@@ -3,4 +3,8 @@ project(SpinChains)
 
 set(CMAKE_CXX_STANDARD 23)
 
+#This is the absolute path to my Eigen folder. You should change line7 to be the path to yours
+set(EIGEN_DIR "C:\\Users\\Cameron McEleney\\OneDrive - University of Glasgow\\University\\PhD\\1st Year\\C++\\eigen-3.4.0")
+include_directories(${EIGEN_DIR})
+
 add_executable(SpinChains main.cpp)
