@@ -6,16 +6,15 @@
 #include <string>
 #include <Eigen3/Eigenvalues>
 
-void saveData(std::string filePath, std::string fileName, Eigen::MatrixXd matrix_to_output)
-{
-    const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
+class saveMatrix {
+private:
+    std::string filePath_in;
+    std::string fileName_in;
+    Eigen::MatrixXd matrix_in;
 
-    std::ofstream file(filePath+"\\"+fileName);
-    if (file.is_open())
-    {
-        file << matrix_to_output.format(CSVFormat);
-        file.close();
-    }
-}
+public:
+    void saveData(std::string filePath, std::string fileName, Eigen::MatrixXd matrix_to_output );
+};
+
 
 #endif //SPINCHAINS_SAVEMATRIX_H

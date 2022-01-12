@@ -11,9 +11,6 @@ private:
     bool endpoint_in;
 
 public:
-    /*linspace(double start, double end, int num);
-    std::vector<double> findarray();
-     */
     std::vector<double> generate_array(void);
     void set_values (double start, double stop, int num, bool endpoint);
 

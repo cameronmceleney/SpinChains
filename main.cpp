@@ -4,8 +4,6 @@
 #include <ctime>
 #include <iostream>
 #include <sstream>
-#include <string>
-#include <vector>
 
 #include "linspace.h"
 #include "saveMatrix.h"
@@ -117,6 +115,7 @@ MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S Excha
 
 int main() {
 
+    saveMatrix savematrix;
     long nspins;
     double JI_min, JI_max;
     std::string file_location = "C:\\Users\\Cameron McEleney\\OneDrive - University of Glasgow\\University\\PhD\\1st Year\\C++\\Chainspins\\Data Outputs";
@@ -154,8 +153,8 @@ int main() {
 
     auto savedata_start = std::chrono::high_resolution_clock::now();
 
-    saveData(file_location,"eigenvectors_"+nspins_string+".csv", es.eigenvectors().real());
-    saveData(file_location,"eigenvalues_"+nspins_string+".csv", es.eigenvalues().imag());
+    savematrix.saveData(file_location,"eigenvectors_"+nspins_string+".csv", es.eigenvectors().real());
+    savematrix.saveData(file_location,"eigenvalues_"+nspins_string+".csv", es.eigenvalues().imag());
 
     auto savedata_stop = std::chrono::high_resolution_clock::now();
     auto savedata_duration = std::chrono::duration_cast<std::chrono::milliseconds>(savedata_stop - savedata_start);

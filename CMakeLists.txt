@@ -7,4 +7,4 @@ set(CMAKE_CXX_STANDARD 23)
 set(EIGEN_DIR "C:\\Users\\Cameron McEleney\\OneDrive - University of Glasgow\\University\\PhD\\1st Year\\C++\\eigen-3.4.0")
 include_directories(${EIGEN_DIR})
 
-add_executable(SpinChains main.cpp saveMatrix.h common.h linspace.cpp linspace.h)
+add_executable(SpinChains main.cpp saveMatrix.h common.h linspace.cpp linspace.h saveMatrix.cpp)
