@@ -10,8 +10,13 @@ private:
     int num_in;
 
 public:
-    linspace(double start, double end, int num);
-    std::vector<double> findlinspace();
+    /*linspace(double start, double end, int num);
+    std::vector<double> findarray();
+     */
+    std::vector<double> generate_array(void);
+    void setStart (double start);
+    void setEnd (double end);
+    void setNum (int num);
 
 };
 

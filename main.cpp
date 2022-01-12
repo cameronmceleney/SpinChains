@@ -26,12 +26,16 @@ MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S Excha
     auto const H0 = static_cast<double>(BiasField);
     auto const gamma = static_cast<double>(GyroMagConst);
 
-    linspace myObj;
+    linspace Linspace;
+    std::vector<double> JI_values_linspace;
+    Linspace.setStart(J_min);
+    Linspace.setEnd(J_max);
+    Linspace.setNum(spins);
+    JI_values_linspace = Linspace.generate_array();
 
     static double w = 0;
     int J_count = 0;
     const long spinpairs = spins - 1, max_N = spins * 2;
-    std::vector<double> JI_values_linspace = myObj.findlinspace();
     //std::vector<double> JI_values_linspace = myObj.findlinspace(J_min, J_max, spinpairs); //calls a linspace function similar to np.linspace()
     //adds a zero to the start and end of JI_values. Insert is faster for large values of numbers compared to push_back()
     std::vector<double> J_array{0}; //initialised with a zero to account for the (P-1)th spin
