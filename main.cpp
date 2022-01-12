@@ -28,9 +28,7 @@ MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S Excha
 
     linspace Linspace;
     std::vector<double> JI_values_linspace;
-    Linspace.setStart(J_min);
-    Linspace.setEnd(J_max);
-    Linspace.setNum(spins);
+    Linspace.set_values(J_min, J_max, spins, true);
     JI_values_linspace = Linspace.generate_array();
 
     static double w = 0;
