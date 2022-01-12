@@ -2,60 +2,18 @@
 #include <cmath>
 #include <complex>
 #include <ctime>
-#include <Eigen3/Eigenvalues> // header
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 
-/* Gives file scope to the Matrix definitions that are required throughout.
- * MatrixcXd = Matrix-custom-dynamic-double; incase the precision needs to be altered at a later date*/
-typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixcXd;
-//static std::complex<double> I(0.0, 1.0);
+#include "linspace.h"
+#include "saveMatrix.h"
+#include "common.h"
 
-template<typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in)
-{
 
-    std::vector<double> linspace;
 
-    auto start = static_cast<double>(start_in);
-    auto end = static_cast<double>(end_in);
-    auto num = static_cast<double>(num_in);
 
-    if (num == 0) {
-        return linspace;
-    }
-
-    if (num == 1)
-    {
-        linspace.push_back(start);
-        return linspace;
-    }
-
-    double delta = (end - start) / (num - 1);
-
-    for(int i=0; i < num-1; ++i)
-    {
-        linspace.push_back(start + delta * i);
-    }
-    linspace.push_back(end); // I want to ensure that start and end
-    // are exactly the same as the input
-    return linspace;
-}
-
-void saveData(std::string filePath, std::string fileName, MatrixcXd matrix_to_output)
-{
-    const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
-
-    std::ofstream file(filePath+"\\"+fileName);
-    if (file.is_open())
-    {
-        file << matrix_to_output.format(CSVFormat);
-        file.close();
-    }
-}
 
 template<typename S>
 MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S ExchangeIntegral_max, S BiasField, S GyroMagConst) {
@@ -68,11 +26,13 @@ MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S Excha
     auto const H0 = static_cast<double>(BiasField);
     auto const gamma = static_cast<double>(GyroMagConst);
 
+    linspace myObj;
+
     static double w = 0;
     int J_count = 0;
     const long spinpairs = spins - 1, max_N = spins * 2;
-
-    std::vector<double> JI_values_linspace = linspace(J_min, J_max, spinpairs); //calls a linspace function similar to np.linspace()
+    std::vector<double> JI_values_linspace = myObj.findlinspace();
+    //std::vector<double> JI_values_linspace = myObj.findlinspace(J_min, J_max, spinpairs); //calls a linspace function similar to np.linspace()
     //adds a zero to the start and end of JI_values. Insert is faster for large values of numbers compared to push_back()
     std::vector<double> J_array{0}; //initialised with a zero to account for the (P-1)th spin
     J_array.insert(J_array.end(), JI_values_linspace.begin(), JI_values_linspace.end());
