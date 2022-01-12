@@ -6,7 +6,7 @@
 class linspace {
 private:
     double start_in;
-    double end_in;
+    double stop_in;
     int num_in;
 
 public:
@@ -15,7 +15,7 @@ public:
      */
     std::vector<double> generate_array(void);
     void setStart (double start);
-    void setEnd (double end);
+    void setEnd (double stop);
     void setNum (int num);
 
 };
