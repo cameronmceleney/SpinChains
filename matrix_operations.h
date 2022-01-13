@@ -1,12 +1,12 @@
 
-#ifndef SPINCHAINS_SAVEMATRIX_H
-#define SPINCHAINS_SAVEMATRIX_H
+#ifndef SPINCHAINS_MATRIX_OPERATIONS_H
+#define SPINCHAINS_MATRIX_OPERATIONS_H
 
 #include <fstream>
 #include <string>
 #include "common.h"
 
-class saveMatrix {
+class matrix_operations {
 private:
     std::string filePath_in;
     std::string fileName_in;
@@ -17,4 +17,4 @@ public:
 };
 
 
-#endif //SPINCHAINS_SAVEMATRIX_H
+#endif //SPINCHAINS_MATRIX_OPERATIONS_H

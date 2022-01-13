@@ -1,6 +1,6 @@
-#include "saveMatrix.h"
+#include "matrix_operations.h"
 
-void saveMatrix::saveData(std::string filePath, std::string fileName, Eigen::MatrixXd matrix)
+void matrix_operations::saveData(std::string filePath, std::string fileName, Eigen::MatrixXd matrix)
 {
     filePath_in = filePath;
     fileName_in = fileName;

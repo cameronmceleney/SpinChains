@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "linspace.h"
-#include "saveMatrix.h"
+#include "matrix_operations.h"
 #include "common.h"
 
 template<typename S>
@@ -109,7 +109,7 @@ MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S Excha
 
 int main() {
 
-    saveMatrix savematrix;
+    matrix_operations savematrix;
     int nspins;
     double JI_min, JI_max;
     std::string file_location = R"(/Users/cameronmceleney/OneDrive - University of Glasgow/University/PhD/1st Year/C++/Chainspins/Data Outputs)";
