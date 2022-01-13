@@ -8,7 +8,7 @@ void saveMatrix::saveData(std::string filePath, std::string fileName, Eigen::Mat
 
     const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
 
-    std::ofstream file(filePath_in+"\\"+fileName_in);
+    std::ofstream file(filePath_in+"/"+fileName_in);
     if (file.is_open())
     {
         file << matrix_in.format(CSVFormat);
