@@ -15,7 +15,7 @@ void linspace::set_values(double start, double stop, int num, bool endpoint){
     endpoint_in = endpoint;
 }
 
-std::vector<double> linspace::generate_array(void)
+std::vector<double> linspace::generate_array()
 {
     std::vector<double> linspace_array;
 
@@ -42,7 +42,7 @@ std::vector<double> linspace::generate_array(void)
         linspace_array.push_back(start_in + delta * i);
     }
     // If true, stop is the last sample; otherwise it's excluded
-    if (endpoint_in == true){
+    if (endpoint_in){
         linspace_array.push_back(stop_in);
     }
 

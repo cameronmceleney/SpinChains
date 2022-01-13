@@ -12,8 +12,15 @@ private:
     std::string fileName_in;
     Eigen::MatrixXd matrix_in;
 
+    int NumSpins_in;
+    double ExchangeIntegral_min_in;
+    double ExchangeIntegral_max_in;
+    double BiasField_in;
+    double GyroMagConst_in;
+
 public:
-    void saveData(std::string filePath, std::string fileName, Eigen::MatrixXd matrix_to_output );
+    void SaveData(std::string filePath, std::string fileName, Eigen::MatrixXd matrix_to_output );
+    MatrixcXd PopulateMatrix(int NumSpins, double ExchangeIntegral_min, double ExchangeIntegral_max, double BiasField, double GyroMagConst);
 };
 
 
