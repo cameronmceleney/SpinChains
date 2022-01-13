@@ -1,11 +1,8 @@
-//
-// Created by Cameron McEleney on 12/01/2022.
-//
-
 #ifndef SPINCHAINS_COMMON_H
 #define SPINCHAINS_COMMON_H
 
-#include <Eigen3/Eigenvalues> // header
+#include <eigen/Eigenvalues> // header for Mac
+//#include <Eigen3/Eigenvalues> // header for Windows
 
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixcXd;
 /* Gives file scope to the Matrix definitions that are required throughout.
