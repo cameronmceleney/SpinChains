@@ -2,7 +2,7 @@
 #include <cmath>
 #include <complex>
 #include <ctime>
-#include <Eigen3/Eigenvalues> // header
+#include <eigen/Eigenvalues> // header
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -175,7 +175,7 @@ int main() {
     std::cout << "File extension is: " << nspins_string << std::endl;
     std::cout << "\nFiles will be outputted to: " << file_location << std::endl;
 
-    auto findeigs_start = std::chrono::high_resolution_clock::now();
+    auto findeigs_start = std::chrono::system_clock::now();
     std::time_t start_time = std::chrono::system_clock::to_time_t(findeigs_start);
     std::cout << "\nBegan computation at: "<< std::ctime(&start_time) << std::endl;
 
@@ -183,19 +183,19 @@ int main() {
     MatrixValues = PopulateMatrix(nspins, JI_min, JI_max, 0.1, 29.2*2*M_PI);
     Eigen::EigenSolver<MatrixcXd> es(MatrixValues); //ces stands for ComplexEigenSolver for ease
 
-    auto findeigs_stop = std::chrono::high_resolution_clock::now();
+    auto findeigs_stop = std::chrono::system_clock::now();
     auto findeigs_duration = std::chrono::duration_cast<std::chrono::milliseconds>(findeigs_stop - findeigs_start);
     std::cout << "Duration to find eigenvectors and values: " << findeigs_duration.count() << std::endl;
 
     MatrixValues.resize(0,0); //to remove from memory by resizing to 0
     //std::cout << "Computing V * D * V^(-1) gives: " << std::endl << ces.eigenvectors() * ces.eigenvalues().asDiagonal() * ces.eigenvectors().inverse() << std::endl;
 
-    auto savedata_start = std::chrono::high_resolution_clock::now();
+    auto savedata_start = std::chrono::system_clock::now();
 
     saveData(file_location,"eigenvectors_"+nspins_string+".csv", es.eigenvectors().real());
     saveData(file_location,"eigenvalues_"+nspins_string+".csv", es.eigenvalues().imag());
 
-    auto savedata_stop = std::chrono::high_resolution_clock::now();
+    auto savedata_stop = std::chrono::system_clock::now();
     auto savedata_duration = std::chrono::duration_cast<std::chrono::milliseconds>(savedata_stop - savedata_start);
     std::cout << "Time to write to files: " << savedata_duration.count() << std::endl;
 
