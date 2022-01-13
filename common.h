@@ -2,6 +2,7 @@
 #define SPINCHAINS_COMMON_H
 
 #include <eigen/Eigenvalues> // header for Mac
+#include <iostream>
 //#include <Eigen3/Eigenvalues> // header for Windows
 
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixcXd;
