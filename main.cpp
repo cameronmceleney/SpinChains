@@ -1,24 +1,18 @@
 #include <chrono>
 #include <cmath>
-#include <complex>
 #include <ctime>
 #include <iostream>
-#include <sstream>
 
 #include "linspace.h"
 #include "saveMatrix.h"
 #include "common.h"
-
-
-
-
 
 template<typename S>
 MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S ExchangeIntegral_max, S BiasField, S GyroMagConst) {
 
     //std::vector<double> JI_values_linspace = linspace(J_min, JI_max, num_spinpairs); //function is like np.linspace()
 
-    auto const spins = static_cast<long>(num_spins_in_chain);
+    auto const spins = static_cast<int>(num_spins_in_chain);
     auto const J_min = static_cast<double>(ExchangeIntegral_min);
     auto const J_max = static_cast<double>(ExchangeIntegral_max);
     auto const H0 = static_cast<double>(BiasField);
@@ -27,12 +21,12 @@ MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S Excha
     linspace Linspace;
     std::vector<double> JI_values_linspace;
     Linspace.set_values(J_min, J_max, spins, true);
-    JI_values_linspace = Linspace.generate_array();
+    JI_values_linspace = Linspace.generate_array(); //calls a linspace function similar to np.linspace()
 
     static double w = 0;
     int J_count = 0;
     const long spinpairs = spins - 1, max_N = spins * 2;
-    //std::vector<double> JI_values_linspace = myObj.findlinspace(J_min, J_max, spinpairs); //calls a linspace function similar to np.linspace()
+
     //adds a zero to the start and end of JI_values. Insert is faster for large values of numbers compared to push_back()
     std::vector<double> J_array{0}; //initialised with a zero to account for the (P-1)th spin
     J_array.insert(J_array.end(), JI_values_linspace.begin(), JI_values_linspace.end());
@@ -116,9 +110,9 @@ MatrixcXd PopulateMatrix(int num_spins_in_chain, S ExchangeIntegral_min, S Excha
 int main() {
 
     saveMatrix savematrix;
-    long nspins;
+    int nspins;
     double JI_min, JI_max;
-    std::string file_location = "C:\\Users\\Cameron McEleney\\OneDrive - University of Glasgow\\University\\PhD\\1st Year\\C++\\Chainspins\\Data Outputs";
+    std::string file_location = R"(C:\Users\Cameron McEleney\OneDrive - University of Glasgow\University\PhD\1st Year\C++\Chainspins\Data Outputs)";
 
     std::cout << "Enter the number of spins in the chain: ";
     std::cin >> nspins;
@@ -136,7 +130,7 @@ int main() {
     std::cout << "File extension is: " << nspins_string << std::endl;
     std::cout << "\nFiles will be outputted to: " << file_location << std::endl;
 
-    auto findeigs_start = std::chrono::high_resolution_clock::now();
+    auto findeigs_start = std::chrono::system_clock::now();
     std::time_t start_time = std::chrono::system_clock::to_time_t(findeigs_start);
     std::cout << "\nBegan computation at: "<< std::ctime(&start_time) << std::endl;
 
@@ -144,19 +138,19 @@ int main() {
     MatrixValues = PopulateMatrix(nspins, JI_min, JI_max, 0.1, 29.2*2*M_PI);
     Eigen::EigenSolver<MatrixcXd> es(MatrixValues); //ces stands for ComplexEigenSolver for ease
 
-    auto findeigs_stop = std::chrono::high_resolution_clock::now();
+    auto findeigs_stop = std::chrono::system_clock::now();
     auto findeigs_duration = std::chrono::duration_cast<std::chrono::milliseconds>(findeigs_stop - findeigs_start);
     std::cout << "Duration to find eigenvectors and values: " << findeigs_duration.count() << std::endl;
 
     MatrixValues.resize(0,0); //to remove from memory by resizing to 0
     //std::cout << "Computing V * D * V^(-1) gives: " << std::endl << ces.eigenvectors() * ces.eigenvalues().asDiagonal() * ces.eigenvectors().inverse() << std::endl;
 
-    auto savedata_start = std::chrono::high_resolution_clock::now();
+    auto savedata_start = std::chrono::system_clock::now();
 
     savematrix.saveData(file_location,"eigenvectors_"+nspins_string+".csv", es.eigenvectors().real());
     savematrix.saveData(file_location,"eigenvalues_"+nspins_string+".csv", es.eigenvalues().imag());
 
-    auto savedata_stop = std::chrono::high_resolution_clock::now();
+    auto savedata_stop = std::chrono::system_clock::now();
     auto savedata_duration = std::chrono::duration_cast<std::chrono::milliseconds>(savedata_stop - savedata_start);
     std::cout << "Time to write to files: " << savedata_duration.count() << std::endl;
 
