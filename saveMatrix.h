@@ -4,7 +4,7 @@
 
 #include <fstream>
 #include <string>
-#include <Eigen3/Eigenvalues>
+#include "common.h"
 
 class saveMatrix {
 private:
