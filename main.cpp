@@ -112,7 +112,7 @@ int main() {
     saveMatrix savematrix;
     int nspins;
     double JI_min, JI_max;
-    std::string file_location = R"(C:\Users\Cameron McEleney\OneDrive - University of Glasgow\University\PhD\1st Year\C++\Chainspins\Data Outputs)";
+    std::string file_location = R"(/Users/cameronmceleney/OneDrive - University of Glasgow/University/PhD/1st Year/C++/Chainspins/Data Outputs)";
 
     std::cout << "Enter the number of spins in the chain: ";
     std::cin >> nspins;
