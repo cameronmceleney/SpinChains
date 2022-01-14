@@ -3,16 +3,16 @@
 
 
 #include <vector>
-class linspace {
+class LinspaceClass {
 private:
-    double start_in;
-    double stop_in;
-    int num_in;
-    bool endpoint_in;
+    double _intervalStart;
+    double _intervalEnd;
+    int _numberOfSamples;
+    bool _shouldIncludeEndpoint;
 
 public:
     std::vector<double> generate_array(void);
-    void set_values (double start, double stop, int num, bool endpoint);
+    void set_values (double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint);
 
 };
 

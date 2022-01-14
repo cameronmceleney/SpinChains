@@ -7,11 +7,11 @@
 int main() {
     // TODO: rename variables
     // rename all variables following https://manual.gromacs.org/documentation/5.1-current/dev-manual/naming.html
-    matrix_operations MatrixOps;
+    MatrixOperationsClass MatrixOperations;
 
     int g_numberSpins; // number of spins in the chain
-    double exchangeMinimum, exchangeMaximum; // minimum and maximum exchange (J) integral (I) values
-    std::string file_location = R"(/Users/cameronmceleney/OneDrive - University of Glasgow/University/PhD/1st Year/C++/Chainspins/Data Outputs)";
+    double exchangeMinimum, exchangeMaximum; // minimum and maximum exchange values (J)
+    std::string fileLocation = R"(/Users/cameronmceleney/OneDrive - University of Glasgow/University/PhD/1st Year/C++/Chainspins/Data Outputs)";
 
     std::cout << "Enter the number of spins in the chain: ";
     std::cin >> g_numberSpins; // Takes user input for the number of spins
@@ -24,45 +24,44 @@ int main() {
     std::string fileNameNumSpins;
     fileNameNumSpins = std::to_string(g_numberSpins) + "spins";
 
-    std::cout << "Enter the Jmin value: ";
+    std::cout << "Enter the minimum exchange value: ";
     std::cin >> exchangeMinimum;
 
-    std::cout << "Enter the Jmax value: ";
+    std::cout << "Enter the maximum exchange value: ";
     std::cin >> exchangeMaximum;
 
     // Compares user's exchange integrals and appends an explanatory string to the filename
     if (exchangeMinimum == exchangeMaximum){
-        fileNameNumSpins += "-lin"; // Equal JI values means the system has linear exchange ('lin')
+        fileNameNumSpins += "-lin"; // Equal J values means the system has linear exchange ('lin')
     }
     else if (exchangeMinimum != exchangeMaximum){
-        fileNameNumSpins += "-nonlin"; // Unequal JI values means the system has nonlinear exchange ('nonlin')
+        fileNameNumSpins += "-nonlin"; // Unequal J values means the system has non-linear exchange ('nonlin')
     }
     else {
         /* no statement */
     }
 
     std::cout << "Filename is: " << fileNameNumSpins << std::endl; // Informs user of filename to enable directory searching via file explorer search function
-    std::cout << "\nFiles will be outputted to: " << file_location << std::endl; // Showing the selected path will make it easier to find the file
+    std::cout << "\nFiles will be outputted to: " << fileLocation << std::endl; // Showing the selected path will make it easier to find the file
 
     auto startTimeFindEigens = std::chrono::system_clock::now(); // Separate start time (from system) for the computation of the eigenvalues
     std::time_t startTimeFindEigens_cTimeUse = std::chrono::system_clock::to_time_t(startTimeFindEigens);
     std::cout << "\nBegan computation at: "<< std::ctime(&startTimeFindEigens_cTimeUse) << std::endl; // Useful for long computations where the start time may be forgotten
 
-    MatrixcXd MatrixValues(c_totalEquations,c_totalEquations); // Generates the matrix but does not allocate memory. That is done as each element is calculated
-    MatrixValues = MatrixOps.PopulateMatrix(g_numberSpins, exchangeMinimum, exchangeMaximum, 0.1, 29.2*2*M_PI);
-    Eigen::EigenSolver<MatrixcXd> eigenSolverMatrixValues(MatrixValues);
+    Matrix_xd MatrixValues(c_totalEquations,c_totalEquations); // Generates the matrix but does not allocate memory. That is done as each element is calculated
+    MatrixValues = MatrixOperations.populate_matrix(g_numberSpins, exchangeMinimum, exchangeMaximum, 0.1, 29.2*2*M_PI);
+    Eigen::EigenSolver<Matrix_xd> eigenSolverMatrixValues(MatrixValues);
 
     auto stopTimeFindEigens = std::chrono::system_clock::now();
     auto durationTimeFindEigens = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeFindEigens - startTimeFindEigens);
     std::cout << "Duration to find eigenvectors and values: " << durationTimeFindEigens.count() << std::endl;
 
     MatrixValues.resize(0,0); // Removes large matrix from memory; leads to faster write times for very large matrices
-    //std::cout << "Computing V * D * V^(-1) gives: " << std::endl << ces.eigenvectors() * ces.eigenvalues().asDiagonal() * ces.eigenvectors().inverse() << std::endl;
 
     auto startTimeSaveData = std::chrono::system_clock::now();
 
-    MatrixOps.SaveData(file_location,"eigenvectors_"+fileNameNumSpins+".csv", eigenSolverMatrixValues.eigenvectors().real());
-    MatrixOps.SaveData(file_location,"eigenvalues_"+fileNameNumSpins+".csv", eigenSolverMatrixValues.eigenvalues().imag());
+    MatrixOperations.save_data(fileLocation,"eigenvectors_"+fileNameNumSpins+".csv", eigenSolverMatrixValues.eigenvectors().real());
+    MatrixOperations.save_data(fileLocation,"eigenvalues_"+fileNameNumSpins+".csv", eigenSolverMatrixValues.eigenvalues().imag());
 
     auto stopTimeSaveData = std::chrono::system_clock::now();
     auto durationTimeSaveData = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeSaveData - startTimeSaveData);
@@ -72,4 +71,7 @@ int main() {
     std::cout << "\nFinished computation at: "<< std::ctime(&stopTimeSaveData_cTimeUse) << std::endl;
 
     return 0;
+
+    //std::cout << "Computing V * D * V^(-1) gives: " << std::endl << ces.eigenvectors() * ces.eigenvalues().asDiagonal() * ces.eigenvectors().inverse() << std::endl;
+
 }

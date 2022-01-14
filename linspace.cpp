@@ -1,50 +1,51 @@
 #include "linspace.h"
 
-void linspace::set_values(double start, double stop, int num, bool endpoint){
+void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint){
 
     // Start point of the interval.
-    start_in = start;
+    _intervalStart = intervalStart;
 
     // Stop point of the interval.
-    stop_in = stop;
+    _intervalEnd = intervalEnd;
 
     // 'Number' of evenly spaced samples to be returned over the given interval.
-    num_in = num;
+    _numberOfSamples = numberOfSamples;
 
     //If true, stop is the last sample. Otherwise, it is not included. Default is true.
-    endpoint_in = endpoint;
+    _shouldIncludeEndpoint = shouldIncludeEndpoint;
 }
 
-std::vector<double> linspace::generate_array()
+std::vector<double> LinspaceClass::generate_array()
 {
     std::vector<double> linspace_array;
 
-    if (num_in == 0) {
+    if (_numberOfSamples == 0) {
         // if no range in inputted then empty vector is returned
         return linspace_array;
     }
 
-    if (num_in == 1)
+    if (_numberOfSamples == 1)
     {
         // if range is one then start value is the only element of the array returned
-        linspace_array.push_back(start_in);
+        linspace_array.push_back(_intervalStart);
         return linspace_array;
     }
 
     // All other cases are dealt with here. Output will be of length 'num' if endpoint = True
 
     // 'Delta' finds the stepsize between values
-    double delta = (stop_in - start_in) / (num_in - 1);
+    double delta = (_intervalEnd - _intervalStart) / (_intervalStart - 1);
 
-    for(int i=0; i < num_in-1; ++i)
+    for(int i=0; i < _numberOfSamples-1; ++i)
     {
         // Adds elements to list. Method is very similar to Euler's numerical method
-        linspace_array.push_back(start_in + delta * i);
+        linspace_array.push_back(_intervalStart + delta * i);
     }
     // If true, stop is the last sample; otherwise it's excluded
-    if (endpoint_in){
-        linspace_array.push_back(stop_in);
+    if (_shouldIncludeEndpoint){
+        linspace_array.push_back(_intervalEnd);
     }
 
     return linspace_array;
 }
+

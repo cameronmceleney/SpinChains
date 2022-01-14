@@ -6,21 +6,21 @@
 #include <string>
 #include "common.h"
 
-class matrix_operations {
+class MatrixOperationsClass {
 private:
-    std::string filePath_in;
-    std::string fileName_in;
-    Eigen::MatrixXd matrix_in;
+    std::string _filePath;
+    std::string _fileName;
+    Eigen::MatrixXd _generatedMatrix;
 
-    int NumSpins_in;
-    double ExchangeIntegral_min_in;
-    double ExchangeIntegral_max_in;
-    double BiasField_in;
-    double GyroMagConst_in;
+    int _numberSpins;
+    double _exchangeMinimum;
+    double _exchangeMaximum;
+    double _biasField;
+    double _gyroscopicMagneticConstant;
 
 public:
-    void SaveData(std::string filePath, std::string fileName, Eigen::MatrixXd matrix_to_output );
-    MatrixcXd PopulateMatrix(int NumSpins, double ExchangeIntegral_min, double ExchangeIntegral_max, double BiasField, double GyroMagConst);
+    void save_data(std::string filePath, std::string fileName, Eigen::MatrixXd generatedMatrix );
+    Matrix_xd populate_matrix(int numberSpins, double exchangeMinimum, double exchangeMaximum, double biasField, double gyroscopicMagneticConstant);
 };
 
 
