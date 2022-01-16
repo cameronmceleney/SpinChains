@@ -9,9 +9,8 @@ int main() {
     std::cin >> numberSpins; // Takes user input for the number of spins
 
     SpinChainEigenSolverClass SolverClass;
-    void *output = SolverClass.DefineUserInputs(numberSpins);
-    return 0;
+    SolverClass.SolveInputs(numberSpins);
 
-    //std::cout << "Computing V * D * V^(-1) gives: " << std::endl << ces.eigenvectors() * ces.eigenvalues().asDiagonal() * ces.eigenvectors().inverse() << std::endl;
+    return 0;
 
 }
