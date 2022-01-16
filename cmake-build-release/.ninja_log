@@ -1,0 +1,5 @@
+# ninja log v5
+1	617	1642342617454179165	CMakeFiles/SpinChains.dir/linspace.cpp.o	8ec25ff3cd964afd
+2	2429	1642342619263685023	CMakeFiles/SpinChains.dir/matrix_operations.cpp.o	1876b448147bae46
+10520	10608	1642342627450177374	SpinChains	2dab668baa86dcc2
+0	10520	1642342627334986043	CMakeFiles/SpinChains.dir/main.cpp.o	6311738833d2767

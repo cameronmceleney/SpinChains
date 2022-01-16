@@ -1,0 +1,4 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja /Users/cameronmceleney/CLionProjects/SpinsChains-GitClone-Local
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/cameronmceleney/CLionProjects/SpinsChains-GitClone-Local/cmake-build-release
