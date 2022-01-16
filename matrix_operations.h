@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <string>
+#include <vector>
 #include "common.h"
 
 class MatrixOperationsClass {
@@ -17,10 +18,12 @@ private:
     double _exchangeMaximum;
     double _biasField;
     double _gyroscopicMagneticConstant;
+    std::vector<double> _inputVector;
 
 public:
     Matrix_xd populate_matrix(int numberSpins, double exchangeMinimum, double exchangeMaximum, double biasField, double gyroscopicMagneticConstant);
     void save_data(std::string filePath, std::string fileName, Matrix_xd generatedMatrix );
+    void PrintVector(std::vector<double> inputVector);
 };
 
 

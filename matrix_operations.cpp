@@ -1,6 +1,15 @@
 #include "matrix_operations.h"
 #include "linspace.h"
 
+void MatrixOperationsClass::PrintVector(std::vector<double> inputVector)
+{
+    _inputVector = inputVector;
+    std::cout << "size: " << _inputVector.size() << std::endl;
+    for (double val : _inputVector)
+        std::cout << val << " ";
+    std::cout << std::endl;
+}
+
 void MatrixOperationsClass::save_data(std::string filePath, std::string fileName, Matrix_xd generatedMatrix )
 {
     /* This class will take a given filename and filepath (supplied by the user), and use that information to create a
