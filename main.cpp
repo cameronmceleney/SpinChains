@@ -16,7 +16,7 @@ int main() {
     std::cout << "Enter the number of spins in the chain: ";
     std::cin >> g_numberSpins; // Takes user input for the number of spins
 
-    /* Total number of spins (2N) is twice the number of spins (N) as there are two coupled equation (dx and dy)
+    /* Total number of spins (2*N) is twice the number of spins (N) as there are two coupled equation (dx and dy)
      for each spin in the chain. */
     int const c_totalEquations = g_numberSpins * 2;
 

@@ -19,8 +19,8 @@ private:
     double _gyroscopicMagneticConstant;
 
 public:
-    void save_data(std::string filePath, std::string fileName, Eigen::MatrixXd generatedMatrix );
     Matrix_xd populate_matrix(int numberSpins, double exchangeMinimum, double exchangeMaximum, double biasField, double gyroscopicMagneticConstant);
+    void save_data(std::string filePath, std::string fileName, Matrix_xd generatedMatrix );
 };
 
 
