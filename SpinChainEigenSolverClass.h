@@ -1,0 +1,14 @@
+//
+// Created by Cameron Aidan McEleney on 16/01/2022.
+//
+
+#ifndef SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
+#define SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
+
+
+class SpinChainEigenSolverClass {
+
+};
+
+
+#endif //SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
