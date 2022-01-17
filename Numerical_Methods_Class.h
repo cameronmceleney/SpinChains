@@ -7,7 +7,7 @@
 class Numerical_Methods_Class {
 
 private:
-    std::vector<double> _fullChainExchangeValues;
+    std::vector<double> _chainExchangeValues; // Holds a linearly spaced array of values which describe the exchange interaction between neighbouring spins
 
     std::string _fileName; //takes a custom filename input from the user
 
@@ -37,7 +37,7 @@ private:
     float _magnetisationSaturation = 1.0; // Saturation Magnetisation (T). Note: 1A/m = 1.254uT. Must be in Telsa,
     float _gyroscopicMagneticConstant = 29.2E9 * 2 * _PIVAL; // gyromagnetic ratio (GHz/T)
 
-    std::vector<double> _mXEstStart{0}, _mYEstStart{0}, _mZEstStart{0}; // Magnetic Component (m), Axis (X), Estimate (Est), Initial Time (Start).
+    bool _shouldDebug = false; // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     std::string _stepsizeString;
     std::string _stopIterString;
 

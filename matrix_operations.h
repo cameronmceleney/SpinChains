@@ -23,6 +23,7 @@ private:
 public:
     Matrix_xd populate_matrix(int numberSpins, double exchangeMinimum, double exchangeMaximum, double biasField, double gyroscopicMagneticConstant);
     void save_data(std::string filePath, std::string fileName, Matrix_xd generatedMatrix );
+    // Writes a vector to the terminal
     void PrintVector(std::vector<double> inputVector);
 };
 

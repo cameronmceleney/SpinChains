@@ -1,6 +1,7 @@
 #include "matrix_operations.h"
 #include "linspace.h"
 
+
 void MatrixOperationsClass::PrintVector(std::vector<double> inputVector)
 {
     _inputVector = inputVector;
