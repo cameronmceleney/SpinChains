@@ -16,19 +16,17 @@ void LinspaceClass::set_values(double intervalStart, double intervalEnd, int num
     _shouldIncludeEndpoint = shouldIncludeEndpoint;
 }
 
-std::vector<double> LinspaceClass::generate_array()
-{
-    std::vector<double> linspace_array;
+std::vector<double> LinspaceClass::generate_array() {
 
     if (_numberOfSamples == 0) {
         // if no range in inputted then empty vector is returned
-        return linspace_array;
+        return _linspaceArray;
     }
 
     if (_numberOfSamples == 1) {
         // if range is one then start value is the only element of the array returned
-        linspace_array.push_back(_intervalStart);
-        return linspace_array;
+        _linspaceArray.push_back(_intervalStart);
+        return _linspaceArray;
     }
 
     // All other cases are dealt with here. Output will be of length 'num' if endpoint = True
@@ -38,13 +36,21 @@ std::vector<double> LinspaceClass::generate_array()
 
     for(int i=0; i < _numberOfSamples-1; ++i) {
         // Adds elements to list. Method is very similar to Euler's numerical method
-        linspace_array.push_back(_intervalStart + delta * i);
+        _linspaceArray.push_back(_intervalStart + delta * i);
     }
 
     if (_shouldIncludeEndpoint) {
-        linspace_array.push_back(_intervalEnd);
+        _linspaceArray.push_back(_intervalEnd);
     }
 
-    return linspace_array;
+    return _linspaceArray;
 }
 
+std::vector<double> LinspaceClass::build_spinchain() {
+
+    _spinchainArray.push_back(0); // Initialised with a zero to account for the (P-1)th spin
+    _spinchainArray.insert(_spinchainArray.end(), _linspaceArray.begin(), _linspaceArray.end()); // Insert is faster for large values of numbers compared to push_back()
+    _spinchainArray.push_back(0); // Appends a zero to the end to account for the exchange from the (N+1)th RHS spin
+
+    return _spinchainArray;
+}

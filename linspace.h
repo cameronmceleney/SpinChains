@@ -9,9 +9,13 @@ private:
     double _intervalEnd;
     int _numberOfSamples;
     bool _shouldIncludeEndpoint;
+    std::vector<double> _linspaceArray;
+    std::vector<double> _spinchainArray;
+
 
 public:
     std::vector<double> generate_array();
+    std::vector<double> build_spinchain();
     void set_values (double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint);
 
 };
