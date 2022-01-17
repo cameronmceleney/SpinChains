@@ -15,8 +15,11 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
     std::cout << "Enter the LHS spin position for the driving region: ";
     std::cin >> _drivingRegionLHS;
 
+    _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
+
     std::cout << "Enter the _stepsize: ";
     std::cin >> _stepsize;
+    _stepsizeHalf = _stepsize/2;
 
     std::cout << "Enter the maximum number of iterations: ";
     std::cin >> _stopIterationValue; // itermax can be inputted in scientific notation or as a float
