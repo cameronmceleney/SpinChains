@@ -63,10 +63,11 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
     mYEstStart.push_back(0);
     mZEstStart.push_back(0);
 
+    std::string filePath = "/Users/cameronmceleney/CLionProjects/Data/rk2_mx_";
     // Creates files to save the data. All files will have (namefile) in them to make them clearly identifiable.
-    std::ofstream mXFile("./Outputs_all/Output_RK2/rk2_mx_"+_fileName+".csv");
-    std::ofstream mYFile("./Outputs_all/Output_RK2/rk2_my_"+_fileName+".csv");
-    std::ofstream mZFile("./Outputs_all/Output_RK2/rk2_mz_"+_fileName+".csv");
+    std::ofstream mXFile(filePath+_fileName+".csv");
+    std::ofstream mYFile(filePath+_fileName+".csv");
+    std::ofstream mZFile(filePath+_fileName+".csv");
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
