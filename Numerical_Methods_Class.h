@@ -11,7 +11,7 @@ private:
 
     std::string _fileName; //takes a custom filename input from the user
 
-   double _PIVAL = 3.14159265359;
+   float _piconstantval = 3.14159265359;
 
     int _numberOfSpins; // Number of sites (spins) in the chain
     int _drivingRegionLHS; // The position of the spin which is leftmost in the driving region
@@ -25,7 +25,7 @@ private:
     double _exchangeMinimum = 43.5;
     double _exchangeMaximum = 132;
     double _drivingFrequency = 67e9;
-    double _drivingAngularFrequency = 2 * _PIVAL * _drivingFrequency; // angular freq (Hz)
+    double _drivingAngularFrequency = 2 * _piconstantval * _drivingFrequency; // angular freq (Hz)
     double _biasFieldDrivingAmplitude = 3e-3;
     double _maxSimulatedTime;     // notifies the user of the maximum simulation time. If the simulation time is too long, the user should simply force-exit the code
     double _initialMagMomentX = 0; // The initial value of the magnetic moment (MM) along the x-direction
@@ -35,7 +35,7 @@ private:
 
     float _biasField = 0.1; // bias field (T)
     float _magnetisationSaturation = 1.0; // Saturation Magnetisation (T). Note: 1A/m = 1.254uT. Must be in Telsa,
-    float _gyroscopicMagneticConstant = 29.2E9 * 2 * _PIVAL; // gyromagnetic ratio (GHz/T)
+    float _gyroscopicMagneticConstant = 29.2E9 * 2 * _piconstantval; // gyromagnetic ratio (GHz/T)
 
     bool _shouldDebug = false; // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     std::string _stepsizeString;

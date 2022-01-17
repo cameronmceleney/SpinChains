@@ -18,7 +18,6 @@ private:
     double _exchangeMaximum;
     double _biasField;
     double _gyroscopicMagneticConstant;
-    std::vector<double> _inputVector;
 
 public:
     Matrix_xd populate_matrix(int numberSpins, double exchangeMinimum, double exchangeMaximum, double biasField, double gyroscopicMagneticConstant);

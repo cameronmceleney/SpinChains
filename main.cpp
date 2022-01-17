@@ -1,5 +1,6 @@
 #include "common.h"
 #include "SpinChainEigenSolverClass.h"
+#include "Numerical_Methods_Class.h"
 
 int main() {
 
@@ -9,7 +10,10 @@ int main() {
     std::cin >> numberSpins; // Takes user input for the number of spins
 
     SpinChainEigenSolverClass SolverClass;
-    SolverClass.SolveInputs(numberSpins);
+    Numerical_Methods_Class NMMethods;
+
+    //SolverClass.SolveInputs(numberSpins);
+    NMMethods.RK2(numberSpins);
 
     return 0;
 

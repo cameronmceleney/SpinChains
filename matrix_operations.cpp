@@ -4,9 +4,8 @@
 
 void MatrixOperationsClass::PrintVector(std::vector<double> inputVector)
 {
-    _inputVector = inputVector;
-    std::cout << "size: " << _inputVector.size() << std::endl;
-    for (double val : _inputVector)
+    std::cout << "size: " << inputVector.size() << std::endl;
+    for (double val : inputVector)
         std::cout << val << " ";
     std::cout << std::endl;
 }
