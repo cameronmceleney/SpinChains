@@ -7,36 +7,44 @@
 class Numerical_Methods_Class {
 
 private:
-    std::vector<double> _linspaceExchangeValues;
+    std::vector<double> _fullChainExchangeValues;
 
     std::string _fileName; //takes a custom filename input from the user
 
    double _PIVAL = 3.14159265359;
 
     int _numberOfSpins; // Number of sites (spins) in the chain
-    int _spinStart = 0; // This is the site that the simulation will begin from
-    int _drivingRegionLHSSpin = _spinStart; // The spin which is the leftmost in the driving region
-    int _drivingRegionRHSSpin = _drivingRegionLHSSpin + 200; // The spin which is the rightmost in the driving region
-    int _initalTime = 0; // Otherwise, known as t0, this is the start-time for the simulation
+    int _drivingRegionLHS; // The position of the spin which is leftmost in the driving region
+    int _drivingRegionWidth = 200;
+    int _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth; // The position of the spin which is leftmost in the driving region
     int _startIterationValue = 0; //The minimum iteration step that the program will calculate to
     int _stopIterationValue; // The maximum iteration step that the program will calculate to
 
     double _stepsize; // Accepts float or scientific notation as input
+    double _stepsizeHalf = _stepsize/2; // Separately defined to avoid repeated unnecessary calculations inside loops
     double _exchangeMinimum = 43.5;
     double _exchangeMaximum = 132;
     double _drivingFrequency = 67e9;
     double _drivingAngularFrequency = 2 * _PIVAL * _drivingFrequency; // angular freq (Hz)
     double _biasFieldDrivingAmplitude = 3e-3;
     double _maxSimulatedTime;     // notifies the user of the maximum simulation time. If the simulation time is too long, the user should simply force-exit the code
+    double _initialMagMomentX = 0; // The initial value of the magnetic moment (MM) along the x-direction
+    double _initialMagMomentY = 0; // The initial value of the magnetic moment (MM) along the y-direction
+    double _initialMagMomentZ = _magnetisationSaturation; // The initial value of the magnetic moment (MM) along the z-direction
+    double _totalTime = 0; // Analogous to a stopwatch in a physical experiment. This tracks for how long the experiment in the model has been simulated
 
     float _biasField = 0.1; // bias field (T)
     float _magnetisationSaturation = 1.0; // Saturation Magnetisation (T). Note: 1A/m = 1.254uT. Must be in Telsa,
     float _gyroscopicMagneticConstant = 29.2E9 * 2 * _PIVAL; // gyromagnetic ratio (GHz/T)
 
+    std::vector<double> _mXEstStart{0}, _mYEstStart{0}, _mZEstStart{0}; // Magnetic Component (m), Axis (X), Estimate (Est), Initial Time (Start).
+    std::string _stepsizeString;
+    std::string _stopIterString;
 
 public:
 
     void RK2(int numberSpins);
+    void StreamToString();
 };
 
 
