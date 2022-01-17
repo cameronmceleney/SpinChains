@@ -15,10 +15,10 @@ private:
 
     int _numberOfSpins; // Number of sites (spins) in the chain
     int _drivingRegionLHS; // The position of the spin which is leftmost in the driving region
-    int _drivingRegionWidth = 200;
+    int _drivingRegionWidth = 30;
     int _drivingRegionRHS; // The position of the spin which is leftmost in the driving region
-    int _startIterationValue = 0; //The minimum iteration step that the program will calculate to
-    int _stopIterationValue; // The maximum iteration step that the program will calculate to
+    double _startIterationValue = 0; //The minimum iteration step that the program will calculate to
+    double _stopIterationValue; // The maximum iteration step that the program will calculate to
 
     double _stepsize; // Accepts float or scientific notation as input
     double _stepsizeHalf; // Separately defined to avoid repeated unnecessary calculations inside loops

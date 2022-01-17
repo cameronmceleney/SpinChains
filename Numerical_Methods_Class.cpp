@@ -17,7 +17,7 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
 
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
-    std::cout << "Enter the _stepsize: ";
+    std::cout << "Enter the stepsize: ";
     std::cin >> _stepsize;
     _stepsizeHalf = _stepsize/2;
 
