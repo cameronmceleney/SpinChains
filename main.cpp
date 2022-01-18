@@ -8,7 +8,7 @@ int main() {
 
     std::cout << "Enter the number of spins in the chain: ";
     std::cin >> numberSpins; // Takes user input for the number of spins
-
+    std::cout << "\n";
     SpinChainEigenSolverClass SolverClass;
     Numerical_Methods_Class NMMethods;
 

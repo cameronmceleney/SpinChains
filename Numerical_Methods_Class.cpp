@@ -10,7 +10,7 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
     LinspaceClass SpinChainExchange;
     MatrixOperationsClass MatrixOperations;
 
-    // notifies the user of what code they are running
+    // Notifies the user of what code they are running
     std::cout << "You are running the RK2 tester chainspin code.\n" << std::endl;
 
     std::cout << "Enter the LHS spin position for the driving region: ";
@@ -43,11 +43,6 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
     SpinChainExchange.set_values(_exchangeMinimum, _exchangeMaximum, c_numberOfSpinPairs,true);
     SpinChainExchange.generate_array();
     _chainExchangeValues = SpinChainExchange.build_spinchain();
-
-    /*std::vector<double> chainExchangeVals{0};
-    chainExchangeVals.insert(chainExchangeVals.end(), exchangeValsArray.begin(), exchangeValsArray.end());
-    chainExchangeVals.push_back(0);
-    _chainExchangeValues = chainExchangeVals;*/
 
     //TODO Turn the initial conditions lines into a separate function
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
