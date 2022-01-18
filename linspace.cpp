@@ -16,6 +16,7 @@ void LinspaceClass::set_values(double intervalStart, double intervalEnd, int num
     _shouldIncludeEndpoint = shouldIncludeEndpoint;
 }
 
+
 std::vector<double> LinspaceClass::generate_array() {
 
     if (_numberOfSamples == 0) {

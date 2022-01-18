@@ -1,59 +1,56 @@
 #include "Numerical_Methods_Class.h"
 #include "linspace.h"
-#include "common.h"
-#include "matrix_operations.h"
-#include <sstream>
 
-void Numerical_Methods_Class::RK2(int numberSpins) {
-
-    _numberOfSpins = numberSpins;
-    LinspaceClass SpinChainExchange;
-    MatrixOperationsClass MatrixOperations;
-
-    // Notifies the user of what code they are running
-    std::cout << "You are running the RK2 tester chainspin code.\n" << std::endl;
-
+void Numerical_Methods_Class::NMSetup() {
+    GlobalVariables GV;
     std::cout << "Enter the LHS spin position for the driving region: ";
     std::cin >> _drivingRegionLHS;
+    std::cout << "NM MEthods first:" << GV.GetExchangeMinVal() << std::endl;
+    std::cout << "Enter the stepsize: ";
+    std::cin >> _stepSize;
 
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
-    std::cout << "Enter the stepsize: ";
-    std::cin >> _stepsize;
-    _stepsizeHalf = _stepsize/2;
-
     std::cout << "Enter the maximum number of iterations: ";
     std::cin >> _stopIterationValue; // itermax can be inputted in scientific notation or as a float
-    std::cout << "\n";
 
-    _maxSimulatedTime = _stepsize * _stopIterationValue;
-    std::cout << "This will simulate a time of " << _maxSimulatedTime << "[s]." << std::endl;
+    _maxSimulatedTime = _stepSize * _stopIterationValue;
 
-    std::cout << "Enter the filename identifier: ";
-    std::cin >> _fileName;
-    std::cout << "\n";
+    std::cout << "\nThis will simulate a time of " << _maxSimulatedTime << "[s]." << std::endl;
+}
 
-    if(_drivingRegionRHS > _numberOfSpins) {
+void Numerical_Methods_Class::RK2() {
+    LinspaceClass SpinChainExchange;
+    GlobalVariables GV;
+
+    // Notifies the user of what code they are running
+    std::cout << "You are running the RK2 tester chainspin code.\n" << std::endl;
+    //std::cout << "DrivingLHS: " << _drivingRegionLHS << "; drivingRHS: " << _drivingRegionRHS << "; driving width: " << _drivingRegionWidth << std::endl;
+    if(_drivingRegionRHS > GV.GetNumSpins()) {
         std::cout << "The width of the domain takes it past the maximum number of spins. Exiting...";
         exit(1);
     }
-
-    const int c_numberOfSpinPairs = _numberOfSpins - 1; // Used to indicate array lengths and tidy notation
-
-    SpinChainExchange.set_values(_exchangeMinimum, _exchangeMaximum, c_numberOfSpinPairs,true);
+    std::cout << "Cake1" << std::endl;
+    int c_numberOfSpinPairs = GV.GetNumSpins() - 1; // Used to indicate array lengths and tidy notation
+    std::cout << "Cake2" << std::endl;
+    std::cout << "ExchangeMin: " << GV.GetExchangeMinVal() << "; ExchangeMax: " << GV.GetExchangeMaxVal() << "pairs: " << c_numberOfSpinPairs << std::endl;
+    SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), c_numberOfSpinPairs,true);
+    std::cout << "Cake3" << std::endl;
     SpinChainExchange.generate_array();
+    std::cout << "Cake4" << std::endl;
     _chainExchangeValues = SpinChainExchange.build_spinchain();
+    std::cout << "Cake5" << std::endl;
 
     //TODO Turn the initial conditions lines into a separate function
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
-    std::vector<double> mXInitCond(_numberOfSpins, _initialMagMomentX), mYInitCond(_numberOfSpins, _initialMagMomentY), mZInitCond(_numberOfSpins, _initialMagMomentZ);
+    std::vector<double> mXInitCond(GV.GetNumSpins(), _initialMagMomentX), mYInitCond(GV.GetNumSpins(), _initialMagMomentY), mZInitCond(GV.GetNumSpins(), _initialMagMomentZ);
     std::vector<double> mXEstStart{0}, mYEstStart{0}, mZEstStart{0}; // Magnetic Component (m), Axis (X), Estimate (Est), Initial Time (Start).
-    
+    std::cout << "Cake6" << std::endl;
     // Appends initial conditions to the vectors
     mXEstStart.insert(mXEstStart.end(), mXInitCond.begin(), mXInitCond.end());
     mYEstStart.insert(mYEstStart.end(), mYInitCond.begin(), mYInitCond.end());
     mZEstStart.insert(mZEstStart.end(), mZInitCond.begin(), mZInitCond.end());
-
+    std::cout << "Cake7" << std::endl;
     // Delete temporary vectors that held the initial conditions
     mXInitCond.clear();
     mYInitCond.clear();
@@ -63,30 +60,29 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
     mXEstStart.push_back(0);
     mYEstStart.push_back(0);
     mZEstStart.push_back(0);
-
-    std::string filePath = "D:/Data/RK2 Tests/";
-    // Creates files to save the data. All files will have (namefile) in them to make them clearly identifiable.
-    std::ofstream mXFile(filePath+"rk2_mx_"+_fileName+".csv");
-    std::ofstream mYFile(filePath+"rk2_my_"+_fileName+".csv");
-    std::ofstream mZFile(filePath+"rk2_mz_"+_fileName+".csv");
+    std::cout << "Cake" << std::endl;
+    // Create files to save the data. All files will have (namefile) in them to make them clearly identifiable.
+    std::ofstream mXFile(GV.GetFilePath()+"rk2_mx_"+GV.GetFileNameBase()+".csv");
+    std::ofstream mYFile(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
+    std::ofstream mZFile(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
     for (long iterationIndex = _startIterationValue; iterationIndex <= (long) _stopIterationValue; iterationIndex++) {
 
-        _totalTime += _stepsize;
+        _totalTime += _stepSize;
         double t0 = _totalTime; // The initial time of the iteration, and the time at the first stage; the start of the interval and the first step of RK2. Often called 't0' in literature
         double t0HalfStep = _totalTime + _stepsizeHalf; // The time at the midpoint of the interval; where the second stage of RK2 is. Often called 't0*h/2' in literature
 
         // The estimate of the slope for the x-axis magnetic moment component at the midpoint
-        std::vector<double> mXEstMid(_numberOfSpins+2, 0);
+        std::vector<double> mXEstMid(GV.GetNumSpins()+2, 0);
         // The estimate of the slope for the y-axis magnetic moment component at the midpoint
-        std::vector<double> mYEstMid(_numberOfSpins+2, 0);
+        std::vector<double> mYEstMid(GV.GetNumSpins()+2, 0);
         // The estimate of the slope for the z-axis magnetic moment component at the midpoint
-        std::vector<double> mZEstMid(_numberOfSpins+2, 0);
+        std::vector<double> mZEstMid(GV.GetNumSpins()+2, 0);
 
         // Loop the 0th and final spins as they will always be zero-valued
-        for (int spin = 1; spin <= _numberOfSpins+1; spin++) {
+        for (int spin = 1; spin <= GV.GetNumSpins()+1; spin++) {
             /* The first stage is based upon finding the value of the slope at the beginning of the interval (k1). This
              * stage takes the start conditions as an input, and substitutes them into the LLG equation. */
             int LHS_spin = spin - 1, RHS_spin = spin + 1;
@@ -126,13 +122,13 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
         }
 
         // The estimate of the mX value for the next iteration of iterationIndex calculated using the RK2 Midpoint rule
-        std::vector<double> mXNextVal(_numberOfSpins+2,0);
+        std::vector<double> mXNextVal(GV.GetNumSpins()+2,0);
         // The estimate of the mY value for the next iteration of iterationIndex
-        std::vector<double> mYNextVal(_numberOfSpins+2,0);
+        std::vector<double> mYNextVal(GV.GetNumSpins()+2,0);
         // The estimate of the mZ value for the next iteration of iterationIndex
-        std::vector<double> mZNextVal(_numberOfSpins+2,0);
+        std::vector<double> mZNextVal(GV.GetNumSpins()+2,0);
 
-        for (int spin = 1; spin <= _numberOfSpins+1; spin++) {
+        for (int spin = 1; spin <= GV.GetNumSpins()+1; spin++) {
             /* The second stage uses the previously found k1 value, as well as the initial conditions, to determine the
              * value of the slope (k2) at the midpoint. In RK2, the values of k1 and k2 can then be jointly used to
              * estimate the next point of the function through a weighted average of k1 & k2.
@@ -160,36 +156,36 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
             mYStage2K2 = +1 * _gyroscopicMagneticConstant * ( mXStage2*HeffZStage2K2 - mZStage2*HeffXStage2K2 );
             mZStage2K2 = -1 * _gyroscopicMagneticConstant * ( mXStage2*HeffYStage2K2 - mYStage2*HeffXStage2K2 );
 
-            mXNextVal[spin] = mXEstStart[spin] + mXStage2K2*_stepsize;
-            mYNextVal[spin] = mYEstStart[spin] + mYStage2K2*_stepsize;
-            mZNextVal[spin] = mZEstStart[spin] + mZStage2K2*_stepsize;
+            mXNextVal[spin] = mXEstStart[spin] + mXStage2K2*_stepSize;
+            mYNextVal[spin] = mYEstStart[spin] + mYStage2K2*_stepSize;
+            mZNextVal[spin] = mZEstStart[spin] + mZStage2K2*_stepSize;
 
 
             if (_shouldDebug) {
                 if (mXNextVal[spin] >= 5000) {
                     std::cout << "Error. Value of mx was greater than 5000 at spin(" << spin << "), iter("
                               << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: _numberOfSpins = " << _numberOfSpins << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; _stepsize: "
-                              << _stepsize << std::endl;
+                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
+                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; stepSize: "
+                              << _stepSize << std::endl;
                     exit(2);
                 }
 
                 if (mYNextVal[spin] >= 5000) {
                     std::cout << "Error. Value of my was greater than 5000 at spin(" << spin << "), iter("
                               << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: _numberOfSpins = " << _numberOfSpins << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; _stepsize: "
-                              << _stepsize << std::endl;
+                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
+                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; stepSize: "
+                              << _stepSize << std::endl;
                     exit(3);
                 }
 
                 if (mZNextVal[spin] >= 5000) {
                     std::cout << "Error. Value of mz was greater than 5000 at spin(" << spin << "), iter("
                               << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: _numberOfSpins = " << _numberOfSpins << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; _stepsize: "
-                              << _stepsize << std::endl;
+                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
+                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; stepSize: "
+                              << _stepSize << std::endl;
                     exit(4);
                 }
             }
@@ -208,13 +204,12 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
         */
         if ( iterationIndex % int(_stopIterationValue*0.01) == 0 ) {
             std::cout << "Reporting at: " << iterationIndex << std::endl;
-            //MatrixOperations.PrintVector(mXNextVal);
 
-            for (int j = 1; j < _numberOfSpins + 1; j++) {
+            for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
                 mXFile << mXNextVal[j] << ",";
                 mYFile << mYNextVal[j] << ",";
                 mZFile << mZNextVal[j] << ",";
-                if (j == _numberOfSpins) {
+                if (j == GV.GetNumSpins()) {
                     mXFile << mXNextVal[j] << std::flush;
                     mYFile << mYNextVal[j] << std::flush;
                     mZFile << mZNextVal[j] << std::flush;
@@ -234,7 +229,7 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
     mYFile.close();
     mZFile.close();
 
-    std::cout << "Finished with: _stepsize = " << _stepsize << "; itermax = " << _stopIterationValue << "; filename = " << _fileName <<  std::endl;
+    std::cout << "Finished with: stepSize = " << _stepSize << "; itermax = " << _stopIterationValue << "; filename = " << GV.GetFileNameBase() <<  std::endl;
 
 }
 
@@ -242,7 +237,7 @@ void Numerical_Methods_Class::StreamToString() {
     // Create an output string stream
     std::ostringstream stepsizeObj;
     std::ostringstream stopiterObj;
-    stepsizeObj << _stepsize;
+    stepsizeObj << _stepSize;
     stopiterObj << _stopIterationValue;
     // Get string from output string stream
     _stepsizeString = stepsizeObj.str();

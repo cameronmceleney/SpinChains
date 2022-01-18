@@ -1,32 +1,24 @@
 #ifndef SPINCHAINS_NUMERICAL_METHODS_CLASS_H
 #define SPINCHAINS_NUMERICAL_METHODS_CLASS_H
 
-#include <vector>
-#include <string>
-#include <cmath>
+#include "GlobalVariables.h"
+
 
 class Numerical_Methods_Class {
 
 private:
     std::vector<double> _chainExchangeValues; // Holds a linearly spaced array of values which describe the exchange interaction between neighbouring spins
 
-    std::string _fileName; //takes a custom filename input from the user
-
-   float _piconstantval = 3.14159265359;
-
-    int _numberOfSpins; // Number of sites (spins) in the chain
     int _drivingRegionLHS; // The position of the spin which is leftmost in the driving region
-    int _drivingRegionWidth = 200;
+    int _drivingRegionWidth = 20;
     int _drivingRegionRHS; // The position of the spin which is leftmost in the driving region
     long _startIterationValue = 0; //The minimum iteration step that the program will calculate to
     double _stopIterationValue; // The maximum iteration step that the program will calculate to
 
-    double _stepsize; // Accepts float or scientific notation as input
+    double _stepSize;
     double _stepsizeHalf; // Separately defined to avoid repeated unnecessary calculations inside loops
-    double _exchangeMinimum = 43.5;
-    double _exchangeMaximum = 132;
     double _drivingFrequency = 42.5e9;
-    double _drivingAngularFrequency = 2 * _piconstantval * _drivingFrequency; // angular freq (Hz)
+    double _drivingAngularFrequency = 2 * M_PI * _drivingFrequency; // angular freq (Hz)
     double _biasFieldDrivingAmplitude = 3e-3;
     double _maxSimulatedTime;     // notifies the user of the maximum simulation time. If the simulation time is too long, the user should simply force-exit the code
     float _magnetisationSaturation = 1.0; // Saturation Magnetisation (T). Note: 1A/m = 1.254uT. Must be in Telsa,
@@ -44,7 +36,8 @@ private:
 
 public:
 
-    void RK2(int numberSpins);
+    void NMSetup();
+    void RK2();
     void StreamToString();
 };
 

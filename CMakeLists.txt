@@ -19,6 +19,5 @@ add_executable(SpinChains
         main.cpp
         common.h
         linspace.cpp linspace.h
-        matrix_operations.cpp matrix_operations.h
         SpinChainEigenSolverClass.cpp SpinChainEigenSolverClass.h
-        Numerical_Methods_Class.cpp Numerical_Methods_Class.h)
+        Numerical_Methods_Class.cpp Numerical_Methods_Class.h GlobalVariables.cpp GlobalVariables.h)
