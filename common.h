@@ -1,9 +1,9 @@
 #ifndef SPINCHAINS_COMMON_H
 #define SPINCHAINS_COMMON_H
 
-#include <Eigen/Eigenvalues> // header for Mac; case-sensitive
+
 #include <iostream>
-//#include <Eigen3/Eigenvalues> // header for Windows
+#include <Eigen/Eigenvalues> // header for Eigen
 
 /* Gives file scope to Matrix definitions that are required throughout the program to ensure consistently. Conflicting definitions of
  * an object would otherwise lead to errors.*/
