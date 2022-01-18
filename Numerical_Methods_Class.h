@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <cmath>
 
 class Numerical_Methods_Class {
 
@@ -15,16 +16,16 @@ private:
 
     int _numberOfSpins; // Number of sites (spins) in the chain
     int _drivingRegionLHS; // The position of the spin which is leftmost in the driving region
-    int _drivingRegionWidth = 30;
+    int _drivingRegionWidth = 200;
     int _drivingRegionRHS; // The position of the spin which is leftmost in the driving region
-    double _startIterationValue = 0; //The minimum iteration step that the program will calculate to
+    long _startIterationValue = 0; //The minimum iteration step that the program will calculate to
     double _stopIterationValue; // The maximum iteration step that the program will calculate to
 
     double _stepsize; // Accepts float or scientific notation as input
     double _stepsizeHalf; // Separately defined to avoid repeated unnecessary calculations inside loops
     double _exchangeMinimum = 43.5;
     double _exchangeMaximum = 132;
-    double _drivingFrequency = 67e9;
+    double _drivingFrequency = 42.5e9;
     double _drivingAngularFrequency = 2 * _piconstantval * _drivingFrequency; // angular freq (Hz)
     double _biasFieldDrivingAmplitude = 3e-3;
     double _maxSimulatedTime;     // notifies the user of the maximum simulation time. If the simulation time is too long, the user should simply force-exit the code
@@ -35,7 +36,7 @@ private:
     double _totalTime = 0; // Analogous to a stopwatch in a physical experiment. This tracks for how long the experiment in the model has been simulated
 
     float _biasField = 0.1; // bias field (T)
-    float _gyroscopicMagneticConstant = 29.2E9 * 2 * _piconstantval; // gyromagnetic ratio (GHz/T)
+    float _gyroscopicMagneticConstant = 29.2E9 * 2 * M_PI; // gyromagnetic ratio (GHz/T)
 
     bool _shouldDebug = false; // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     std::string _stepsizeString;

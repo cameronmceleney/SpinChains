@@ -2,6 +2,7 @@
 #include "linspace.h"
 #include "common.h"
 #include "matrix_operations.h"
+#include <sstream>
 
 void Numerical_Methods_Class::RK2(int numberSpins) {
 
@@ -34,14 +35,19 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
 
     if(_drivingRegionRHS > _numberOfSpins) {
         std::cout << "The width of the domain takes it past the maximum number of spins. Exiting...";
-        exit(5);
+        exit(1);
     }
 
     const int c_numberOfSpinPairs = _numberOfSpins - 1; // Used to indicate array lengths and tidy notation
 
     SpinChainExchange.set_values(_exchangeMinimum, _exchangeMaximum, c_numberOfSpinPairs,true);
     SpinChainExchange.generate_array();
-    _chainExchangeValues = SpinChainExchange.build_spinchain(); 
+    _chainExchangeValues = SpinChainExchange.build_spinchain();
+
+    /*std::vector<double> chainExchangeVals{0};
+    chainExchangeVals.insert(chainExchangeVals.end(), exchangeValsArray.begin(), exchangeValsArray.end());
+    chainExchangeVals.push_back(0);
+    _chainExchangeValues = chainExchangeVals;*/
 
     //TODO Turn the initial conditions lines into a separate function
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
@@ -63,11 +69,11 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
     mYEstStart.push_back(0);
     mZEstStart.push_back(0);
 
-    std::string filePath = "/Users/cameronmceleney/CLionProjects/Data/rk2_mx_";
+    std::string filePath = "D:/Data/RK2 Tests/";
     // Creates files to save the data. All files will have (namefile) in them to make them clearly identifiable.
-    std::ofstream mXFile(filePath+_fileName+".csv");
-    std::ofstream mYFile(filePath+_fileName+".csv");
-    std::ofstream mZFile(filePath+_fileName+".csv");
+    std::ofstream mXFile(filePath+"rk2_mx_"+_fileName+".csv");
+    std::ofstream mYFile(filePath+"rk2_my_"+_fileName+".csv");
+    std::ofstream mZFile(filePath+"rk2_mz_"+_fileName+".csv");
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
@@ -132,14 +138,12 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
         std::vector<double> mZNextVal(_numberOfSpins+2,0);
 
         for (int spin = 1; spin <= _numberOfSpins+1; spin++) {
-            /* The first stage is based upon finding the value of the slope at the beginning of the interval (k1). This
- * stage takes the start conditions as an input, and substitutes them into the LLG equation. */
-
             /* The second stage uses the previously found k1 value, as well as the initial conditions, to determine the
              * value of the slope (k2) at the midpoint. In RK2, the values of k1 and k2 can then be jointly used to
              * estimate the next point of the function through a weighted average of k1 & k2.
              * 
              * In this loop the definitions of variables follow a similar format to Stage1.*/
+
             int LHS_spin = spin - 1, RHS_spin = spin + 1;
             double mXStage2 = mXEstMid[spin], mXStage2LHS = mXEstMid[LHS_spin], mXStage2RHS = mXEstMid[RHS_spin];
             double mYStage2 = mYEstMid[spin], mYStage2LHS = mYEstMid[LHS_spin], mYStage2RHS = mYEstMid[RHS_spin];
@@ -209,7 +213,7 @@ void Numerical_Methods_Class::RK2(int numberSpins) {
         */
         if ( iterationIndex % int(_stopIterationValue*0.01) == 0 ) {
             std::cout << "Reporting at: " << iterationIndex << std::endl;
-            MatrixOperations.PrintVector(mXNextVal);
+            //MatrixOperations.PrintVector(mXNextVal);
 
             for (int j = 1; j < _numberOfSpins + 1; j++) {
                 mXFile << mXNextVal[j] << ",";
