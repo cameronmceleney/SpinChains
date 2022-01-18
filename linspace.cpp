@@ -32,9 +32,9 @@ std::vector<double> LinspaceClass::generate_array() {
     // All other cases are dealt with here. Output will be of length 'num' if endpoint = True
 
     // 'delta' finds the stepsize between values
-    double delta = (_intervalEnd - _intervalStart) / (_intervalStart - 1);
+    double delta = (_intervalEnd - _intervalStart) / (_numberOfSamples - 1);
 
-    for(int i=0; i < _numberOfSamples-1; ++i) {
+    for(int i = 0; i < _numberOfSamples - 1; ++i) {
         // Adds elements to list. Method is very similar to Euler's numerical method
         _linspaceArray.push_back(_intervalStart + delta * i);
     }
