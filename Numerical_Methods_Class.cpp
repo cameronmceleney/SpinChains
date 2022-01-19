@@ -9,6 +9,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     std::cout << "Enter the stepsize: ";
     std::cin >> _stepSize;
+    _stepsizeHalf = _stepSize / 2;
 
     _drivingRegionWidth = 15;
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
@@ -198,7 +199,11 @@ void Numerical_Methods_Class::RK2() {
         /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
         */
         if ( iterationIndex % int(_stopIterationValue*0.01) == 0 ) {
-            std::cout << "Reporting at: " << iterationIndex << std::endl;
+            /*std::cout << "Reporting at: " << iterationIndex << std::endl;
+            std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
+            std::cout << "RegionLHS: " << _drivingRegionLHS << "; RegionWidth: " << _drivingRegionWidth << "; RegionRHS: " << _drivingRegionRHS << std::endl;
+            std::cout << "StepSize: " << _stepSize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
+            */
             printtest.PrintVector(mXNextVal);
             for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
                 mXFile << mXNextVal[j] << ",";
