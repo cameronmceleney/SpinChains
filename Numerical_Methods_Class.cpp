@@ -4,6 +4,8 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
+    _drivingAngularFrequency = 2 * M_PI * _drivingFrequency;
+
     std::cout << "Enter the LHS spin position for the driving region: ";
     std::cin >> _drivingRegionLHS;
 
@@ -18,6 +20,7 @@ void Numerical_Methods_Class::NMSetup() {
     std::cin >> _stopIterationValue; // Can be inputted in scientific notation or as a float
 
     _maxSimulatedTime = _stepSize * _stopIterationValue;
+    _initialMagMomentZ = _magnetisationSaturation;
 
     std::cout << "\nThis will simulate a time of " << _maxSimulatedTime << "[s]." << std::endl;
 }
