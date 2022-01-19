@@ -3,7 +3,7 @@
 #include "linspace.h"
 #include "SpinChainEigenSolverClass.h"
 
-void SpinChainEigenSolverClass::SolveInputs() {
+void SpinChainEigenSolverClass::CalculateEigFreqs() {
     // TODO: rename variables
     // rename all variables following https://manual.gromacs.org/documentation/5.1-current/dev-manual/naming.html
 

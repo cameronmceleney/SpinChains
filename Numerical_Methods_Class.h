@@ -40,6 +40,7 @@ private:
     double              _stopIterVal;                           // The maximum iteration step that the program will calculate to
     double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks for how long the experiment in the model has been simulated
 
+
 public:
 //  Dtype               Member Name                                     //Comment
     void                NMSetup();

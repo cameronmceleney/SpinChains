@@ -37,7 +37,7 @@ int main() {
     }
 
     if (query) {
-        SolverClass.SolveInputs();
+        SolverClass.CalculateEigFreqs();
     }
     RK2_method_use.NMSetup();
     RK2_method_use.RK2();
