@@ -1,7 +1,7 @@
 #ifndef SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
 #define SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
 
-#include "GlobalVariables.h"
+#include "CommonLibs.h"
 
 class SpinChainEigenSolverClass {
 
@@ -19,8 +19,6 @@ private:
     Matrix_xd _matrixValues;
 
 public:
-
-    GlobalVariables GV;
 
     void SolveInputs();
     Matrix_xd populate_matrix(double biasField, double gyroscopicMagneticConstant);

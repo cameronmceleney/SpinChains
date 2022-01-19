@@ -1,13 +1,11 @@
 #include "SpinChainEigenSolverClass.h"
 #include "Numerical_Methods_Class.h"
-#include "GlobalVariables.h"
+#include "CommonLibs.h"
 
 int main() {
 
-    GlobalVariables GV;
-
-    SpinChainEigenSolverClass SolverClass;
-    Numerical_Methods_Class NMMethods;
+    SpinChainEigenSolverClass SolverClass{};
+    Numerical_Methods_Class NMMethods{};
 
     bool query = false;
 
@@ -20,13 +18,11 @@ int main() {
     std::cout << "Enter the minimum exchange value: ";
     std::cin >> in_exchangeMin;
     GV.SetExchangeMinVal(in_exchangeMin);
-    std::cout << "Main minval: " << GV.GetExchangeMinVal() << std::endl;
 
     double in_exchangeMax;
     std::cout << "Enter the maximum exchange value: ";
     std::cin >> in_exchangeMax;
     GV.SetExchangeMaxVal(in_exchangeMax);
-    std::cout << "Main maxval: " << GV.GetExchangeMaxVal() << std::endl;
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier that all filenames will share: ";

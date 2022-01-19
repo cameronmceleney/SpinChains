@@ -2,7 +2,6 @@
 #include <ctime>
 #include "linspace.h"
 #include "SpinChainEigenSolverClass.h"
-#include "GlobalVariables.h"
 
 void SpinChainEigenSolverClass::SolveInputs() {
     // TODO: rename variables
@@ -147,7 +146,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix( double biasField, double g
             } else {
                 // TODO Legacy error handling which needs updating (dm_x/dt rows)
                 std::cout << "Error with generating the dx/dt terms on row #{rowNumber}. Exiting..." << std::endl;
-                std::exit(1);
+                std::exit(3);
 
             }
         }
@@ -177,7 +176,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix( double biasField, double g
             } else {
                 // TODO Legacy error handling which needs updating (dm_y/dt rows)
                 std::cout << "Error with generating the dy/dt terms on row #{rowNumber}. Exiting..." << std::endl;
-                std::exit(1);
+                std::exit(3);
             }
 
             linkingExchangesTracker += 1; // Solving one set of coupled equations means the tracker can be increased to reflect moving along one spin site position in the chain
@@ -186,7 +185,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix( double biasField, double g
         else {
             // TODO Legacy error handling which needs updating (matrixToFill)
             std::cout << "An issue arose in generating the matrix. Exiting..." << std::endl;
-            std::exit(1);
+            std::exit(3);
         }
     }
 

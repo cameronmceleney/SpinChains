@@ -1,36 +1,36 @@
 #include "GlobalVariables.h"
 
-int GlobalVariables::GetNumSpins() {
+int GlobalVariablesClass::GetNumSpins() {
     return _numSpins;
 }
-void GlobalVariables::SetNumSpins(int numSpins) {
+void GlobalVariablesClass::SetNumSpins(int numSpins) {
     _numSpins = numSpins;
 }
 
-std::string GlobalVariables::GetFilePath() {
+std::string GlobalVariablesClass::GetFilePath() {
     return _filePath;
 }
-void GlobalVariables::SetFilePath(std::string filePath) {
-    _filePath = filePath;
+void GlobalVariablesClass::SetFilePath(std::string filePath) {
+    _filePath = std::move(filePath);
 }
 
-std::string GlobalVariables::GetFileNameBase() {
+std::string GlobalVariablesClass::GetFileNameBase() {
     return _fileNameBase;
 }
-void GlobalVariables::SetFileNameBase(std::string fileNameBase) {
-    _fileNameBase = fileNameBase;
+void GlobalVariablesClass::SetFileNameBase(std::string fileNameBase) {
+    _fileNameBase = std::move(fileNameBase);
 }
 
-double GlobalVariables::GetExchangeMinVal() {
+double GlobalVariablesClass::GetExchangeMinVal() {
     return _exchangeMinVal;
 }
-void GlobalVariables::SetExchangeMinVal(double exchangeMinVal) {
+void GlobalVariablesClass::SetExchangeMinVal(double exchangeMinVal) {
     _exchangeMinVal = exchangeMinVal;
 }
 
-double GlobalVariables::GetExchangeMaxVal() {
+double GlobalVariablesClass::GetExchangeMaxVal() {
     return _exchangeMaxVal;
 }
-void GlobalVariables::SetExchangeMaxVal(double exchangeMaxVal) {
+void GlobalVariablesClass::SetExchangeMaxVal(double exchangeMaxVal) {
     _exchangeMaxVal = exchangeMaxVal;
 }

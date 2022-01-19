@@ -17,7 +17,8 @@ include_directories(${EIGEN_DIR})
 
 add_executable(SpinChains
         main.cpp
-        common.h
         linspace.cpp linspace.h
         SpinChainEigenSolverClass.cpp SpinChainEigenSolverClass.h
-        Numerical_Methods_Class.cpp Numerical_Methods_Class.h GlobalVariables.cpp GlobalVariables.h)
+        Numerical_Methods_Class.cpp Numerical_Methods_Class.h
+        GlobalVariables.cpp GlobalVariables.h
+        CommonLibs.h)

@@ -1,18 +1,20 @@
 #include "Numerical_Methods_Class.h"
 #include "linspace.h"
+#include "SpinChainEigenSolverClass.h"
 
 void Numerical_Methods_Class::NMSetup() {
-    GlobalVariables GV;
+
     std::cout << "Enter the LHS spin position for the driving region: ";
     std::cin >> _drivingRegionLHS;
-    std::cout << "NM MEthods first:" << GV.GetExchangeMinVal() << std::endl;
+
     std::cout << "Enter the stepsize: ";
     std::cin >> _stepSize;
 
+    _drivingRegionWidth = 15;
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
     std::cout << "Enter the maximum number of iterations: ";
-    std::cin >> _stopIterationValue; // itermax can be inputted in scientific notation or as a float
+    std::cin >> _stopIterationValue; // Can be inputted in scientific notation or as a float
 
     _maxSimulatedTime = _stepSize * _stopIterationValue;
 
@@ -20,37 +22,30 @@ void Numerical_Methods_Class::NMSetup() {
 }
 
 void Numerical_Methods_Class::RK2() {
+
     LinspaceClass SpinChainExchange;
-    GlobalVariables GV;
+    SpinChainEigenSolverClass printtest;
 
     // Notifies the user of what code they are running
-    std::cout << "You are running the RK2 tester chainspin code.\n" << std::endl;
+    std::cout << "\nYou are running the RK2 tester chainspin code." << std::endl;
     //std::cout << "DrivingLHS: " << _drivingRegionLHS << "; drivingRHS: " << _drivingRegionRHS << "; driving width: " << _drivingRegionWidth << std::endl;
     if(_drivingRegionRHS > GV.GetNumSpins()) {
         std::cout << "The width of the domain takes it past the maximum number of spins. Exiting...";
-        exit(1);
+        exit(3);
     }
-    std::cout << "Cake1" << std::endl;
     int c_numberOfSpinPairs = GV.GetNumSpins() - 1; // Used to indicate array lengths and tidy notation
-    std::cout << "Cake2" << std::endl;
-    std::cout << "ExchangeMin: " << GV.GetExchangeMinVal() << "; ExchangeMax: " << GV.GetExchangeMaxVal() << "pairs: " << c_numberOfSpinPairs << std::endl;
     SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), c_numberOfSpinPairs,true);
-    std::cout << "Cake3" << std::endl;
     SpinChainExchange.generate_array();
-    std::cout << "Cake4" << std::endl;
     _chainExchangeValues = SpinChainExchange.build_spinchain();
-    std::cout << "Cake5" << std::endl;
 
     //TODO Turn the initial conditions lines into a separate function
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
     std::vector<double> mXInitCond(GV.GetNumSpins(), _initialMagMomentX), mYInitCond(GV.GetNumSpins(), _initialMagMomentY), mZInitCond(GV.GetNumSpins(), _initialMagMomentZ);
     std::vector<double> mXEstStart{0}, mYEstStart{0}, mZEstStart{0}; // Magnetic Component (m), Axis (X), Estimate (Est), Initial Time (Start).
-    std::cout << "Cake6" << std::endl;
     // Appends initial conditions to the vectors
     mXEstStart.insert(mXEstStart.end(), mXInitCond.begin(), mXInitCond.end());
     mYEstStart.insert(mYEstStart.end(), mYInitCond.begin(), mYInitCond.end());
     mZEstStart.insert(mZEstStart.end(), mZInitCond.begin(), mZInitCond.end());
-    std::cout << "Cake7" << std::endl;
     // Delete temporary vectors that held the initial conditions
     mXInitCond.clear();
     mYInitCond.clear();
@@ -60,7 +55,7 @@ void Numerical_Methods_Class::RK2() {
     mXEstStart.push_back(0);
     mYEstStart.push_back(0);
     mZEstStart.push_back(0);
-    std::cout << "Cake" << std::endl;
+
     // Create files to save the data. All files will have (namefile) in them to make them clearly identifiable.
     std::ofstream mXFile(GV.GetFilePath()+"rk2_mx_"+GV.GetFileNameBase()+".csv");
     std::ofstream mYFile(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
@@ -168,7 +163,7 @@ void Numerical_Methods_Class::RK2() {
                     std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
                               << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; stepSize: "
                               << _stepSize << std::endl;
-                    exit(2);
+                    exit(3);
                 }
 
                 if (mYNextVal[spin] >= 5000) {
@@ -186,7 +181,7 @@ void Numerical_Methods_Class::RK2() {
                     std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
                               << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; stepSize: "
                               << _stepSize << std::endl;
-                    exit(4);
+                    exit(3);
                 }
             }
 
@@ -204,7 +199,7 @@ void Numerical_Methods_Class::RK2() {
         */
         if ( iterationIndex % int(_stopIterationValue*0.01) == 0 ) {
             std::cout << "Reporting at: " << iterationIndex << std::endl;
-
+            printtest.PrintVector(mXNextVal);
             for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
                 mXFile << mXNextVal[j] << ",";
                 mYFile << mYNextVal[j] << ",";

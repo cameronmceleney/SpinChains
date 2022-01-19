@@ -1,8 +1,3 @@
 # ninja log v5
 11264	11349	1642370085135936335	SpinChains	c080dbce9b2d8ca1
-13	2434	6642094943589710	CMakeFiles/SpinChains.dir/matrix_operations.cpp.obj	aae394d5fa83f277
-0	585	6642094925168577	CMakeFiles/SpinChains.dir/linspace.cpp.obj	76653af8f94bed50
-3	1302	6642098809903493	CMakeFiles/SpinChains.dir/main.cpp.obj	15bf904727c278f8
 1548	1627	6642118583266097	SpinChains.exe	cfc89a28cfe8fd49
-4	1547	6642118582480174	CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.obj	2a5227f5edc8d766
-15	8231	6642095001589043	CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.obj	85cc18bdaeb2698d
