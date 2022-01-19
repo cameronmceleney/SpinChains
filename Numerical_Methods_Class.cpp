@@ -4,25 +4,25 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _drivingAngularFrequency = 2 * M_PI * _drivingFrequency;
+    _drivingAngFreq = 2 * M_PI * _drivingFreq;
 
     std::cout << "Enter the LHS spin position for the driving region: ";
     std::cin >> _drivingRegionLHS;
 
     std::cout << "Enter the stepsize: ";
-    std::cin >> _stepSize;
-    _stepsizeHalf = _stepSize / 2;
+    std::cin >> _stepsize;
+    _stepsizeHalf = _stepsize / 2;
 
     _drivingRegionWidth = GV.GetNumSpins() * 0.05;
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
     std::cout << "Enter the maximum number of iterations: ";
-    std::cin >> _stopIterationValue; // Can be inputted in scientific notation or as a float
+    std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
 
-    _maxSimulatedTime = _stepSize * _stopIterationValue;
-    _initialMagMomentZ = _magnetisationSaturation;
+    _maxSimTime = _stepsize * _stopIterVal;
+    _mzInit = _magSat;
 
-    std::cout << "\nThis will simulate a time of " << _maxSimulatedTime << "[s]." << std::endl;
+    std::cout << "\nThis will simulate a time of " << _maxSimTime << "[s]." << std::endl;
 }
 
 void Numerical_Methods_Class::RK2() {
@@ -40,11 +40,11 @@ void Numerical_Methods_Class::RK2() {
     int c_numberOfSpinPairs = GV.GetNumSpins() - 1; // Used to indicate array lengths and tidy notation
     SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), c_numberOfSpinPairs,true);
     SpinChainExchange.generate_array();
-    _chainExchangeValues = SpinChainExchange.build_spinchain();
+    _chainJVals = SpinChainExchange.build_spinchain();
 
     //TODO Turn the initial conditions lines into a separate function
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
-    std::vector<double> mXInitCond(GV.GetNumSpins(), _initialMagMomentX), mYInitCond(GV.GetNumSpins(), _initialMagMomentY), mZInitCond(GV.GetNumSpins(), _initialMagMomentZ);
+    std::vector<double> mXInitCond(GV.GetNumSpins(), _mxInit), mYInitCond(GV.GetNumSpins(), _myInit), mZInitCond(GV.GetNumSpins(), _mzInit);
     std::vector<double> mXEstStart{0}, mYEstStart{0}, mZEstStart{0}; // Magnetic Component (m), Axis (X), Estimate (Est), Initial Time (Start).
     // Appends initial conditions to the vectors
     mXEstStart.insert(mXEstStart.end(), mXInitCond.begin(), mXInitCond.end());
@@ -67,9 +67,9 @@ void Numerical_Methods_Class::RK2() {
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
-    for (long iterationIndex = _startIterationValue; iterationIndex <= (long) _stopIterationValue; iterationIndex++) {
+    for (long iterationIndex = _startIterVal; iterationIndex <= (long) _stopIterVal; iterationIndex++) {
 
-        _totalTime += _stepSize;
+        _totalTime += _stepsize;
         double t0 = _totalTime; // The initial time of the iteration, and the time at the first stage; the start of the interval and the first step of RK2. Often called 't0' in literature
         double t0HalfStep = _totalTime + _stepsizeHalf; // The time at the midpoint of the interval; where the second stage of RK2 is. Often called 't0*h/2' in literature
 
@@ -98,22 +98,22 @@ void Numerical_Methods_Class::RK2() {
 
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-                HeffXStage1K1 = _chainExchangeValues[LHS_spin] * mXStage1LHS + _chainExchangeValues[spin] * mXStage1RHS + _biasFieldDrivingAmplitude*cos(_drivingAngularFrequency * t0);
+                HeffXStage1K1 = _chainJVals[LHS_spin] * mXStage1LHS + _chainJVals[spin] * mXStage1RHS + _biasFieldDriving*cos(_drivingAngFreq * t0);
 
             } else {
                 // The else statement includes all spins along x which are not within the driving region
-                HeffXStage1K1 = _chainExchangeValues[LHS_spin] * mXStage1LHS + _chainExchangeValues[spin] * mXStage1RHS;
+                HeffXStage1K1 = _chainJVals[LHS_spin] * mXStage1LHS + _chainJVals[spin] * mXStage1RHS;
             }
             // No changes are made to the effective field in the y-direction
-            HeffYStage1K1 = _chainExchangeValues[LHS_spin] * mYStage1LHS + _chainExchangeValues[spin] * mYStage1RHS;
+            HeffYStage1K1 = _chainJVals[LHS_spin] * mYStage1LHS + _chainJVals[spin] * mYStage1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
-            HeffZStage1K1 = _chainExchangeValues[LHS_spin] * mZStage1LHS + _chainExchangeValues[spin] * mZStage1RHS + _biasField;
+            HeffZStage1K1 = _chainJVals[LHS_spin] * mZStage1LHS + _chainJVals[spin] * mZStage1RHS + _biasField;
 
             /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the
              * first stage of RK2.*/
-            mXStage1K1 = -1 * _gyroscopicMagneticConstant * (mYStage1 * HeffZStage1K1 - mZStage1 * HeffYStage1K1);
-            mYStage1K1 = +1 * _gyroscopicMagneticConstant * (mXStage1 * HeffZStage1K1 - mZStage1 * HeffXStage1K1);
-            mZStage1K1 = -1 * _gyroscopicMagneticConstant * (mXStage1 * HeffYStage1K1 - mYStage1 * HeffXStage1K1);
+            mXStage1K1 = -1 * _gyroMagConst * (mYStage1 * HeffZStage1K1 - mZStage1 * HeffYStage1K1);
+            mYStage1K1 = +1 * _gyroMagConst * (mXStage1 * HeffZStage1K1 - mZStage1 * HeffXStage1K1);
+            mZStage1K1 = -1 * _gyroMagConst * (mXStage1 * HeffYStage1K1 - mYStage1 * HeffXStage1K1);
 
             mXEstMid[spin] = mXStage1 + mXStage1K1*_stepsizeHalf;
             mYEstMid[spin] = mYStage1 + mYStage1K1*_stepsizeHalf;
@@ -131,7 +131,7 @@ void Numerical_Methods_Class::RK2() {
             /* The second stage uses the previously found k1 value, as well as the initial conditions, to determine the
              * value of the slope (k2) at the midpoint. In RK2, the values of k1 and k2 can then be jointly used to
              * estimate the next point of the function through a weighted average of k1 & k2.
-             * 
+             *
              * In this loop the definitions of variables follow a similar format to Stage1.*/
 
             int LHS_spin = spin - 1, RHS_spin = spin + 1;
@@ -144,29 +144,28 @@ void Numerical_Methods_Class::RK2() {
 
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // Driving region must be consistently applied at every stage of the RK2 method
-                HeffXStage2K2 = _chainExchangeValues[LHS_spin] * mXStage2LHS + _chainExchangeValues[spin] * mXStage2RHS + _biasFieldDrivingAmplitude*cos(_drivingAngularFrequency * t0HalfStep);
+                HeffXStage2K2 = _chainJVals[LHS_spin] * mXStage2LHS + _chainJVals[spin] * mXStage2RHS + _biasFieldDriving*cos(_drivingAngFreq * t0HalfStep);
             } else {
-                HeffXStage2K2 = _chainExchangeValues[LHS_spin] * mXStage2LHS + _chainExchangeValues[spin] * mXStage2RHS;
+                HeffXStage2K2 = _chainJVals[LHS_spin] * mXStage2LHS + _chainJVals[spin] * mXStage2RHS;
             }
-            HeffYStage2K2 = _chainExchangeValues[LHS_spin] * mYStage2LHS + _chainExchangeValues[spin] * mYStage2RHS;
-            HeffZStage2K2 = _chainExchangeValues[LHS_spin] * mZStage2LHS + _chainExchangeValues[spin] * mZStage2RHS + _biasField;
+            HeffYStage2K2 = _chainJVals[LHS_spin] * mYStage2LHS + _chainJVals[spin] * mYStage2RHS;
+            HeffZStage2K2 = _chainJVals[LHS_spin] * mZStage2LHS + _chainJVals[spin] * mZStage2RHS + _biasField;
 
-            mXStage2K2 = -1 * _gyroscopicMagneticConstant * ( mYStage2*HeffZStage2K2 - mZStage2*HeffYStage2K2 );
-            mYStage2K2 = +1 * _gyroscopicMagneticConstant * ( mXStage2*HeffZStage2K2 - mZStage2*HeffXStage2K2 );
-            mZStage2K2 = -1 * _gyroscopicMagneticConstant * ( mXStage2*HeffYStage2K2 - mYStage2*HeffXStage2K2 );
+            mXStage2K2 = -1 * _gyroMagConst * ( mYStage2*HeffZStage2K2 - mZStage2*HeffYStage2K2 );
+            mYStage2K2 = +1 * _gyroMagConst * ( mXStage2*HeffZStage2K2 - mZStage2*HeffXStage2K2 );
+            mZStage2K2 = -1 * _gyroMagConst * ( mXStage2*HeffYStage2K2 - mYStage2*HeffXStage2K2 );
 
-            mXNextVal[spin] = mXEstStart[spin] + mXStage2K2*_stepSize;
-            mYNextVal[spin] = mYEstStart[spin] + mYStage2K2*_stepSize;
-            mZNextVal[spin] = mZEstStart[spin] + mZStage2K2*_stepSize;
-
+            mXNextVal[spin] = mXEstStart[spin] + mXStage2K2*_stepsize;
+            mYNextVal[spin] = mYEstStart[spin] + mYStage2K2*_stepsize;
+            mZNextVal[spin] = mZEstStart[spin] + mZStage2K2*_stepsize;
 
             if (_shouldDebug) {
                 if (mXNextVal[spin] >= 5000) {
                     std::cout << "Error. Value of mx was greater than 5000 at spin(" << spin << "), iter("
                               << iterationIndex << ")." << std::flush;
                     std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; stepSize: "
-                              << _stepSize << std::endl;
+                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
+                              << _stepsize << std::endl;
                     exit(3);
                 }
 
@@ -174,8 +173,8 @@ void Numerical_Methods_Class::RK2() {
                     std::cout << "Error. Value of my was greater than 5000 at spin(" << spin << "), iter("
                               << iterationIndex << ")." << std::flush;
                     std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; stepSize: "
-                              << _stepSize << std::endl;
+                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
+                              << _stepsize << std::endl;
                     exit(3);
                 }
 
@@ -183,8 +182,8 @@ void Numerical_Methods_Class::RK2() {
                     std::cout << "Error. Value of mz was greater than 5000 at spin(" << spin << "), iter("
                               << iterationIndex << ")." << std::flush;
                     std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterationValue << "; stepSize: "
-                              << _stepSize << std::endl;
+                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
+                              << _stepsize << std::endl;
                     exit(3);
                 }
             }
@@ -201,11 +200,11 @@ void Numerical_Methods_Class::RK2() {
 
         /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
         */
-        if ( iterationIndex % int(_stopIterationValue*0.01) == 0 ) {
+        if ( iterationIndex % int(_stopIterVal*0.01) == 0 ) {
             std::cout << "Reporting Point: " << iterationIndex << " iterations." << std::endl;
             /*std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
             std::cout << "RegionLHS: " << _drivingRegionLHS << "; RegionWidth: " << _drivingRegionWidth << "; RegionRHS: " << _drivingRegionRHS << std::endl;
-            std::cout << "StepSize: " << _stepSize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
+            std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
             */
             //printtest.PrintVector(mXNextVal);
             for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
@@ -232,7 +231,7 @@ void Numerical_Methods_Class::RK2() {
     mYFile.close();
     mZFile.close();
 
-    std::cout << "Finished with: stepSize = " << _stepSize << "; itermax = " << _stopIterationValue << "; filename = " << GV.GetFileNameBase() <<  std::endl;
+    std::cout << "Finished with: stepSize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
 
 }
 
@@ -240,8 +239,8 @@ void Numerical_Methods_Class::StreamToString() {
     // Create an output string stream
     std::ostringstream stepsizeObj;
     std::ostringstream stopiterObj;
-    stepsizeObj << _stepSize;
-    stopiterObj << _stopIterationValue;
+    stepsizeObj << _stepsize;
+    stopiterObj << _stopIterVal;
     // Get string from output string stream
     _stepsizeString = stepsizeObj.str();
     _stopIterString = stopiterObj.str();
