@@ -1,18 +1,14 @@
 #include "linspace.h"
 
 void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint){
-    // Value assignment is set separately to other class member functions in case value preprocessing of some sort is later required as added functionality
+    // Setter function for linspace functions
 
-    // Start point of the interval.
     _intervalStart = intervalStart;
 
-    // Stop point of the interval.
     _intervalEnd = intervalEnd;
 
-    // Number (N) of evenly spaced samples to be returned over the given interval. Length of outputted linspace array is thus (N-1)
     _numberOfSamples = numberOfSamples;
 
-    //If true, stop is appended to be the last sample. Otherwise, stop is not included.
     _shouldIncludeEndpoint = shouldIncludeEndpoint;
 }
 
