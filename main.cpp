@@ -40,7 +40,7 @@ int main() {
         SolverClass.CalculateEigFreqs();
     }
     RK2_method_use.NMSetup();
-    RK2_method_use.RK2();
+    RK2_method_use.RK2Shockwaves();
 
     return 0;
 
