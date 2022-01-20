@@ -252,7 +252,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
     // Sets the values of the driving field for before (Init) and after (Shock) the shockwave point respectively
     _biasFieldDrivingInit = _biasFieldDriving;
-    _biasFieldDrivingShock = _biasFieldDriving * 2;
+    _biasFieldDrivingShock = _biasFieldDriving;
     _hasShockWaveBegan = false;
     // Notifies the user of what code they are running
     std::cout << "\nYou are running the RK2 Shockwave Spinchains code." << std::endl;
