@@ -188,9 +188,10 @@ void Numerical_Methods_Class::RK2() {
                 }
             }
 
-        }
+        } // Final line of the RK2 solvers for this iteration. Everything below here is part of the class function, but not the internal RK2 stage loops
 
-        // Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp
+        // Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear these between
+        // loop iterations sometimes led to incorrect values cropping up
         _mxStartVal.clear();
         _myStartVal.clear();
         _mzStartVal.clear();
@@ -199,38 +200,50 @@ void Numerical_Methods_Class::RK2() {
         mzEstMid.clear();
 
         /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
-        */
+         * statement (default: 0.01 indicates how often the writing should occur. A value of 0.01 would mean writing
+         * should occur every 1% of progress through the simulation*/
         if ( iterationIndex % int(_stopIterVal*0.01) == 0 ) {
             std::cout << "Reporting Point: " << iterationIndex << " iterations." << std::endl;
-            /*std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
-            std::cout << "RegionLHS: " << _drivingRegionLHS << "; RegionWidth: " << _drivingRegionWidth << "; RegionRHS: " << _drivingRegionRHS << std::endl;
-            std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
-            */
-            //printtest.PrintVector(mxNextVal);
+            /*  Code this is useful for debugging
+             *  std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
+             *  std::cout << "RegionLHS: " << _drivingRegionLHS << "; RegionWidth: " << _drivingRegionWidth << "; RegionRHS: " << _drivingRegionRHS << std::endl;
+             *  std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
+             *  printtest.PrintVector(mxNextVal); */
+
+            // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
                 mxRK2File << mxNextVal[j] << ",";
                 myRK2File << myNextVal[j] << ",";
                 mzRK2File << mzNextVal[j] << ",";
+
+                // Ensures that the final line doesn't contain a comma
                 if (j == GV.GetNumSpins()) {
                     mxRK2File << mxNextVal[j] << std::flush;
                     myRK2File << myNextVal[j] << std::flush;
                     mzRK2File << mzNextVal[j] << std::flush;
                 }
             }
+
+            // Housekeeping
             mxRK2File << std::endl;
             myRK2File << std::endl;
             mzRK2File << std::endl;
         }
 
+        /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
+         * value of the next iteration (y_n) */
         _mxStartVal = mxNextVal;
         _myStartVal = myNextVal;
         _mzStartVal = mzNextVal;
 
-    }
+    } // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
+
+    // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
     myRK2File.close();
     mzRK2File.close();
 
+    // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "Finished RK2 with: stepSize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
 
 }
