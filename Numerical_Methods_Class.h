@@ -35,7 +35,7 @@ private:
 
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
-    long                _startIterVal = 0;                      // The iteration step that the program will begin at. Often set as zero
+    double                _startIterVal = 0;                      // The iteration step that the program will begin at. Often set as zero
     double              _stepsize;                              // Stepsize between values
     double              _stepsizeHalf;                          // Separately defined to avoid repeated unnecessary calculations inside loops
 
