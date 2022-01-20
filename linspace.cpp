@@ -1,7 +1,7 @@
 #include "linspace.h"
 
+// Setter function for linspace class
 void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint){
-    // Setter function for linspace functions
 
     _intervalStart = intervalStart;
 
@@ -12,16 +12,16 @@ void LinspaceClass::set_values(double intervalStart, double intervalEnd, int num
     _shouldIncludeEndpoint = shouldIncludeEndpoint;
 }
 
-
+// Getter function for linspace class
 std::vector<double> LinspaceClass::generate_array() {
 
     if (_numberOfSamples == 0) {
-        // if no range in inputted then empty vector is returned
+        // If no range in inputted then empty vector is returned
         return _linspaceArray;
     }
 
     if (_numberOfSamples == 1) {
-        // if range is one then start value is the only element of the array returned
+        // If range is one then start value is the only element of the array returned
         _linspaceArray.push_back(_intervalStart);
         return _linspaceArray;
     }
@@ -37,17 +37,25 @@ std::vector<double> LinspaceClass::generate_array() {
     }
 
     if (_shouldIncludeEndpoint) {
+
         _linspaceArray.push_back(_intervalEnd);
     }
 
     return _linspaceArray;
 }
 
+/* Special Getter function for linspace class. Must be used AFTER set_values() and generate_array() are called from
+ * linspace class. This function appends zeros to start&end of array to represent spins at the end of the chain */
 std::vector<double> LinspaceClass::build_spinchain() {
 
-    _spinchainArray.push_back(0); // Initialised with a zero to account for the (P-1)th spin
-    _spinchainArray.insert(_spinchainArray.end(), _linspaceArray.begin(), _linspaceArray.end()); // Insert is faster for large values of numbers compared to push_back()
-    _spinchainArray.push_back(0); // Appends a zero to the end to account for the exchange from the (N+1)th RHS spin
+    // Initialised with a zero to account for the (P-1)th spin
+    _spinchainArray.push_back(0);
+
+    // Insert is faster for large values of numbers compared to push_back()
+    _spinchainArray.insert(_spinchainArray.end(), _linspaceArray.begin(), _linspaceArray.end());
+
+    // Appends a zero to the end to account for the exchange from the (N+1)th RHS spin
+    _spinchainArray.push_back(0);
 
     return _spinchainArray;
 }

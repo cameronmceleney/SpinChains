@@ -99,11 +99,11 @@ void Numerical_Methods_Class::RK2() {
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
                 HeffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS + _biasFieldDriving*cos(_drivingAngFreq * t0);
-
             } else {
                 // The else statement includes all spins along x which are not within the driving region
                 HeffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS;
             }
+
             // No changes are made to the effective field in the y-direction
             HeffY1K1 = _chainJVals[LHS_spin] * my1LHS + _chainJVals[spin] * my1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
@@ -148,6 +148,7 @@ void Numerical_Methods_Class::RK2() {
             } else {
                 HeffX2K2 = _chainJVals[LHS_spin] * mx2LHS + _chainJVals[spin] * mx2RHS;
             }
+
             HeffY2K2 = _chainJVals[LHS_spin] * my2LHS + _chainJVals[spin] * my2RHS;
             HeffZ2K2 = _chainJVals[LHS_spin] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
 
@@ -187,7 +188,6 @@ void Numerical_Methods_Class::RK2() {
                     exit(3);
                 }
             }
-
         } // Final line of the RK2 solvers for this iteration. Everything below here is part of the class function, but not the internal RK2 stage loops
 
         // Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear these between
@@ -235,7 +235,6 @@ void Numerical_Methods_Class::RK2() {
         _mxStartVal = mxNextVal;
         _myStartVal = myNextVal;
         _mzStartVal = mzNextVal;
-
     } // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
@@ -245,7 +244,6 @@ void Numerical_Methods_Class::RK2() {
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "Finished RK2 with: stepSize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
-
 }
 
 void Numerical_Methods_Class::StreamToString() {
