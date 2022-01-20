@@ -5,7 +5,7 @@
 int main() {
 
     SpinChainEigenSolverClass SolverClass{};
-    Numerical_Methods_Class NMMethods{};
+    Numerical_Methods_Class RK2_method_use{};
 
     bool query = false;
 
@@ -37,10 +37,10 @@ int main() {
     }
 
     if (query) {
-        SolverClass.SolveInputs();
+        SolverClass.CalculateEigFreqs();
     }
-    NMMethods.NMSetup();
-    NMMethods.RK2();
+    RK2_method_use.NMSetup();
+    RK2_method_use.RK2();
 
     return 0;
 

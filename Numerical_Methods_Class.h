@@ -22,10 +22,14 @@ private:
     float               _magSat = 1.0;                          // Saturation Magnetisation (T). Note: 1A/m = 1.254uT. Must be in Telsa,
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time
 
+    std::vector<double> _mxStartVal{0};                         // Vector containing magnetic components (m) along the x-axis (x) at the initial conditions for all spins
+    std::vector<double> _myStartVal{0};                         // Vector containing magnetic components (m) along the y-axis (y) at the initial conditions for all spins
+    std::vector<double> _mzStartVal{0};                         // Vector containing magnetic components (m) along the z-axis (z) at the initial conditions for all spins
     double              _mxInit = 0;                            // The initial value of the magnetic moment (m) along the x-direction
     double              _myInit = 0;                            // The initial value of the magnetic moment (m) along the y-direction
     double              _mzInit;                                // The initial value of the magnetic moment (m) along the z-direction
 
+    int                 _numberOfSpinPairs;                      // Number of pairs of spins in the chain. Used for array lengths and tidying notation
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     long                _startIterVal = 0;                      // The iteration step that the program will begin at. Often set as zero
     double              _stepsize;                              // Stepsize between values
@@ -35,6 +39,7 @@ private:
     std::string         _stopIterString;                        // Object to string conversion for value
     double              _stopIterVal;                           // The maximum iteration step that the program will calculate to
     double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks for how long the experiment in the model has been simulated
+
 
 public:
 //  Dtype               Member Name                                     //Comment
