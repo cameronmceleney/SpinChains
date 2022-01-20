@@ -8,7 +8,7 @@ class Numerical_Methods_Class {
 private:
 //  Dtype               Member Name                             //Comment
 
-    float               _biasField = 0.1;                       // Bias field (T)
+    float               _biasField = 0.1;                    // Bias field (T)
     double              _biasFieldDriving = 3e-3;               // Driving field amplitude [T] (caution: papers often give in mT)
     double              _biasFieldDrivingUse;                   // Value to be used after bool statement. Will be either _biasFieldDrivingInit or _biasFieldDrivingShock
     double              _biasFieldDrivingInit;                  // Driving field amplitude [T] for use prior to shockwave. Commonly will be set to equal _biasFieldDriving
@@ -16,7 +16,7 @@ private:
     std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
 
     double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field[rad*s^{-1}]
-    double              _drivingFreq = 42.5e9;                  // Frequency of oscillatory driving field [GHz] (f_d in literature)
+    double              _drivingFreq = 42.5 * 1e9;                  // Frequency of oscillatory driving field [GHz] (f_d in literature)
     int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region
     double              _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     double              _drivingRegionWidth;                    // Driving region width

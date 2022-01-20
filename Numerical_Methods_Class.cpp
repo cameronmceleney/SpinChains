@@ -11,7 +11,7 @@ void Numerical_Methods_Class::NMSetup() {
     _mzInit = _magSat;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
 
-    std::cout << "Enter the LHS spin position for the driving region: ";
+    std::cout << "Enter the LHS spin position for the driving region (minval=1): ";
     std::cin >> _drivingRegionLHS;
     _drivingRegionWidth = GV.GetNumSpins() * 0.05;
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
@@ -257,10 +257,11 @@ void Numerical_Methods_Class::RK2Shockwaves() {
     // Notifies the user of what code they are running
     std::cout << "\nYou are running the RK2 Shockwave Spinchains code." << std::endl;
 
-    // Create files to save the data. All files will have (namefile) in them to make them clearly identifiable.
-    std::ofstream mxRK2File(GV.GetFilePath()+"rk2_mx_"+GV.GetFileNameBase()+".csv");
-    std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
-    std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
+    // Create files to save the data. All files will have (FileNameBase) in them to make them clearly identifiable.
+    std::ofstream mxRK2ShockwaveLHSDriving(GV.GetFilePath()+"rk2Shockwave_mxinputLHSdriving_"+GV.GetFileNameBase()+".csv");
+    std::ofstream mxRK2ShockwaveRHSDriving(GV.GetFilePath()+"rk2Shockwave_mxinputRHSdriving_"+GV.GetFileNameBase()+".csv");
+    std::ofstream mxRK2ShockwaveMid(GV.GetFilePath()+"rk2Shockwave_mxoutputmidpoint_"+GV.GetFileNameBase()+".csv");
+    std::ofstream mxRK2ShockwaveEnd(GV.GetFilePath()+"rk2Shockwave_mxoutputendpoint_"+GV.GetFileNameBase()+".csv");
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
@@ -278,9 +279,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
             // Keeps used driving field value to be pre-shockwave value
             _biasFieldDrivingUse = _biasFieldDrivingInit;
         } else {
-            // Catch all incase this condition fails
-            std::cout << "Failure to set _biasFieldDrivingUse value. Exiting..." << std::endl;
-            exit(3);
+            // No statement
         }
 
         _totalTime += _stepsize;
@@ -387,7 +386,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
         /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
          * statement (default: 0.01 indicates how often the writing should occur. A value of 0.01 would mean writing
          * should occur every 1% of progress through the simulation*/
-        if ( iterationIndex % int(_stopIterVal*0.01) == 0 ) {
+        if ( iterationIndex % int(_stopIterVal*0.001) == 0 ) {
             std::cout << "Reporting Point: " << iterationIndex << " iterations. Shockwave bool: " << _hasShockWaveBegan << " with driving val: " << _biasFieldDrivingUse <<std::endl;
             /*  Code this is useful for debugging
              *  std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
@@ -395,24 +394,16 @@ void Numerical_Methods_Class::RK2Shockwaves() {
              *  std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
              *  printtest.PrintVector(mxNextVal); */
 
-            // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
-            for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
-                mxRK2File << mxNextVal[j] << ",";
-                myRK2File << myNextVal[j] << ",";
-                mzRK2File << mzNextVal[j] << ",";
-
-                // Ensures that the final line doesn't contain a comma
-                if (j == GV.GetNumSpins()) {
-                    mxRK2File << mxNextVal[j] << std::flush;
-                    myRK2File << myNextVal[j] << std::flush;
-                    mzRK2File << mzNextVal[j] << std::flush;
-                }
-            }
+            // This is the input signal. Saves all mx values at spin site 1 (spin site zero isn't really a spin).
+            mxRK2ShockwaveLHSDriving << mxNextVal[_drivingRegionLHS] << std::endl;
+            mxRK2ShockwaveRHSDriving << mxNextVal[_drivingRegionRHS] << std::endl;
+            // This is the output signal. Saves all mx values at second last array element, and the final real spin site.
+            mxRK2ShockwaveMid << mxNextVal[1+(GV.GetNumSpins()/2)] << std::endl;
+            mxRK2ShockwaveEnd << mxNextVal[GV.GetNumSpins()-5] << std::endl;
 
             // Housekeeping
-            mxRK2File << std::endl;
-            myRK2File << std::endl;
-            mzRK2File << std::endl;
+            //mxRK2ShockwaveStart << std::endl;
+            //mxRK2ShockwaveEnd << std::endl;
         }
 
         /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
@@ -423,9 +414,10 @@ void Numerical_Methods_Class::RK2Shockwaves() {
     } // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
-    mxRK2File.close();
-    myRK2File.close();
-    mzRK2File.close();
+    mxRK2ShockwaveLHSDriving.close();
+    mxRK2ShockwaveRHSDriving.close();
+    mxRK2ShockwaveMid.close();
+    mxRK2ShockwaveEnd.close();
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "Finished RK2 with: stepSize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
