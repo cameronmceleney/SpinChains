@@ -263,16 +263,21 @@ void Numerical_Methods_Class::RK2Shockwaves() {
     std::cout << "\nYou are running the RK2 Shockwave Spinchains code." << std::endl;
 
     // Create files to save the data. All files will have (FileNameBase) in them to make them clearly identifiable.
-    std::ofstream mxRK2ShockwaveLHSDriving(GV.GetFilePath()+"rk2Shockwave_mxinputLHSdriving_"+GV.GetFileNameBase()+".csv");
-    std::ofstream mxRK2ShockwaveRHSDriving(GV.GetFilePath()+"rk2Shockwave_mxinputRHSdriving_"+GV.GetFileNameBase()+".csv");
-    std::ofstream mxRK2ShockwaveMid(GV.GetFilePath()+"rk2Shockwave_mxoutputmidpoint_"+GV.GetFileNameBase()+".csv");
-    std::ofstream mxRK2ShockwaveEnd(GV.GetFilePath()+"rk2Shockwave_mxoutputendpoint_"+GV.GetFileNameBase()+".csv");
+    std::ofstream mxRK2ShockwaveFile(GV.GetFilePath()+"rk2Shockwave_"+GV.GetFileNameBase()+".csv");
+
+    mxRK2ShockwaveFile << "Key Data\n" << std::endl;
+    mxRK2ShockwaveFile << "Min. Exchange Val [T], Max. Exchange Val [T], Num. Spins, Bias Field (H0) [T], Bias Field (Driving) [T], "
+                          "Driving Frequency [Hz], Stepsize (h), Max. Iterations, Driving Region Start Site, "
+                          "Driving Region Width" << std::endl;
+    mxRK2ShockwaveFile << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << GV.GetNumSpins() << ", " << _biasField << ", " << _biasFieldDriving << ", " << _drivingFreq << ", " << _stepsize << ", " << _stopIterVal << ", " << _drivingRegionLHS << ", " << _drivingRegionWidth << "\n"<< std::endl;
+    mxRK2ShockwaveFile << "Column heading indicates the spin site (#) being recorded. Data is for the (mx) component\n\n" << std::endl;
+    mxRK2ShockwaveFile << _drivingRegionLHS << ", " << _drivingRegionRHS << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
     for (long iterationIndex = _startIterVal; iterationIndex <= (long) _stopIterVal; iterationIndex++) {
 
-        /*
+
         if (iterationIndex >= (long)_stopIterVal*0.5){
             // Shockwave begins once simulation is 50% complete
             _hasShockWaveBegan = true;
@@ -280,22 +285,14 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
         if (_hasShockWaveBegan){
             // Changes used driving field to be post-shockwave value
-            //_biasFieldDrivingUse = _biasFieldDrivingShock;
-            _biasFieldDrivingUse = 1e-3;
+            _biasFieldDrivingUse = _biasFieldDrivingShock;
         } else if (!_hasShockWaveBegan) {
             // Keeps used driving field value to be pre-shockwave value
-            //_biasFieldDrivingUse = _biasFieldDrivingInit;
-            _biasFieldDrivingUse = 1e-3;
+            _biasFieldDrivingUse = _biasFieldDrivingInit;
         } else {
             // No statement
         }
-        */
-        if (iterationIndex >= (long)_stopIterVal*0.5){
-            // Shockwave begins once simulation is 50% complete
-            _biasFieldDrivingUse = 3e-3;
-        } else if (iterationIndex < (long)_stopIterVal*0.5){
-            _biasFieldDrivingUse = 1e-3;
-        }
+
 
         _totalTime += _stepsize;
         double t0 = _totalTime; // The initial time of the iteration, and the time at the first stage; the start of the interval and the first step of RK2. Often called 't0' in literature
@@ -327,13 +324,9 @@ void Numerical_Methods_Class::RK2Shockwaves() {
             if (spinMid1 >= _drivingRegionLHS && spinMid1 <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
                 HeffX1K1 = _chainJVals[spinToLHS1] * mx1LHS + _chainJVals[spinMid1] * mx1RHS + _biasFieldDrivingUse*cos(_drivingAngFreq * t0);
-                //std::cout << "Iteration: " << iterationIndex << "| Spin: " << spinMid1 << "| HeffXK1: " << HeffX1K1 << "|Driving: " << _biasFieldDrivingUse << "| cos term: " << cos(_drivingAngFreq * t0) << std::endl;
-                //std::cout << "|_chainJVals[spinToLHS1] * mx1LHS: " << _chainJVals[spinToLHS1] * mx1LHS << "| _chainJVals[spinMid1] * mx1RHS: " << _chainJVals[spinMid1] * mx1RHS << "\n" << std::endl;
             } else if (spinMid1 > _drivingRegionRHS) {
                 // The ELSE IF statement includes all spins along x which are not within the driving region
                 HeffX1K1 = _chainJVals[spinToLHS1] * mx1LHS + _chainJVals[spinMid1] * mx1RHS;
-                //std::cout << "Iteration: " << iterationIndex << "| Spin: " << spinMid1 << "| HeffXK1: " << HeffX1K1 << "|Driving: " << _biasFieldDrivingUse << "| cos term: " << cos(_drivingAngFreq * t0) << std::endl;
-                //std::cout << "|_chainJVals[spinToLHS1] * mx1LHS: " << _chainJVals[spinToLHS1] * mx1LHS << "| _chainJVals[spinMid1] * mx1RHS: " << _chainJVals[spinMid1] * mx1RHS << std::endl;
             } else {
                 // No statement
             }
@@ -410,23 +403,13 @@ void Numerical_Methods_Class::RK2Shockwaves() {
          * statement (default: 0.01 indicates how often the writing should occur. A value of 0.01 would mean writing
          * should occur every 1% of progress through the simulation*/
         if ( iterationIndex % int(_stopIterVal*0.001) == 0 ) {
-            //std::cout << "Reporting Point: " << iterationIndex << " iterations. Shockwave bool: " << _hasShockWaveBegan << " with driving val: " << _biasFieldDrivingUse <<std::endl;
-            /*  Code this is useful for debugging
-             *  std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
-             *  std::cout << "RegionLHS: " << _drivingRegionLHS << "; RegionWidth: " << _drivingRegionWidth << "; RegionRHS: " << _drivingRegionRHS << std::endl;
-             *  std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
-             *  printtest.PrintVector(mxNextVal); */
 
-            // This is the input signal. Saves all mx values at spin site 1 (spin site zero isn't really a spin).
-            mxRK2ShockwaveLHSDriving << mxNextVal[_drivingRegionLHS] << std::endl;
-            mxRK2ShockwaveRHSDriving << mxNextVal[_drivingRegionRHS] << std::endl;
-            // This is the output signal. Saves all mx values at second last array element, and the final real spin site.
-            mxRK2ShockwaveMid << mxNextVal[1+(GV.GetNumSpins()/2)] << std::endl;
-            mxRK2ShockwaveEnd << mxNextVal[GV.GetNumSpins()-5] << std::endl;
-
-            // Housekeeping
-            //mxRK2ShockwaveStart << std::endl;
-            //mxRK2ShockwaveEnd << std::endl;
+            //
+            if (mxRK2ShockwaveFile.is_open()) {
+                mxRK2ShockwaveFile << mxNextVal[_drivingRegionLHS] << "," << std::flush;
+                mxRK2ShockwaveFile << mxNextVal[_drivingRegionRHS] << "," << std::flush;
+                mxRK2ShockwaveFile << mxNextVal[neededval]  << "," << std::endl;
+            }
         }
 
         /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
@@ -437,10 +420,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
     } // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
-    mxRK2ShockwaveLHSDriving.close();
-    mxRK2ShockwaveRHSDriving.close();
-    mxRK2ShockwaveMid.close();
-    mxRK2ShockwaveEnd.close();
+    mxRK2ShockwaveFile.close();
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "Finished RK2 with: stepsize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
