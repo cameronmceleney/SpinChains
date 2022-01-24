@@ -14,7 +14,7 @@ void Numerical_Methods_Class::NMSetup() {
     //std::cout << "Enter the LHS spin position for the driving region (minval=1): ";
     //std::cin >> _drivingRegionLHS;
     _drivingRegionLHS = 1;
-    _drivingRegionWidth = GV.GetNumSpins() * 0.05;
+    _drivingRegionWidth = GV.GetNumSpins() * 0.0;
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
     //std::cout << "Enter the stepsize: ";
@@ -256,8 +256,9 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
     // Sets the values of the driving field for before (Init) and after (Shock) the shockwave point respectively
     _biasFieldDrivingInit = _biasFieldDriving;
-    _biasFieldDrivingShock = _biasFieldDriving * 1e4;
+    _biasFieldDrivingShock = _biasFieldDriving * 5;
     _hasShockWaveBegan = false;
+
     // Notifies the user of what code they are running
     std::cout << "\nYou are running the RK2 Shockwave Spinchains code." << std::endl;
 
@@ -271,20 +272,29 @@ void Numerical_Methods_Class::RK2Shockwaves() {
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
     for (long iterationIndex = _startIterVal; iterationIndex <= (long) _stopIterVal; iterationIndex++) {
 
-
-        if (iterationIndex >= (long)_stopIterVal*0.75){
+        /*
+        if (iterationIndex >= (long)_stopIterVal*0.5){
             // Shockwave begins once simulation is 50% complete
             _hasShockWaveBegan = true;
         }
 
         if (_hasShockWaveBegan){
             // Changes used driving field to be post-shockwave value
-            _biasFieldDrivingUse = _biasFieldDrivingShock;
+            //_biasFieldDrivingUse = _biasFieldDrivingShock;
+            _biasFieldDrivingUse = 1e-3;
         } else if (!_hasShockWaveBegan) {
             // Keeps used driving field value to be pre-shockwave value
-            _biasFieldDrivingUse = _biasFieldDrivingInit;
+            //_biasFieldDrivingUse = _biasFieldDrivingInit;
+            _biasFieldDrivingUse = 1e-3;
         } else {
             // No statement
+        }
+        */
+        if (iterationIndex >= (long)_stopIterVal*0.5){
+            // Shockwave begins once simulation is 50% complete
+            _biasFieldDrivingUse = 3e-3;
+        } else if (iterationIndex < (long)_stopIterVal*0.5){
+            _biasFieldDrivingUse = 1e-3;
         }
 
         _totalTime += _stepsize;
