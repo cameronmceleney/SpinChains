@@ -8,7 +8,8 @@ class GlobalVariablesClass{
 
 private:
 //  Dtype               Member Name                             //Comment
-    int                 _numSpins;                              // Number of sites (spins) in the chain
+    int                 _numSpins;
+// Number of sites (spins) in the chain
 
     //Mac std::string   _filePath = "/Users/cameronmceleney/CLionProjects/Data/"; // Path to directory where all files will be saved
     std::string         _filePath = "D:/Data/24 Jan 22/RK2 Shockwaves Tests Data/";

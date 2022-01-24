@@ -14,7 +14,7 @@ void Numerical_Methods_Class::NMSetup() {
     //std::cout << "Enter the LHS spin position for the driving region (minval=1): ";
     //std::cin >> _drivingRegionLHS;
     _drivingRegionLHS = 1;
-    _drivingRegionWidth = GV.GetNumSpins() * 0.0;
+    _drivingRegionWidth = int(GV.GetNumSpins() * 0.05);
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
     //std::cout << "Enter the stepsize: ";
@@ -256,23 +256,30 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
     // Sets the values of the driving field for before (Init) and after (Shock) the shockwave point respectively
     _biasFieldDrivingInit = _biasFieldDriving;
-    _biasFieldDrivingShock = _biasFieldDriving * 5;
+    _biasFieldDrivingShock = _biasFieldDriving * 10;
     _hasShockWaveBegan = false;
 
     // Notifies the user of what code they are running
     std::cout << "\nYou are running the RK2 Shockwave Spinchains code." << std::endl;
-
     // Create files to save the data. All files will have (FileNameBase) in them to make them clearly identifiable.
     std::ofstream mxRK2ShockwaveFile(GV.GetFilePath()+"rk2Shockwave_"+GV.GetFileNameBase()+".csv");
 
     mxRK2ShockwaveFile << "Key Data\n" << std::endl;
     mxRK2ShockwaveFile << "Min. Exchange Val [T], Max. Exchange Val [T], Num. Spins, Bias Field (H0) [T], Bias Field (Driving) [T], "
                           "Driving Frequency [Hz], Stepsize (h), Max. Iterations, Driving Region Start Site, "
-                          "Driving Region Width" << std::endl;
-    mxRK2ShockwaveFile << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << GV.GetNumSpins() << ", " << _biasField << ", " << _biasFieldDriving << ", " << _drivingFreq << ", " << _stepsize << ", " << _stopIterVal << ", " << _drivingRegionLHS << ", " << _drivingRegionWidth << "\n"<< std::endl;
-    mxRK2ShockwaveFile << "Column heading indicates the spin site (#) being recorded. Data is for the (mx) component\n\n" << std::endl;
-    mxRK2ShockwaveFile << _drivingRegionLHS << ", " << _drivingRegionRHS << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
+                          "Driving Region Width\n";
+    mxRK2ShockwaveFile << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << GV.GetNumSpins() << ", " << _biasField << ", " << _biasFieldDriving << ", " << _drivingFreq << ", " << _stepsize << ", " << _stopIterVal << ", " << _drivingRegionLHS << ", " << _drivingRegionWidth << "\n\n";
 
+    std::string notesComments;
+    std::cout << "Enter any notes for this simulation: ";
+    std::cin.ignore();
+    std::getline(std::cin, notesComments );
+    mxRK2ShockwaveFile << "Note(s): " << notesComments;
+
+    mxRK2ShockwaveFile << "\n[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n\n";
+    mxRK2ShockwaveFile << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
+
+    std::cout << "\nBeginning simulation...";
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
     for (long iterationIndex = _startIterVal; iterationIndex <= (long) _stopIterVal; iterationIndex++) {
@@ -292,7 +299,6 @@ void Numerical_Methods_Class::RK2Shockwaves() {
         } else {
             // No statement
         }
-
 
         _totalTime += _stepsize;
         double t0 = _totalTime; // The initial time of the iteration, and the time at the first stage; the start of the interval and the first step of RK2. Often called 't0' in literature
@@ -348,11 +354,11 @@ void Numerical_Methods_Class::RK2Shockwaves() {
         }
 
         // The estimate of the mx value for the next iteration of iterationIndex calculated using the RK2 Midpoint rule
-        std::vector<double> mxNextVal(GV.GetNumSpins()+2,0);
+        std::vector<double> mxNextVal(GV.GetNumSpins()+2, 0);
         // The estimate of the my value for the next iteration of iterationIndex
-        std::vector<double> myNextVal(GV.GetNumSpins()+2,0);
+        std::vector<double> myNextVal(GV.GetNumSpins()+2, 0);
         // The estimate of the mz value for the next iteration of iterationIndex
-        std::vector<double> mzNextVal(GV.GetNumSpins()+2,0);
+        std::vector<double> mzNextVal(GV.GetNumSpins()+2, 0);
 
         for (int spinMid2 = 1; spinMid2 <= GV.GetNumSpins()+1; spinMid2++) {
             /* The second stage uses the previously found k1 value, as well as the initial conditions, to determine the
@@ -405,11 +411,8 @@ void Numerical_Methods_Class::RK2Shockwaves() {
         if ( iterationIndex % int(_stopIterVal*0.001) == 0 ) {
 
             //
-            if (mxRK2ShockwaveFile.is_open()) {
-                mxRK2ShockwaveFile << mxNextVal[_drivingRegionLHS] << "," << std::flush;
-                mxRK2ShockwaveFile << mxNextVal[_drivingRegionRHS] << "," << std::flush;
-                mxRK2ShockwaveFile << mxNextVal[neededval]  << "," << std::endl;
-            }
+            mxRK2ShockwaveFile << mxNextVal[_drivingRegionLHS] << ", "<< mxNextVal[_drivingRegionRHS] << ", "<< mxNextVal[int(1+GV.GetNumSpins()*0.5)] << ", " << mxNextVal[int(GV.GetNumSpins())] << ",\n";
+
         }
 
         /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
@@ -417,13 +420,17 @@ void Numerical_Methods_Class::RK2Shockwaves() {
         _mxStartVal = mxNextVal;
         _myStartVal = myNextVal;
         _mzStartVal = mzNextVal;
+
+        mxNextVal.clear();
+        myNextVal.clear();
+        mzNextVal.clear();
     } // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2ShockwaveFile.close();
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
-    std::cout << "Finished RK2 with: stepsize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
+    std::cout << "\nFinished RK2 with: stepsize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
 }
 
 void Numerical_Methods_Class::StreamToString() {
