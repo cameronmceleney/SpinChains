@@ -256,7 +256,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
     // Sets the values of the driving field for before (Init) and after (Shock) the shockwave point respectively
     _biasFieldDrivingInit = _biasFieldDriving;
-    _biasFieldDrivingShock = _biasFieldDriving * 10;
+    _biasFieldDrivingShock = _biasFieldDriving * _biasFieldDrivingScale;
     _hasShockWaveBegan = false;
 
     // Notifies the user of what code they are running
@@ -265,16 +265,17 @@ void Numerical_Methods_Class::RK2Shockwaves() {
     std::ofstream mxRK2ShockwaveFile(GV.GetFilePath()+"rk2Shockwave_"+GV.GetFileNameBase()+".csv");
 
     mxRK2ShockwaveFile << "Key Data\n" << std::endl;
-    mxRK2ShockwaveFile << "Min. Exchange Val [T], Max. Exchange Val [T], Num. Spins, Bias Field (H0) [T], Bias Field (Driving) [T], "
-                          "Driving Frequency [Hz], Stepsize (h), Max. Iterations, Driving Region Start Site, "
-                          "Driving Region Width\n";
-    mxRK2ShockwaveFile << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << GV.GetNumSpins() << ", " << _biasField << ", " << _biasFieldDriving << ", " << _drivingFreq << ", " << _stepsize << ", " << _stopIterVal << ", " << _drivingRegionLHS << ", " << _drivingRegionWidth << "\n\n";
+    mxRK2ShockwaveFile << "Bias Field (H0) [T], Bias Field (Driving) [T], "
+                          "Driving Frequency [Hz], Driving Region Start Site, Driving Region End Site, Driving Region Width,"
+                          "Max. Sim. Time [s], Max. Exchange Val [T], Max. Iterations, Min. Exchange Val [T], "
+                          "Num. DataPoints, Num. Spins, Stepsize (h)\n";
+    mxRK2ShockwaveFile << _biasField << ", " << _biasFieldDriving << ", " << _biasFieldDrivingScale << ", " << _drivingFreq << ", " << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " <<_drivingRegionWidth << ", " << _maxSimTime << ", " << GV.GetExchangeMaxVal() << ", " << _stopIterVal << ", " << GV.GetExchangeMinVal() << ", " << _numberOfDataPoints << ", " << GV.GetNumSpins() << ", " << _stepsize << "\n\n";
 
     std::string notesComments;
     std::cout << "Enter any notes for this simulation: ";
     std::cin.ignore();
     std::getline(std::cin, notesComments );
-    mxRK2ShockwaveFile << "Note(s): " << notesComments;
+    mxRK2ShockwaveFile << "Note(s):," << notesComments; // Adding comma ensures the note itself is in a different csv cell to the term 'Note(s):'
 
     mxRK2ShockwaveFile << "\n[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n\n";
     mxRK2ShockwaveFile << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
@@ -408,10 +409,10 @@ void Numerical_Methods_Class::RK2Shockwaves() {
         /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
          * statement (default: 0.01 indicates how often the writing should occur. A value of 0.01 would mean writing
          * should occur every 1% of progress through the simulation*/
-        if ( iterationIndex % int(_stopIterVal*0.001) == 0 ) {
+        if ( iterationIndex % int(_stopIterVal*(1.0/_numberOfDataPoints)) == 0 ) { // Value MUST be 1.0 to ensure correct casting
 
             //
-            mxRK2ShockwaveFile << mxNextVal[_drivingRegionLHS] << ", "<< mxNextVal[_drivingRegionRHS] << ", "<< mxNextVal[int(1+GV.GetNumSpins()*0.5)] << ", " << mxNextVal[int(GV.GetNumSpins())] << ",\n";
+            mxRK2ShockwaveFile << mxNextVal[_drivingRegionLHS] << ", "<< mxNextVal[_drivingRegionRHS] << ", "<< mxNextVal[int(1+GV.GetNumSpins()*0.5)] << ", " << mxNextVal[int(1+GV.GetNumSpins())] << "\n";
 
         }
 
