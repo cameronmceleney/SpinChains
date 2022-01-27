@@ -24,7 +24,7 @@ void Numerical_Methods_Class::NMSetup() {
     
     //std::cout << "Enter the maximum number of iterations: ";
     //std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
-    _stopIterVal = 3.5e5;
+    _stopIterVal = 1.75e5;
     _maxSimTime = _stepsize * _stopIterVal;
 
     std::cout << "\nThis will simulate a time of " << _maxSimTime << "[s]." << std::endl;
@@ -256,7 +256,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
     // Sets the values of the driving field for before (Init) and after (Shock) the shockwave point respectively
     _biasFieldDrivingInit = _biasFieldDriving;
-    _biasFieldDrivingShock = _biasFieldDriving * _biasFieldDrivingScale;
+    _biasFieldDrivingShock = _biasFieldDriving * 2;
     _hasShockWaveBegan = false;
 
     // Notifies the user of what code they are running
@@ -266,7 +266,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
     mxRK2ShockwaveFile << "Key Data\n" << std::endl;
     mxRK2ShockwaveFile << "Bias Field (H0) [T], Bias Field (Driving) [T], "
-                          "Driving Frequency [Hz], Driving Region Start Site, Driving Region End Site, Driving Region Width,"
+                          "Bias Field Driving Scale, Driving Frequency [Hz], Driving Region Start Site, Driving Region End Site, Driving Region Width,"
                           "Max. Sim. Time [s], Max. Exchange Val [T], Max. Iterations, Min. Exchange Val [T], "
                           "Num. DataPoints, Num. Spins, Stepsize (h)\n";
     mxRK2ShockwaveFile << _biasField << ", " << _biasFieldDriving << ", " << _biasFieldDrivingScale << ", " << _drivingFreq << ", " << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " <<_drivingRegionWidth << ", " << _maxSimTime << ", " << GV.GetExchangeMaxVal() << ", " << _stopIterVal << ", " << GV.GetExchangeMinVal() << ", " << _numberOfDataPoints << ", " << GV.GetNumSpins() << ", " << _stepsize << "\n\n";

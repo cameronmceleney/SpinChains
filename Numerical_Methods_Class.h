@@ -10,14 +10,14 @@ private:
 
     double              _biasField = 0.1328;                    // Bias field (T)
     double              _biasFieldDriving = 1e-5;               // Driving field amplitude [T] (caution: papers often give in mT)
-    double              _biasFieldDrivingScale = 5;                 // The factor by which the driving field amplitude will be modulated
+    double              _biasFieldDrivingScale = 2;                 // The factor by which the driving field amplitude will be modulated
     double              _biasFieldDrivingUse;                   // Value to be used after bool statement. Will be either _biasFieldDrivingInit or _biasFieldDrivingShock
     double              _biasFieldDrivingInit;                  // Driving field amplitude [T] for use prior to shockwave. Commonly will be set to equal _biasFieldDriving
     double              _biasFieldDrivingShock;                 // Driving field amplitude [T] for the shockwave. Must be different to _biasFieldDriving to notice an effect
     std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
 
     double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field[rad*s^{-1}]
-    double              _drivingFreq = 10 * 6.045 * 1e9;        // Frequency of oscillatory driving field [GHz] (f_d in literature)
+    double              _drivingFreq = 59 * 1e9;        // Frequency of oscillatory driving field [GHz] (f_d in literature) (default: 10 * 6.045 * 1e9)
     int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width

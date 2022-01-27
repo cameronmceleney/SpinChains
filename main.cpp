@@ -19,13 +19,13 @@ int main() {
     //std::cout << "Enter the minimum exchange value: ";
     //std::cin >> in_exchangeMin;
     //GV.SetExchangeMinVal(in_exchangeMin);
-    GV.SetExchangeMinVal(70);
+    GV.SetExchangeMinVal(43.5);
 
     //double in_exchangeMax;
     //std::cout << "Enter the maximum exchange value: ";
     //std::cin >> in_exchangeMax;
     //GV.SetExchangeMaxVal(in_exchangeMax);
-    GV.SetExchangeMaxVal(70);
+    GV.SetExchangeMaxVal(43.5);
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier that all filenames will share: ";
@@ -46,5 +46,4 @@ int main() {
     RK2_method_use.RK2Shockwaves();
 
     return 0;
-
 }
