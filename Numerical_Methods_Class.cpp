@@ -337,7 +337,6 @@ void Numerical_Methods_Class::RK2Shockwaves() {
             } else {
                 // No statement
             }
-
             // No changes are made to the effective field in the y-direction
             HeffY1K1 = _chainJVals[spinToLHS1] * my1LHS + _chainJVals[spinMid1] * my1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
