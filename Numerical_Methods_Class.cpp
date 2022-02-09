@@ -24,7 +24,7 @@ void Numerical_Methods_Class::NMSetup() {
     
     //std::cout << "Enter the maximum number of iterations: ";
     //std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
-    _stopIterVal = 1.75e5;
+    _stopIterVal = 1.75e-5;
     _maxSimTime = _stepsize * _stopIterVal;
 
     std::cout << "\nThis will simulate a time of " << _maxSimTime << "[s]." << std::endl;
