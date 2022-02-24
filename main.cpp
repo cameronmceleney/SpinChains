@@ -25,7 +25,7 @@ int main() {
     //std::cout << "Enter the maximum exchange value: ";
     //std::cin >> in_exchangeMax;
     //GV.SetExchangeMaxVal(in_exchangeMax);
-    GV.SetExchangeMaxVal(43.5);
+    GV.SetExchangeMaxVal(132.0);
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier that all filenames will share: ";
@@ -43,7 +43,7 @@ int main() {
         SolverClass.CalculateEigFreqs();
     }
     RK2_method_use.NMSetup();
-    RK2_method_use.RK2Shockwaves();
+    RK2_method_use.RK2LLG();
 
     return 0;
 }
