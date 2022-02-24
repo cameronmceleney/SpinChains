@@ -30,7 +30,7 @@ int main() {
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier that all filenames will share: ";
     std::cin >> in_fileNameBase;
-    GV.SetFileNameBase("Test"+in_fileNameBase);
+    GV.SetFileNameBase("LLGTest"+in_fileNameBase);
 
     if (query) {
         std::string in_filePath;

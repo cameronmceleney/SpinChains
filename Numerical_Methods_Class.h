@@ -10,7 +10,7 @@ private:
 
     double              _biasField = 0.1;                    // Bias field (T)
     double              _biasFieldDriving = 3e-3;               // Driving field amplitude [T] (caution: papers often give in mT)
-    double              _biasFieldDrivingScale = 0;             // The factor by which the driving field amplitude will be modulated
+    double              _biasFieldDrivingScale = 2;             // The factor by which the driving field amplitude will be modulated
     double              _biasFieldDrivingUse;                   // Value to be used after bool statement. Will be either _biasFieldDrivingInit or _biasFieldDrivingShock
     double              _biasFieldDrivingInit;                  // Driving field amplitude [T] for use prior to shockwave. Commonly will be set to equal _biasFieldDriving
     double              _biasFieldDrivingShock;                 // Driving field amplitude [T] for the shockwave. Must be different to _biasFieldDriving to notice an effect
@@ -22,6 +22,7 @@ private:
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width
 
+    double              _gilbertConst = 10e-4;                   // Gilbert Damping Factor
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio (GHz/T). 29.2E9 is the numerical value of the gyromagetic ratio of the electron divided by 2pi
     bool                _hasShockWaveBegan;
     double              _magSat = 1.0;                          // Saturation Magnetisation (T). Note: 1A/m = 1.254uT. Must be in Telsa,
