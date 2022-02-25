@@ -19,12 +19,12 @@ void Numerical_Methods_Class::NMSetup() {
 
     //std::cout << "Enter the stepsize: ";
     //std::cin >> _stepsize;
-    _stepsize = 1e-15;
+    _stepsize = 1e-17;
     _stepsizeHalf = _stepsize / 2;
     
     //std::cout << "Enter the maximum number of iterations: ";
     //std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
-    _stopIterVal = 1.75e5 * 4;
+    _stopIterVal = 1.75e5 * 400;
     _maxSimTime = _stepsize * _stopIterVal;
 
     std::cout << "\nThis will simulate a time of " << _maxSimTime << "[s]." << std::endl;
@@ -297,7 +297,8 @@ void Numerical_Methods_Class::RK2LLG() {
 
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-                HeffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS + _biasFieldDriving*cos(_drivingAngFreq * t0);
+                // removed + _biasFieldDriving*cos(_drivingAngFreq * t0)
+                HeffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS;
             } else {
                 // The else statement includes all spins along x which are not within the driving region
                 HeffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS;
@@ -400,9 +401,42 @@ void Numerical_Methods_Class::RK2LLG() {
 
         /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
          * statement (default: 0.01 indicates how often the writing should occur. A value of 0.01 would mean writing
-         * should occur every 1% of progress through the simulation*/
+         * should occur every 1% of progress through the simulation
+
+
         if ( iterationIndex % int(_stopIterVal*0.01) == 0 ) {
             std::cout << "Reporting Point: " << ++reportingPoint << "%" <<std::endl;
+            //std::cout << "Reporting Point: " << iterationIndex << " iterations." << std::endl;
+             *  Code this is useful for debugging
+             *  std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
+             *  std::cout << "RegionLHS: " << _drivingRegionLHS << "; RegionWidth: " << _drivingRegionWidth << "; RegionRHS: " << _drivingRegionRHS << std::endl;
+             *  std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
+             *  printtest.PrintVector(mxNextVal);
+
+            // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
+            for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
+                mxRK2File << mxNextVal[j] << ",";
+                myRK2File << myNextVal[j] << ",";
+                mzRK2File << mzNextVal[j] << ",";
+
+                // Ensures that the final line doesn't contain a comma
+                if (j == GV.GetNumSpins()) {
+                    mxRK2File << mxNextVal[j] << std::flush;
+                    myRK2File << myNextVal[j] << std::flush;
+                    mzRK2File << mzNextVal[j] << std::flush;
+                }
+            }
+
+
+            // Housekeeping
+            mxRK2File << std::endl;
+            myRK2File << std::endl;
+            mzRK2File << std::endl;
+        }
+        */
+
+        if ( iterationIndex % int(_stopIterVal * 1e-6) == 0 ) {
+            std::cout << "Reporting Point: " << iterationIndex << std::endl;
             //std::cout << "Reporting Point: " << iterationIndex << " iterations." << std::endl;
             /*  Code this is useful for debugging
              *  std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
@@ -443,7 +477,7 @@ void Numerical_Methods_Class::RK2LLG() {
     mzRK2File.close();
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
-    std::cout << "Finished RK2 with: stepSize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
+    std::cout << "Finished RK2 with: stepSize = " << _stepsize << "; maxsimtime = " << _maxSimTime << "; filename = " << GV.GetFileNameBase() <<  std::endl;
 }
 
 void Numerical_Methods_Class::RK2Shockwaves() {
