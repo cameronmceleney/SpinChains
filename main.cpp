@@ -25,7 +25,7 @@ int main() {
     //std::cout << "Enter the maximum exchange value: ";
     //std::cin >> in_exchangeMax;
     //GV.SetExchangeMaxVal(in_exchangeMax);
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetExchangeMaxVal(43.5);
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier that all filenames will share: ";

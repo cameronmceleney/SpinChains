@@ -19,12 +19,12 @@ void Numerical_Methods_Class::NMSetup() {
 
     //std::cout << "Enter the stepsize: ";
     //std::cin >> _stepsize;
-    _stepsize = 1e-17;
-    _stepsizeHalf = _stepsize / 2;
+    _stepsize = 1e-18;
+    _stepsizeHalf = _stepsize / 2.0;
     
     //std::cout << "Enter the maximum number of iterations: ";
     //std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
-    _stopIterVal = 1.75e5 * 400;
+    _stopIterVal = 1.75e5 * 4000;
     _maxSimTime = _stepsize * _stopIterVal;
 
     std::cout << "\nThis will simulate a time of " << _maxSimTime << "[s]." << std::endl;
@@ -280,7 +280,7 @@ void Numerical_Methods_Class::RK2LLG() {
         std::vector<double> mzEstMid(GV.GetNumSpins()+2, 0);
 
         // Loop the 0th and final spins as they will always be zero-valued
-        for (int spin = 1; spin <= GV.GetNumSpins()+1; spin++) {
+        for (int spin = 1; spin <= GV.GetNumSpins() + 1; spin++) {
             /* The first stage is based upon finding the value of the slope at the beginning of the interval (k1). This
              * stage takes the start conditions as an input, and substitutes them into the LLG equation. */
             int LHS_spin = spin - 1, RHS_spin = spin + 1;
@@ -435,8 +435,8 @@ void Numerical_Methods_Class::RK2LLG() {
         }
         */
 
-        if ( iterationIndex % int(_stopIterVal * 1e-6) == 0 ) {
-            std::cout << "Reporting Point: " << iterationIndex << std::endl;
+        if ( iterationIndex % int(_stopIterVal * 1e-7) == 0 ) {
+            //std::cout << "Reporting Point: " << iterationIndex << std::endl;
             //std::cout << "Reporting Point: " << iterationIndex << " iterations." << std::endl;
             /*  Code this is useful for debugging
              *  std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
