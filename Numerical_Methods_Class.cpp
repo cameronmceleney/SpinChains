@@ -19,12 +19,12 @@ void Numerical_Methods_Class::NMSetup() {
 
     //std::cout << "Enter the stepsize: ";
     //std::cin >> _stepsize;
-    _stepsize = 1e-18;
+    _stepsize = 1e-15;
     _stepsizeHalf = _stepsize / 2.0;
     
     //std::cout << "Enter the maximum number of iterations: ";
     //std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
-    _stopIterVal = 1.75e5 * 4000;
+    _stopIterVal = 1.75e5 * 4e2;
     _maxSimTime = _stepsize * _stopIterVal;
 
     std::cout << "\nThis will simulate a time of " << _maxSimTime << "[s]." << std::endl;
@@ -261,6 +261,26 @@ void Numerical_Methods_Class::RK2LLG() {
     std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
     std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
 
+    for (int i = 0; i <= GV.GetNumSpins(); i++) {
+
+        if (i == 0) {
+
+            mxRK2File << "Time" << ",";
+            myRK2File << "Time" << ",";
+            mzRK2File << "Time" << ",";
+        } else if (i == GV.GetNumSpins()) {
+
+            mxRK2File << "Spin Site #" << i << "\n";
+            myRK2File << "Spin Site #" << i << "\n";
+            mzRK2File << "Spin Site #" << i << "\n";
+        } else {
+
+            mxRK2File << "Spin Site #" << i << ",";
+            myRK2File << "Spin Site #" << i << ",";
+            mzRK2File << "Spin Site #" << i << ",";
+        }
+    }
+
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
 
@@ -280,7 +300,7 @@ void Numerical_Methods_Class::RK2LLG() {
         std::vector<double> mzEstMid(GV.GetNumSpins()+2, 0);
 
         // Loop the 0th and final spins as they will always be zero-valued
-        for (int spin = 1; spin <= GV.GetNumSpins() + 1; spin++) {
+        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
             /* The first stage is based upon finding the value of the slope at the beginning of the interval (k1). This
              * stage takes the start conditions as an input, and substitutes them into the LLG equation. */
             int LHS_spin = spin - 1, RHS_spin = spin + 1;
@@ -311,9 +331,13 @@ void Numerical_Methods_Class::RK2LLG() {
 
             /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the
              * first stage of RK2.*/
-            mx1K1 = _gyroMagConst * (- (_gilbertConst * HeffY1K1 * mx1 * my1) + HeffY1K1 * mz1 - HeffZ1K1 * (my1 + _gilbertConst*mx1*mz1) + _gilbertConst * HeffX1K1 * (pow(my1,2) + pow(mz1,2)));
-            my1K1 = _gyroMagConst * (-(HeffX1K1*mz1) + HeffZ1K1 * (mx1 - _gilbertConst * my1 * mz1) + _gilbertConst * (HeffY1K1 * pow(mx1,2) - HeffX1K1 * mx1 * my1 + HeffY1K1 * pow(mz1,2)));
-            mz1K1 = _gyroMagConst * (HeffX1K1 * my1 + _gilbertConst * HeffZ1K1*(pow(mx1,2) + pow(my1,2)) - _gilbertConst*HeffX1K1*mx1*mz1 - HeffY1K1 * (mx1 + _gilbertConst * my1 * mz1));
+            //mx1K1 = _gyroMagConst * (- (_gilbertConst * HeffY1K1 * mx1 * my1) + HeffY1K1 * mz1 - HeffZ1K1 * (my1 + _gilbertConst*mx1*mz1) + _gilbertConst * HeffX1K1 * (pow(my1,2) + pow(mz1,2)));
+            //my1K1 = _gyroMagConst * (-(HeffX1K1*mz1) + HeffZ1K1 * (mx1 - _gilbertConst * my1 * mz1) + _gilbertConst * (HeffY1K1 * pow(mx1,2) - HeffX1K1 * mx1 * my1 + HeffY1K1 * pow(mz1,2)));
+            //mz1K1 = _gyroMagConst * (HeffX1K1 * my1 + _gilbertConst * HeffZ1K1*(pow(mx1,2) + pow(my1,2)) - _gilbertConst*HeffX1K1*mx1*mz1 - HeffY1K1 * (mx1 + _gilbertConst * my1 * mz1));
+
+            mx1K1 = -1 * _gyroMagConst * (my1 * HeffZ1K1 - mz1 * HeffY1K1);
+            my1K1 = +1 * _gyroMagConst * (mx1 * HeffZ1K1 - mz1 * HeffX1K1);
+            mz1K1 = -1 * _gyroMagConst * (mx1 * HeffY1K1 - my1 * HeffX1K1);
 
             mxEstMid[spin] = mx1 + mx1K1*_stepsizeHalf;
             myEstMid[spin] = my1 + my1K1*_stepsizeHalf;
@@ -327,7 +351,7 @@ void Numerical_Methods_Class::RK2LLG() {
         // The estimate of the mz value for the next iteration of iterationIndex
         std::vector<double> mzNextVal(GV.GetNumSpins()+2,0);
 
-        for (int spin = 1; spin <= GV.GetNumSpins()+1; spin++) {
+        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
             /* The second stage uses the previously found k1 value, as well as the initial conditions, to determine the
              * value of the slope (k2) at the midpoint. In RK2, the values of k1 and k2 can then be jointly used to
              * estimate the next point of the function through a weighted average of k1 & k2.
@@ -352,9 +376,13 @@ void Numerical_Methods_Class::RK2LLG() {
             HeffY2K2 = _chainJVals[LHS_spin] * my2LHS + _chainJVals[spin] * my2RHS;
             HeffZ2K2 = _chainJVals[LHS_spin] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
 
-            mx2K2 = _gyroMagConst * (- (_gilbertConst * HeffY2K2 * mx2 * my2) + HeffY2K2 * mz2 - HeffZ2K2 * (my2 + _gilbertConst*mx2*mz2) + _gilbertConst * HeffX2K2 * (pow(my2,2) + pow(mz2,2)));
-            my2K2 = _gyroMagConst * (-(HeffX2K2*mz2) + HeffZ2K2 * (mx2 - _gilbertConst * my2 * mz2) + _gilbertConst * (HeffY2K2 * pow(mx2,2) - HeffX2K2 * mx2 * my2 + HeffY2K2 * pow(mz2,2)));
-            mz2K2 = _gyroMagConst * (HeffX2K2 * my2 + _gilbertConst * HeffZ2K2*(pow(mx2,2) + pow(my2,2)) - _gilbertConst*HeffX2K2*mx2*mz2 - HeffY2K2 * (mx2 + _gilbertConst * my2 * mz2));
+            //mx2K2 = _gyroMagConst * (- (_gilbertConst * HeffY2K2 * mx2 * my2) + HeffY2K2 * mz2 - HeffZ2K2 * (my2 + _gilbertConst*mx2*mz2) + _gilbertConst * HeffX2K2 * (pow(my2,2) + pow(mz2,2)));
+            //my2K2 = _gyroMagConst * (-(HeffX2K2*mz2) + HeffZ2K2 * (mx2 - _gilbertConst * my2 * mz2) + _gilbertConst * (HeffY2K2 * pow(mx2,2) - HeffX2K2 * mx2 * my2 + HeffY2K2 * pow(mz2,2)));
+            //mz2K2 = _gyroMagConst * (HeffX2K2 * my2 + _gilbertConst * HeffZ2K2*(pow(mx2,2) + pow(my2,2)) - _gilbertConst*HeffX2K2*mx2*mz2 - HeffY2K2 * (mx2 + _gilbertConst * my2 * mz2));
+
+            mx2K2 = -1 * _gyroMagConst * ( my2*HeffZ2K2 - mz2*HeffY2K2 );
+            my2K2 = +1 * _gyroMagConst * ( mx2*HeffZ2K2 - mz2*HeffX2K2 );
+            mz2K2 = -1 * _gyroMagConst * ( mx2*HeffY2K2 - my2*HeffX2K2 );
 
             mxNextVal[spin] = _mxStartVal[spin] + mx2K2*_stepsize;
             myNextVal[spin] = _myStartVal[spin] + my2K2*_stepsize;
@@ -435,7 +463,7 @@ void Numerical_Methods_Class::RK2LLG() {
         }
         */
 
-        if ( iterationIndex % int(_stopIterVal * 1e-7) == 0 ) {
+        if ( iterationIndex % int(_stopIterVal * 1e-6) == 0 ) {
             //std::cout << "Reporting Point: " << iterationIndex << std::endl;
             //std::cout << "Reporting Point: " << iterationIndex << " iterations." << std::endl;
             /*  Code this is useful for debugging
@@ -444,17 +472,24 @@ void Numerical_Methods_Class::RK2LLG() {
              *  std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
              *  printtest.PrintVector(mxNextVal); */
 
-            // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
-            for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
-                mxRK2File << mxNextVal[j] << ",";
-                myRK2File << myNextVal[j] << ",";
-                mzRK2File << mzNextVal[j] << ",";
+            for (int j = 0; j <= GV.GetNumSpins(); j++) {
+                // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
+                if (j == 0) {
+                    // Print current time
+                    mxRK2File << (iterationIndex * _stepsize) << ",";
+                    myRK2File << (iterationIndex * _stepsize) << ",";
+                    mzRK2File << (iterationIndex * _stepsize) << ",";
 
-                // Ensures that the final line doesn't contain a comma
-                if (j == GV.GetNumSpins()) {
+                }else if (j == GV.GetNumSpins()) {
+                    // Ensures that the final line doesn't contain a comma
                     mxRK2File << mxNextVal[j] << std::flush;
                     myRK2File << myNextVal[j] << std::flush;
                     mzRK2File << mzNextVal[j] << std::flush;
+                } else {
+                    // For non-special values, write the data
+                    mxRK2File << mxNextVal[j] << ",";
+                    myRK2File << myNextVal[j] << ",";
+                    mzRK2File << mzNextVal[j] << ",";
                 }
             }
 
