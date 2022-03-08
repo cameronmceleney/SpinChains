@@ -19,13 +19,15 @@ void Numerical_Methods_Class::NMSetup() {
 
     //std::cout << "Enter the stepsize: ";
     //std::cin >> _stepsize;
-    _stepsize = 1e-15;
+    _stepsize = 4.82e-15 / 5;
     _stepsizeHalf = _stepsize / 2.0;
     
     //std::cout << "Enter the maximum number of iterations: ";
     //std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
-    _stopIterVal = 1.75e5 * 4e2;
+    _stopIterVal = 8.3022e6 * 5;
     _maxSimTime = _stepsize * _stopIterVal;
+
+    _linearFMR = (_gyroMagConst / 2 * M_PI) * sqrt(_biasField * (_biasField + 4 * M_PI * _magSat)) / 1e9;
 
     std::cout << "\nThis will simulate a time of " << _maxSimTime << "[s]." << std::endl;
 
@@ -70,7 +72,7 @@ void Numerical_Methods_Class::RK2() {
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
-    for (long iterationIndex = _startIterVal; iterationIndex <= (long) _stopIterVal; iterationIndex++) {
+    for (long iterationIndex = static_cast<long>(_startIterVal); iterationIndex <= (long) _stopIterVal; iterationIndex++) {
 
         _totalTime += _stepsize;
         double t0 = _totalTime; // The initial time of the iteration, and the time at the first stage; the start of the interval and the first step of RK2. Often called 't0' in literature
@@ -163,34 +165,6 @@ void Numerical_Methods_Class::RK2() {
             myNextVal[spin] = _myStartVal[spin] + my2K2*_stepsize;
             mzNextVal[spin] = _mzStartVal[spin] + mz2K2*_stepsize;
 
-            if (_shouldDebug) {
-                if (mxNextVal[spin] >= 5000) {
-                    std::cout << "Error. Value of mx was greater than 5000 at spin(" << spin << "), iter("
-                              << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
-                              << _stepsize << std::endl;
-                    exit(3);
-                }
-
-                if (myNextVal[spin] >= 5000) {
-                    std::cout << "Error. Value of my was greater than 5000 at spin(" << spin << "), iter("
-                              << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
-                              << _stepsize << std::endl;
-                    exit(3);
-                }
-
-                if (mzNextVal[spin] >= 5000) {
-                    std::cout << "Error. Value of mz was greater than 5000 at spin(" << spin << "), iter("
-                              << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
-                              << _stepsize << std::endl;
-                    exit(3);
-                }
-            }
         } // Final line of the RK2 solvers for this iteration. Everything below here is part of the class function, but not the internal RK2 stage loops
 
         // Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear these between
@@ -258,35 +232,34 @@ void Numerical_Methods_Class::RK2LLG() {
 
     // Create files to save the data. All files will have (namefile) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath()+"rk2_mx_"+GV.GetFileNameBase()+".csv");
-    std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
-    std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
+    //std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
+    //std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
 
     for (int i = 0; i <= GV.GetNumSpins(); i++) {
 
         if (i == 0) {
 
             mxRK2File << "Time" << ",";
-            myRK2File << "Time" << ",";
-            mzRK2File << "Time" << ",";
+            //myRK2File << "Time" << ",";
+            //mzRK2File << "Time" << ",";
         } else if (i == GV.GetNumSpins()) {
 
             mxRK2File << "Spin Site #" << i << "\n";
-            myRK2File << "Spin Site #" << i << "\n";
-            mzRK2File << "Spin Site #" << i << "\n";
+            //myRK2File << "Spin Site #" << i << "\n";
+            //mzRK2File << "Spin Site #" << i << "\n";
         } else {
 
             mxRK2File << "Spin Site #" << i << ",";
-            myRK2File << "Spin Site #" << i << ",";
-            mzRK2File << "Spin Site #" << i << ",";
+            //myRK2File << "Spin Site #" << i << ",";
+            //mzRK2File << "Spin Site #" << i << ",";
         }
     }
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
-     * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
+     * confusion with the stepsize (h) which is referred to as a step or half-step (h/2)*/
 
-    short reportingPoint = 0;
 
-    for (long iterationIndex = _startIterVal; iterationIndex <= (long) _stopIterVal; iterationIndex++) {
+    for (long iterationIndex = static_cast<long>(_startIterVal); iterationIndex <= (long) _stopIterVal; iterationIndex++) {
 
         _totalTime += _stepsize;
         double t0 = _totalTime; // The initial time of the iteration, and the time at the first stage; the start of the interval and the first step of RK2. Often called 't0' in literature
@@ -313,31 +286,31 @@ void Numerical_Methods_Class::RK2LLG() {
             double mz1 = _mzStartVal[spin], mz1LHS = _mzStartVal[LHS_spin], mz1RHS = _mzStartVal[RHS_spin];
 
             double mx1K1, my1K1, mz1K1; // These are the estimations of the slopes at the beginning of the interval for each magnetic moment component
-            double HeffX1K1, HeffY1K1, HeffZ1K1; // The effective field component acting upon each spin
+            double heffX1K1, heffY1K1, heffZ1K1; // The effective field component acting upon each spin
 
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
                 // removed + _biasFieldDriving*cos(_drivingAngFreq * t0)
-                HeffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS;
+                heffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS + _biasFieldDriving * cos(_drivingAngFreq * t0);
             } else {
                 // The else statement includes all spins along x which are not within the driving region
-                HeffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS;
+                heffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS;
             }
 
             // No changes are made to the effective field in the y-direction
-            HeffY1K1 = _chainJVals[LHS_spin] * my1LHS + _chainJVals[spin] * my1RHS;
+            heffY1K1 = _chainJVals[LHS_spin] * my1LHS + _chainJVals[spin] * my1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
-            HeffZ1K1 = _chainJVals[LHS_spin] * mz1LHS + _chainJVals[spin] * mz1RHS + _biasField;
+            heffZ1K1 = _chainJVals[LHS_spin] * mz1LHS + _chainJVals[spin] * mz1RHS + _biasField;
 
             /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the
              * first stage of RK2.*/
-            //mx1K1 = _gyroMagConst * (- (_gilbertConst * HeffY1K1 * mx1 * my1) + HeffY1K1 * mz1 - HeffZ1K1 * (my1 + _gilbertConst*mx1*mz1) + _gilbertConst * HeffX1K1 * (pow(my1,2) + pow(mz1,2)));
-            //my1K1 = _gyroMagConst * (-(HeffX1K1*mz1) + HeffZ1K1 * (mx1 - _gilbertConst * my1 * mz1) + _gilbertConst * (HeffY1K1 * pow(mx1,2) - HeffX1K1 * mx1 * my1 + HeffY1K1 * pow(mz1,2)));
-            //mz1K1 = _gyroMagConst * (HeffX1K1 * my1 + _gilbertConst * HeffZ1K1*(pow(mx1,2) + pow(my1,2)) - _gilbertConst*HeffX1K1*mx1*mz1 - HeffY1K1 * (mx1 + _gilbertConst * my1 * mz1));
+            mx1K1 = _gyroMagConst * (- (_gilbertConst * heffY1K1 * mx1 * my1) + heffY1K1 * mz1 - heffZ1K1 * (my1 + _gilbertConst*mx1*mz1) + _gilbertConst * heffX1K1 * (pow(my1,2) + pow(mz1,2)));
+            my1K1 = _gyroMagConst * (-(heffX1K1*mz1) + heffZ1K1 * (mx1 - _gilbertConst * my1 * mz1) + _gilbertConst * (heffY1K1 * pow(mx1,2) - heffX1K1 * mx1 * my1 + heffY1K1 * pow(mz1,2)));
+            mz1K1 = _gyroMagConst * (heffX1K1 * my1 + _gilbertConst * heffZ1K1*(pow(mx1,2) + pow(my1,2)) - _gilbertConst*heffX1K1*mx1*mz1 - heffY1K1 * (mx1 + _gilbertConst * my1 * mz1));
 
-            mx1K1 = -1 * _gyroMagConst * (my1 * HeffZ1K1 - mz1 * HeffY1K1);
-            my1K1 = +1 * _gyroMagConst * (mx1 * HeffZ1K1 - mz1 * HeffX1K1);
-            mz1K1 = -1 * _gyroMagConst * (mx1 * HeffY1K1 - my1 * HeffX1K1);
+            //mx1K1 = -1 * _gyroMagConst * (my1 * heffZ1K1 - mz1 * heffY1K1);
+            //my1K1 = +1 * _gyroMagConst * (mx1 * heffZ1K1 - mz1 * heffX1K1);
+            //mz1K1 = -1 * _gyroMagConst * (mx1 * heffY1K1 - my1 * heffX1K1);
 
             mxEstMid[spin] = mx1 + mx1K1*_stepsizeHalf;
             myEstMid[spin] = my1 + my1K1*_stepsizeHalf;
@@ -376,46 +349,19 @@ void Numerical_Methods_Class::RK2LLG() {
             HeffY2K2 = _chainJVals[LHS_spin] * my2LHS + _chainJVals[spin] * my2RHS;
             HeffZ2K2 = _chainJVals[LHS_spin] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
 
-            //mx2K2 = _gyroMagConst * (- (_gilbertConst * HeffY2K2 * mx2 * my2) + HeffY2K2 * mz2 - HeffZ2K2 * (my2 + _gilbertConst*mx2*mz2) + _gilbertConst * HeffX2K2 * (pow(my2,2) + pow(mz2,2)));
-            //my2K2 = _gyroMagConst * (-(HeffX2K2*mz2) + HeffZ2K2 * (mx2 - _gilbertConst * my2 * mz2) + _gilbertConst * (HeffY2K2 * pow(mx2,2) - HeffX2K2 * mx2 * my2 + HeffY2K2 * pow(mz2,2)));
-            //mz2K2 = _gyroMagConst * (HeffX2K2 * my2 + _gilbertConst * HeffZ2K2*(pow(mx2,2) + pow(my2,2)) - _gilbertConst*HeffX2K2*mx2*mz2 - HeffY2K2 * (mx2 + _gilbertConst * my2 * mz2));
+            mx2K2 = _gyroMagConst * (- (_gilbertConst * HeffY2K2 * mx2 * my2) + HeffY2K2 * mz2 - HeffZ2K2 * (my2 + _gilbertConst*mx2*mz2) + _gilbertConst * HeffX2K2 * (pow(my2,2) + pow(mz2,2)));
+            my2K2 = _gyroMagConst * (-(HeffX2K2*mz2) + HeffZ2K2 * (mx2 - _gilbertConst * my2 * mz2) + _gilbertConst * (HeffY2K2 * pow(mx2,2) - HeffX2K2 * mx2 * my2 + HeffY2K2 * pow(mz2,2)));
+            mz2K2 = _gyroMagConst * (HeffX2K2 * my2 + _gilbertConst * HeffZ2K2*(pow(mx2,2) + pow(my2,2)) - _gilbertConst*HeffX2K2*mx2*mz2 - HeffY2K2 * (mx2 + _gilbertConst * my2 * mz2));
 
-            mx2K2 = -1 * _gyroMagConst * ( my2*HeffZ2K2 - mz2*HeffY2K2 );
-            my2K2 = +1 * _gyroMagConst * ( mx2*HeffZ2K2 - mz2*HeffX2K2 );
-            mz2K2 = -1 * _gyroMagConst * ( mx2*HeffY2K2 - my2*HeffX2K2 );
+            //mx2K2 = -1 * _gyroMagConst * ( my2*HeffZ2K2 - mz2*HeffY2K2 );
+            //my2K2 = +1 * _gyroMagConst * ( mx2*HeffZ2K2 - mz2*HeffX2K2 );
+            //mz2K2 = -1 * _gyroMagConst * ( mx2*HeffY2K2 - my2*HeffX2K2 );
 
             mxNextVal[spin] = _mxStartVal[spin] + mx2K2*_stepsize;
             myNextVal[spin] = _myStartVal[spin] + my2K2*_stepsize;
             mzNextVal[spin] = _mzStartVal[spin] + mz2K2*_stepsize;
 
-            if (_shouldDebug) {
-                if (mxNextVal[spin] >= 5000) {
-                    std::cout << "Error. Value of mx was greater than 5000 at spin(" << spin << "), iter("
-                              << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
-                              << _stepsize << std::endl;
-                    exit(3);
-                }
 
-                if (myNextVal[spin] >= 5000) {
-                    std::cout << "Error. Value of my was greater than 5000 at spin(" << spin << "), iter("
-                              << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
-                              << _stepsize << std::endl;
-                    exit(3);
-                }
-
-                if (mzNextVal[spin] >= 5000) {
-                    std::cout << "Error. Value of mz was greater than 5000 at spin(" << spin << "), iter("
-                              << iterationIndex << ")." << std::flush;
-                    std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
-                              << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
-                              << _stepsize << std::endl;
-                    exit(3);
-                }
-            }
         } // Final line of the RK2 solvers for this iteration. Everything below here is part of the class function, but not the internal RK2 stage loops
 
         // Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear these between
@@ -427,77 +373,32 @@ void Numerical_Methods_Class::RK2LLG() {
         myEstMid.clear();
         mzEstMid.clear();
 
-        /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
-         * statement (default: 0.01 indicates how often the writing should occur. A value of 0.01 would mean writing
-         * should occur every 1% of progress through the simulation
-
-
-        if ( iterationIndex % int(_stopIterVal*0.01) == 0 ) {
-            std::cout << "Reporting Point: " << ++reportingPoint << "%" <<std::endl;
-            //std::cout << "Reporting Point: " << iterationIndex << " iterations." << std::endl;
-             *  Code this is useful for debugging
-             *  std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
-             *  std::cout << "RegionLHS: " << _drivingRegionLHS << "; RegionWidth: " << _drivingRegionWidth << "; RegionRHS: " << _drivingRegionRHS << std::endl;
-             *  std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
-             *  printtest.PrintVector(mxNextVal);
-
+        for (int j = 0; j <= GV.GetNumSpins(); j++) {
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
-            for (int j = 1; j < GV.GetNumSpins() + 1; j++) {
-                mxRK2File << mxNextVal[j] << ",";
-                myRK2File << myNextVal[j] << ",";
-                mzRK2File << mzNextVal[j] << ",";
+            if (j == 0) {
+                // Print current time
+                mxRK2File << (iterationIndex * _stepsize) << ",";
+                //myRK2File << (iterationIndex * _stepsize) << ",";
+                //mzRK2File << (iterationIndex * _stepsize) << ",";
 
+            }else if (j == GV.GetNumSpins()) {
                 // Ensures that the final line doesn't contain a comma
-                if (j == GV.GetNumSpins()) {
-                    mxRK2File << mxNextVal[j] << std::flush;
-                    myRK2File << myNextVal[j] << std::flush;
-                    mzRK2File << mzNextVal[j] << std::flush;
-                }
+                mxRK2File << mxNextVal[j] << std::flush;
+                //myRK2File << myNextVal[j] << std::flush;
+                //mzRK2File << mzNextVal[j] << std::flush;
+            } else {
+                // For non-special values, write the data
+                mxRK2File << mxNextVal[j] << ",";
+                //myRK2File << myNextVal[j] << ",";
+                //mzRK2File << mzNextVal[j] << ",";
             }
-
-
-            // Housekeeping
-            mxRK2File << std::endl;
-            myRK2File << std::endl;
-            mzRK2File << std::endl;
         }
-        */
 
-        if ( iterationIndex % int(_stopIterVal * 1e-6) == 0 ) {
-            //std::cout << "Reporting Point: " << iterationIndex << std::endl;
-            //std::cout << "Reporting Point: " << iterationIndex << " iterations." << std::endl;
-            /*  Code this is useful for debugging
-             *  std::cout << "Numspins: " << GV.GetNumSpins() << "; const Jmin: " << GV.GetExchangeMinVal() << "; const Jmax: " << GV.GetExchangeMaxVal() << std::endl;
-             *  std::cout << "RegionLHS: " << _drivingRegionLHS << "; RegionWidth: " << _drivingRegionWidth << "; RegionRHS: " << _drivingRegionRHS << std::endl;
-             *  std::cout << "StepSize: " << _stepsize << "; HalfStepSize: " << _stepsizeHalf << "; TotalTime: " << _totalTime << "\n\n" << std::endl;
-             *  printtest.PrintVector(mxNextVal); */
+        // Housekeeping
+        mxRK2File << std::endl;
+        //myRK2File << std::endl;
+        //mzRK2File << std::endl;
 
-            for (int j = 0; j <= GV.GetNumSpins(); j++) {
-                // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
-                if (j == 0) {
-                    // Print current time
-                    mxRK2File << (iterationIndex * _stepsize) << ",";
-                    myRK2File << (iterationIndex * _stepsize) << ",";
-                    mzRK2File << (iterationIndex * _stepsize) << ",";
-
-                }else if (j == GV.GetNumSpins()) {
-                    // Ensures that the final line doesn't contain a comma
-                    mxRK2File << mxNextVal[j] << std::flush;
-                    myRK2File << myNextVal[j] << std::flush;
-                    mzRK2File << mzNextVal[j] << std::flush;
-                } else {
-                    // For non-special values, write the data
-                    mxRK2File << mxNextVal[j] << ",";
-                    myRK2File << myNextVal[j] << ",";
-                    mzRK2File << mzNextVal[j] << ",";
-                }
-            }
-
-            // Housekeeping
-            mxRK2File << std::endl;
-            myRK2File << std::endl;
-            mzRK2File << std::endl;
-        }
 
         /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
          * value of the next iteration (y_n) */
@@ -508,8 +409,8 @@ void Numerical_Methods_Class::RK2LLG() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
-    myRK2File.close();
-    mzRK2File.close();
+    //myRK2File.close();
+    //mzRK2File.close();
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "Finished RK2 with: stepSize = " << _stepsize << "; maxsimtime = " << _maxSimTime << "; filename = " << GV.GetFileNameBase() <<  std::endl;
@@ -547,8 +448,8 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
     std::cout << "\nBeginning simulation...";
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
-     * confusion with the stepsize (h) which is referred to as a step or halfstep (h/2)*/
-    for (long iterationIndex = _startIterVal; iterationIndex <= (long) _stopIterVal; iterationIndex++) {
+     * confusion with the stepsize (h) which is referred to as a step or half-step (h/2)*/
+    for (long iterationIndex = static_cast<long>(_startIterVal); iterationIndex <= (long) _stopIterVal; iterationIndex++) {
 
 
         if (iterationIndex >= (long)_stopIterVal*0.5){
@@ -591,7 +492,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
             double mz1 = _mzStartVal[spinMid1], mz1LHS = _mzStartVal[spinToLHS1], mz1RHS = _mzStartVal[spinToRHS1];
 
             double mx1K1, my1K1, mz1K1; // These are the estimations of the slopes at the beginning of the interval for each magnetic moment component
-            double HeffX1K1, HeffY1K1, HeffZ1K1; // The effective field component acting upon each spin
+            double HeffX1K1, HeffY1K1, heffZ1K1; // The effective field component acting upon each spin
 
             if (spinMid1 >= _drivingRegionLHS && spinMid1 <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
@@ -605,12 +506,12 @@ void Numerical_Methods_Class::RK2Shockwaves() {
             // No changes are made to the effective field in the y-direction
             HeffY1K1 = _chainJVals[spinToLHS1] * my1LHS + _chainJVals[spinMid1] * my1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
-            HeffZ1K1 = _chainJVals[spinToLHS1] * mz1LHS + _chainJVals[spinMid1] * mz1RHS + _biasField;
+            heffZ1K1 = _chainJVals[spinToLHS1] * mz1LHS + _chainJVals[spinMid1] * mz1RHS + _biasField;
 
             /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the
              * first stage of RK2.*/
-            mx1K1 = -1 * _gyroMagConst * (my1 * HeffZ1K1 - mz1 * HeffY1K1);
-            my1K1 = +1 * _gyroMagConst * (mx1 * HeffZ1K1 - mz1 * HeffX1K1);
+            mx1K1 = -1 * _gyroMagConst * (my1 * heffZ1K1 - mz1 * HeffY1K1);
+            my1K1 = +1 * _gyroMagConst * (mx1 * heffZ1K1 - mz1 * HeffX1K1);
             mz1K1 = -1 * _gyroMagConst * (mx1 * HeffY1K1 - my1 * HeffX1K1);
 
             mxEstMid[spinMid1] = mx1 + mx1K1*_stepsizeHalf;
@@ -672,11 +573,14 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
         /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
          * statement (default: 0.01 indicates how often the writing should occur. A value of 0.01 would mean writing
-         * should occur every 1% of progress through the simulation*/
+         * should occur every 1% of progress through the simulation)*/
         if ( iterationIndex % int(_stopIterVal*(1.0/_numberOfDataPoints)) == 0 ) { // Value MUST be 1.0 to ensure correct casting
 
             //
-            mxRK2ShockwaveFile << mxNextVal[_drivingRegionLHS] << ", "<< mxNextVal[_drivingRegionRHS] << ", "<< mxNextVal[int(1+GV.GetNumSpins()*0.5)] << ", " << mxNextVal[int(1+GV.GetNumSpins())] << "\n";
+            mxRK2ShockwaveFile << mxNextVal[_drivingRegionLHS] << ", "
+                               << mxNextVal[_drivingRegionRHS] << ", "
+                               << mxNextVal[int(1+GV.GetNumSpins()*0.5)]
+                               << ", " << mxNextVal[int(1+GV.GetNumSpins())] << "\n";
 
         }
 
@@ -713,4 +617,33 @@ void Numerical_Methods_Class::StreamToString() {
     
     stepsizeObj.clear();
     stopiterObj.clear();
+}
+
+void Numerical_Methods_Class::Debug_Options(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex) {
+        if (mxNextVal[spin] >= 5000) {
+            std::cout << "Error. Value of mx was greater than 5000 at spin(" << spin << "), iter("
+                      << iterationIndex << ")." << std::flush;
+            std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
+                      << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
+                      << _stepsize << std::endl;
+            exit(3);
+        }
+
+        if (myNextVal[spin] >= 5000) {
+            std::cout << "Error. Value of my was greater than 5000 at spin(" << spin << "), iter("
+                      << iterationIndex << ")." << std::flush;
+            std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
+                      << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
+                      << _stepsize << std::endl;
+            exit(3);
+        }
+
+        if (mzNextVal[spin] >= 5000) {
+            std::cout << "Error. Value of mz was greater than 5000 at spin(" << spin << "), iter("
+                      << iterationIndex << ")." << std::flush;
+            std::cout << " Test info as follows: numSpins = " << GV.GetNumSpins() << "; starting spin = "
+                      << _drivingRegionLHS << "; itermax = " << _stopIterVal << "; stepSize: "
+                      << _stepsize << std::endl;
+            exit(3);
+        }
 }
