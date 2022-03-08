@@ -4,6 +4,7 @@
 
 int main() {
 
+    // GitHub Token: ***REMOVED*** (works as of 08 Mar 22)
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
 
