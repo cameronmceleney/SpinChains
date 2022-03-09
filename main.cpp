@@ -4,6 +4,7 @@
 
 int main() {
 
+    // GitHub Token: ***REMOVED*** (works as of 08 Mar 22)
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
 
@@ -13,7 +14,7 @@ int main() {
     //std::cout << "Enter the number of spins in the chain: ";
     //std::cin >> in_numSpins; // Takes user input for the number of spins
     //GV.SetNumSpins(in_numSpins);
-    GV.SetNumSpins(1);
+    GV.SetNumSpins(3);
 
     //double in_exchangeMin;
     //std::cout << "Enter the minimum exchange value: ";
