@@ -22,7 +22,7 @@ private:
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width
 
-    double              _gilbertConst = 10e-4;                   // Gilbert Damping Factor
+    double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio (GHz/T). 29.2E9 is the numerical value of the gyromagetic ratio of the electron divided by 2pi
     bool                _hasShockWaveBegan;
     double              _magSat = 1.0;                          // Saturation Magnetisation (T). Note: 1A/m = 1.254uT. Must be in Telsa,
