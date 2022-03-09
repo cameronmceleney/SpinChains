@@ -19,12 +19,12 @@ void Numerical_Methods_Class::NMSetup() {
 
     //std::cout << "Enter the stepsize: ";
     //std::cin >> _stepsize;
-    _stepsize = 4.82e-15 / 5;
+    _stepsize = 2.353e-12;
     _stepsizeHalf = _stepsize / 2.0;
     
     //std::cout << "Enter the maximum number of iterations: ";
     //std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
-    _stopIterVal = 8.3022e6 * 5;
+    _stopIterVal = 16700;
     _maxSimTime = _stepsize * _stopIterVal;
 
     _linearFMR = (_gyroMagConst / 2 * M_PI) * sqrt(_biasField * (_biasField + 4 * M_PI * _magSat)) / 1e9;
@@ -288,15 +288,9 @@ void Numerical_Methods_Class::RK2LLG() {
             double mx1K1, my1K1, mz1K1; // These are the estimations of the slopes at the beginning of the interval for each magnetic moment component
             double heffX1K1, heffY1K1, heffZ1K1; // The effective field component acting upon each spin
 
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
-                // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-                // removed + _biasFieldDriving*cos(_drivingAngFreq * t0)
-                heffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS + _biasFieldDriving * cos(_drivingAngFreq * t0);
-            } else {
-                // The else statement includes all spins along x which are not within the driving region
-                heffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS;
-            }
-
+            // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
+            // removed + _biasFieldDriving*cos(_drivingAngFreq * t0)
+            heffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS + _biasFieldDriving * cos(_drivingAngFreq * t0);
             // No changes are made to the effective field in the y-direction
             heffY1K1 = _chainJVals[LHS_spin] * my1LHS + _chainJVals[spin] * my1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
@@ -339,13 +333,9 @@ void Numerical_Methods_Class::RK2LLG() {
             double mx2K2, my2K2, mz2K2;
             double HeffX2K2, HeffY2K2, HeffZ2K2;
 
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
-                // Driving region must be consistently applied at every stage of the RK2 method
-                HeffX2K2 = _chainJVals[LHS_spin] * mx2LHS + _chainJVals[spin] * mx2RHS + _biasFieldDriving*cos(_drivingAngFreq * t0HalfStep);
-            } else {
-                HeffX2K2 = _chainJVals[LHS_spin] * mx2LHS + _chainJVals[spin] * mx2RHS;
-            }
 
+            // Driving region must be consistently applied at every stage of the RK2 method
+            HeffX2K2 = _chainJVals[LHS_spin] * mx2LHS + _chainJVals[spin] * mx2RHS + _biasFieldDriving*cos(_drivingAngFreq * t0HalfStep);
             HeffY2K2 = _chainJVals[LHS_spin] * my2LHS + _chainJVals[spin] * my2RHS;
             HeffZ2K2 = _chainJVals[LHS_spin] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
 
