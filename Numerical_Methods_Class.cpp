@@ -8,7 +8,6 @@ void Numerical_Methods_Class::NMSetup() {
     
     // Calculate Numerical_Methods_Class members which are only dependent upon the user's prior input
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
-    _mzInit = _magSat;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
 
     //std::cout << "Enter the LHS spin position for the driving region (minval=1): ";
@@ -17,17 +16,13 @@ void Numerical_Methods_Class::NMSetup() {
     _drivingRegionWidth = int(GV.GetNumSpins() * 0.05);
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
-    //std::cout << "Enter the stepsize: ";
-    //std::cin >> _stepsize;
-    _stepsize = 2.353e-12;
+    _stepsize = 2.857e-10 * 1e-3; // This is (1 / _drivingFreq)
     _stepsizeHalf = _stepsize / 2.0;
-    
-    //std::cout << "Enter the maximum number of iterations: ";
-    //std::cin >> _stopIterVal; // Can be inputted in scientific notation or as a float
-    _stopIterVal = 16700;
+
+    _stopIterVal = 40 * 1e3;
     _maxSimTime = _stepsize * _stopIterVal;
 
-    _linearFMR = (_gyroMagConst / 2 * M_PI) * sqrt(_biasField * (_biasField + 4 * M_PI * _magSat)) / 1e9;
+    _linearFMR = (_gyroMagConst / 2 * M_PI) * sqrt(_biasField * (_biasField + 4 * M_PI * _magSat)) / 1e9; // Only here for testing
 
     std::cout << "\nThis will simulate a time of " << _maxSimTime << "[s]." << std::endl;
 

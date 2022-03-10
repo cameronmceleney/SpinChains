@@ -8,8 +8,8 @@ class Numerical_Methods_Class {
 private:
 //  Dtype               Member Name                             //Comment
 
-    double              _biasField = 0.1;                       // Bias field (T)
-    double              _biasFieldDriving = 0.35;                // Driving field amplitude [T] (caution: papers often give in mT)
+    double              _biasField = 0.1;                       // Bias field (T). Often written as H or H-static in literature
+    double              _biasFieldDriving = 0.2;               // Driving field amplitude [T] (caution: papers often give in mT)
     double              _biasFieldDrivingScale = 0;             // The factor by which the driving field amplitude will be modulated
     double              _biasFieldDrivingUse;                   // Value to be used after bool statement. Will be either _biasFieldDrivingInit or _biasFieldDrivingShock
     double              _biasFieldDrivingInit;                  // Driving field amplitude [T] for use prior to shockwave. Commonly will be set to equal _biasFieldDriving
@@ -17,7 +17,7 @@ private:
     std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
 
     double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field[rad*s^{-1}]
-    double              _drivingFreq = 42.5 * 1e9;              // Frequency of oscillatory driving field [GHz] (f_d in literature) (default: 10 * 6.045 * 1e9)
+    double              _drivingFreq = 3.5 * 1e9;               // Frequency of oscillatory driving field [GHz] (f_d in literature) (default: 10 * 6.045 * 1e9)
     int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width
@@ -34,7 +34,7 @@ private:
     std::vector<double> _mzStartVal{0};                         // Vector containing magnetic components (m) along the z-axis (z) at the initial conditions for all spins
     double              _mxInit = 0;                            // The initial value of the magnetic moment (m) along the x-direction. Normalised to mZInit (1.0 = 100% of mzInit)
     double              _myInit = 0;                            // The initial value of the magnetic moment (m) along the y-direction. Normalised to mZInit (1.0 = 100% of mzInit)
-    double              _mzInit;                                // The initial value of the magnetic moment (m) along the z-direction.
+    double              _mzInit = 1.0;                                // The initial value of the magnetic moment (m) along the z-direction.
 
     int                 _numberOfDataPoints = 100;             // How many data-points will be saved. Higher number gives greater precision, but drastically increases filesize. Default is 100.
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
