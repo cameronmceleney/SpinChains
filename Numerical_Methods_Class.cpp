@@ -19,7 +19,7 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsize = 2.857e-10 * 1e-3; // This is (1 / _drivingFreq)
     _stepsizeHalf = _stepsize / 2.0;
 
-    _stopIterVal = 40 * 1e3;
+    _stopIterVal = 141 * 1e3;
     _maxSimTime = _stepsize * _stopIterVal;
 
     _linearFMR = (_gyroMagConst / 2 * M_PI) * sqrt(_biasField * (_biasField + 4 * M_PI * _magSat)) / 1e9; // Only here for testing
@@ -38,7 +38,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
     std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
-    
+
     // Appends initial conditions to the vectors
     _mxStartVal.insert(_mxStartVal.end(), mxInitCond.begin(), mxInitCond.end());
     _myStartVal.insert(_myStartVal.end(), myInitCond.begin(), myInitCond.end());
@@ -47,6 +47,7 @@ void Numerical_Methods_Class::NMSetup() {
     _mxStartVal.push_back(0);
     _myStartVal.push_back(0);
     _mzStartVal.push_back(0);
+
     // Delete temporary vectors that held the initial conditions
     mxInitCond.clear();
     myInitCond.clear();
@@ -285,7 +286,12 @@ void Numerical_Methods_Class::RK2LLG() {
 
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             // removed + _biasFieldDriving*cos(_drivingAngFreq * t0)
-            heffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS + _biasFieldDriving * cos(_drivingAngFreq * t0);
+            if (spin == 1) {
+                heffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS +
+                           _biasFieldDriving * cos(_drivingAngFreq * t0);
+            } else {
+                heffX1K1 = _chainJVals[LHS_spin] * mx1LHS + _chainJVals[spin] * mx1RHS;
+            }
             // No changes are made to the effective field in the y-direction
             heffY1K1 = _chainJVals[LHS_spin] * my1LHS + _chainJVals[spin] * my1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
@@ -328,9 +334,13 @@ void Numerical_Methods_Class::RK2LLG() {
             double mx2K2, my2K2, mz2K2;
             double HeffX2K2, HeffY2K2, HeffZ2K2;
 
-
             // Driving region must be consistently applied at every stage of the RK2 method
-            HeffX2K2 = _chainJVals[LHS_spin] * mx2LHS + _chainJVals[spin] * mx2RHS + _biasFieldDriving*cos(_drivingAngFreq * t0HalfStep);
+            if (spin == 1) {
+                HeffX2K2 = _chainJVals[LHS_spin] * mx2LHS + _chainJVals[spin] * mx2RHS
+                + _biasFieldDriving*cos(_drivingAngFreq * t0HalfStep);
+            } else {
+                HeffX2K2 = _chainJVals[LHS_spin] * mx2LHS + _chainJVals[spin] * mx2RHS;
+            }
             HeffY2K2 = _chainJVals[LHS_spin] * my2LHS + _chainJVals[spin] * my2RHS;
             HeffZ2K2 = _chainJVals[LHS_spin] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
 
@@ -383,7 +393,6 @@ void Numerical_Methods_Class::RK2LLG() {
         mxRK2File << std::endl;
         //myRK2File << std::endl;
         //mzRK2File << std::endl;
-
 
         /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
          * value of the next iteration (y_n) */
