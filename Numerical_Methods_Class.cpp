@@ -16,10 +16,12 @@ void Numerical_Methods_Class::NMSetup() {
     _drivingRegionWidth = int(GV.GetNumSpins() * 0.05);
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
-    _stepsize = 2.857e-10 * 1e-3; // This is (1 / _drivingFreq)
+    _stepsize = 2.857e-15; // This is (1 / _drivingFreq)
     _stepsizeHalf = _stepsize / 2.0;
 
-    _stopIterVal = 141 * 1e3;
+    // _stopIterVal = ceil(40e-9 / _stepsize) * 1e2;
+    _stopIterVal = 141000 * 5;
+
     _numberOfDataPoints = _stopIterVal;
     _maxSimTime = _stepsize * _stopIterVal;
 
@@ -381,7 +383,7 @@ void Numerical_Methods_Class::RK2LLG() {
                 //myRK2File << (iterationIndex * _stepsize) << ",";
                 //mzRK2File << (iterationIndex * _stepsize) << ",";
 
-            }else if (j == GV.GetNumSpins()) {
+            } else if (j == GV.GetNumSpins()) {
                 // Ensures that the final line doesn't contain a comma
                 mxRK2File << mxNextVal[j] << std::flush;
                 //myRK2File << myNextVal[j] << std::flush;
@@ -587,7 +589,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
     std::cout << "\nFinished RK2 with: stepsize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
 }
 
-void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bool isSingleSpin) {
+void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bool list_of_spins) {
 
     outputFileName << "Key Data\n" << std::endl;
     outputFileName << "Bias Field (H0) [T], Bias Field (Driving) [T], "
@@ -604,8 +606,14 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
 
     outputFileName << "\n[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n\n";
     // outputFileName << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
-    if (isSingleSpin) {
-        outputFileName << "Time, " << "1" << std::endl;
+    if (list_of_spins) {
+        // Print column heading for every spin simulated.
+        outputFileName << "Time";
+        for (int i = 1; i <= GV.GetNumSpins(); i++) {
+            outputFileName << "," << i;
+        }
+        outputFileName << std::endl;
+
     } else {
         outputFileName << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
     }
