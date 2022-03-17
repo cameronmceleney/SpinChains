@@ -8,7 +8,7 @@ int main() {
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
 
-    bool query = false;
+    GV.SetFilePath();
 
     //int in_numSpins; // number of spins in the chain
     //std::cout << "Enter the number of spins in the chain: ";
@@ -29,20 +29,19 @@ int main() {
     GV.SetExchangeMaxVal(43.5);
 
     std::string in_fileNameBase; //Better name might be fileID
-    std::cout << "Enter the unique identifier that all filenames will share: ";
+    std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("LLGTest"+in_fileNameBase);
 
-    if (query) {
-        std::string in_filePath;
-        std::cout << "Enter the absolute path to the directory to save data: ";
-        std::cin >> in_filePath;
-        GV.SetFilePath(in_filePath);
-    }
+    /*
+    std::string in_filePath;
+    std::cout << "Enter the absolute path to the directory to save data: ";
+    std::cin >> in_filePath;
+    GV.SetFilePath(in_filePath);
 
-    if (query) {
-        SolverClass.CalculateEigFreqs();
-    }
+    SolverClass.CalculateEigFreqs();
+    */
+
     RK2_method_use.NMSetup();
     RK2_method_use.RK2LLG();
 

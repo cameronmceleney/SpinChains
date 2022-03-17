@@ -20,6 +20,7 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsizeHalf = _stepsize / 2.0;
 
     _stopIterVal = 141 * 1e3;
+    _numberOfDataPoints = _stopIterVal;
     _maxSimTime = _stepsize * _stopIterVal;
 
     _linearFMR = (_gyroMagConst / 2 * M_PI) * sqrt(_biasField * (_biasField + 4 * M_PI * _magSat)) / 1e9; // Only here for testing
@@ -231,6 +232,9 @@ void Numerical_Methods_Class::RK2LLG() {
     //std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
     //std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
 
+    CreateFileHeader(mxRK2File, true);
+
+    /*
     for (int i = 0; i <= GV.GetNumSpins(); i++) {
 
         if (i == 0) {
@@ -250,6 +254,7 @@ void Numerical_Methods_Class::RK2LLG() {
             //mzRK2File << "Spin Site #" << i << ",";
         }
     }
+    */
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or half-step (h/2)*/
@@ -407,7 +412,7 @@ void Numerical_Methods_Class::RK2LLG() {
     //mzRK2File.close();
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
-    std::cout << "Finished RK2 with: stepSize = " << _stepsize << "; maxsimtime = " << _maxSimTime << "; filename = " << GV.GetFileNameBase() <<  std::endl;
+    std::cout << "\nFile can be found at:\n" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
 void Numerical_Methods_Class::RK2Shockwaves() {
@@ -424,21 +429,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
     // Create files to save the data. All files will have (FileNameBase) in them to make them clearly identifiable.
     std::ofstream mxRK2ShockwaveFile(GV.GetFilePath()+"rk2Shockwave_"+GV.GetFileNameBase()+".csv");
 
-    mxRK2ShockwaveFile << "Key Data\n" << std::endl;
-    mxRK2ShockwaveFile << "Bias Field (H0) [T], Bias Field (Driving) [T], "
-                          "Bias Field Driving Scale, Driving Frequency [Hz], Driving Region Start Site, Driving Region End Site, Driving Region Width,"
-                          "Max. Sim. Time [s], Max. Exchange Val [T], Max. Iterations, Min. Exchange Val [T], "
-                          "Num. DataPoints, Num. Spins, Stepsize (h)\n";
-    mxRK2ShockwaveFile << _biasField << ", " << _biasFieldDriving << ", " << _biasFieldDrivingScale << ", " << _drivingFreq << ", " << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " <<_drivingRegionWidth << ", " << _maxSimTime << ", " << GV.GetExchangeMaxVal() << ", " << _stopIterVal << ", " << GV.GetExchangeMinVal() << ", " << _numberOfDataPoints << ", " << GV.GetNumSpins() << ", " << _stepsize << "\n\n";
-
-    std::string notesComments;
-    std::cout << "Enter any notes for this simulation: ";
-    std::cin.ignore();
-    std::getline(std::cin, notesComments );
-    mxRK2ShockwaveFile << "Note(s):," << notesComments; // Adding comma ensures the note itself is in a different csv cell to the term 'Note(s):'
-
-    mxRK2ShockwaveFile << "\n[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n\n";
-    mxRK2ShockwaveFile << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
+    CreateFileHeader(mxRK2ShockwaveFile, false);
 
     std::cout << "\nBeginning simulation...";
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
@@ -594,6 +585,31 @@ void Numerical_Methods_Class::RK2Shockwaves() {
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "\nFinished RK2 with: stepsize = " << _stepsize << "; itermax = " << _stopIterVal << "; filename = " << GV.GetFileNameBase() <<  std::endl;
+}
+
+void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bool isSingleSpin) {
+
+    outputFileName << "Key Data\n" << std::endl;
+    outputFileName << "Bias Field (H0) [T], Bias Field (Driving) [T], "
+                          "Bias Field Driving Scale, Driving Frequency [Hz], Driving Region Start Site, Driving Region End Site, Driving Region Width,"
+                          "Max. Sim. Time [s], Max. Exchange Val [T], Max. Iterations, Min. Exchange Val [T], "
+                          "Num. DataPoints, Num. Spins, Stepsize (h)\n";
+    outputFileName << _biasField << ", " << _biasFieldDriving << ", " << _biasFieldDrivingScale << ", " << _drivingFreq << ", " << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " <<_drivingRegionWidth << ", " << _maxSimTime << ", " << GV.GetExchangeMaxVal() << ", " << _stopIterVal << ", " << GV.GetExchangeMinVal() << ", " << _numberOfDataPoints << ", " << GV.GetNumSpins() << ", " << _stepsize << "\n\n";
+
+    std::string notesComments;
+    std::cout << "Enter any notes for this simulation: ";
+    std::cin.ignore();
+    std::getline(std::cin, notesComments );
+    outputFileName << "Note(s):," << notesComments; // Adding comma ensures the note itself is in a different csv cell to the term 'Note(s):'
+
+    outputFileName << "\n[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n\n";
+    // outputFileName << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
+    if (isSingleSpin) {
+        outputFileName << "Time, " << "1" << std::endl;
+    } else {
+        outputFileName << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
+    }
+
 }
 
 void Numerical_Methods_Class::StreamToString() {
