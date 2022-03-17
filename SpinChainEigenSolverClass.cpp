@@ -29,11 +29,10 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     _matrixValues(_totalEquations, _totalEquations); // Generates the matrix but does not allocate memory. That is done as each element is calculated
     _matrixValues = populate_matrix();
-    std::cout << "The populated matrix is :\n" << _matrixValues << std::endl;
+    // std::cout << "The populated matrix is :\n" << _matrixValues << std::endl;
 
     Eigen::EigenSolver <Matrix_xd> eigenSolverMatrixValues(_matrixValues);
-    std::cout << "The eigenvalues are :\n" << eigenSolverMatrixValues.eigenvalues() << std::endl;
-    exit(0);
+    // std::cout << "The eigenvalues are :\n" << eigenSolverMatrixValues.eigenvalues() << std::endl;
 
     auto stopTimeFindEigens = std::chrono::system_clock::now();
     auto durationTimeFindEigens = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeFindEigens - startTimeFindEigens);
@@ -97,7 +96,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
 
     exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins(), true);
     exchangeValues.generate_array();
-    _chainExchangeValues = exchangeValues.build_spinchain();
+    _chainJValues = exchangeValues.build_spinchain();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
      * than using an eigen-solver library to find the roots of a characteristic equation populated by angular_frequency values. The outputted
@@ -105,14 +104,14 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
      * angular_frequency/(2*Pi) for each given eigenvalue. */
 
     // static double angular_frequency = 0;
-    int iLinkingJ = 0; // Ensures a spin has the same exchange integral values on its LHS and RHS used in the spin's associated coupled equations
+    // int JVal = 0; // Ensures a spin has the same exchange integral values on its LHS and RHS used in the spin's associated coupled equations
     const long totalEquations = GV.GetNumSpins() * 2; // Each spin has an x- and y-axis dependent coupled equation normalised to the z-component. Thus, two equations total
 
     Matrix_xd matrixToFill(totalEquations, totalEquations); // Each (spin) site location comprises two consecutive rows in matrixToFill
 
     matrixToFill.setZero(); // Large matrix of known size so more computationally efficient to predefine size in memory
 
-    for (long row = 0; row < totalEquations; row++) {
+    for (int row = 0, JVal = 0; row < totalEquations; row++, JVal++) {
         /* Where an element is matrixToFill(index, index) = 0), this indicates that the element would be a diagonal
          * element of the matrix. While the full computation would be matrixToFill(index, index) =  -1.0  * angular_frequency / _gyroscopicMagneticConstant;),
          * this is an unnecessary series of computations as angular_frequency = 0 is strictly true in this code.*/
@@ -123,21 +122,21 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
             if (row == 0) {
                 // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
                 matrixToFill(row,0) = 0;
-                matrixToFill(row,1) = ( 0 +  _chainExchangeValues[iLinkingJ + 1] + _biasField);
-                matrixToFill(row,3) = -1.0 *  _chainExchangeValues[iLinkingJ + 1];
+                matrixToFill(row,1) = ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + _biasField);
+                matrixToFill(row,3) = -1.0 *  _chainJValues[JVal + 1];
 
             } else if (row > 0 and row < totalEquations - 2) {
                 // Handles all other even-numbered rows
-                matrixToFill(row,row - 1) = -1.0 *  _chainExchangeValues[iLinkingJ];
+                matrixToFill(row,row - 1) = -1.0 *  _chainJValues[JVal];
                 matrixToFill(row,row + 0) = 0;
-                matrixToFill(row,row + 1) = ( _chainExchangeValues[iLinkingJ] +  _chainExchangeValues[iLinkingJ + 1] + _biasField);
-                matrixToFill(row,row + 3) = -1.0 *  _chainExchangeValues[iLinkingJ + 1];
+                matrixToFill(row,row + 1) = _chainJValues[JVal] +  _chainJValues[JVal + 1] + _biasField;
+                matrixToFill(row,row + 3) = -1.0 *  _chainJValues[JVal + 1];
 
             } else if (row == totalEquations - 2) {
                 // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                matrixToFill(row,totalEquations - 1) = ( _chainExchangeValues[iLinkingJ] +  0 + _biasField);
+                matrixToFill(row,totalEquations - 1) = ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + _biasField);
                 matrixToFill(row,totalEquations - 2) = 0;
-                matrixToFill(row,totalEquations - 3) = -1.0 *  _chainExchangeValues[iLinkingJ];
+                matrixToFill(row,totalEquations - 3) = -1.0 *  _chainJValues[JVal];
 
             } else {
                 // TODO Legacy error handling which needs updating (dm_x/dt rows)
@@ -152,22 +151,22 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
 
             if (row == 1) {
                 // Exception for the first dm_y/dt row (2nd matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
-                matrixToFill(row,0) = -1.0 * ( 0 +  _chainExchangeValues[iLinkingJ + 1] + _biasField);
+                matrixToFill(row,0) = -1.0 * ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + _biasField);
                 matrixToFill(row,1) = 0;
-                matrixToFill(row,2) =  _chainExchangeValues[iLinkingJ + 1];
+                matrixToFill(row,2) =  _chainJValues[JVal + 1];
 
             } else if (row > 1 and row < totalEquations - 1) {
                 // Handles all other odd-numbered rows
-                matrixToFill(row,row - 3) =  _chainExchangeValues[iLinkingJ];
-                matrixToFill(row,row - 1) = -1.0 * ( _chainExchangeValues[iLinkingJ] +  _chainExchangeValues[iLinkingJ + 1] + _biasField);
+                matrixToFill(row,row - 3) =  _chainJValues[JVal];
+                matrixToFill(row,row - 1) = -1.0 * ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + _biasField);
                 matrixToFill(row,row + 0) = 0;
-                matrixToFill(row,row + 1) =  _chainExchangeValues[iLinkingJ + 1];
+                matrixToFill(row,row + 1) =  _chainJValues[JVal + 1];
 
             } else if (row == totalEquations - 1) {
                 // Exception for the final dm_y/dt row (final matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
                 matrixToFill(row,totalEquations - 1) = 0;
-                matrixToFill(row,totalEquations - 2) = -1.0 * ( _chainExchangeValues[iLinkingJ] +  0 + _biasField);
-                matrixToFill(row,totalEquations - 4) =  _chainExchangeValues[iLinkingJ];
+                matrixToFill(row,totalEquations - 2) = -1.0 * ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + _biasField);
+                matrixToFill(row,totalEquations - 4) =  _chainJValues[JVal];
 
             } else {
                 // TODO Legacy error handling which needs updating (dm_y/dt rows)
@@ -175,7 +174,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
                 std::exit(3);
             }
 
-            iLinkingJ += 1; // Solving one set of coupled equations means the tracker can be increased to reflect moving along one spin site position in the chain
+            // JVal += 1; // Solving one set of coupled equations means the tracker can be increased to reflect moving along one spin site position in the chain
         }
 
         else {
@@ -185,7 +184,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
         }
     }
 
-    matrixToFill *= 1; // LLG equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
+    matrixToFill *= _gyroMagConst; // LLG equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
 
     return matrixToFill;
 }

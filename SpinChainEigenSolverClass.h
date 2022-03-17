@@ -8,10 +8,10 @@ class SpinChainEigenSolverClass {
 private:
 //  Dtype               Member Name                             //Comment
     double              _biasField = 0.1;
-    std::vector<double> _chainExchangeValues;
+    std::vector<double> _chainJValues;
     std::string         _fileNameEigenSolver = GV.GetFileNameBase() + "spins"; // Creates unique filename by combining the number of spins with the keyword 'spins'
     Eigen::MatrixXd     _generatedMatrix;
-    double              _gyroMagConst = 29.2; // Should not have 2Pi here!
+    double              _gyroMagConst = 29.2 * 2 * M_PI;
     Matrix_xd           _matrixValues;
     int                 _totalEquations;                        //Total number of spins (2*N) is twice the number of spins (N) as there are two coupled equation (dx and dy) for each spin in the chain.
 
