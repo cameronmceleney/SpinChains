@@ -11,7 +11,7 @@ std::string GlobalVariablesClass::GetFilePath() {
     return _filePath;
 }
 void GlobalVariablesClass::SetFilePath() {
-    _filePath = "/Users/cameronmceleney/CLionProjects/Data/"+ FindDateToday() +"/RK2 Shockwaves Tests Data/"; // This filepath is for Mac!
+    _filePath = "/Users/cameronmceleney/CLionProjects/Data/"+ FindDateToday() +"/Simulation_Data/"; // This filepath is for Mac!
     //_filePath = "D:/Data/" + FindDateToday() +"/RK2 Shockwaves Tests Data/" // This filepath is for Windows
 }
 

@@ -19,8 +19,7 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsize = 1e-15;//2.857e-15; // This is (1 / _drivingFreq)
     _stepsizeHalf = _stepsize / 2.0;
 
-    // _stopIterVal = ceil(40e-9 / _stepsize) * 1e2;
-    _stopIterVal = 40000000;//1410000 * 5;
+    _stopIterVal = 2e5;
 
     _numberOfDataPoints = _stopIterVal;
     _maxSimTime = _stepsize * _stopIterVal;
