@@ -25,6 +25,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     auto startTimeFindEigens = std::chrono::system_clock::now(); // Separate start time (from system) for the computation of the eigenvalues
     std::time_t startTimeFindEigens_cTimeUse = std::chrono::system_clock::to_time_t( startTimeFindEigens);
+    std::cout << "\n------------------------------" << "\nEigenvalues and Eigenvectors";
     std::cout << "\nBegan computation at: " << std::ctime(&startTimeFindEigens_cTimeUse) << std::endl; // Useful for long computations where the start time may be forgotten
 
     _matrixValues(_totalEquations, _totalEquations); // Generates the matrix but does not allocate memory. That is done as each element is calculated
@@ -51,7 +52,8 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     std::cout << "Time to write to files: " << durationTimeSaveData.count() << std::endl;
 
     std::time_t stopTimeSaveData_cTimeUse = std::chrono::system_clock::to_time_t(stopTimeSaveData);
-    std::cout << "\nFinished computation at: " << std::ctime(&stopTimeSaveData_cTimeUse) << std::endl;
+    std::cout << "\nFinished computation at: " << std::ctime(&stopTimeSaveData_cTimeUse);
+    std::cout << "\n------------------------------\n";
 
     //std::cout << "Computing V * D * V^(-1) gives: " << std::endl << ces.eigenvectors() * ces.eigenvalues().asDiagonal() * ces.eigenvectors().inverse() << std::endl;
 

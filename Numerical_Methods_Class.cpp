@@ -16,11 +16,11 @@ void Numerical_Methods_Class::NMSetup() {
     _drivingRegionWidth = int(GV.GetNumSpins() * 0.05);
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
-    _stepsize = 2.857e-15; // This is (1 / _drivingFreq)
+    _stepsize = 1e-15;//2.857e-15; // This is (1 / _drivingFreq)
     _stepsizeHalf = _stepsize / 2.0;
 
     // _stopIterVal = ceil(40e-9 / _stepsize) * 1e2;
-    _stopIterVal = 141000 * 5;
+    _stopIterVal = 40000000;//1410000 * 5;
 
     _numberOfDataPoints = _stopIterVal;
     _maxSimTime = _stepsize * _stopIterVal;
@@ -41,6 +41,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
     std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
+    // mxInitCond[0] = _mxInit; // Only perturb initial spin
 
     // Appends initial conditions to the vectors
     _mxStartVal.insert(_mxStartVal.end(), mxInitCond.begin(), mxInitCond.end());
@@ -306,13 +307,13 @@ void Numerical_Methods_Class::RK2LLG() {
 
             /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the
              * first stage of RK2.*/
-            mx1K1 = _gyroMagConst * (- (_gilbertConst * heffY1K1 * mx1 * my1) + heffY1K1 * mz1 - heffZ1K1 * (my1 + _gilbertConst*mx1*mz1) + _gilbertConst * heffX1K1 * (pow(my1,2) + pow(mz1,2)));
-            my1K1 = _gyroMagConst * (-(heffX1K1*mz1) + heffZ1K1 * (mx1 - _gilbertConst * my1 * mz1) + _gilbertConst * (heffY1K1 * pow(mx1,2) - heffX1K1 * mx1 * my1 + heffY1K1 * pow(mz1,2)));
-            mz1K1 = _gyroMagConst * (heffX1K1 * my1 + _gilbertConst * heffZ1K1*(pow(mx1,2) + pow(my1,2)) - _gilbertConst*heffX1K1*mx1*mz1 - heffY1K1 * (mx1 + _gilbertConst * my1 * mz1));
+            //mx1K1 = _gyroMagConst * (- (_gilbertConst * heffY1K1 * mx1 * my1) + heffY1K1 * mz1 - heffZ1K1 * (my1 + _gilbertConst*mx1*mz1) + _gilbertConst * heffX1K1 * (pow(my1,2) + pow(mz1,2)));
+            //my1K1 = _gyroMagConst * (-(heffX1K1*mz1) + heffZ1K1 * (mx1 - _gilbertConst * my1 * mz1) + _gilbertConst * (heffY1K1 * pow(mx1,2) - heffX1K1 * mx1 * my1 + heffY1K1 * pow(mz1,2)));
+            //mz1K1 = _gyroMagConst * (heffX1K1 * my1 + _gilbertConst * heffZ1K1*(pow(mx1,2) + pow(my1,2)) - _gilbertConst*heffX1K1*mx1*mz1 - heffY1K1 * (mx1 + _gilbertConst * my1 * mz1));
 
-            //mx1K1 = -1 * _gyroMagConst * (my1 * heffZ1K1 - mz1 * heffY1K1);
-            //my1K1 = +1 * _gyroMagConst * (mx1 * heffZ1K1 - mz1 * heffX1K1);
-            //mz1K1 = -1 * _gyroMagConst * (mx1 * heffY1K1 - my1 * heffX1K1);
+            mx1K1 = -1 * _gyroMagConst * (my1 * heffZ1K1 - mz1 * heffY1K1);
+            my1K1 = +1 * _gyroMagConst * (mx1 * heffZ1K1 - mz1 * heffX1K1);
+            mz1K1 = -1 * _gyroMagConst * (mx1 * heffY1K1 - my1 * heffX1K1);
 
             mxEstMid[spin] = mx1 + mx1K1*_stepsizeHalf;
             myEstMid[spin] = my1 + my1K1*_stepsizeHalf;
@@ -351,13 +352,13 @@ void Numerical_Methods_Class::RK2LLG() {
             HeffY2K2 = _chainJVals[LHS_spin] * my2LHS + _chainJVals[spin] * my2RHS;
             HeffZ2K2 = _chainJVals[LHS_spin] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
 
-            mx2K2 = _gyroMagConst * (- (_gilbertConst * HeffY2K2 * mx2 * my2) + HeffY2K2 * mz2 - HeffZ2K2 * (my2 + _gilbertConst*mx2*mz2) + _gilbertConst * HeffX2K2 * (pow(my2,2) + pow(mz2,2)));
-            my2K2 = _gyroMagConst * (-(HeffX2K2*mz2) + HeffZ2K2 * (mx2 - _gilbertConst * my2 * mz2) + _gilbertConst * (HeffY2K2 * pow(mx2,2) - HeffX2K2 * mx2 * my2 + HeffY2K2 * pow(mz2,2)));
-            mz2K2 = _gyroMagConst * (HeffX2K2 * my2 + _gilbertConst * HeffZ2K2*(pow(mx2,2) + pow(my2,2)) - _gilbertConst*HeffX2K2*mx2*mz2 - HeffY2K2 * (mx2 + _gilbertConst * my2 * mz2));
+            //mx2K2 = _gyroMagConst * (- (_gilbertConst * HeffY2K2 * mx2 * my2) + HeffY2K2 * mz2 - HeffZ2K2 * (my2 + _gilbertConst*mx2*mz2) + _gilbertConst * HeffX2K2 * (pow(my2,2) + pow(mz2,2)));
+            //my2K2 = _gyroMagConst * (-(HeffX2K2*mz2) + HeffZ2K2 * (mx2 - _gilbertConst * my2 * mz2) + _gilbertConst * (HeffY2K2 * pow(mx2,2) - HeffX2K2 * mx2 * my2 + HeffY2K2 * pow(mz2,2)));
+            //mz2K2 = _gyroMagConst * (HeffX2K2 * my2 + _gilbertConst * HeffZ2K2*(pow(mx2,2) + pow(my2,2)) - _gilbertConst*HeffX2K2*mx2*mz2 - HeffY2K2 * (mx2 + _gilbertConst * my2 * mz2));
 
-            //mx2K2 = -1 * _gyroMagConst * ( my2*HeffZ2K2 - mz2*HeffY2K2 );
-            //my2K2 = +1 * _gyroMagConst * ( mx2*HeffZ2K2 - mz2*HeffX2K2 );
-            //mz2K2 = -1 * _gyroMagConst * ( mx2*HeffY2K2 - my2*HeffX2K2 );
+            mx2K2 = -1 * _gyroMagConst * ( my2*HeffZ2K2 - mz2*HeffY2K2 );
+            my2K2 = +1 * _gyroMagConst * ( mx2*HeffZ2K2 - mz2*HeffX2K2 );
+            mz2K2 = -1 * _gyroMagConst * ( mx2*HeffY2K2 - my2*HeffX2K2 );
 
             mxNextVal[spin] = _mxStartVal[spin] + mx2K2*_stepsize;
             myNextVal[spin] = _myStartVal[spin] + my2K2*_stepsize;

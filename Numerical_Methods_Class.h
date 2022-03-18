@@ -9,7 +9,7 @@ private:
 //  Dtype               Member Name                             //Comment
 
     double              _biasField = 0.1;                       // Bias field (T). Often written as H or H-static in literature
-    double              _biasFieldDriving = 0;               // Driving field amplitude [T] (caution: papers often give in mT)
+    double              _biasFieldDriving = 0.2;               // Driving field amplitude [T] (caution: papers often give in mT)
     double              _biasFieldDrivingScale = 0;             // The factor by which the driving field amplitude will be modulated
     double              _biasFieldDrivingUse;                   // Value to be used after bool statement. Will be either _biasFieldDrivingInit or _biasFieldDrivingShock
     double              _biasFieldDrivingInit;                  // Driving field amplitude [T] for use prior to shockwave. Commonly will be set to equal _biasFieldDriving
@@ -32,7 +32,7 @@ private:
     std::vector<double> _mxStartVal{0};                         // Vector containing magnetic components (m) along the x-axis (x) at the initial conditions for all spins
     std::vector<double> _myStartVal{0};                         // Vector containing magnetic components (m) along the y-axis (y) at the initial conditions for all spins
     std::vector<double> _mzStartVal{0};                         // Vector containing magnetic components (m) along the z-axis (z) at the initial conditions for all spins
-    double              _mxInit = 0.0001;                            // The initial value of the magnetic moment (m) along the x-direction. Normalised to mZInit (1.0 = 100% of mzInit)
+    double              _mxInit = 0;                            // The initial value of the magnetic moment (m) along the x-direction. Normalised to mZInit (1.0 = 100% of mzInit)
     double              _myInit = 0;                            // The initial value of the magnetic moment (m) along the y-direction. Normalised to mZInit (1.0 = 100% of mzInit)
     double              _mzInit = 1.0;                          // The initial value of the magnetic moment (m) along the z-direction.
 
