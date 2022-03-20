@@ -14,6 +14,8 @@ private:
     double              _biasFieldDrivingUse;                   // Value to be used after bool statement. Will be either _biasFieldDrivingInit or _biasFieldDrivingShock
     double              _biasFieldDrivingInit;                  // Driving field amplitude [T] for use prior to shockwave. Commonly will be set to equal _biasFieldDriving
     double              _biasFieldDrivingShock;                 // Driving field amplitude [T] for the shockwave. Must be different to _biasFieldDriving to notice an effect
+    double              _shockwaveScaling;                 // Driving field amplitude [T] for the shockwave. Must be different to _biasFieldDriving to notice an effect
+
     std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
 
     double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field[rad*s^{-1}]
@@ -25,6 +27,7 @@ private:
     double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio (GHz/T). 29.2E9 is the numerical value of the gyromagetic ratio of the electron divided by 2pi
     bool                _hasShockWaveBegan;
+    bool                _hasShockwave, _isShockwaveAlreadyOn = false;
     double              _linearFMR;
     double              _magSat = 1.0;                          // Saturation Magnetisation (T). Note: 1A/m = 1.254uT. Must be in Telsa,
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time
@@ -39,19 +42,21 @@ private:
     int                 _numberOfDataPoints;                    // How many data-points will be saved. Higher number gives greater precision, but drastically increases filesize. Default is 100.
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
-    double               _startIterVal = 0;                     // The iteration step that the program will begin at. Often set as zero
+    int              _startIterVal = 0;                     // The iteration step that the program will begin at. Often set as zero
     double              _stepsize;                              // Stepsize between values
     double              _stepsizeHalf;                          // Separately defined to avoid repeated unnecessary calculations inside loops
 
     std::string         _stepsizeString;                        // Object to string conversation for value
     std::string         _stopIterString;                        // Object to string conversion for value
-    double              _stopIterVal;                           // The maximum iteration step that the program will calculate to
+    int              _stopIterVal;                           // The maximum iteration step that the program will calculate to
     double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks for how long the experiment in the model has been simulated
 
     // Private functions
     void                CreateFileHeader(std::ofstream &outputFileName, bool list_of_spins);
     void                StreamToString();
-    void                Debug_Options(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex);
+    void                DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex);
+    void                SetupVectors();
+    void                SetShockwaveConditions();
 
 public:
 //  Dtype               Member Name                             // Comment
