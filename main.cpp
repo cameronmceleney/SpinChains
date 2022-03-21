@@ -15,7 +15,7 @@ int main() {
      * std::cin >> in_numSpins; // Takes user input for the number of spins
      * GV.SetNumSpins(in_numSpins);
      */
-    GV.SetNumSpins(4000);
+    GV.SetNumSpins(6000);
 
     /* double in_exchangeMin;
      * std::cout << "Enter the minimum exchange value: ";
@@ -29,7 +29,7 @@ int main() {
      * std::cin >> in_exchangeMax;
      * GV.SetExchangeMaxVal(in_exchangeMax);
      */
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetExchangeMaxVal(43.5);
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier for the file: ";

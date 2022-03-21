@@ -4,16 +4,15 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 42.5 * 3 * 1e9;
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _biasFieldDriving = 3e-3;
 
-    //std::cout << "Enter the LHS spin position for the driving region (minval=1): ";
-    //std::cin >> _drivingRegionLHS;
-    _drivingRegionLHS = 1;
-    _drivingRegionWidth = int(GV.GetNumSpins() * 0.05);
-    _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
+    _numberOfSpinPairs = GV.GetNumSpins() - 1;
 
+    _drivingRegionLHS = 1;
+    _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
+    _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
     // --- For testing on 20 Mar 22 ---
     //_drivingRegionLHS = 1;
@@ -26,19 +25,21 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
     _stepsizeHalf = _stepsize / 2.0;
 
-    _stopIterVal = static_cast<int>(7e5);
-    _numberOfDataPoints = _stopIterVal; // only here while I save every datapoint
+    _stopIterVal = static_cast<int>(1.5e5);
+    _numberOfDataPoints = 1000; // Set equal to _stopIterVal to save all data
     _maxSimTime = _stepsize * _stopIterVal;
 
-    _hasShockwave = false;
-    _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 5.0;
-    _useLLG = false;
+    _hasShockwave = true;
+    _iterToBeginShockwave = 0.25; // Value should be between [0.0, 1.0] inclusive.
+    _shockwaveScaling = 12.0;
+
+    _useLLG = true;
     _saveAllSpins = false;
+    _onlyShowFinalState = false;
 
     if (_drivingRegionRHS > GV.GetNumSpins()) {
         std::cout << "The width of the domain takes it past the maximum number of spins. Exiting...";
-        //exit(3);
+        exit(3);
     }
 
     SetupVectors(); // Calls private class method to generate vectors needed for RK methods..
@@ -51,6 +52,14 @@ void Numerical_Methods_Class::SetupVectors() {
     SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true);
     SpinChainExchange.generate_array();
     _chainJVals = SpinChainExchange.build_spinchain();
+
+    /*
+    std::cout << "size: " << _chainJVals.size() << std::endl;
+    for (double val : _chainJVals)
+        std::cout << val << " ";
+    std::cout << std::endl;
+    exit(0);
+     */
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
     std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
@@ -240,21 +249,19 @@ void Numerical_Methods_Class::RK2LLG() {
     // Create files to save the data. All files will have (namefile) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath()+"rk2_mx_"+GV.GetFileNameBase()+".csv");
 
-    CreateFileHeader(mxRK2File, _saveAllSpins);
+    CreateFileHeader(mxRK2File, _saveAllSpins, _onlyShowFinalState);
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or half-step (h/2)*/
     for (int iterationIndex = _startIterVal; iterationIndex <= _stopIterVal; iterationIndex++) {
 
-        /*
         if (_hasShockwave and not _isShockwaveAlreadyOn) {
                 if (iterationIndex >= _stopIterVal * _iterToBeginShockwave) {
-                    // Shockwave begins once simulation is 50% complete
+                    // Shockwave begins once simulation is a certain % complete
                     SetShockwaveConditions();
                     _isShockwaveAlreadyOn = true;
                 }
         }
-        */
 
         _totalTime += _stepsize;
         double t0 = _totalTime; // The initial time of the iteration, and the time at the first stage; the start of the interval and the first step of RK2. Often called 't0' in literature
@@ -287,11 +294,9 @@ void Numerical_Methods_Class::RK2LLG() {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
                 heffXK1 = _chainJVals[spinLHS] * mx1LHS + _chainJVals[spin] * mx1RHS +
                           _biasFieldDriving * cos(_drivingAngFreq * t0);
-            } else if (spin > _drivingRegionRHS) {
+            } else {
                 // The ELSE IF statement includes all spins along x which are not within the driving region
                 heffXK1 = _chainJVals[spinLHS] * mx1LHS + _chainJVals[spin] * mx1RHS;
-            } else {
-                std::cout << "Error with selecting driving region spins in K1." << std::endl;
             }
 
             // No changes are made to the effective field in the y-direction
@@ -345,10 +350,8 @@ void Numerical_Methods_Class::RK2LLG() {
                 // If a spin is driven during Stage 1 of an RK method, then it must be driven throughout the rest of the method's stages
                 heffXK2 = _chainJVals[spinLHS] * mx2LHS + _chainJVals[spin] * mx2RHS
                           + _biasFieldDriving * cos(_drivingAngFreq * t0HalfStep);
-            else if (spin > _drivingRegionRHS)
-                heffXK2 = _chainJVals[spinLHS] * mx2LHS + _chainJVals[spin] * mx2RHS;
             else
-                std::cout << "Error with selecting driving region spins in K2." << std::endl;
+                heffXK2 = _chainJVals[spinLHS] * mx2LHS + _chainJVals[spin] * mx2RHS;
 
             heffYK2 = _chainJVals[spinLHS] * my2LHS + _chainJVals[spin] * my2RHS;
             heffZK2 = _chainJVals[spinLHS] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
@@ -363,7 +366,7 @@ void Numerical_Methods_Class::RK2LLG() {
                 /* The magnetic moment components' coupled equations (obtained from the torque equation) with the
                  * parameters for the second stage of RK2. */
                 mxK2 = -1 * _gyroMagConst * (my2 * heffZK2 - mz2 * heffYK2);
-                myK2 = _gyroMagConst * (mx2 * heffZK2 - mz2 * heffXK2);
+                myK2 =      _gyroMagConst * (mx2 * heffZK2 - mz2 * heffXK2);
                 mzK2 = -1 * _gyroMagConst * (mx2 * heffYK2 - my2 * heffXK2);
             }
 
@@ -382,7 +385,7 @@ void Numerical_Methods_Class::RK2LLG() {
         myEstMid.clear();
         mzEstMid.clear();
 
-        SaveDataToFile(_saveAllSpins, mxRK2File, mxNextVal, iterationIndex);
+        SaveDataToFile(_saveAllSpins, mxRK2File, mxNextVal, iterationIndex, _onlyShowFinalState);
 
         /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
          * value of the next iteration (y_n) */
@@ -412,7 +415,7 @@ void Numerical_Methods_Class::RK2Shockwaves() {
     // Create files to save the data. All files will have (FileNameBase) in them to make them clearly identifiable.
     std::ofstream mxRK2ShockwaveFile(GV.GetFilePath()+"rk2Shockwave_"+GV.GetFileNameBase()+".csv");
 
-    CreateFileHeader(mxRK2ShockwaveFile, _saveAllSpins);
+    CreateFileHeader(mxRK2ShockwaveFile, _saveAllSpins, _onlyShowFinalState);
 
     std::cout << "\nBeginning simulation...";
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
@@ -583,7 +586,7 @@ void Numerical_Methods_Class::InformUserOfCodeType() {
         std::cout << ".\n";
 
 }
-void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved) {
+void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState) {
 
     outputFileName << "Key Data\n" << std::endl;
     outputFileName << "Bias Field (H0) [T], Bias Field (Driving) [T], "
@@ -605,7 +608,8 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
 
     outputFileName << "\n[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n\n";
     // outputFileName << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
-    if (areAllSpinBeingSaved) {
+
+    if (areAllSpinBeingSaved or onlyShowFinalState) {
         // Print column heading for every spin simulated.
         outputFileName << "Time";
         for (int i = 1; i <= GV.GetNumSpins(); i++) {
@@ -614,8 +618,14 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
         outputFileName << std::endl;
 
     } else {
-        outputFileName << "Time" << ", " << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", "
-                       << int(GV.GetNumSpins()/2.0) << ", " << GV.GetNumSpins() << std::endl;
+        outputFileName << "Time" << ", "
+                       << _drivingRegionLHS << ","
+                       << _drivingRegionLHS + static_cast<int>(_drivingRegionWidth / 2.0) - 1<< ","
+                       << (_drivingRegionRHS - 1) << ","
+                       << static_cast<int>(GV.GetNumSpins() / 12.0) << ","
+                       << static_cast<int>(GV.GetNumSpins() / 6.0) << ","
+                       << static_cast<int>(GV.GetNumSpins() - 5) << ","
+                       << GV.GetNumSpins() << std::endl;
     }
 
 }
@@ -625,34 +635,58 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
     _biasFieldDriving *= _shockwaveScaling;
 
 }
-void Numerical_Methods_Class::SaveDataToFile(bool &_areAllSpinBeingSaved, std::ofstream &outputFileName,
-                                             std::vector<double> arrayToWrite, int iteration) {
+void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
+                                             std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState) {
+    if (onlyShowFinalState) {
+        if (iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
+            for (int i = 0; i <= GV.GetNumSpins(); i++) {
+                // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
+                if (i == 0)
+                    // Print current time
+                    outputFileName << (iteration * _stepsize) << ",";
 
-    if (_areAllSpinBeingSaved) {
-        for (int i = 0; i <= GV.GetNumSpins(); i++) {
-            // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
-            if (i == 0)
-                // Print current time
-                outputFileName << (iteration * _stepsize) << ",";
+                else if (i == GV.GetNumSpins())
+                    // Ensures that the final line doesn't contain a comma.
+                    outputFileName << arrayToWrite[i] << std::flush;
 
-            else if (i == GV.GetNumSpins())
-                // Ensures that the final line doesn't contain a comma.
-                outputFileName << arrayToWrite[i] << std::flush;
-
-            else
-                // For non-special values, write the data.
-                outputFileName << arrayToWrite[i] << ",";
+                else
+                    // For non-special values, write the data.
+                    outputFileName << arrayToWrite[i] << ",";
+            }
+            // Take new line after current row is finished being written.
+            outputFileName << std::endl;
         }
     } else {
-        outputFileName << (iteration * _stepsize) << ","
-                       << arrayToWrite[_drivingRegionLHS] << ", "
-                       << arrayToWrite[_drivingRegionRHS] << ", "
-                       << arrayToWrite[static_cast<int>(1 + GV.GetNumSpins()/2.0)] << ", "
-                       << arrayToWrite[static_cast<int>(1 + GV.GetNumSpins())];
+        if (areAllSpinBeingSaved)
+        {
+            for (int i = 0; i <= GV.GetNumSpins(); i++)
+            {
+                // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
+                if (i == 0)
+                    outputFileName << (iteration * _stepsize) << ","; // Print current time
+                else if (i == GV.GetNumSpins())
+                    outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
+                else
+                    outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
+            }
+            outputFileName << std::endl; // Take new line after current row is finished being written.
+        }
+        else
+        {
+            if (iteration % (_stopIterVal / _numberOfDataPoints) == 0)
+            {
 
+                outputFileName << (iteration * _stepsize) << ","
+                               << arrayToWrite[_drivingRegionLHS] << ","
+                               << arrayToWrite[_drivingRegionLHS + static_cast<int>(_drivingRegionWidth / 2.0)] << ","
+                               << arrayToWrite[_drivingRegionRHS] << ","
+                               << arrayToWrite[1 + static_cast<int>(GV.GetNumSpins() / 12.0)] << ","
+                               << arrayToWrite[1 + static_cast<int>(GV.GetNumSpins() / 6.0)] << ","
+                               << arrayToWrite[GV.GetNumSpins() - 5] << ","
+                               << arrayToWrite[GV.GetNumSpins()] << std::endl;
+            }
+        }
     }
-    // Take new line after current row is finished being written.
-    outputFileName << std::endl;
 }
 
 void Numerical_Methods_Class::StreamToString() {
@@ -671,7 +705,6 @@ void Numerical_Methods_Class::StreamToString() {
     stepsizeObj.clear();
     stopiterObj.clear();
 }
-
 void Numerical_Methods_Class::DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex) {
         if (mxNextVal[spin] >= 5000) {
             std::cout << "Error. Value of mx was greater than 5000 at spin(" << spin << "), iter("

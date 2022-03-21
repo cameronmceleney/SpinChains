@@ -39,7 +39,7 @@ private:
     double              _mzInit = 1.0;                          // The initial value of the magnetic moment (m) along the z-direction.
 
     int                 _numberOfDataPoints;                    // How many data-points will be saved. Higher number gives greater precision, but drastically increases filesize. Default is 100.
-    int                 _numberOfSpinPairs = GV.GetNumSpins() - 1;// Number of pairs of spins in the chain. Used for array lengths and tidying notation
+    int                 _numberOfSpinPairs; // Number of pairs of spins in the chain. Used for array lengths and tidying notation
     int                 _startIterVal = 0;                      // The iteration step that the program will begin at. Often set as zero
     double              _stepsize;                              // Stepsize between values
     double              _stepsizeHalf;                          // Separately defined to avoid repeated unnecessary calculations inside loops
@@ -55,13 +55,14 @@ private:
     bool                _isShockwaveAlreadyOn = false;
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     bool                _saveAllSpins;
+    bool                _onlyShowFinalState;
 
     // Private functions
-    void                CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved);
+    void                CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
     void                DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex);
     void                InformUserOfCodeType();
-    void                SaveDataToFile(bool &_areAllSpinBeingSaved, std::ofstream &outputFileName,
-                                       std::vector<double> arrayToWrite, int iteration);
+    void                SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
+                                       std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState);
     void                SetShockwaveConditions();
     void                SetupVectors();
     void                StreamToString();
