@@ -61,7 +61,7 @@ private:
     void                DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex);
     void                InformUserOfCodeType();
     void                SaveDataToFile(bool &_areAllSpinBeingSaved, std::ofstream &outputFileName,
-                                       std::vector<double> &arrayToWrite, int iteration);
+                                       std::vector<double> arrayToWrite, int iteration);
     void                SetShockwaveConditions();
     void                SetupVectors();
     void                StreamToString();
