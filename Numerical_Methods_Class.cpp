@@ -19,7 +19,7 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsize = 1e-15;//2.857e-15; // This is (1 / _drivingFreq)
     _stepsizeHalf = _stepsize / 2.0;
 
-    _stopIterVal = 2e5;
+    _stopIterVal = 7e5;
 
     _numberOfDataPoints = _stopIterVal;
     _maxSimTime = _stepsize * _stopIterVal;
@@ -234,7 +234,7 @@ void Numerical_Methods_Class::RK2LLG() {
     //std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
     //std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
 
-    CreateFileHeader(mxRK2File, true);
+    CreateFileHeader(mxRK2File, false);
 
     /*
     for (int i = 0; i <= GV.GetNumSpins(); i++) {
@@ -388,7 +388,7 @@ void Numerical_Methods_Class::RK2LLG() {
                 mxRK2File << mxNextVal[j] << std::flush;
                 //myRK2File << myNextVal[j] << std::flush;
                 //mzRK2File << mzNextVal[j] << std::flush;
-            } else {
+            } else if (j == 1 or j == 190 or j == 2000){
                 // For non-special values, write the data
                 mxRK2File << mxNextVal[j] << ",";
                 //myRK2File << myNextVal[j] << ",";
@@ -615,7 +615,9 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
         outputFileName << std::endl;
 
     } else {
-        outputFileName << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
+        //outputFileName << _drivingRegionLHS << ", " << _drivingRegionRHS - 1 << ", " << (GV.GetNumSpins()/2) << ", " << GV.GetNumSpins() << std::endl;
+        outputFileName << 1 << ", " << 190 << ", " << 2000 << ", " << GV.GetNumSpins() << std::endl;
+
     }
 
 }

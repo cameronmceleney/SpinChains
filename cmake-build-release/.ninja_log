@@ -73,3 +73,10 @@
 4	2169	1647619453979885789	CMakeFiles/SpinChains.dir/GlobalVariables.cpp.o	9b4206e4f885a550
 3	3543	1647619455353349374	CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.o	d8d6840f3c1f36de
 3543	3641	1647619455464602469	SpinChains	ec27c6b42ede7a72
+2	1654	1647863675331836696	CMakeFiles/SpinChains.dir/main.cpp.o	7350b506d1103978
+3	2503	1647863676181646382	CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.o	d8d6840f3c1f36de
+2	12371	1647863686007984447	CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.o	fa7e33f83874791b
+12372	12462	1647863686151814444	SpinChains	ec27c6b42ede7a72
+2	2036	1647863805893116119	CMakeFiles/SpinChains.dir/main.cpp.o	7350b506d1103978
+2	3116	1647863806974587330	CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.o	d8d6840f3c1f36de
+3116	3211	1647863807083319086	SpinChains	ec27c6b42ede7a72
