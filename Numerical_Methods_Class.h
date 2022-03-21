@@ -54,15 +54,17 @@ private:
     bool                _hasShockwave;
     bool                _isShockwaveAlreadyOn = false;
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
-
+    bool                _saveAllSpins;
 
     // Private functions
-    void                CreateFileHeader(std::ofstream &outputFileName, bool list_of_spins);
-    void                StreamToString();
+    void                CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved);
     void                DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex);
     void                InformUserOfCodeType();
-    void                SetupVectors();
+    void                SaveDataToFile(bool &_areAllSpinBeingSaved, std::ofstream &outputFileName,
+                                       std::vector<double> &arrayToWrite, int iteration);
     void                SetShockwaveConditions();
+    void                SetupVectors();
+    void                StreamToString();
 
 public:
 //  Dtype               Member Name                             // Comment

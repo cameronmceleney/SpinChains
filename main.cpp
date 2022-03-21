@@ -15,7 +15,7 @@ int main() {
      * std::cin >> in_numSpins; // Takes user input for the number of spins
      * GV.SetNumSpins(in_numSpins);
      */
-    GV.SetNumSpins(200);
+    GV.SetNumSpins(2);
 
     /* double in_exchangeMin;
      * std::cout << "Enter the minimum exchange value: ";
