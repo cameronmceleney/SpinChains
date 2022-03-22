@@ -235,7 +235,7 @@ void Numerical_Methods_Class::RK2LLG() {
 
     progressbar bar(100);
 
-    // Notifies the user of what code they are running
+    // Notifies the user of what code they are running.
     InformUserOfCodeType();
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
