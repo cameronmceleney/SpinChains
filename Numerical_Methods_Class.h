@@ -11,7 +11,6 @@ class Numerical_Methods_Class {
 private:
 //  Dtype               Member Name                             //Comment
 
-    double              _biasField = 0.1;                       // Applied bias field [T]. Often written as H_0 or H_static in literature
     double              _biasFieldDriving;                      // Driving field amplitude [T] (caution: papers often give in mT)
     double              _shockwaveScaling;                      // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
 

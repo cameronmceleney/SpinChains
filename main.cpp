@@ -9,27 +9,28 @@ int main() {
     Numerical_Methods_Class RK2_method_use{};
 
     GV.SetFilePath();
+    GV.SetBiasField(0.1);
+    GV.SetNumSpins(4000);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(132.0);
+
 
     /* int in_numSpins; // number of spins in the chain
      * std::cout << "Enter the number of spins in the chain: ";
      * std::cin >> in_numSpins; // Takes user input for the number of spins
      * GV.SetNumSpins(in_numSpins);
      */
-    GV.SetNumSpins(4000);
 
     /* double in_exchangeMin;
      * std::cout << "Enter the minimum exchange value: ";
      * std::cin >> in_exchangeMin;
      * GV.SetExchangeMinVal(in_exchangeMin);
      */
-    GV.SetExchangeMinVal(43.5);
-
     /* double in_exchangeMax;
      * std::cout << "Enter the maximum exchange value: ";
      * std::cin >> in_exchangeMax;
      * GV.SetExchangeMaxVal(in_exchangeMax);
      */
-    GV.SetExchangeMaxVal(132.0);
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier for the file: ";

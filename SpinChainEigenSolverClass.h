@@ -7,7 +7,6 @@ class SpinChainEigenSolverClass {
 
 private:
 //  Dtype               Member Name                             // Comment
-    double              _biasField = 0.1;
     std::vector<double> _chainJValues;
     std::string         _fileNameEigenSolver = GV.GetFileNameBase() + "spins"; // Creates unique filename by combining the number of spins with the keyword 'spins'
     Eigen::MatrixXd     _generatedMatrix;

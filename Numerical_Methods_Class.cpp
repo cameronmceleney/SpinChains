@@ -120,7 +120,7 @@ void Numerical_Methods_Class::RK2() {
             // No changes are made to the effective field in the y-direction
             HeffY1K1 = _chainJVals[LHS_spin] * my1LHS + _chainJVals[spin] * my1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
-            HeffZ1K1 = _chainJVals[LHS_spin] * mz1LHS + _chainJVals[spin] * mz1RHS + _biasField;
+            HeffZ1K1 = _chainJVals[LHS_spin] * mz1LHS + _chainJVals[spin] * mz1RHS + GV.GetBiasField();
 
             /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the
              * first stage of RK2.*/
@@ -163,7 +163,7 @@ void Numerical_Methods_Class::RK2() {
             }
 
             HeffY2K2 = _chainJVals[LHS_spin] * my2LHS + _chainJVals[spin] * my2RHS;
-            HeffZ2K2 = _chainJVals[LHS_spin] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
+            HeffZ2K2 = _chainJVals[LHS_spin] * mz2LHS + _chainJVals[spin] * mz2RHS + GV.GetBiasField();
 
             mx2K2 = -1 * _gyroMagConst * ( my2*HeffZ2K2 - mz2*HeffY2K2 );
             my2K2 = +1 * _gyroMagConst * ( mx2*HeffZ2K2 - mz2*HeffX2K2 );
@@ -298,7 +298,7 @@ void Numerical_Methods_Class::RK2LLG() {
             // No changes are made to the effective field in the y-direction
             heffYK1 = _chainJVals[spinLHS] * my1LHS + _chainJVals[spin] * my1RHS;
             // The bias field is applied in the z-direction and so it contributes to the effective field in the z-direction
-            heffZK1 = _chainJVals[spinLHS] * mz1LHS + _chainJVals[spin] * mz1RHS + _biasField;
+            heffZK1 = _chainJVals[spinLHS] * mz1LHS + _chainJVals[spin] * mz1RHS + GV.GetBiasField();
 
             if (_useLLG) {
                 /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters
@@ -350,7 +350,7 @@ void Numerical_Methods_Class::RK2LLG() {
                 heffXK2 = _chainJVals[spinLHS] * mx2LHS + _chainJVals[spin] * mx2RHS;
 
             heffYK2 = _chainJVals[spinLHS] * my2LHS + _chainJVals[spin] * my2RHS;
-            heffZK2 = _chainJVals[spinLHS] * mz2LHS + _chainJVals[spin] * mz2RHS + _biasField;
+            heffZK2 = _chainJVals[spinLHS] * mz2LHS + _chainJVals[spin] * mz2RHS + GV.GetBiasField();
 
             if (_useLLG) {
                 /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters
@@ -418,7 +418,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
                           "Max. Sim. Time [s], Max. Exchange Val [T], Max. Iterations, Min. Exchange Val [T], "
                           "Num. DataPoints, Num. Spins, Stepsize (h)\n";
 
-    outputFileName << _biasField << ", " << _biasFieldDriving << ", " << _shockwaveScaling << ", "
+    outputFileName << GV.GetBiasField() << ", " << _biasFieldDriving << ", " << _shockwaveScaling << ", "
                    << _drivingFreq << ", " << _drivingRegionLHS << ", " << _drivingRegionRHS << ", "
                    << _drivingRegionWidth << ", " << _maxSimTime << ", " << GV.GetExchangeMaxVal() << ", "
                    << _stopIterVal << ", " << GV.GetExchangeMinVal() << ", " << _numberOfDataPoints << ", "
