@@ -58,6 +58,7 @@ private:
     bool                _onlyShowFinalState;
 
     // Private functions
+    void                CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
     void                CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
     void                DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex);
     void                InformUserOfCodeType();
@@ -72,7 +73,6 @@ public:
     void                NMSetup();
     void                RK2();
     void                RK2LLG();                               // Testing function to add nonlinearity test to original RK2 code
-    void                RK2Shockwaves();                        // Testing function for shockwaves work
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
