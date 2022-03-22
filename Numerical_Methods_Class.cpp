@@ -33,23 +33,26 @@ void Numerical_Methods_Class::NMSetup() {
     }
 
     SetupVectors(); // Calls private class method to generate vectors needed for RK methods.
+
+    /*
+    int countsPerRow = 0;
+    for (int i = 0; i < GV.GetNumSpins() + 2; i++) {
+        if (++countsPerRow % 10 == 0)
+            std::cout << std::setw(12) << _chainJVals[i] << "\n";
+        else
+            std::cout << std::setw(12) << _chainJVals[i] << ", ";
+    } */
+
 }
 void Numerical_Methods_Class::SetupVectors() {
 
     LinspaceClass SpinChainExchange;
+    LinspaceClass GilbertDamping;
 
     // The linearly spaced vector is saved as the class member '_chainJVals' simply to increase code readability
     SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true);
     SpinChainExchange.generate_array();
     _chainJVals = SpinChainExchange.build_spinchain();
-
-    /*
-    std::cout << "size: " << _chainJVals.size() << std::endl;
-    for (double val : _chainJVals)
-        std::cout << val << " ";
-    std::cout << std::endl;
-    exit(0);
-     */
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
     std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
@@ -64,6 +67,15 @@ void Numerical_Methods_Class::SetupVectors() {
     _mxStartVal.push_back(0);
     _myStartVal.push_back(0);
     _mzStartVal.push_back(0);
+
+    // Handles the Gilbert Damping vector.
+    int numGilbert = 100;
+    GilbertDamping.set_values(1e-4, 1e-1, numGilbert, true);
+    std::vector<double> tempGilbert = GilbertDamping.generate_array();
+    std::vector<double> gilbertChain(GV.GetNumSpins() - numGilbert, 1e-4);
+    gilbertChain.insert(gilbertChain.end(), tempGilbert.begin(), tempGilbert.end());
+    _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
+    _gilbertVector.push_back(0);
 }
 
 void Numerical_Methods_Class::RK2() {

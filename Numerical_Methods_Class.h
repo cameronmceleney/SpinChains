@@ -15,6 +15,7 @@ private:
     double              _shockwaveScaling;                      // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
 
     std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
+    std::vector<double> _gilbertVector{0};
 
     double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field[rad*s^{-1}]
     double              _drivingFreq;                           // Frequency of oscillatory driving field [GHz] (f_d in literature) (default: 10 * 6.045 * 1e9)
