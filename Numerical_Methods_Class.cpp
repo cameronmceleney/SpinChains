@@ -238,7 +238,7 @@ void Numerical_Methods_Class::RK2LLG() {
     // Notifies the user of what code they are running
     InformUserOfCodeType();
 
-    // Create files to save the data. All files will have (namefile) in them to make them clearly identifiable.
+    // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath()+"rk2_mx_"+GV.GetFileNameBase()+".csv");
 
     CreateFileHeader(mxRK2File, _saveAllSpins, _onlyShowFinalState);
