@@ -1,7 +1,10 @@
 #ifndef SPINCHAINS_NUMERICAL_METHODS_CLASS_H
 #define SPINCHAINS_NUMERICAL_METHODS_CLASS_H
 
+#include "linspace.h"
+#include "SpinChainEigenSolverClass.h"
 #include "CommonLibs.h"
+#include "progressbar.hpp"
 
 class Numerical_Methods_Class {
 

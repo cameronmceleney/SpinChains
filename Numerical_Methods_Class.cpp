@@ -1,6 +1,4 @@
 #include "Numerical_Methods_Class.h"
-#include "linspace.h"
-#include "SpinChainEigenSolverClass.h"
 
 void Numerical_Methods_Class::NMSetup() {
 
@@ -13,14 +11,6 @@ void Numerical_Methods_Class::NMSetup() {
     _drivingRegionLHS = 1;
     _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
-
-    // --- For testing on 20 Mar 22 ---
-    //_drivingRegionLHS = 1;
-    //_drivingRegionWidth = int(GV.GetNumSpins() * 0.05);
-    // _drivingRegionRHS = 1;
-
-    // _linearFMR = (_gyroMagConst / 2 * M_PI) * sqrt(_biasField * (_biasField + 4 * M_PI * _magSat)) / 1e9; // Only here for testing
-    // --------------------------------
 
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
     _stepsizeHalf = _stepsize / 2.0;
@@ -243,6 +233,8 @@ void Numerical_Methods_Class::RK2() {
 
 void Numerical_Methods_Class::RK2LLG() {
 
+    progressbar bar(100);
+
     // Notifies the user of what code they are running
     InformUserOfCodeType();
 
@@ -254,6 +246,10 @@ void Numerical_Methods_Class::RK2LLG() {
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or half-step (h/2)*/
     for (int iterationIndex = _startIterVal; iterationIndex <= _stopIterVal; iterationIndex++) {
+        if (iterationIndex % (_stopIterVal / 100) == 0)
+            {
+                bar.update();
+            }
 
         if (_hasShockwave and not _isShockwaveAlreadyOn) {
                 if (iterationIndex >= _stopIterVal * _iterToBeginShockwave) {
@@ -398,7 +394,7 @@ void Numerical_Methods_Class::RK2LLG() {
     mxRK2File.close();
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
-    std::cout << "\nFile can be found at:\n" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
 void Numerical_Methods_Class::InformUserOfCodeType() {
@@ -437,6 +433,8 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
     outputFileName << "\n[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n\n";
 
     CreateColumnHeaders(outputFileName, areAllSpinBeingSaved, onlyShowFinalState);
+
+    std::cout << "\n";
 }
 void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState){
     /* Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
@@ -453,8 +451,8 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName,
     } else {
         outputFileName << "Time" << ", "
                        << _drivingRegionLHS << ","
-                       << _drivingRegionLHS + static_cast<int>(_drivingRegionWidth / 2.0) << ","
-                       << (_drivingRegionRHS) << ","
+                       << static_cast<int>(_drivingRegionWidth / 2.0) << ","
+                       << _drivingRegionRHS << ","
                        << static_cast<int>(GV.GetNumSpins() / 4.0) << ","
                        << static_cast<int>(GV.GetNumSpins() / 2.0) << ","
                        << static_cast<int>(3.0 * GV.GetNumSpins() / 4.0) << ","
@@ -510,7 +508,7 @@ void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::of
 
                 outputFileName << (iteration * _stepsize) << ","
                                << arrayToWrite[_drivingRegionLHS] << ","
-                               << arrayToWrite[_drivingRegionLHS + static_cast<int>(_drivingRegionWidth / 2.0)] << ","
+                               << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
                                << arrayToWrite[_drivingRegionRHS] << ","
                                << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
                                << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 2.0)] << ","
