@@ -32,7 +32,7 @@ void Numerical_Methods_Class::NMSetup() {
         exit(3);
     }
 
-    SetupVectors(); // Calls private class method to generate vectors needed for RK methods..
+    SetupVectors(); // Calls private class method to generate vectors needed for RK methods.
 }
 void Numerical_Methods_Class::SetupVectors() {
 
