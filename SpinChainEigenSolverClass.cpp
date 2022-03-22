@@ -105,8 +105,6 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
      * eigenvalues of this matrix (matrixToFill) are eigen-frequencies, however they are angular (w). To obtain  frequencies (f), you must find
      * angular_frequency/(2*Pi) for each given eigenvalue. */
 
-    // static double angular_frequency = 0;
-    // int JVal = 0; // Ensures a spin has the same exchange integral values on its LHS and RHS used in the spin's associated coupled equations
     const long totalEquations = GV.GetNumSpins() * 2; // Each spin has an x- and y-axis dependent coupled equation normalised to the z-component. Thus, two equations total
 
     Matrix_xd matrixToFill(totalEquations, totalEquations); // Each (spin) site location comprises two consecutive rows in matrixToFill
@@ -114,6 +112,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
     matrixToFill.setZero(); // Large matrix of known size so more computationally efficient to predefine size in memory
 
     for (int row = 0, JVal = 0; row < totalEquations; row++, JVal++) {
+        // JVal ensures a spin has the same exchange integral values on its LHS and RHS used in the spin's associated coupled equations
         /* Where an element is matrixToFill(index, index) = 0), this indicates that the element would be a diagonal
          * element of the matrix. While the full computation would be matrixToFill(index, index) =  -1.0  * angular_frequency / _gyroscopicMagneticConstant;),
          * this is an unnecessary series of computations as angular_frequency = 0 is strictly true in this code.*/
@@ -175,8 +174,6 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
                 std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
                 std::exit(3);
             }
-
-            // JVal += 1; // Solving one set of coupled equations means the tracker can be increased to reflect moving along one spin site position in the chain
         }
 
         else {

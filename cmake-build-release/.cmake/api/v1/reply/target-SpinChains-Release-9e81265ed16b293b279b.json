@@ -118,7 +118,8 @@
 				3,
 				5,
 				7,
-				9
+				9,
+				10
 			]
 		}
 	],
@@ -177,6 +178,11 @@
 		{
 			"backtrace" : 1,
 			"path" : "GlobalVariables.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "progressbar.hpp",
 			"sourceGroupIndex" : 1
 		}
 	],
