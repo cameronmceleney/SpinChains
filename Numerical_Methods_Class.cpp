@@ -2,30 +2,30 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _drivingFreq = 42.5 * 3 * 1e9;
-    _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _biasFieldDriving = 3e-3;
+    _drivingFreq = 42.5 * 1e9;
+    _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
+    _stopIterVal = static_cast<int>(7e5);
 
+    _hasShockwave = false;
+    _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
+    _shockwaveScaling = 12.0;
+
+    _useLLG = false; // If (false), code will revert to using Torque equation components.
+    _saveAllSpins = false;
+    _onlyShowFinalState = true;
+
+    _numberOfDataPoints = 1000; // Set equal to _stopIterVal to save all data
+
+    _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
+    _stepsizeHalf = _stepsize / 2.0;
+    _maxSimTime = _stepsize * _stopIterVal;
 
     _drivingRegionLHS = 1;
     _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
-    _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stepsizeHalf = _stepsize / 2.0;
-
-    _stopIterVal = static_cast<int>(1.5e5);
-    _numberOfDataPoints = 1000; // Set equal to _stopIterVal to save all data
-    _maxSimTime = _stepsize * _stopIterVal;
-
-    _hasShockwave = true;
-    _iterToBeginShockwave = 0.25; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 12.0;
-
-    _useLLG = true;
-    _saveAllSpins = false;
-    _onlyShowFinalState = false;
 
     if (_drivingRegionRHS > GV.GetNumSpins()) {
         std::cout << "The width of the domain takes it past the maximum number of spins. Exiting...";
@@ -418,7 +418,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
                           "Max. Sim. Time [s], Max. Exchange Val [T], Max. Iterations, Min. Exchange Val [T], "
                           "Num. DataPoints, Num. Spins, Stepsize (h)\n";
 
-    outputFileName << _biasField << ", " << _biasFieldDriving << ", " << _biasFieldDrivingScale << ", "
+    outputFileName << _biasField << ", " << _biasFieldDriving << ", " << _shockwaveScaling << ", "
                    << _drivingFreq << ", " << _drivingRegionLHS << ", " << _drivingRegionRHS << ", "
                    << _drivingRegionWidth << ", " << _maxSimTime << ", " << GV.GetExchangeMaxVal() << ", "
                    << _stopIterVal << ", " << GV.GetExchangeMinVal() << ", " << _numberOfDataPoints << ", "

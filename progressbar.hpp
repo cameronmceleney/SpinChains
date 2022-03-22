@@ -55,7 +55,7 @@ public:
 
     // default constructor, must call set_niter later
     inline progressbar();
-    inline progressbar(int n, bool showbar=true);
+    inline explicit progressbar(int n, bool showbar=true);
 
     // reset bar to use it again
     inline void reset();
@@ -110,14 +110,12 @@ inline void progressbar::reset() {
     progress = 0,
             update_is_called = false;
     last_perc = 0;
-    return;
 }
 
 inline void progressbar::set_niter(int niter) {
     if (niter <= 0) throw std::invalid_argument(
                 "progressbar::set_niter: number of iterations null or negative");
     n_cycles = niter;
-    return;
 }
 
 inline void progressbar::update() {
@@ -126,7 +124,7 @@ inline void progressbar::update() {
                 "progressbar::update: number of cycles not set");
 
     if (!update_is_called) {
-        if (do_show_bar == true) {
+        if (do_show_bar) {
             std::cout << opening_bracket_char;
             for (int _ = 0; _ < 50; _++) std::cout << todo_char;
             std::cout << closing_bracket_char << " 0%";
@@ -138,7 +136,7 @@ inline void progressbar::update() {
     int perc = 0;
 
     // compute percentage, if did not change, do nothing and return
-    perc = progress*100./(n_cycles-1);
+    perc = static_cast<int>(progress*100.0/(n_cycles-1));
     if (perc < last_perc) return;
 
     // update percentage each unit
@@ -148,7 +146,7 @@ inline void progressbar::update() {
         else if (perc  > 10 and perc < 100) std::cout << "\b\b\b" << perc << '%';
         else if (perc == 100)               std::cout << "\b\b\b" << perc << '%';
     }
-    if (do_show_bar == true) {
+    if (do_show_bar) {
         // update bar every ten units
         if (perc % 2 == 0) {
             // erase closing bracket
@@ -178,7 +176,10 @@ inline void progressbar::update() {
     ++progress;
     std::cout << std::flush;
 
-    return;
+    if (progress == 100) {
+        // Small change I made to make completion more obvious to myself.
+        std::cout << "\b\b\b\bFinished!";
+    }
 }
 
 #endif
