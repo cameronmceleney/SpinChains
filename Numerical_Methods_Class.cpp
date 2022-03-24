@@ -5,19 +5,22 @@ void Numerical_Methods_Class::NMSetup() {
     _biasFieldDriving = 3e-3;
     _drivingFreq = 100.0 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(2.6e5); // 2.6e5
+    _stopIterVal = static_cast<int>(2.4e5); // 2.6e5
 
-    _hasShockwave = false;
-    _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 1.0;
+    _hasShockwave = true;
+    _iterToBeginShockwave = 0.1; // Value should be between [0.0, 1.0] inclusive.
+    _shockwaveScaling = 8.0;
 
-    _useLLG = true; // If (false), code will revert to using Torque equation components.
+    _useLLG = true;
+    _LHSDrive = false;
+
     _saveAllSpins = false;
     _onlyShowFinalState = true;
     _fixedPoints = true;
 
+    _gilbertLower = 1e-4;
     _gilbertUpper = 1e-1;
-    _numGilbert = 0;
+    _numGilbert = 200;
 
     _numberOfDataPoints = 100; // Set equal to _stopIterVal to save all data
 
@@ -26,32 +29,40 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsizeHalf = _stepsize / 2.0;
     _maxSimTime = _stepsize * _stopIterVal;
 
-    _drivingRegionLHS = 5699; // If RHS start, then this value should be (startStart - 1) for correct offset.
-    _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
-    _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
-
-
-    if (_drivingRegionRHS > GV.GetNumSpins()) {
-        std::cout << "The width of the domain takes it past the maximum number of spins. Exiting...";
-        exit(3);
-    }
+    SetDrivingRegion(_LHSDrive);
 
     SetupVectors(); // Calls private class method to generate vectors needed for RK methods.
 
-    /*
-    int countsPerRow = 0;
-    for (int i = 0; i < GV.GetNumSpins() + 2; i++) {
-        if (++countsPerRow % 10 == 0)
-            std::cout << std::setw(12) << _chainJVals[i] << "\n";
-        else
-            std::cout << std::setw(12) << _chainJVals[i] << ", ";
-    } */
+}
+void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
 
+    if (useLHSDrive)
+    { //Drives from the LHS, starting at _drivingRegionLHS
+        _drivingRegionLHS = 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
+        _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
+        _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
+    }
+    else
+    { // Drives from the RHS, starting at _drivingRegionRHS
+        _drivingRegionRHS = GV.GetNumSpins();
+        _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
+        _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth - 1; // The -1 is to correct the offset
+    }
+
+    if (_drivingRegionLHS < 1 or _drivingRegionRHS > GV.GetNumSpins())
+    { // Checks neither driving region site is out with the range of the chain
+        std::cout << "The width of the domain takes it past the maximum number of spins. Exiting...";
+        exit(3);
+    }
 }
 void Numerical_Methods_Class::SetupVectors() {
 
+    SetupVectorsExchange();
+    SetupVectorsGilbert();
+}
+void Numerical_Methods_Class::SetupVectorsExchange() {
+
     LinspaceClass SpinChainExchange;
-    LinspaceClass GilbertDamping;
 
     // The linearly spaced vector is saved as the class member '_chainJVals' simply to increase code readability
     SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true);
@@ -72,13 +83,50 @@ void Numerical_Methods_Class::SetupVectors() {
     _myStartVal.push_back(0);
     _mzStartVal.push_back(0);
 
+}
+void Numerical_Methods_Class::SetupVectorsGilbert() {
+    LinspaceClass GilbertDamping;
     // Handles the Gilbert Damping vector.
-    GilbertDamping.set_values(_gilbertConst, _gilbertUpper, _numGilbert, true);
-    std::vector<double> tempGilbert = GilbertDamping.generate_array();
-    std::vector<double> gilbertChain(GV.GetNumSpins() - _numGilbert, _gilbertConst);
-    gilbertChain.insert(gilbertChain.end(), tempGilbert.begin(), tempGilbert.end());
-    _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
-    _gilbertVector.push_back(0);
+    if (_numGilbert < 0)
+        { // Guard clause.
+            std::cout << "numGilbert is less than zero!";
+            exit(0);
+        }
+
+    if (_LHSDrive)
+    {
+        GilbertDamping.set_values(_gilbertLower, _gilbertUpper, _numGilbert, true);
+        std::vector<double> tempGilbert = GilbertDamping.generate_array();
+
+        std::vector<double> gilbertChain(GV.GetNumSpins() - _numGilbert, _gilbertConst);
+        gilbertChain.insert(gilbertChain.end(), tempGilbert.begin(), tempGilbert.end());
+        _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
+
+        _gilbertVector.push_back(0);
+    }
+    else
+    {
+        GilbertDamping.set_values(_gilbertUpper, _gilbertLower, _numGilbert, true);
+        std::vector<double> scaledGilbertChain = GilbertDamping.generate_array();
+
+        std::vector<double> gilbertChain(GV.GetNumSpins() - _numGilbert, _gilbertConst);
+        _gilbertVector.insert(_gilbertVector.end(), scaledGilbertChain.begin(), scaledGilbertChain.end());
+        _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
+
+        _gilbertVector.push_back(0);
+    }
+
+    /* test code to find vector contents
+    int count = 0;
+    for (int i = 0; i < _gilbertVector.size(); i++) {
+        if (++count % 10 == 0) {std::cout << std::setw(12) << _gilbertVector[i] << "\n";}
+        else {std::cout << std::setw(12) << _gilbertVector[i] << " ";}
+    }
+
+    exit(0);
+    */
+
+
 }
 
 void Numerical_Methods_Class::RK2() {
@@ -261,17 +309,20 @@ void Numerical_Methods_Class::RK2LLG() {
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or half-step (h/2)*/
     for (int iterationIndex = _startIterVal; iterationIndex <= _stopIterVal; iterationIndex++) {
+        // Doesn't work on Windows
         if (iterationIndex % (_stopIterVal / 100) == 0)
             {
                 bar.update();
             }
 
-        if (_hasShockwave and not _isShockwaveAlreadyOn) {
-                if (iterationIndex >= _stopIterVal * _iterToBeginShockwave) {
-                    // Shockwave begins once simulation is a certain % complete
-                    SetShockwaveConditions();
-                    _isShockwaveAlreadyOn = true;
-                }
+        if (_hasShockwave and not _isShockwaveAlreadyOn)
+        {
+            if (iterationIndex >= _stopIterVal * _iterToBeginShockwave)
+            {
+                // Shockwave begins once simulation is a certain % complete
+                SetShockwaveConditions();
+                _isShockwaveAlreadyOn = true;
+            }
         }
 
         _totalTime += _stepsize;
@@ -463,7 +514,7 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName,
         }
         outputFileName << std::endl;
 
-    } else if (_fixedPoints == true) {
+    } else if (_fixedPoints) {
         outputFileName << "Time" << ", "
                        << _drivingRegionLHS << ","
                        << static_cast<int>(_drivingRegionWidth / 2.0) << ","
@@ -492,7 +543,8 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
 void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
                                              std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState) {
     if (onlyShowFinalState) {
-        if (iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
+        //if (iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
+        if (iteration == _stopIterVal) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)

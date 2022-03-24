@@ -90,7 +90,7 @@ inline progressbar::progressbar() :
         last_perc(0),
         do_show_bar(true),
         update_is_called(false),
-        done_char("█"),
+        done_char("#"),
         todo_char(" "),
         opening_bracket_char("{"),
         closing_bracket_char("}") {}
@@ -101,7 +101,7 @@ inline progressbar::progressbar(int n, bool showbar) :
         last_perc(0),
         do_show_bar(showbar),
         update_is_called(false),
-        done_char("█"),
+        done_char("#"),
         todo_char(" "),
         opening_bracket_char("{"),
         closing_bracket_char("}") {}
@@ -168,7 +168,7 @@ inline void progressbar::update() {
             // refill with 'todo_char'
             for (int j = 0; j < 50-(perc-1)/2-1; ++j) std::cout << todo_char;
 
-            // readd trailing percentage characters
+            // read trailing percentage characters
             std::cout << closing_bracket_char << ' ' << perc << '%';
         }
     }

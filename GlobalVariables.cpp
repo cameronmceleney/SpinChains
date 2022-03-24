@@ -18,8 +18,8 @@ std::string GlobalVariablesClass::GetFilePath() {
     return _filePath;
 }
 void GlobalVariablesClass::SetFilePath() {
-    _filePath = "/Users/cameronmceleney/CLionProjects/Data/"+ FindDateToday() +"/Simulation_Data/"; // This filepath is for Mac!
-    //_filePath = "D:/Data/" + FindDateToday() +"/RK2 Shockwaves Tests Data/" // This filepath is for Windows
+    //_filePath = "/Users/cameronmceleney/CLionProjects/Data/"+ FindDateToday() +"/Simulation_Data/"; // This filepath is for Mac!
+    _filePath = "D:/Data/" + FindDateToday() +"/Simulation_Data/"; // This filepath is for Windows
 }
 
 std::string GlobalVariablesClass::GetFileNameBase() {
@@ -45,12 +45,13 @@ void GlobalVariablesClass::SetExchangeMaxVal(double exchangeMaxVal) {
 
 std::string GlobalVariablesClass::FindDateToday() {
 
-    long t = std::time(nullptr);
-    tm tm = *std::localtime(&t);
+    time_t     now = time(0);
+    struct tm  timeStruct;
+    char       buf[80];
+    timeStruct = *localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+    strftime(buf, sizeof(buf), "%d %b %y", &timeStruct);
 
-    std::ostringstream oss;
-    oss << std::put_time(&tm, "%d %b %y");
-    std::string date = oss.str();
-
-    return date;
+    return buf;
 }

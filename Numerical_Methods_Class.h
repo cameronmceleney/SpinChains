@@ -24,6 +24,7 @@ private:
     int                 _drivingRegionWidth;                    // Driving region width
 
     double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
+    double              _gilbertLower;
     double              _gilbertUpper;                   // Gilbert Damping Factor
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
     double              _iterToBeginShockwave;
@@ -54,7 +55,8 @@ private:
     int                 _stopIterVal;                           // The maximum iteration step that the program will calculate to
     double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks for how long the experiment in the model has been simulated
 
-    bool                _useLLG;
+    bool                _LHSDrive;                              // If (false), code will drive from the RHS
+    bool                _useLLG;                                // If (false), code will revert to using Torque equation components.
     bool                _hasShockwave;
     bool                _isShockwaveAlreadyOn = false;
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
@@ -69,8 +71,11 @@ private:
     void                InformUserOfCodeType();
     void                SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
                                        std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState);
+    void                SetDrivingRegion(bool &useLHSDrive);
     void                SetShockwaveConditions();
     void                SetupVectors();
+    void                SetupVectorsExchange();
+    void                SetupVectorsGilbert();
     void                StreamToString();
 
 public:
