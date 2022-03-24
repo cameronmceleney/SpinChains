@@ -24,12 +24,13 @@ private:
     int                 _drivingRegionWidth;                    // Driving region width
 
     double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
+    double              _gilbertUpper;                   // Gilbert Damping Factor
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
     double              _iterToBeginShockwave;
     double              _linearFMR;
     double              _magSat = 1.0;                          // Saturation Magnetisation [T]. Note: 1A/m = 1.254uT. Must be in Telsa,
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time
-
+    int                 _numGilbert;
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins
     std::vector<double> _mxStartVal{0};                         // x-axis (x)
     std::vector<double> _myStartVal{0};                         // y-axis (y)
@@ -59,6 +60,7 @@ private:
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     bool                _saveAllSpins;
     bool                _onlyShowFinalState;
+    bool                _fixedPoints;
 
     // Private functions
     void                CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);

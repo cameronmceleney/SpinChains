@@ -3,26 +3,30 @@
 void Numerical_Methods_Class::NMSetup() {
 
     _biasFieldDriving = 3e-3;
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 100.0 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(7e5);
+    _stopIterVal = static_cast<int>(2.6e5); // 2.6e5
 
     _hasShockwave = false;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 12.0;
+    _shockwaveScaling = 1.0;
 
-    _useLLG = false; // If (false), code will revert to using Torque equation components.
+    _useLLG = true; // If (false), code will revert to using Torque equation components.
     _saveAllSpins = false;
     _onlyShowFinalState = true;
+    _fixedPoints = true;
 
-    _numberOfDataPoints = 1000; // Set equal to _stopIterVal to save all data
+    _gilbertUpper = 1e-1;
+    _numGilbert = 0;
+
+    _numberOfDataPoints = 100; // Set equal to _stopIterVal to save all data
 
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
     _stepsizeHalf = _stepsize / 2.0;
     _maxSimTime = _stepsize * _stopIterVal;
 
-    _drivingRegionLHS = 1;
+    _drivingRegionLHS = 5699; // If RHS start, then this value should be (startStart - 1) for correct offset.
     _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
     _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
 
@@ -69,10 +73,9 @@ void Numerical_Methods_Class::SetupVectors() {
     _mzStartVal.push_back(0);
 
     // Handles the Gilbert Damping vector.
-    int numGilbert = 100;
-    GilbertDamping.set_values(1e-4, 1e-1, numGilbert, true);
+    GilbertDamping.set_values(_gilbertConst, _gilbertUpper, _numGilbert, true);
     std::vector<double> tempGilbert = GilbertDamping.generate_array();
-    std::vector<double> gilbertChain(GV.GetNumSpins() - numGilbert, 1e-4);
+    std::vector<double> gilbertChain(GV.GetNumSpins() - _numGilbert, _gilbertConst);
     gilbertChain.insert(gilbertChain.end(), tempGilbert.begin(), tempGilbert.end());
     _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
     _gilbertVector.push_back(0);
@@ -315,9 +318,9 @@ void Numerical_Methods_Class::RK2LLG() {
             if (_useLLG) {
                 /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters
                  * for the first stage of RK2. */
-                mxK1 = _gyroMagConst * (- (_gilbertConst * heffYK1 * mx1 * my1) + heffYK1 * mz1 - heffZK1 * (my1 + _gilbertConst*mx1*mz1) + _gilbertConst * heffXK1 * (pow(my1,2) + pow(mz1,2)));
-                myK1 = _gyroMagConst * (-(heffXK1*mz1) + heffZK1 * (mx1 - _gilbertConst * my1 * mz1) + _gilbertConst * (heffYK1 * pow(mx1,2) - heffXK1 * mx1 * my1 + heffYK1 * pow(mz1,2)));
-                mzK1 = _gyroMagConst * (heffXK1 * my1 + _gilbertConst * heffZK1*(pow(mx1,2) + pow(my1,2)) - _gilbertConst*heffXK1*mx1*mz1 - heffYK1 * (mx1 + _gilbertConst * my1 * mz1));
+                mxK1 = _gyroMagConst * (- (_gilbertVector[spin] * heffYK1 * mx1 * my1) + heffYK1 * mz1 - heffZK1 * (my1 + _gilbertVector[spin]*mx1*mz1) + _gilbertVector[spin] * heffXK1 * (pow(my1,2) + pow(mz1,2)));
+                myK1 = _gyroMagConst * (-(heffXK1*mz1) + heffZK1 * (mx1 - _gilbertVector[spin] * my1 * mz1) + _gilbertVector[spin] * (heffYK1 * pow(mx1,2) - heffXK1 * mx1 * my1 + heffYK1 * pow(mz1,2)));
+                mzK1 = _gyroMagConst * (heffXK1 * my1 + _gilbertVector[spin] * heffZK1*(pow(mx1,2) + pow(my1,2)) - _gilbertVector[spin]*heffXK1*mx1*mz1 - heffYK1 * (mx1 + _gilbertVector[spin] * my1 * mz1));
             } else {
                 /* The magnetic moment components' coupled equations (obtained from the torque equation) with the
                  * parameters for the first stage of RK2. */
@@ -367,9 +370,9 @@ void Numerical_Methods_Class::RK2LLG() {
             if (_useLLG) {
                 /* The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters
                  * for the second stage of RK2. */
-                mxK2 = _gyroMagConst * (- (_gilbertConst * heffYK2 * mx2 * my2) + heffYK2 * mz2 - heffZK2 * (my2 + _gilbertConst*mx2*mz2) + _gilbertConst * heffXK2 * (pow(my2,2) + pow(mz2,2)));
-                myK2 = _gyroMagConst * (-(heffXK2*mz2) + heffZK2 * (mx2 - _gilbertConst * my2 * mz2) + _gilbertConst * (heffYK2 * pow(mx2,2) - heffXK2 * mx2 * my2 + heffYK2 * pow(mz2,2)));
-                mzK2 = _gyroMagConst * (heffXK2 * my2 + _gilbertConst * heffZK2*(pow(mx2,2) + pow(my2,2)) - _gilbertConst*heffXK2*mx2*mz2 - heffYK2 * (mx2 + _gilbertConst * my2 * mz2));
+                mxK2 = _gyroMagConst * (- (_gilbertVector[spin] * heffYK2 * mx2 * my2) + heffYK2 * mz2 - heffZK2 * (my2 + _gilbertVector[spin]*mx2*mz2) + _gilbertVector[spin] * heffXK2 * (pow(my2,2) + pow(mz2,2)));
+                myK2 = _gyroMagConst * (-(heffXK2*mz2) + heffZK2 * (mx2 - _gilbertVector[spin] * my2 * mz2) + _gilbertVector[spin] * (heffYK2 * pow(mx2,2) - heffXK2 * mx2 * my2 + heffYK2 * pow(mz2,2)));
+                mzK2 = _gyroMagConst * (heffXK2 * my2 + _gilbertVector[spin] * heffZK2*(pow(mx2,2) + pow(my2,2)) - _gilbertVector[spin]*heffXK2*mx2*mz2 - heffYK2 * (mx2 + _gilbertVector[spin] * my2 * mz2));
             } else {
                 /* The magnetic moment components' coupled equations (obtained from the torque equation) with the
                  * parameters for the second stage of RK2. */
@@ -448,7 +451,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
 
     std::cout << "\n";
 }
-void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState){
+void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState) {
     /* Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
      */
@@ -460,6 +463,15 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName,
         }
         outputFileName << std::endl;
 
+    } else if (_fixedPoints == true) {
+        outputFileName << "Time" << ", "
+                       << _drivingRegionLHS << ","
+                       << static_cast<int>(_drivingRegionWidth / 2.0) << ","
+                       << _drivingRegionRHS << ","
+                       << static_cast<int>(1500) << ","
+                       << static_cast<int>(2500) << ","
+                       << static_cast<int>(3500) << ","
+                       << GV.GetNumSpins() << std::endl;
     } else {
         outputFileName << "Time" << ", "
                        << _drivingRegionLHS << ","
@@ -517,15 +529,28 @@ void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::of
         {
             if (iteration % (_stopIterVal / _numberOfDataPoints) == 0)
             {
-
-                outputFileName << (iteration * _stepsize) << ","
-                               << arrayToWrite[_drivingRegionLHS] << ","
-                               << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
-                               << arrayToWrite[_drivingRegionRHS] << ","
-                               << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
-                               << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 2.0)] << ","
-                               << arrayToWrite[3 * static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
-                               << arrayToWrite[GV.GetNumSpins()] << std::endl;
+                if (_fixedPoints)
+                {
+                    outputFileName << (iteration * _stepsize) << ","
+                                   << arrayToWrite[_drivingRegionLHS] << ","
+                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[_drivingRegionRHS] << ","
+                                   << arrayToWrite[static_cast<int>(1500)] << ","
+                                   << arrayToWrite[static_cast<int>(2500)] << ","
+                                   << arrayToWrite[static_cast<int>(3500)] << ","
+                                   << arrayToWrite[GV.GetNumSpins()] << std::endl;
+                }
+                else
+                {
+                    outputFileName << (iteration * _stepsize) << ","
+                                   << arrayToWrite[_drivingRegionLHS] << ","
+                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[_drivingRegionRHS] << ","
+                                   << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
+                                   << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 2.0)] << ","
+                                   << arrayToWrite[3 * static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
+                                   << arrayToWrite[GV.GetNumSpins()] << std::endl;
+                }
             }
         }
     }
