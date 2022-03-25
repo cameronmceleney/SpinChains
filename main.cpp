@@ -12,7 +12,7 @@ int main() {
     GV.SetBiasField(0.1);
     GV.SetNumSpins(6000);
     GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetExchangeMaxVal(43.5);
 
 
     /* int in_numSpins; // number of spins in the chain

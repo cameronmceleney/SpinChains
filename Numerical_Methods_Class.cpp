@@ -5,24 +5,24 @@ void Numerical_Methods_Class::NMSetup() {
     _biasFieldDriving = 3e-3;
     _drivingFreq = 100.0 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(2.4e5); // 2.6e5
+    _stopIterVal = static_cast<int>(1e7); // 2.6e5
 
     _hasShockwave = true;
-    _iterToBeginShockwave = 0.1; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 8.0;
+    _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
+    _shockwaveScaling = 12.0;
 
     _useLLG = true;
     _LHSDrive = false;
 
     _saveAllSpins = false;
     _onlyShowFinalState = true;
-    _fixedPoints = true;
+    _fixedPoints = false;
 
     _gilbertLower = 1e-4;
-    _gilbertUpper = 1e-1;
-    _numGilbert = 200;
+    _gilbertUpper = 1.0;
+    _numGilbert = 300;
 
-    _numberOfDataPoints = 100; // Set equal to _stopIterVal to save all data
+    _numberOfDataPoints = 1000; // Set equal to _stopIterVal to save all data
 
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
@@ -515,14 +515,21 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName,
         outputFileName << std::endl;
 
     } else if (_fixedPoints) {
-        outputFileName << "Time" << ", "
+        /*outputFileName << "Time" << ", "
                        << _drivingRegionLHS << ","
                        << static_cast<int>(_drivingRegionWidth / 2.0) << ","
                        << _drivingRegionRHS << ","
                        << static_cast<int>(1500) << ","
                        << static_cast<int>(2500) << ","
                        << static_cast<int>(3500) << ","
-                       << GV.GetNumSpins() << std::endl;
+                       << GV.GetNumSpins() << std::endl;*/
+
+        outputFileName << "Time" << ", "
+                       << static_cast<int>(400) << ","
+                       << static_cast<int>(1500) << ","
+                       << static_cast<int>(3000) << ","
+                       << static_cast<int>(4500) << ","
+                       << static_cast<int>(5600) << std::endl;
     } else {
         outputFileName << "Time" << ", "
                        << _drivingRegionLHS << ","
@@ -543,8 +550,8 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
 void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
                                              std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState) {
     if (onlyShowFinalState) {
-        //if (iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
-        if (iteration == _stopIterVal) {
+        if (iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
+        //if (iteration == _stopIterVal) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
@@ -583,6 +590,7 @@ void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::of
             {
                 if (_fixedPoints)
                 {
+                    /*
                     outputFileName << (iteration * _stepsize) << ","
                                    << arrayToWrite[_drivingRegionLHS] << ","
                                    << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
@@ -591,6 +599,15 @@ void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::of
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
                                    << arrayToWrite[GV.GetNumSpins()] << std::endl;
+                   */
+                    outputFileName << (iteration * _stepsize) << ","
+                                   << arrayToWrite[400] << ","
+                                   << arrayToWrite[1500] << ","
+                                   << arrayToWrite[3000] << ","
+                                   << arrayToWrite[4500] << ","
+                                   << arrayToWrite[5600] << std::endl;
+
+
                 }
                 else
                 {
