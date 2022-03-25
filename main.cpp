@@ -24,7 +24,7 @@ int main() {
     /* double in_exchangeMin;
      * std::cout << "Enter the minimum exchange value: ";
      * std::cin >> in_exchangeMin;
-     * GV.SetExchangeMinVal(in_exchangeMin);
+     * GV.SetExchangeMinVal(in_exchangeMin)
      */
     /* double in_exchangeMax;
      * std::cout << "Enter the maximum exchange value: ";
