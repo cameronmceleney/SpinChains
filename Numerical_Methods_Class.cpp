@@ -5,7 +5,7 @@ void Numerical_Methods_Class::NMSetup() {
     _biasFieldDriving = 3e-3;
     _drivingFreq = 100.0 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(1e7); // 2.6e5
+    _stopIterVal = static_cast<int>(1e4); // 2.6e5
 
     _hasShockwave = false;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
