@@ -7,16 +7,16 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
     _stopIterVal = static_cast<int>(1e7); // 2.6e5
 
-    _hasShockwave = true;
+    _hasShockwave = false;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
     _shockwaveScaling = 12.0;
 
     _useLLG = true;
     _LHSDrive = false;
 
+    _onlyShowFinalState = false;
     _saveAllSpins = false;
-    _onlyShowFinalState = true;
-    _fixedPoints = false;
+    _fixedPoints = true;
 
     _gilbertLower = 1e-4;
     _gilbertUpper = 1.0;
