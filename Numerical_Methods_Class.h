@@ -46,6 +46,10 @@ private:
 
     int                 _numberOfDataPoints;                    // How many data-points will be saved in the output file. Higher number gives greater precision, but drastically increases filesize. Default is 1000.
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
+    double                 _shockwaveIncreaseTime;
+    double              _shockwaveStepsize;
+    double              _shockwaveMax;
+    double              _shockwaveInit;
     int                 _startIterVal = 0;                      // The iteration step that the program will begin at. Often set as zero
     double              _stepsize;                              // Stepsize between values
     double              _stepsizeHalf;                          // Separately defined to avoid repeated unnecessary calculations inside loops
@@ -55,10 +59,11 @@ private:
     int                 _stopIterVal;                           // The maximum iteration step that the program will calculate to
     double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks for how long the experiment in the model has been simulated
 
-    bool                _LHSDrive;                              // If (false), code will drive from the RHS
+    bool                _lhsDrive;                              // If (false), code will drive from the RHS
     bool                _useLLG;                                // If (false), code will revert to using Torque equation components.
     bool                _hasShockwave;
-    bool                _isShockwaveAlreadyOn = false;
+    bool                _isShockwaveOn = false;
+    bool                _isShockwaveAtMax = false;
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     bool                _saveAllSpins;
     bool                _onlyShowFinalState;
@@ -72,7 +77,7 @@ private:
     void                SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
                                        std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState);
     void                SetDrivingRegion(bool &useLHSDrive);
-    void                SetShockwaveConditions();
+    void                SetShockwaveConditions(double current_iteration);
     void                SetupVectors();
     void                SetupVectorsExchange();
     void                SetupVectorsGilbert();

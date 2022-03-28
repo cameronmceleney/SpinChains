@@ -3,20 +3,24 @@
 void Numerical_Methods_Class::NMSetup() {
 
     _biasFieldDriving = 3e-3;
-    _drivingFreq = 100.0 * 1e9;
+    _drivingFreq = 42.5 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(1e4); // 2.6e5
+    _stopIterVal = static_cast<int>(1e7); // 2.6e5
 
-    _hasShockwave = false;
+    _hasShockwave = true;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 12.0;
+    _shockwaveScaling = 2.0;
+    _shockwaveInit = _biasFieldDriving;
+    _shockwaveMax = _shockwaveInit * _shockwaveScaling;
+    _shockwaveIncreaseTime = _stopIterVal * 0.001; // Set to 1 for an instantaneous application of the shockwave. _stopIterVal * 0.001
+    _shockwaveStepsize = (_shockwaveMax - _shockwaveInit) / _shockwaveIncreaseTime;
 
     _useLLG = true;
-    _LHSDrive = false;
+    _lhsDrive = false;
 
-    _onlyShowFinalState = false;
+    _onlyShowFinalState = true;
     _saveAllSpins = false;
-    _fixedPoints = true;
+    _fixedPoints = false;
 
     _gilbertLower = 1e-4;
     _gilbertUpper = 1.0;
@@ -29,7 +33,7 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsizeHalf = _stepsize / 2.0;
     _maxSimTime = _stepsize * _stopIterVal;
 
-    SetDrivingRegion(_LHSDrive);
+    SetDrivingRegion(_lhsDrive);
 
     SetupVectors(); // Calls private class method to generate vectors needed for RK methods.
 
@@ -93,7 +97,7 @@ void Numerical_Methods_Class::SetupVectorsGilbert() {
             exit(0);
         }
 
-    if (_LHSDrive)
+    if (_lhsDrive)
     {
         GilbertDamping.set_values(_gilbertLower, _gilbertUpper, _numGilbert, true);
         std::vector<double> tempGilbert = GilbertDamping.generate_array();
@@ -303,8 +307,12 @@ void Numerical_Methods_Class::RK2LLG() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath()+"rk2_mx_"+GV.GetFileNameBase()+".csv");
+    std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
+    std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
 
     CreateFileHeader(mxRK2File, _saveAllSpins, _onlyShowFinalState);
+    CreateFileHeader(myRK2File, _saveAllSpins, _onlyShowFinalState);
+    CreateFileHeader(mzRK2File, _saveAllSpins, _onlyShowFinalState);
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or half-step (h/2)*/
@@ -315,15 +323,7 @@ void Numerical_Methods_Class::RK2LLG() {
                 bar.update();
             }
 
-        if (_hasShockwave and not _isShockwaveAlreadyOn)
-        {
-            if (iterationIndex >= _stopIterVal * _iterToBeginShockwave)
-            {
-                // Shockwave begins once simulation is a certain % complete
-                SetShockwaveConditions();
-                _isShockwaveAlreadyOn = true;
-            }
-        }
+        SetShockwaveConditions(iterationIndex);
 
         _totalTime += _stepsize;
         double t0 = _totalTime; // The initial time of the iteration, and the time at the first stage; the start of the interval and the first step of RK2. Often called 't0' in literature
@@ -448,6 +448,8 @@ void Numerical_Methods_Class::RK2LLG() {
         mzEstMid.clear();
 
         SaveDataToFile(_saveAllSpins, mxRK2File, mxNextVal, iterationIndex, _onlyShowFinalState);
+        SaveDataToFile(_saveAllSpins, myRK2File, myNextVal, iterationIndex, _onlyShowFinalState);
+        SaveDataToFile(_saveAllSpins, mzRK2File, mzNextVal, iterationIndex, _onlyShowFinalState);
 
         /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
          * value of the next iteration (y_n) */
@@ -458,7 +460,8 @@ void Numerical_Methods_Class::RK2LLG() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
-
+    myRK2File.close();
+    mzRK2File.close();
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
@@ -541,10 +544,33 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName,
                        << GV.GetNumSpins() << std::endl;
     }
 }
-void Numerical_Methods_Class::SetShockwaveConditions() {
+void Numerical_Methods_Class::SetShockwaveConditions(double current_iteration) {
 
     // If function is triggered, then the applied biasFieldDriving is increased by the scale factor _shockwaveScaling
-    _biasFieldDriving *= _shockwaveScaling;
+    if (_hasShockwave and not _isShockwaveOn)
+    {
+        if (current_iteration >= _stopIterVal * _iterToBeginShockwave)
+        {
+            // Shockwave begins once simulation is a certain % complete
+            _isShockwaveOn = true;
+        }
+
+        return;
+    }
+
+    if (_isShockwaveOn and not _isShockwaveAtMax)
+    {
+        _biasFieldDriving += _shockwaveStepsize;
+
+        if (_biasFieldDriving >= _shockwaveMax)
+        {
+            _biasFieldDriving = _shockwaveMax;
+            _isShockwaveAtMax = true;
+
+        }
+        return;
+
+    }
 
 }
 void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
