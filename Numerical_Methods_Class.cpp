@@ -3,13 +3,13 @@
 void Numerical_Methods_Class::NMSetup() {
 
     _biasFieldDriving = 3e-3;
-    _drivingFreq = 100.0 * 1e9;
+    _drivingFreq = 150.0 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
     _stopIterVal = static_cast<int>(5e6); // 2.6e5
 
     _hasShockwave = true;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 12.0;
+    _shockwaveScaling = 2.0;
     _shockwaveInit = _biasFieldDriving;
     _shockwaveMax = _shockwaveInit * _shockwaveScaling;
     _shockwaveIncreaseTime = _stopIterVal * 0.001; // Set to 1 for an instantaneous application of the shockwave. _stopIterVal * 0.001
@@ -23,10 +23,11 @@ void Numerical_Methods_Class::NMSetup() {
     _fixedPoints = false;
 
     _gilbertLower = 1e-4;
-    _gilbertUpper = 10.0;
-    _numGilbert = 400;
+    _gilbertUpper = 1.0;
+    _numGilbert = 300;
+    _correctNumSpins = 6000;
 
-    _numberOfDataPoints = 10000; // Set equal to _stopIterVal to save all data
+    _numberOfDataPoints = 1000; // Set equal to _stopIterVal to save all data
 
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
@@ -41,19 +42,16 @@ void Numerical_Methods_Class::NMSetup() {
 }
 void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
 
-    int correctNumSpins = static_cast<int>(6000);
-    int sectionWidth = 400;
-
     if (useLHSDrive)
     { //Drives from the LHS, starting at _drivingRegionLHS
-        _drivingRegionLHS = sectionWidth + 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
-        _drivingRegionWidth = static_cast<int>(correctNumSpins * _regionScaling);
+        _drivingRegionLHS = _numGilbert + 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
+        _drivingRegionWidth = static_cast<int>(_correctNumSpins * _regionScaling);
         _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
     }
     else
     { // Drives from the RHS, starting at _drivingRegionRHS
-        _drivingRegionRHS = correctNumSpins + sectionWidth;
-        _drivingRegionWidth = static_cast<int>(correctNumSpins * _regionScaling);
+        _drivingRegionRHS = _correctNumSpins + _numGilbert;
+        _drivingRegionWidth = static_cast<int>(_correctNumSpins * _regionScaling);
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth - 1; // The -1 is to correct the offset
     }
 }
@@ -101,9 +99,7 @@ void Numerical_Methods_Class::GilbertVectorsBothSides() {
     LinspaceClass GilbertDampingLHS;
     LinspaceClass GilbertDampingRHS;
 
-    int correctNumSpins = 6000;
-
-    std::vector<double> gilbertChain(correctNumSpins, _gilbertConst);
+    std::vector<double> gilbertChain(_correctNumSpins, _gilbertConst);
 
 
     GilbertDampingLHS.set_values(_gilbertUpper, _gilbertLower, _numGilbert, true);
