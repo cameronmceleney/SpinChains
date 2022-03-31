@@ -29,4 +29,5 @@ add_executable(SpinChains
         linspace.cpp linspace.h
         SpinChainEigenSolverClass.cpp SpinChainEigenSolverClass.h
         Numerical_Methods_Class.cpp Numerical_Methods_Class.h
-        GlobalVariables.cpp GlobalVariables.h)
+        GlobalVariables.cpp GlobalVariables.h
+        progressbar.hpp)
