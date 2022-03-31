@@ -5,7 +5,7 @@ void Numerical_Methods_Class::NMSetup() {
     _biasFieldDriving = 3e-3;
     _drivingFreq = 100.0 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(1e7); // 2.6e5
+    _stopIterVal = static_cast<int>(5e6); // 2.6e5
 
     _hasShockwave = true;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
@@ -23,8 +23,8 @@ void Numerical_Methods_Class::NMSetup() {
     _fixedPoints = false;
 
     _gilbertLower = 1e-4;
-    _gilbertUpper = 1.0;
-    _numGilbert = 300;
+    _gilbertUpper = 10.0;
+    _numGilbert = 400;
 
     _numberOfDataPoints = 10000; // Set equal to _stopIterVal to save all data
 
@@ -37,32 +37,31 @@ void Numerical_Methods_Class::NMSetup() {
 
     SetupVectors(); // Calls private class method to generate vectors needed for RK methods.
 
+    // std::cout << "gil: " << _gilbertVector.size() << ".mz: " << _mzStartVal.size() << std::endl; std::cout << "\n\n";
 }
 void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
 
+    int correctNumSpins = static_cast<int>(6000);
+    int sectionWidth = 400;
+
     if (useLHSDrive)
     { //Drives from the LHS, starting at _drivingRegionLHS
-        _drivingRegionLHS = 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
-        _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
+        _drivingRegionLHS = sectionWidth + 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
+        _drivingRegionWidth = static_cast<int>(correctNumSpins * _regionScaling);
         _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
     }
     else
     { // Drives from the RHS, starting at _drivingRegionRHS
-        _drivingRegionRHS = GV.GetNumSpins();
-        _drivingRegionWidth = static_cast<int>(GV.GetNumSpins() * 0.05);
+        _drivingRegionRHS = correctNumSpins + sectionWidth;
+        _drivingRegionWidth = static_cast<int>(correctNumSpins * _regionScaling);
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth - 1; // The -1 is to correct the offset
-    }
-
-    if (_drivingRegionLHS < 1 or _drivingRegionRHS > GV.GetNumSpins())
-    { // Checks neither driving region site is out with the range of the chain
-        std::cout << "The width of the domain takes it past the maximum number of spins. Exiting...";
-        exit(3);
     }
 }
 void Numerical_Methods_Class::SetupVectors() {
 
     SetupVectorsExchange();
-    SetupVectorsGilbert();
+    // SetupVectorsGilbert();
+    GilbertVectorsBothSides();
 }
 void Numerical_Methods_Class::SetupVectorsExchange() {
 
@@ -87,6 +86,47 @@ void Numerical_Methods_Class::SetupVectorsExchange() {
     _myStartVal.push_back(0);
     _mzStartVal.push_back(0);
 
+    /*
+    int count2 = 0;
+    for (int i =0; i < GV.GetNumSpins() + 2; i++) {
+        if (++count2 % 10 == 0)
+            std::cout << std::setw(12) << _mzStartVal[i] << std::endl;
+        else
+            std::cout << std::setw(12) << _mzStartVal[i] << ", ";
+    }
+    std::cout << "\n\n";
+    */
+}
+void Numerical_Methods_Class::GilbertVectorsBothSides() {
+    LinspaceClass GilbertDampingLHS;
+    LinspaceClass GilbertDampingRHS;
+
+    int correctNumSpins = 6000;
+
+    std::vector<double> gilbertChain(correctNumSpins, _gilbertConst);
+
+
+    GilbertDampingLHS.set_values(_gilbertUpper, _gilbertLower, _numGilbert, true);
+    GilbertDampingRHS.set_values(_gilbertLower, _gilbertUpper, _numGilbert, true);
+    std::vector<double> tempGilbertLHS = GilbertDampingLHS.generate_array();
+    std::vector<double> tempGilbertRHS = GilbertDampingRHS.generate_array();
+
+
+    _gilbertVector.insert(_gilbertVector.end(), tempGilbertLHS.begin(), tempGilbertLHS.end());
+    _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
+    _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
+
+    _gilbertVector.push_back(0);
+
+    /*
+    int count = 0;
+    for (int i = 0; i < GV.GetNumSpins() + 2; i++) {
+        if (++count % 10 == 0)
+            std::cout << std::setw(12) << _gilbertVector[i] << std::endl;
+        else
+            std::cout << std::setw(12) << _gilbertVector[i] << ", ";
+    }
+    */
 }
 void Numerical_Methods_Class::SetupVectorsGilbert() {
     LinspaceClass GilbertDamping;

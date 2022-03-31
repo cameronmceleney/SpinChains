@@ -32,6 +32,7 @@ private:
     double              _magSat = 1.0;                          // Saturation Magnetisation [T]. Note: 1A/m = 1.254uT. Must be in Telsa,
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time
     int                 _numGilbert;
+    double              _regionScaling = 0.05;
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins
     std::vector<double> _mxStartVal{0};                         // x-axis (x)
     std::vector<double> _myStartVal{0};                         // y-axis (y)
@@ -81,6 +82,7 @@ private:
     void                SetupVectors();
     void                SetupVectorsExchange();
     void                SetupVectorsGilbert();
+    void                GilbertVectorsBothSides();
     void                StreamToString();
 
 public:
