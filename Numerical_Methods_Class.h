@@ -34,7 +34,7 @@ private:
 
     int                 _numGilbert;
     double              _regionScaling = 0.05;
-    int                 _correctNumSpins;
+    int                 _undampedNumSpins;
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins
     std::vector<double> _mxStartVal{0};                         // x-axis (x)
     std::vector<double> _myStartVal{0};                         // y-axis (y)
@@ -49,7 +49,7 @@ private:
 
     int                 _numberOfDataPoints;                    // How many data-points will be saved in the output file. Higher number gives greater precision, but drastically increases filesize. Default is 1000.
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
-    double                 _shockwaveIncreaseTime;
+    double              _shockwaveIncreaseTime;
     double              _shockwaveStepsize;
     double              _shockwaveMax;
     double              _shockwaveInit;

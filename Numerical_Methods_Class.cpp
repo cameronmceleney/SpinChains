@@ -3,13 +3,14 @@
 void Numerical_Methods_Class::NMSetup() {
 
     _biasFieldDriving = 3e-3;
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 100.0 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(7e5); // 2.6e5
+    _stopIterVal = static_cast<int>(5e6); // 2.6e5
+    _undampedNumSpins = GV.GetNumSpins();
 
-    _hasShockwave = false;
+    _hasShockwave = true;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 2.0;
+    _shockwaveScaling = 12.0;
     _shockwaveInit = _biasFieldDriving;
     _shockwaveMax = _shockwaveInit * _shockwaveScaling;
     _shockwaveIncreaseTime = _stopIterVal * 0.001; // Set to 1 for an instantaneous application of the shockwave. _stopIterVal * 0.001
@@ -24,10 +25,10 @@ void Numerical_Methods_Class::NMSetup() {
 
     _gilbertLower = 1e-4;
     _gilbertUpper = 1.0;
-    _numGilbert = 0;
-    _correctNumSpins = 4000;
+    _numGilbert = 200;
+    GV.SetNumSpins(_undampedNumSpins + 2 * _numGilbert);
 
-    _numberOfDataPoints = 100; // Set equal to _stopIterVal to save all data
+    _numberOfDataPoints = 1000; // Set equal to _stopIterVal to save all data
 
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
@@ -45,13 +46,14 @@ void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
     if (useLHSDrive)
     { //Drives from the LHS, starting at _drivingRegionLHS
         _drivingRegionLHS = _numGilbert + 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
-        _drivingRegionWidth = static_cast<int>(_correctNumSpins * _regionScaling);
+        _drivingRegionWidth = 200;// static_cast<int>(_undampedNumSpins * _regionScaling);
         _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
     }
     else
     { // Drives from the RHS, starting at _drivingRegionRHS
-        _drivingRegionRHS = _correctNumSpins + _numGilbert;
-        _drivingRegionWidth = static_cast<int>(_correctNumSpins * _regionScaling);
+        _drivingRegionWidth = 200;// static_cast<int>(_undampedNumSpins * _regionScaling);
+        _drivingRegionRHS = GV.GetNumSpins() - _numGilbert - 100 - 1;
+        //_drivingRegionRHS = (_undampedNumSpins/2) +_numGilbert + (_drivingRegionWidth / 2); // use for central drive
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth - 1; // The -1 is to correct the offset
     }
 }
@@ -99,7 +101,7 @@ void Numerical_Methods_Class::GilbertVectorsBothSides() {
     LinspaceClass GilbertDampingLHS;
     LinspaceClass GilbertDampingRHS;
 
-    std::vector<double> gilbertChain(_correctNumSpins, _gilbertConst);
+    std::vector<double> gilbertChain(_undampedNumSpins, _gilbertConst);
 
 
     GilbertDampingLHS.set_values(_gilbertUpper, _gilbertLower, _numGilbert, true);
@@ -521,13 +523,13 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
     outputFileName << "Bias Field (H0) [T], Bias Field (Driving) [T], "
                           "Bias Field Driving Scale, Driving Frequency [Hz], Driving Region Start Site, Driving Region End Site, Driving Region Width,"
                           "Max. Sim. Time [s], Max. Exchange Val [T], Max. Iterations, Min. Exchange Val [T], "
-                          "Num. DataPoints, Num. Spins, Stepsize (h)\n";
+                          "Num. DataPoints, Num. Spins, Stepsize (h), Damped Region Width\n";
 
     outputFileName << GV.GetBiasField() << ", " << _biasFieldDriving << ", " << _shockwaveScaling << ", "
                    << _drivingFreq << ", " << _drivingRegionLHS << ", " << _drivingRegionRHS << ", "
                    << _drivingRegionWidth << ", " << _maxSimTime << ", " << GV.GetExchangeMaxVal() << ", "
                    << _stopIterVal << ", " << GV.GetExchangeMinVal() << ", " << _numberOfDataPoints << ", "
-                   << GV.GetNumSpins() << ", " << _stepsize << "\n\n";
+                   << GV.GetNumSpins() << ", " << _stepsize << ", "<< _numGilbert << "\n\n";
 
     std::string notesComments;
     std::cout << "Enter any notes for this simulation: ";
