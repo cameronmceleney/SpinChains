@@ -10,10 +10,10 @@ int main() {
 
     GV.SetFilePath();
     GV.SetBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(8000));
+    GV.SetNumSpins(static_cast<int>(16000));
     // GV.SetNumSpins(static_cast<int>(6000 * (1.0 + 0.05 * 2)));
-    GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(43.5);
+    GV.SetExchangeMinVal(132.0);
+    GV.SetExchangeMaxVal(132.0);
 
 
     /* int in_numSpins; // number of spins in the chain
