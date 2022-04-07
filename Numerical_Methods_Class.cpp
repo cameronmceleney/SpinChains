@@ -2,15 +2,15 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _biasFieldDriving = 3e-3;
+    _biasFieldDriving = 60e-3;
     _drivingFreq = 42.5 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(7e6); // 2.6e5
+    _stopIterVal = static_cast<int>(3.5e6); // 2.6e5
     _undampedNumSpins = GV.GetNumSpins();
 
-    _hasShockwave = true;
+    _hasShockwave = false;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 9;
+    _shockwaveScaling = 15;
     _shockwaveInit = _biasFieldDriving;
     _shockwaveMax = _shockwaveInit * _shockwaveScaling;
     _shockwaveIncreaseTime = _stopIterVal * 0.001; // Set to 1 for an instantaneous application of the shockwave. _stopIterVal * 0.001
@@ -345,12 +345,12 @@ void Numerical_Methods_Class::RK2LLG() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath()+"rk2_mx_"+GV.GetFileNameBase()+".csv");
-    std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
-    std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
+    //std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
+    //std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
 
     CreateFileHeader(mxRK2File, _saveAllSpins, _onlyShowFinalState);
-    CreateFileHeader(myRK2File, _saveAllSpins, _onlyShowFinalState);
-    CreateFileHeader(mzRK2File, _saveAllSpins, _onlyShowFinalState);
+    //CreateFileHeader(myRK2File, _saveAllSpins, _onlyShowFinalState);
+    //CreateFileHeader(mzRK2File, _saveAllSpins, _onlyShowFinalState);
 
     /* An increment of any RK method (such as RK4 which has k1, k2, k3 & k4) will be referred to as a stage to remove
      * confusion with the stepsize (h) which is referred to as a step or half-step (h/2)*/
@@ -486,8 +486,8 @@ void Numerical_Methods_Class::RK2LLG() {
         mzEstMid.clear();
 
         SaveDataToFile(_saveAllSpins, mxRK2File, mxNextVal, iterationIndex, _onlyShowFinalState);
-        SaveDataToFile(_saveAllSpins, myRK2File, myNextVal, iterationIndex, _onlyShowFinalState);
-        SaveDataToFile(_saveAllSpins, mzRK2File, mzNextVal, iterationIndex, _onlyShowFinalState);
+        //SaveDataToFile(_saveAllSpins, myRK2File, myNextVal, iterationIndex, _onlyShowFinalState);
+        //SaveDataToFile(_saveAllSpins, mzRK2File, mzNextVal, iterationIndex, _onlyShowFinalState);
 
         /* Sets the final value of the current iteration of the loop (y_(n+1) in textbook's notation) to be the starting
          * value of the next iteration (y_n) */
@@ -498,8 +498,8 @@ void Numerical_Methods_Class::RK2LLG() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
-    myRK2File.close();
-    mzRK2File.close();
+    //myRK2File.close();
+    //mzRK2File.close();
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
@@ -598,13 +598,11 @@ void Numerical_Methods_Class::SetShockwaveConditions(double current_iteration) {
 
     if (_isShockwaveOn and not _isShockwaveAtMax)
     {
-        // _biasFieldDriving += _shockwaveStepsize;
-        _biasFieldDriving = 0.036;
+        _biasFieldDriving += _shockwaveStepsize;
 
         if (_biasFieldDriving >= _shockwaveMax)
         {
-            // _biasFieldDriving = _shockwaveMax;
-            _biasFieldDriving = 0.036;
+            _biasFieldDriving = _shockwaveMax;
             _isShockwaveAtMax = true;
 
         }
