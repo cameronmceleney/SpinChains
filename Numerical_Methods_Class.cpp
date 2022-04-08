@@ -2,15 +2,15 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _biasFieldDriving = 60e-3;
+    _biasFieldDriving = 36e-3;
     _drivingFreq = 42.5 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(3.5e6); // 2.6e5
+    _stopIterVal = static_cast<int>(7e6); // 2.6e5
     _undampedNumSpins = GV.GetNumSpins();
 
     _hasShockwave = false;
-    _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 15;
+    _iterToBeginShockwave = 0; // Value should be between [0.0, 1.0] inclusive.
+    _shockwaveScaling = 0;
     _shockwaveInit = _biasFieldDriving;
     _shockwaveMax = _shockwaveInit * _shockwaveScaling;
     _shockwaveIncreaseTime = _stopIterVal * 0.001; // Set to 1 for an instantaneous application of the shockwave. _stopIterVal * 0.001
