@@ -5,7 +5,7 @@ void Numerical_Methods_Class::NMSetup() {
     _biasFieldDriving = 35e-3;
     _drivingFreq = 3.5 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(1e7); // 2.6e5
+    _stopIterVal = static_cast<int>(2e7); // 2.6e5
     _undampedNumSpins = GV.GetNumSpins();
 
     _hasShockwave = false;
@@ -47,7 +47,7 @@ void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
     { //Drives from the LHS, starting at _drivingRegionLHS
         _drivingRegionLHS = _numGilbert + 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
         _drivingRegionWidth = 0;// static_cast<int>(_undampedNumSpins * _regionScaling);
-        _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
+        _drivingRegionRHS = 1;//_drivingRegionLHS + _drivingRegionWidth;
     }
     else
     { // Drives from the RHS, starting at _drivingRegionRHS
