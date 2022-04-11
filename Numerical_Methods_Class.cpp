@@ -2,8 +2,8 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _biasFieldDriving = 35e-3;
-    _drivingFreq = 3.5 * 1e9;
+    _biasFieldDriving = 3e-2;
+    _drivingFreq = 12.0 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
     _stopIterVal = static_cast<int>(2e7); // 2.6e5
     _undampedNumSpins = GV.GetNumSpins();
@@ -23,7 +23,7 @@ void Numerical_Methods_Class::NMSetup() {
     _saveAllSpins = true;
     _fixedPoints = false;
 
-    _gilbertLower = 1e-4;
+    _gilbertLower = 1e-5;
     _gilbertUpper = 1.0;
     _numGilbert = 0;
     GV.SetNumSpins(_undampedNumSpins + 2 * _numGilbert);
@@ -46,13 +46,13 @@ void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
     if (useLHSDrive)
     { //Drives from the LHS, starting at _drivingRegionLHS
         _drivingRegionLHS = _numGilbert + 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
-        _drivingRegionWidth = 0;// static_cast<int>(_undampedNumSpins * _regionScaling);
-        _drivingRegionRHS = 1;//_drivingRegionLHS + _drivingRegionWidth;
+        _drivingRegionWidth = 10;// static_cast<int>(_undampedNumSpins * _regionScaling);
+        _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
     }
     else
     { // Drives from the RHS, starting at _drivingRegionRHS
-        _drivingRegionWidth = 1;// static_cast<int>(_undampedNumSpins * _regionScaling);
-        _drivingRegionRHS = 1; //GV.GetNumSpins() - _numGilbert - 100 - 1;
+        _drivingRegionWidth = 10;// static_cast<int>(_undampedNumSpins * _regionScaling);
+        _drivingRegionRHS = 1 + _drivingRegionWidth; //GV.GetNumSpins() - _numGilbert - 100 - 1;
         //_drivingRegionRHS = (_undampedNumSpins/2) +_numGilbert + (_drivingRegionWidth / 2); // use for central drive
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth - 1; // The -1 is to correct the offset
     }
