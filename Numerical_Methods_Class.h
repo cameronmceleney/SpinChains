@@ -23,7 +23,7 @@ private:
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width
 
-    double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
+    double              _gilbertConst = 1e-5;                   // Gilbert Damping Factor
     double              _gilbertLower;
     double              _gilbertUpper;                   // Gilbert Damping Factor
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
