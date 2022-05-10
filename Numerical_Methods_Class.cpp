@@ -2,18 +2,18 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _biasFieldDriving = 3e-3;
+    _biasFieldDriving = 1e-7;
     _drivingFreq = 42.5 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(4e6); // 2.6e5
+    _stopIterVal = static_cast<int>(1.4e6); // 2.6e5
     _undampedNumSpins = GV.GetNumSpins();
 
     _hasShockwave = true;
     _iterToBeginShockwave = 0.5; // Value should be between [0.0, 1.0] inclusive.
-    _shockwaveScaling = 100;
+    _shockwaveScaling = 1e6;
     _shockwaveInit = _biasFieldDriving;
     _shockwaveMax = _shockwaveInit * _shockwaveScaling;
-    _shockwaveIncreaseTime = 50e3; // 1 = instantaneous application. 35e3 is 35[fs] when stepsize=1e-15
+    _shockwaveIncreaseTime = 40e3; // 1 = instantaneous application. 35e3 is 35[fs] when stepsize=1e-15
     _shockwaveStepsize = (_shockwaveMax - _shockwaveInit) / _shockwaveIncreaseTime;
 
     _useLLG = true;
@@ -23,12 +23,12 @@ void Numerical_Methods_Class::NMSetup() {
     _saveAllSpins = false;
     _fixedPoints = false;
 
-    _gilbertLower = 1e-4;
+    _gilbertLower = 1e-5;
     _gilbertUpper = 1.0;
     _numGilbert = 400;
     GV.SetNumSpins(_undampedNumSpins + 2 * _numGilbert);
 
-    _numberOfDataPoints = 1000; // Set equal to _stopIterVal to save all data
+    _numberOfDataPoints = 100; // Set equal to _stopIterVal to save all data
 
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
