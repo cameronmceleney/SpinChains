@@ -2,10 +2,10 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _biasFieldDriving = 35e-3;
+    _biasFieldDriving = 3e-3;
     _drivingFreq = 42.5 * 1e9;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(2e7); // 2.6e5
+    _stopIterVal = static_cast<int>(7e5); // 2.6e5
     _undampedNumSpins = GV.GetNumSpins();
 
     _hasShockwave = false;
@@ -17,10 +17,10 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveStepsize = (_shockwaveMax - _shockwaveInit) / _shockwaveIncreaseTime;
 
     _useLLG = true;
-    _lhsDrive = true;
+    _lhsDrive = false;
 
     _onlyShowFinalState = true;
-    _saveAllSpins = true;
+    _saveAllSpins = false;
     _fixedPoints = false;
 
     _gilbertLower = 1e-5;
@@ -28,7 +28,7 @@ void Numerical_Methods_Class::NMSetup() {
     _numGilbert = 0;
     GV.SetNumSpins(_undampedNumSpins + 2 * _numGilbert);
 
-    _numberOfDataPoints = 1000000; // Set equal to _stopIterVal to save all data, else 100
+    _numberOfDataPoints = 100; // Set equal to _stopIterVal to save all data, else 100
 
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
@@ -46,13 +46,13 @@ void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
     if (useLHSDrive)
     { //Drives from the LHS, starting at _drivingRegionLHS
         _drivingRegionLHS = _numGilbert + 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
-        _drivingRegionWidth = 5;// static_cast<int>(_undampedNumSpins * _regionScaling);
+        _drivingRegionWidth = 200;// static_cast<int>(_undampedNumSpins * _regionScaling);
         _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
     }
     else
     { // Drives from the RHS, starting at _drivingRegionRHS
         _drivingRegionWidth = 200;// static_cast<int>(_undampedNumSpins * _regionScaling);
-        _drivingRegionRHS = GV.GetNumSpins() - _numGilbert - 100 - 1;
+        _drivingRegionRHS = GV.GetNumSpins() - _numGilbert - 0 - 1;
         //_drivingRegionRHS = (_undampedNumSpins/2) +_numGilbert + (_drivingRegionWidth / 2); // use for central drive
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth - 1; // The -1 is to correct the offset
     }
@@ -614,7 +614,7 @@ void Numerical_Methods_Class::SetShockwaveConditions(double current_iteration) {
 void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
                                              std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState) {
     if (onlyShowFinalState) {
-        if (iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
+        if (iteration >= static_cast<int>(_stopIterVal / 2.0) && iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
         //if (iteration == _stopIterVal) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files

@@ -51,7 +51,8 @@ std::string GlobalVariablesClass::FindDateToday() {
     timeStruct = *localtime(&now);
     // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
     // for more information about date/time format
-    strftime(buf, sizeof(buf), "%d %b %y", &timeStruct);
+    // strftime(buf, sizeof(buf), "%d %b %y", &timeStruct);
+    strftime(buf, sizeof(buf), "%Y-%m-%d", &timeStruct);
 
     return buf;
 }
