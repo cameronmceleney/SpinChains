@@ -8,12 +8,16 @@ int main() {
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
 
+    // Set core parameters
+    GV.SetCurrentTime();
     GV.SetFilePath();
+
+    // Set simulation parameters
     GV.SetBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(4000));
+    GV.SetNumSpins(static_cast<int>(100));
     // GV.SetNumSpins(static_cast<int>(6000 * (1.0 + 0.05 * 2)));
     GV.SetExchangeMinVal(43.5); // 132.0
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetExchangeMaxVal(43.5);
 
 
     /* int in_numSpins; // number of spins in the chain
@@ -44,12 +48,10 @@ int main() {
      * GV.SetFilePath(in_filePath);
      */
 
-    /* SolverClass.CalculateEigFreqs();
-     * SolverClass.CalculateEigFreqs();
-     */
+    SolverClass.CalculateEigFreqs();
 
-    RK2_method_use.NMSetup();
-    RK2_method_use.RK2LLG();
+    //RK2_method_use.NMSetup();
+    //RK2_method_use.RK2LLG();
 
     return 0;
 }

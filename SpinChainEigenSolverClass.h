@@ -8,7 +8,7 @@ class SpinChainEigenSolverClass {
 private:
 //  Dtype               Member Name                             // Comment
     std::vector<double> _chainJValues;
-    std::string         _fileNameEigenSolver = GV.GetFileNameBase() + "spins"; // Creates unique filename by combining the number of spins with the keyword 'spins'
+    std::string         _fileNameEigenSolver = GV.GetFileNameBase(); // Creates unique filename by combining the number of spins with the keyword 'spins'
     Eigen::MatrixXd     _generatedMatrix;
     double              _gyroMagConst = 29.2 * 2 * M_PI;
     Matrix_xd           _matrixValues;

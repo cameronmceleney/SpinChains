@@ -2,10 +2,10 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    _biasFieldDriving = 3e-3;
-    _drivingFreq = 42.5 * 1e9;
+    _biasFieldDriving = 0;
+    _drivingFreq = 0;
     _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(7e5); // 2.6e5
+    _stopIterVal = static_cast<int>(10e6); // 2.6e5
     _undampedNumSpins = GV.GetNumSpins();
 
     _hasShockwave = false;
@@ -17,7 +17,7 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveStepsize = (_shockwaveMax - _shockwaveInit) / _shockwaveIncreaseTime;
 
     _useLLG = true;
-    _lhsDrive = false;
+    _lhsDrive = true;
 
     _onlyShowFinalState = true;
     _saveAllSpins = false;
@@ -28,7 +28,7 @@ void Numerical_Methods_Class::NMSetup() {
     _numGilbert = 0;
     GV.SetNumSpins(_undampedNumSpins + 2 * _numGilbert);
 
-    _numberOfDataPoints = 100; // Set equal to _stopIterVal to save all data, else 100
+    _numberOfDataPoints = 10000; // Set equal to _stopIterVal to save all data, else 100
 
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
@@ -46,7 +46,7 @@ void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
     if (useLHSDrive)
     { //Drives from the LHS, starting at _drivingRegionLHS
         _drivingRegionLHS = _numGilbert + 1; // If RHS start, then this value should be (startStart - 1) for correct offset.
-        _drivingRegionWidth = 200;// static_cast<int>(_undampedNumSpins * _regionScaling);
+        _drivingRegionWidth = 100;// static_cast<int>(_undampedNumSpins * _regionScaling);
         _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
     }
     else
@@ -75,6 +75,24 @@ void Numerical_Methods_Class::SetupVectorsExchange() {
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
     std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
     // mxInitCond[0] = _mxInit; // Only perturb initial spin
+    int spinsEitherSide = 10;
+    for (int i = GV.GetNumSpins()-1-spinsEitherSide; i <= GV.GetNumSpins()-1+spinsEitherSide; i++)
+    {
+        mxInitCond[i] = 0.001;
+        myInitCond[i] = 0.0;
+        mzInitCond[i] = 0.999;
+    }
+
+    for (int i = 39, j=49; i <= 49; i++, j++)
+    {
+        mxInitCond[i] = 0.001;
+        myInitCond[i] = 0.0;
+        mzInitCond[i] = 0.999;
+
+        mxInitCond[j] = 0.001;
+        myInitCond[j] = 0.0;
+        mzInitCond[j] = 0.999;
+    }
 
     // Appends initial conditions to the vectors
     _mxStartVal.insert(_mxStartVal.end(), mxInitCond.begin(), mxInitCond.end());
@@ -85,17 +103,6 @@ void Numerical_Methods_Class::SetupVectorsExchange() {
     _mxStartVal.push_back(0);
     _myStartVal.push_back(0);
     _mzStartVal.push_back(0);
-
-    /*
-    int count2 = 0;
-    for (int i =0; i < GV.GetNumSpins() + 2; i++) {
-        if (++count2 % 10 == 0)
-            std::cout << std::setw(12) << _mzStartVal[i] << std::endl;
-        else
-            std::cout << std::setw(12) << _mzStartVal[i] << ", ";
-    }
-    std::cout << "\n\n";
-    */
 }
 void Numerical_Methods_Class::GilbertVectorsBothSides() {
     LinspaceClass GilbertDampingLHS;
@@ -614,7 +621,8 @@ void Numerical_Methods_Class::SetShockwaveConditions(double current_iteration) {
 void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
                                              std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState) {
     if (onlyShowFinalState) {
-        if (iteration >= static_cast<int>(_stopIterVal / 2.0) && iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
+        // iteration >= static_cast<int>(_stopIterVal / 2.0) &&
+        if (iteration % (_stopIterVal / _numberOfDataPoints) == 0) {
         //if (iteration == _stopIterVal) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files

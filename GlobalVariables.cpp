@@ -43,16 +43,35 @@ void GlobalVariablesClass::SetExchangeMaxVal(double exchangeMaxVal) {
     _exchangeMaxVal = exchangeMaxVal;
 }
 
+std::string GlobalVariablesClass::GetCurrentTime() {
+    return _currentTime;
+}
+void GlobalVariablesClass::SetCurrentTime() {
+    time_t     now = time(0);
+    struct tm  timeStruct;
+    char       buf[80];
+    timeStruct = *localtime(&now);
+
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+
+    strftime(buf, sizeof(buf), "T%H%M", &timeStruct);
+
+    _currentTime = buf;
+}
+
 std::string GlobalVariablesClass::FindDateToday() {
 
     time_t     now = time(0);
     struct tm  timeStruct;
     char       buf[80];
     timeStruct = *localtime(&now);
+
     // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
     // for more information about date/time format
-    // strftime(buf, sizeof(buf), "%d %b %y", &timeStruct);
+
     strftime(buf, sizeof(buf), "%Y-%m-%d", &timeStruct);
 
     return buf;
 }
+

@@ -9,17 +9,18 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     _totalEquations = GV.GetNumSpins() * 2;
 
+    _fileNameEigenSolver += GV.GetCurrentTime();
     // Compares user's exchange integrals and appends an explanatory string to the filename
-    if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
+    /*if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
         _fileNameEigenSolver += "-lin"; // Equal J values means the system has linear exchange ('lin')
 
     } else if (GV.GetExchangeMinVal() != GV.GetExchangeMaxVal()) {
         _fileNameEigenSolver += "-nonlin"; // Unequal J values means the system has non-linear exchange ('nonlin')
 
     } else {
-        /* no statement */
+        // no statement
     }
-
+    */
     std::cout << "Filename is: " << _fileNameEigenSolver << std::endl; // Informs user of filename to enable directory searching via file explorer search function
     std::cout << "\nFiles will be outputted to: " << GV.GetFilePath() << std::endl; // Showing the selected path will make it easier to find the file
 
@@ -37,7 +38,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     auto stopTimeFindEigens = std::chrono::system_clock::now();
     auto durationTimeFindEigens = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeFindEigens - startTimeFindEigens);
-    std::cout << "Duration to find eigenvectors and values: " << durationTimeFindEigens.count() << std::endl;
+    std::cout << "Duration to find eigenvectors and values: " << durationTimeFindEigens.count() << "[ms]." << std::endl;
 
     _matrixValues.resize(0, 0); // Removes large matrix from memory; leads to faster write times for very large matrices
 
@@ -49,7 +50,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     auto stopTimeSaveData = std::chrono::system_clock::now();
     auto durationTimeSaveData = std::chrono::duration_cast<std::chrono::milliseconds>(
             stopTimeSaveData - startTimeSaveData);
-    std::cout << "Time to write to files: " << durationTimeSaveData.count() << std::endl;
+    std::cout << "Time to write to files: " << durationTimeSaveData.count() << "[ms]." << std::endl;
 
     std::time_t stopTimeSaveData_cTimeUse = std::chrono::system_clock::to_time_t(stopTimeSaveData);
     std::cout << "\nFinished computation at: " << std::ctime(&stopTimeSaveData_cTimeUse);
@@ -61,9 +62,20 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
 void SpinChainEigenSolverClass::PrintVector(std::vector<double> inputVector)
 {
+    int count = 0;
+
     std::cout << "size: " << inputVector.size() << std::endl;
     for (double val : inputVector)
-        std::cout << val << " ";
+    {
+        if (++count % 10 == 0)
+        {
+            std::cout << std::setw(8) << val << " \n";
+        }
+        else
+        {
+            std::cout << std::setw(8) << val << " ";
+        }
+    }
     std::cout << std::endl;
 }
 
@@ -96,7 +108,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
     LinspaceClass exchangeValues{};
     std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
 
-    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins(), true);
+    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true);
     exchangeValues.generate_array();
     _chainJValues = exchangeValues.build_spinchain();
 
@@ -111,7 +123,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
 
     matrixToFill.setZero(); // Large matrix of known size so more computationally efficient to predefine size in memory
 
-    for (int row = 0, JVal = 0; row < totalEquations; row++, JVal++) {
+    for (int row = 0, JVal = 0; row < totalEquations; row++) {
         // JVal ensures a spin has the same exchange integral values on its LHS and RHS used in the spin's associated coupled equations
         /* Where an element is matrixToFill(index, index) = 0), this indicates that the element would be a diagonal
          * element of the matrix. While the full computation would be matrixToFill(index, index) =  -1.0  * angular_frequency / _gyroscopicMagneticConstant;),
@@ -123,63 +135,58 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
             if (row == 0) {
                 // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
                 matrixToFill(row,0) = 0;
-                matrixToFill(row,1) = ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetBiasField());
+                matrixToFill(row,1) = _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetBiasField(); //
                 matrixToFill(row,3) = -1.0 *  _chainJValues[JVal + 1];
-
-            } else if (row > 0 and row < totalEquations - 2) {
+            }
+            else if (row > 0 and row < totalEquations - 2) {
                 // Handles all other even-numbered rows
                 matrixToFill(row,row - 1) = -1.0 *  _chainJValues[JVal];
                 matrixToFill(row,row + 0) = 0;
                 matrixToFill(row,row + 1) = _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetBiasField();
                 matrixToFill(row,row + 3) = -1.0 *  _chainJValues[JVal + 1];
-
-            } else if (row == totalEquations - 2) {
+            }
+            else if (row == totalEquations - 2) {
                 // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                matrixToFill(row,totalEquations - 1) = ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetBiasField());
+                matrixToFill(row,totalEquations - 1) =  _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetBiasField(); //
                 matrixToFill(row,totalEquations - 2) = 0;
                 matrixToFill(row,totalEquations - 3) = -1.0 *  _chainJValues[JVal];
-
-            } else {
+            }
+            else {
                 // TODO Legacy error handling which needs updating (dm_x/dt rows)
                 std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
                 std::exit(3);
-
             }
+            continue;
         }
-
-        else if (row % 2 == 1) {
+        if (row % 2 == 1) {
             // The dm_y/dt coupled equations are the odd-numbered rows of the matrix (see notes for details)
 
             if (row == 1) {
                 // Exception for the first dm_y/dt row (2nd matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
-                matrixToFill(row,0) = -1.0 * ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetBiasField());
+                matrixToFill(row,0) = -1.0 * (_chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetBiasField()); //
                 matrixToFill(row,1) = 0;
                 matrixToFill(row,2) =  _chainJValues[JVal + 1];
-
-            } else if (row > 1 and row < totalEquations - 1) {
+            }
+            else if (row > 1 and row < totalEquations - 1) {
                 // Handles all other odd-numbered rows
                 matrixToFill(row,row - 3) =  _chainJValues[JVal];
                 matrixToFill(row,row - 1) = -1.0 * ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetBiasField());
                 matrixToFill(row,row + 0) = 0;
                 matrixToFill(row,row + 1) =  _chainJValues[JVal + 1];
-
-            } else if (row == totalEquations - 1) {
+            }
+            else if (row == totalEquations - 1) {
                 // Exception for the final dm_y/dt row (final matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
                 matrixToFill(row,totalEquations - 1) = 0;
-                matrixToFill(row,totalEquations - 2) = -1.0 * ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetBiasField());
+                matrixToFill(row,totalEquations - 2) = -1.0 * ( _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetBiasField()); //
                 matrixToFill(row,totalEquations - 4) =  _chainJValues[JVal];
-
-            } else {
+            }
+            else {
                 // TODO Legacy error handling which needs updating (dm_y/dt rows)
                 std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
                 std::exit(3);
             }
-        }
-
-        else {
-            // TODO Legacy error handling which needs updating (matrixToFill)
-            std::cout << "An issue arose in generating the matrix. Exiting..." << std::endl;
-            std::exit(3);
+            JVal++;
+            continue;
         }
     }
 

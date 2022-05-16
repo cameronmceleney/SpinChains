@@ -23,10 +23,10 @@ private:
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width
 
-    double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
+    double              _gilbertConst = 1e-5;                   // Gilbert Damping Factor
     double              _gilbertLower;
     double              _gilbertUpper;                   // Gilbert Damping Factor
-    double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
+    double              _gyroMagConst = 29E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
     double              _iterToBeginShockwave;
     double              _linearFMR;
     double              _magSat = 1.0;                          // Saturation Magnetisation [T]. Note: 1A/m = 1.254uT. Must be in Telsa,
@@ -35,17 +35,18 @@ private:
     int                 _numGilbert;
     double              _regionScaling = 0.05;
     int                 _undampedNumSpins;
-    // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins
+
+    // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
     std::vector<double> _mxStartVal{0};                         // x-axis (x)
     std::vector<double> _myStartVal{0};                         // y-axis (y)
     std::vector<double> _mzStartVal{0};                         // z-axis (z)
 
-    /* The initial value of the magnetic moment (m) along each axis.
-     * When setting [_mxInit, _myInit, _mzInit] note that they CANNOT sum to greater than 1.0
+    /* The initial value of the magnetic moment (m) along each axis. When setting
+     * [_mxInit, _myInit, _mzInit] note that they CANNOT sum to greater than 1.0
      */
     double              _mxInit = 0.0;                          // x-direction. Default is (0.0)
     double              _myInit = 0.0;                          // y-direction. Default is (0.0)
-    double              _mzInit = _magSat;                      // z-direction. Default is (1.0)
+    double              _mzInit = 1.0;                      // z-direction. Default is (1.0)
 
     int                 _numberOfDataPoints;                    // How many data-points will be saved in the output file. Higher number gives greater precision, but drastically increases filesize. Default is 1000.
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
