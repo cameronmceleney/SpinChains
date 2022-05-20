@@ -23,10 +23,10 @@ private:
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width
 
-    double              _gilbertConst = 1e-5;                   // Gilbert Damping Factor
+    double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
     double              _gilbertLower;
     double              _gilbertUpper;                   // Gilbert Damping Factor
-    double              _gyroMagConst = 29E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
+    double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
     double              _iterToBeginShockwave;
     double              _linearFMR;
     double              _magSat = 1.0;                          // Saturation Magnetisation [T]. Note: 1A/m = 1.254uT. Must be in Telsa,
@@ -46,7 +46,7 @@ private:
      */
     double              _mxInit = 0.0;                          // x-direction. Default is (0.0)
     double              _myInit = 0.0;                          // y-direction. Default is (0.0)
-    double              _mzInit = 1.0;                      // z-direction. Default is (1.0)
+    double              _mzInit = _magSat;                      // z-direction. Default is (1.0)
 
     int                 _numberOfDataPoints;                    // How many data-points will be saved in the output file. Higher number gives greater precision, but drastically increases filesize. Default is 1000.
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
@@ -93,6 +93,7 @@ public:
     void                NMSetup();
     void                RK2();
     void                RK2LLG();                               // Testing function to add nonlinearity test to original RK2 code
+    void                RK2LLGTestbed();
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H

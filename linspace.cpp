@@ -17,12 +17,16 @@ std::vector<double> LinspaceClass::generate_array() {
 
     if (_numberOfSamples == 0) {
         // If no range in inputted then empty vector is returned
+        _linspaceArray.push_back(0);
+        _linspaceArray.push_back(0);
         return _linspaceArray;
     }
 
     if (_numberOfSamples == 1) {
         // If range is one then start value is the only element of the array returned
+        _linspaceArray.push_back(0);
         _linspaceArray.push_back(_intervalStart);
+        _linspaceArray.push_back(0);
         return _linspaceArray;
     }
 
