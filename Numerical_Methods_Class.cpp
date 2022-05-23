@@ -2,60 +2,65 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
+    // ###################### Flags ######################
+    _hasShockwave = false;
+    _lhsDrive = true;
+    _useLLG = true;
+
+    // ###################### Core Parameters ######################
     _biasFieldDriving = 3e-3;
     _drivingFreq = 42.5 * 1e9;
-    _stepsize = 1e-15; // This should be at least (1 / _drivingFreq)
-    _stopIterVal = static_cast<int>(7e5); // 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15
-    _undampedNumSpins = GV.GetNumSpins();
+    _stepsize = 1e-15;
+    _stopIterVal = static_cast<int>(7e5);
 
-    _hasShockwave = false;
-    _iterToBeginShockwave = 0.0; // Value should be between [0.0, 1.0] inclusive.
+    // ###################### Shockwave Parameters ######################
+    _iterToBeginShockwave = 0.0;
     _shockwaveScaling = 0;
     _shockwaveInit = _biasFieldDriving;
     _shockwaveMax = _shockwaveInit * _shockwaveScaling;
-    _shockwaveIncreaseTime = 50e3; // 1 = instantaneous application. 35e3 is 35[fs] when stepsize=1e-15
-    _shockwaveStepsize = (_shockwaveMax - _shockwaveInit) / _shockwaveIncreaseTime;
+    _shockwaveGradientTime = 50e3;
+    _shockwaveStepsize = (_shockwaveMax - _shockwaveInit) / _shockwaveGradientTime;
 
-    _useLLG = true;
-    _lhsDrive = true;
-
+    // ###################### Data Output Parameters ######################
     _onlyShowFinalState = true;
     _saveAllSpins = false;
     _fixedPoints = false;
+    _numberOfDataPoints = 100;
 
+    // ###################### Damping Factors ######################
     _gilbertLower = _gilbertConst;
     _gilbertUpper = 1.0;
-    _numGilbert = 0;
+
+    // ###################### SpinChain Length Parameters ######################
     _drivingRegionWidth = 200;
-    GV.SetNumSpins(_undampedNumSpins + 2 * _numGilbert);
+    _numSpinsDamped = 0;
+    _numSpinsInChain = GV.GetNumSpins();
 
-    _numberOfDataPoints = 100; // Set equal to _stopIterVal to save all data, else 100
-
+    // ###################### Computations based upon other inputs ######################
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
+    _maxSimTime = _stepsize * _stopIterVal;
     _numberOfSpinPairs = GV.GetNumSpins() - 1;
     _stepsizeHalf = _stepsize / 2.0;
-    _maxSimTime = _stepsize * _stopIterVal;
+    GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
 
-    SetDrivingRegion(_lhsDrive);
-
-    SetupVectors(); // Calls private class method to generate vectors needed for RK methods.
-
-    // std::cout << "gil: " << _gilbertVector.size() << ".mz: " << _mzStartVal.size() << std::endl; std::cout << "\n\n";
+    // ###################### Method Invocations ######################
+    SetDrivingRegion(_lhsDrive); // Create driving region
+    SetupVectors(); // Generate exchange and damping-region vectors needed for all RK methods.
 }
 void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
 
     if (useLHSDrive) {
         //Drives from the LHS, starting at _drivingRegionLHS
-        _drivingRegionLHS = _numGilbert + 1;
-        // _drivingRegionWidth = 10;// static_cast<int>(_undampedNumSpins * _regionScaling);
+        _drivingRegionLHS = _numSpinsDamped + 1;  // The +1 is to correct the offset of adding a zeroth spin
+        // _drivingRegionWidth = static_cast<int>(_numSpinsInChain * _regionScaling);
         _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth;
     }
     else {
         // Drives from the RHS, starting at _drivingRegionRHS
-        // _drivingRegionWidth = 10;// static_cast<int>(_undampedNumSpins * _regionScaling);
-        _drivingRegionRHS = GV.GetNumSpins() - _numGilbert; // The -1 is to correct the offset
-        //_drivingRegionRHS = (_undampedNumSpins/2) +_numGilbert + (_drivingRegionWidth / 2); // use for central drive
-        _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth + 1;
+        _drivingRegionRHS = GV.GetNumSpins() - _numSpinsDamped;
+        // _drivingRegionWidth = static_cast<int>(_numSpinsInChain * _regionScaling);
+        //_drivingRegionRHS = (_numSpinsInChain/2) +_numSpinsDamped + (_drivingRegionWidth / 2); // use for central drive
+        _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth + 1;  // The +1 is to correct the offset of adding a zeroth spin
     }
 }
 void Numerical_Methods_Class::SetupVectors() {
@@ -71,7 +76,6 @@ void Numerical_Methods_Class::SetupVectorsExchange() {
     // The linearly spaced vector is saved as the class member '_chainJVals' simply to increase code readability
     SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, true);
     _chainJVals = SpinChainExchange.generate_array();
-    //_chainJVals = SpinChainExchange.build_spinchain();
 
     /*
     for (double i: _chainJVals) {
@@ -112,19 +116,22 @@ void Numerical_Methods_Class::GilbertVectorsBothSides() {
     LinspaceClass GilbertDampingLHS;
     LinspaceClass GilbertDampingRHS;
 
-    std::vector<double> gilbertChain(_undampedNumSpins, _gilbertConst);
+    if (_numSpinsDamped < 0) {
+        // Guard clause.
+        std::cout << "numGilbert is less than zero!";
+        exit(0);
+    }
 
+    std::vector<double> gilbertChain(_numSpinsInChain, _gilbertConst);
 
-    GilbertDampingLHS.set_values(_gilbertUpper, _gilbertLower, _numGilbert, true, false);
-    GilbertDampingRHS.set_values(_gilbertLower, _gilbertUpper, _numGilbert, true, false);
+    GilbertDampingLHS.set_values(_gilbertUpper, _gilbertLower, _numSpinsDamped, true, false);
+    GilbertDampingRHS.set_values(_gilbertLower, _gilbertUpper, _numSpinsDamped, true, false);
     std::vector<double> tempGilbertLHS = GilbertDampingLHS.generate_array();
     std::vector<double> tempGilbertRHS = GilbertDampingRHS.generate_array();
-
 
     _gilbertVector.insert(_gilbertVector.end(), tempGilbertLHS.begin(), tempGilbertLHS.end());
     _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
     _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
-
     _gilbertVector.push_back(0);
 
     /*
@@ -137,50 +144,6 @@ void Numerical_Methods_Class::GilbertVectorsBothSides() {
     }
     exit(0);
      */
-
-}
-void Numerical_Methods_Class::SetupVectorsGilbert() {
-    LinspaceClass GilbertDamping;
-    // Handles the Gilbert Damping vector for the chain (but not the damping region(s) on the ends.
-    if (_numGilbert < 0)
-        { // Guard clause.
-            std::cout << "numGilbert is less than zero!";
-            exit(0);
-        }
-
-    if (_lhsDrive)
-    {
-        GilbertDamping.set_values(_gilbertLower, _gilbertUpper, _numGilbert, true, false);
-        std::vector<double> tempGilbert = GilbertDamping.generate_array();
-
-        std::vector<double> gilbertChain(GV.GetNumSpins() - _numGilbert, _gilbertConst);
-        gilbertChain.insert(gilbertChain.end(), tempGilbert.begin(), tempGilbert.end());
-        _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
-
-        _gilbertVector.push_back(0);
-    }
-    else
-    {
-        GilbertDamping.set_values(_gilbertUpper, _gilbertLower, _numGilbert, true, false);
-        std::vector<double> scaledGilbertChain = GilbertDamping.generate_array();
-
-        std::vector<double> gilbertChain(GV.GetNumSpins() - _numGilbert, _gilbertConst);
-        _gilbertVector.insert(_gilbertVector.end(), scaledGilbertChain.begin(), scaledGilbertChain.end());
-        _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
-
-        _gilbertVector.push_back(0);
-    }
-
-    /* test code to find vector contents
-    int count = 0;
-    for (int i = 0; i < _gilbertVector.size(); i++) {
-        if (++count % 10 == 0) {std::cout << std::setw(12) << _gilbertVector[i] << "\n";}
-        else {std::cout << std::setw(12) << _gilbertVector[i] << " ";}
-    }
-
-    exit(0);
-    */
-
 
 }
 
@@ -667,7 +630,7 @@ void Numerical_Methods_Class::RK2LLGTestbed() {
             myNextVal[spin] = _myStartVal[spin] + myK2 * _stepsize;
             mzNextVal[spin] = _mzStartVal[spin] + mzK2 * _stepsize;
 
-            if (spin > _numGilbert && spin <= _numGilbert + _undampedNumSpins) {
+            if (spin > _numSpinsDamped && spin <= _numSpinsDamped + _numSpinsInChain) {
                 double mValsTotal = mxNextVal[spin] + myNextVal[spin] + mzNextVal[spin];
                 // if (mValsTotal > 1.1) {std::cout << "Iter: " << iterationIndex << " | Spin: " << spin << " | MVal: " << mValsTotal << std::endl;}
                 if (mValsTotal > maxMVal) {
@@ -706,9 +669,9 @@ void Numerical_Methods_Class::RK2LLGTestbed() {
         //SaveDataToFile(_saveAllSpins, myRK2File, myNextVal, iterationIndex, _onlyShowFinalState);
         //SaveDataToFile(_saveAllSpins, mzRK2File, mzNextVal, iterationIndex, _onlyShowFinalState);
         if (iterationIndex % static_cast<int>(_stopIterVal / _numberOfDataPoints) == 0) {
-            mxRK2Analysis << iterationIndex << ", " << maxMVal << ", " << minMVal << ", " << (avMVal) / _undampedNumSpins << ", " << counter << ", ";
+            mxRK2Analysis << iterationIndex << ", " << maxMVal << ", " << minMVal << ", " << (avMVal) / _numSpinsInChain << ", " << counter << ", ";
             for (int i: largesites) {
-                if (i > _numGilbert && i <= _numGilbert + _undampedNumSpins){mxRK2Analysis << i << ", ";}
+                if (i > _numSpinsDamped && i <= _numSpinsDamped + _numSpinsInChain){mxRK2Analysis << i << ", ";}
             }
             mxRK2Analysis << std::endl;
         }
@@ -760,10 +723,10 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
                       "\n";
 
     outputFileName << GV.GetBiasField() << ", " << _biasFieldDriving << ", " << _shockwaveScaling << ", " << _biasFieldDriving * _shockwaveScaling << ", "
-                   << _drivingFreq << ", " << _drivingRegionLHS - _numGilbert << ", " << _drivingRegionRHS - _numGilbert << ", " << _drivingRegionWidth << ", "
+                   << _drivingFreq << ", " << _drivingRegionLHS - _numSpinsDamped << ", " << _drivingRegionRHS - _numSpinsDamped << ", " << _drivingRegionWidth << ", "
                    << _maxSimTime << ", " << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << _stopIterVal << ", " <<  _numberOfDataPoints << ", "
-                   << _undampedNumSpins << ", "  << _numGilbert << ", " << _undampedNumSpins + 2 * _numGilbert << ", " << _stepsize << ", " << _gilbertConst << ", " << _gyroMagConst << ", "
-                   << _iterToBeginShockwave << ", " << _shockwaveIncreaseTime * _stepsize
+                   << _numSpinsInChain << ", "  << _numSpinsDamped << ", " << _numSpinsInChain + 2 * _numSpinsDamped << ", " << _stepsize << ", " << _gilbertConst << ", " << _gyroMagConst << ", "
+                   << _iterToBeginShockwave << ", " << _shockwaveGradientTime * _stepsize
                    << "\n";
 
     outputFileName << "\n";

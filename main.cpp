@@ -15,7 +15,6 @@ int main() {
     // Set simulation parameters
     GV.SetBiasField(0.1);
     GV.SetNumSpins(static_cast<int>(4000));
-    // GV.SetNumSpins(static_cast<int>(6000 * (1.0 + 0.05 * 2)));
     GV.SetExchangeMinVal(43.5); // 132.0
     GV.SetExchangeMaxVal(132.0);
 
@@ -25,19 +24,17 @@ int main() {
         std::cout << "Non-Uniform Exchange\n";
     }
 
-
     /* int in_numSpins; // number of spins in the chain
      * std::cout << "Enter the number of spins in the chain: ";
      * std::cin >> in_numSpins; // Takes user input for the number of spins
      * GV.SetNumSpins(in_numSpins);
-     */
 
-    /* double in_exchangeMin;
+     * double in_exchangeMin;
      * std::cout << "Enter the minimum exchange value: ";
      * std::cin >> in_exchangeMin;
      * GV.SetExchangeMinVal(in_exchangeMin)
-     */
-    /* double in_exchangeMax;
+
+     * double in_exchangeMax;
      * std::cout << "Enter the maximum exchange value: ";
      * std::cin >> in_exchangeMax;
      * GV.SetExchangeMaxVal(in_exchangeMax);

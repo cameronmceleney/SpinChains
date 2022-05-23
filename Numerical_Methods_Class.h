@@ -13,55 +13,48 @@ private:
 
     double              _biasFieldDriving;                      // Driving field amplitude [T] (caution: papers often give in mT)
     double              _shockwaveScaling;                      // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
-
-    std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
-    std::vector<double> _gilbertVector{0};
-
     double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field[rad*s^{-1}]
     double              _drivingFreq;                           // Frequency of oscillatory driving field [GHz] (f_d in literature) (default: 10 * 6.045 * 1e9)
+
     int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width
-
     double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
-    double              _gilbertLower;
-    double              _gilbertUpper;                   // Gilbert Damping Factor
+
+    double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain
+    double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
-    double              _iterToBeginShockwave;
-    double              _linearFMR;
-    double              _magSat = 1.0;                          // Saturation Magnetisation [T]. Note: 1A/m = 1.254uT. Must be in Telsa,
+    double              _iterToBeginShockwave;                  // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime
+
+    double              _magSat = 1.0;                          // Saturation Magnetisation [T]. Note: 1A/m = 1.254uT.
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time
 
-    int                 _numGilbert;
-    double              _regionScaling = 0.05;
-    int                 _undampedNumSpins;
+    // The initial values of the squares of the magnetic moments (m) along each axis. [_mxInit + _myInit + _mzInit]  CANNOT sum to greater than 1.0
+    double              _mxInit = 0.0;                          // x-direction. (Default: 0.0)
+    double              _myInit = 0.0;                          // y-direction. (Default: 0.0)
+    double              _mzInit = _magSat;                      // z-direction. (Default: _magSat = 1.0)
 
-    // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
-    std::vector<double> _mxStartVal{0};                         // x-axis (x)
-    std::vector<double> _myStartVal{0};                         // y-axis (y)
-    std::vector<double> _mzStartVal{0};                         // z-axis (z)
-
-    /* The initial value of the magnetic moment (m) along each axis. When setting
-     * [_mxInit, _myInit, _mzInit] note that they CANNOT sum to greater than 1.0
-     */
-    double              _mxInit = 0.0;                          // x-direction. Default is (0.0)
-    double              _myInit = 0.0;                          // y-direction. Default is (0.0)
-    double              _mzInit = _magSat;                      // z-direction. Default is (1.0)
-
-    int                 _numberOfDataPoints;                    // How many data-points will be saved in the output file. Higher number gives greater precision, but drastically increases filesize. Default is 1000.
+    int                 _numberOfDataPoints;                    // Number of datapoints sent to output file. Higher number gives greater precision, but drastically increases filesize. Set equal to _stopIterVal to save all data, else 100.
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
-    double              _shockwaveIncreaseTime;
+    int                 _numSpinsDamped;                        // Number of spins in the damped regions (previously called _numGilbert)
+    int                 _numSpinsInChain;                       // The number of spin sites in the spin chain to be simulated
+
+    double              _regionScaling = 0.05;                  // Calculate _drivingRegionWidth as a fraction of _numSpinsInChain
+    double              _shockwaveGradientTime;                 // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[fs] when stepsize=1e-15
     double              _shockwaveStepsize;
     double              _shockwaveMax;
+
     double              _shockwaveInit;
-    int                 _startIterVal = 0;                      // The iteration step that the program will begin at. Often set as zero
+    int                 _startIterVal = 0;                      // The iteration step that the program will begin at. (Default: 0.0)
     double              _stepsize;                              // Stepsize between values
     double              _stepsizeHalf;                          // Separately defined to avoid repeated unnecessary calculations inside loops
 
-    std::string         _stepsizeString;                        // Object to string conversation for value
-    std::string         _stopIterString;                        // Object to string conversion for value
-    int                 _stopIterVal;                           // The maximum iteration step that the program will calculate to
-    double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks for how long the experiment in the model has been simulated
+    std::string         _stepsizeString;                        // Object to string conversation for _stepsize
+    std::string         _stopIterString;                        // Object to string conversion for _stopIterVal
+    int                 _stopIterVal;                           // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15
+    double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks the 'real' time' of the simulation
+
+    // ########################################################
 
     bool                _lhsDrive;                              // If (false), code will drive from the RHS
     bool                _useLLG;                                // If (false), code will revert to using Torque equation components.
@@ -72,6 +65,13 @@ private:
     bool                _saveAllSpins;
     bool                _onlyShowFinalState;
     bool                _fixedPoints;
+
+    std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
+    std::vector<double> _gilbertVector{0};
+    // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
+    std::vector<double> _mxStartVal{0};                         // x-axis (x)
+    std::vector<double> _myStartVal{0};                         // y-axis (y)
+    std::vector<double> _mzStartVal{0};                         // z-axis (z)
 
     // Private functions
     void                CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
@@ -84,9 +84,7 @@ private:
     void                SetShockwaveConditions(double current_iteration);
     void                SetupVectors();
     void                SetupVectorsExchange();
-    void                SetupVectorsGilbert();
     void                GilbertVectorsBothSides();
-    void                StreamToString();
 
 public:
 //  Dtype               Member Name                             // Comment
