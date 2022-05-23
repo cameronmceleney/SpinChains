@@ -1,7 +1,7 @@
 #include "linspace.h"
 
 // Setter function for linspace class
-void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint){
+void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool forExchangeVals){
 
     _intervalStart = intervalStart;
 
@@ -10,6 +10,8 @@ void LinspaceClass::set_values(double intervalStart, double intervalEnd, int num
     _numberOfSamples = numberOfSamples;
 
     _shouldIncludeEndpoint = shouldIncludeEndpoint;
+
+    _forExchangeVals = forExchangeVals;
 }
 
 // Getter function for linspace class
@@ -17,16 +19,21 @@ std::vector<double> LinspaceClass::generate_array() {
 
     if (_numberOfSamples == 0) {
         // If no range in inputted then empty vector is returned
-        _linspaceArray.push_back(0);
-        _linspaceArray.push_back(0);
+        if (_forExchangeVals) {
+            _linspaceArray.push_back(0);
+            _linspaceArray.push_back(0);
+        }
+
         return _linspaceArray;
     }
 
     if (_numberOfSamples == 1) {
         // If range is one then start value is the only element of the array returned
-        _linspaceArray.push_back(0);
-        _linspaceArray.push_back(_intervalStart);
-        _linspaceArray.push_back(0);
+        if (_forExchangeVals) {
+            _linspaceArray.push_back(0);
+            _linspaceArray.push_back(_intervalStart);
+            _linspaceArray.push_back(0);
+        }
         return _linspaceArray;
     }
 
@@ -45,12 +52,14 @@ std::vector<double> LinspaceClass::generate_array() {
         _linspaceArray.push_back(_intervalEnd);
     }
 
+    build_spinchain();
+
     return _linspaceArray;
 }
 
 /* Special Getter function for linspace class. Must be used AFTER set_values() and generate_array() are called from
  * linspace class. This function appends zeros to start&end of array to represent spins at the end of the chain */
-std::vector<double> LinspaceClass::build_spinchain() {
+void LinspaceClass::build_spinchain() {
 
     // Initialised with a zero to account for the (P-1)th spin
     _spinchainArray.push_back(0);
@@ -61,5 +70,6 @@ std::vector<double> LinspaceClass::build_spinchain() {
     // Appends a zero to the end to account for the exchange from the (N+1)th RHS spin
     _spinchainArray.push_back(0);
 
-    return _spinchainArray;
+    _linspaceArray.clear();
+    _linspaceArray = _spinchainArray;
 }

@@ -108,9 +108,9 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
     LinspaceClass exchangeValues{};
     std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
 
-    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true);
+    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, false);
     exchangeValues.generate_array();
-    _chainJValues = exchangeValues.build_spinchain();
+    // _chainJValues = exchangeValues.build_spinchain();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
      * than using an eigen-solver library to find the roots of a characteristic equation populated by angular_frequency values. The outputted

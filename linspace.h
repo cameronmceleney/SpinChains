@@ -15,15 +15,16 @@ private:
 
     int                 _numberOfSamples;                       // Number (N) of evenly spaced samples to be returned over the given interval. Length of outputted linspace array is thus (N-1)
     bool                _shouldIncludeEndpoint;                 // If true, _intervalEnd is appended to be the last sample. Otherwise, stop is not included.
+    bool                _forExchangeVals;
 
     std::vector<double> _spinchainArray;                        // Custom vector that appends zeros to the start and end of _linspaceArray.
 
 
 public:
     //  Dtype               Member Name                             //Comment
-    std::vector<double>     build_spinchain();
+    void                    build_spinchain();
     std::vector<double>     generate_array();
-    void                    set_values (double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint);
+    void                    set_values (double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool forExchangeVals);
 
 };
 

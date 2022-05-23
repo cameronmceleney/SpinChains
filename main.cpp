@@ -54,8 +54,7 @@ int main() {
      * GV.SetFilePath(in_filePath);
      */
 
-    //SolverClass.CalculateEigFreqs();
-
+    // SolverClass.CalculateEigFreqs();
     RK2_method_use.NMSetup();
     RK2_method_use.RK2LLGTestbed();
 
