@@ -10,9 +10,9 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Core Parameters ######################
     _biasFieldDriving = 3e-3;
-    _drivingFreq = 42.5 * 1e9;
-    _stepsize = 1e-15;
-    _iterationEnd = static_cast<int>(7e5);
+    _drivingFreq = 2.5 * 1e9;
+    _stepsize = 4e-15;
+    _iterationEnd = static_cast<int>(1e3);
 
     // ###################### Shockwave Parameters ######################
     _iterToBeginShockwave = 0.0;
@@ -33,7 +33,7 @@ void Numerical_Methods_Class::NMSetup() {
     _gilbertUpper = 1.0;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 200;
+    _drivingRegionWidth = 10;
     _numSpinsDamped = 0;
     _numSpinsInChain = GV.GetNumSpins();
 
@@ -329,17 +329,21 @@ void Numerical_Methods_Class::RK2Midpoint() {
     InformUserOfCodeType();
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
-    std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
-    CreateFileHeader(mxRK2File, _saveAllSpins, _onlyShowFinalState);
-    /**
-     * std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
-     * CreateFileHeader(myRK2File, _saveAllSpins, _onlyShowFinalState);
-     * std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
-     * CreateFileHeader(mzRK2File, _saveAllSpins, _onlyShowFinalState);
-     */
+    //std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+    std::ofstream SystemAllValuesPart1(GV.GetFilePath() + "rk2_analysisFile1_" + GV.GetFileNameBase() + ".csv");
+    std::ofstream SystemAllValuesPart2(GV.GetFilePath() + "rk2_analysisFile2_" + GV.GetFileNameBase() + ".csv");
+    //CreateFileHeader(mxRK2File, _saveAllSpins, _onlyShowFinalState);
+
+    //std::ofstream myRK2File(GV.GetFilePath()+"rk2_my_"+GV.GetFileNameBase()+".csv");
+    //CreateFileHeader(myRK2File, _saveAllSpins, _onlyShowFinalState);
+    //std::ofstream mzRK2File(GV.GetFilePath()+"rk2_mz_"+GV.GetFileNameBase()+".csv");
+    //CreateFileHeader(mzRK2File, _saveAllSpins, _onlyShowFinalState);
 
     std::ofstream RK2MidPointMAnalysis(GV.GetFilePath() + "rk2_mx_analysis_" + GV.GetFileNameBase() + ".csv");
     RK2MidPointMAnalysis << "Iteration" << ", " << "Max M Value" << ", " << "Min M Value" << ", " << "Av M Value" << ", " << "No. over 1.0" << ", " << "Site Listing" << std::endl;
+
+    SystemAllValuesPart1 << "Spin,Iteration,t0,hX0,hY0,hZ0,mxK1,myK1,mzK1,mx1,my1,mz1\n";
+    SystemAllValuesPart2 << "Spin,Iteration,t0h,hX1, hY1, hZ1,mxK2,myK2,mzK2,mx2,my2,mz2,M Norm, Delta Norm\n";
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
         
@@ -348,7 +352,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
 
         double maxMSum = 1.0, minMSum = 1.0, averageMSum = 0.0;
         int counter = 0;
-        std::vector<int> sitesLargerThanMSum {0};
+        std::vector<int> sitesLargerThanMSum{0};
 
         SetShockwaveConditions(iteration);
 
@@ -407,8 +411,10 @@ void Numerical_Methods_Class::RK2Midpoint() {
             mx1[spin] = mx0MID + mxK1 * _stepsizeHalf;
             my1[spin] = my0MID + myK1 * _stepsizeHalf;
             mz1[spin] = mz0MID + mzK1 * _stepsizeHalf;
-        }
 
+            SystemAllValuesPart1 << spin << ", " << iteration << ", " << _totalTime << ", " << hX0 << ", " << hY0 << ", " << hZ0 << ", " << mxK1 << ", " << myK1 << ", " << mzK1 << ", " << mx1[spin] << ", " << my1[spin] << ", " << mz1[spin] << "\n";
+        }
+        SystemAllValuesPart1 << "\n\n\n";
         // The estimations of the m-components' values for the next iteration.
         std::vector<double> mx2(GV.GetNumSpins() + 2,0), my2(GV.GetNumSpins() + 2,0), mz2(GV.GetNumSpins() + 2,0);
 
@@ -452,6 +458,10 @@ void Numerical_Methods_Class::RK2Midpoint() {
             my2[spin] = _my0[spin] + myK2 * _stepsize;
             mz2[spin] = _mz0[spin] + mzK2 * _stepsize;
 
+            double mSumTotal = mx2[spin] + my2[spin] + mz2[spin];
+            SystemAllValuesPart2 << spin << ", " << iteration << ", " << t0HalfStep << ", " << hX1 << ", " << hY1 << ", " << hZ1 << ", " << mxK2 << ", " << myK2 << ", " << mzK2 << ", " << mx2[spin] << ", " << my2[spin] << ", " << mz2[spin] << ", " << mSumTotal << ", " << 1.0 - mSumTotal << "\n";
+            // std::cout << mz2[spin] << " | " << my2[spin] << " | " << mz2[spin] << std::endl;
+
             if (_shouldTrackMValues) {
                 if (spin > _numSpinsDamped && spin <= _numSpinsDamped + _numSpinsInChain) {
                     double mSumTotal = mx2[spin] + my2[spin] + mz2[spin];
@@ -477,7 +487,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
             }
         }
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
-
+        SystemAllValuesPart2 << "\n\n\n";
         /**
          * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
          * these between loop iterations sometimes led to incorrect values cropping up.
@@ -489,27 +499,34 @@ void Numerical_Methods_Class::RK2Midpoint() {
         my1.clear();
         mz1.clear();
 
-        SaveDataToFile(_saveAllSpins, mxRK2File, mx2, iteration, _onlyShowFinalState);
-        // SaveDataToFile(_saveAllSpins, myRK2File, my2, iteration, _onlyShowFinalState);
-        // SaveDataToFile(_saveAllSpins, mzRK2File, mz2, iteration, _onlyShowFinalState);
+        //SaveDataToFile(_saveAllSpins, mxRK2File, mx2, iteration, _onlyShowFinalState);
+        //SaveDataToFile(_saveAllSpins, myRK2File, my2, iteration, _onlyShowFinalState);
+        //SaveDataToFile(_saveAllSpins, mzRK2File, mz2, iteration, _onlyShowFinalState);
 
-        if (iteration % static_cast<int>(_iterationEnd / _numberOfDataPoints) == 0) {
-            RK2MidPointMAnalysis << iteration << ", " << maxMSum << ", " << minMSum << ", " << (averageMSum) / _numSpinsInChain << ", " << counter << ", ";
-            for (int i: sitesLargerThanMSum) {RK2MidPointMAnalysis << i << ", ";}
-            RK2MidPointMAnalysis << std::endl;
+        if (_shouldTrackMValues) {
+            if (iteration % static_cast<int>(_iterationEnd / _numberOfDataPoints) == 0) {
+                RK2MidPointMAnalysis << iteration << ", " << maxMSum << ", " << minMSum << ", " << (averageMSum) / _numSpinsInChain << ", " << counter << ", ";
+                for (int i: sitesLargerThanMSum) { RK2MidPointMAnalysis << i << ", "; }
+                RK2MidPointMAnalysis << std::endl;
+            }
         }
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         _mx0 = mx2;
         _my0 = my2;
         _mz0 = mz2;
+
+        if (iteration == 10)
+            exit(0);
     } // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
-    mxRK2File.close();
-    // myRK2File.close();
-    // mzRK2File.close();
+    //mxRK2File.close();
+    //myRK2File.close();
+    //mzRK2File.close();
     RK2MidPointMAnalysis.close();
+    SystemAllValuesPart1.close();
+    SystemAllValuesPart2.close();
 
     // Provides key parameters to user for their log. Filename can be copy/pasted from terminal to a plotter function in Python
     std::cout << "\nmax value is: " << _maxMSummation << std::endl;

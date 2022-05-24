@@ -19,11 +19,11 @@ private:
     int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region
     int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
     int                 _drivingRegionWidth;                    // Driving region width
-    double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor
+    double              _gilbertConst = 1e-3;                   // Gilbert Damping Factor
 
     double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain
     double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain
-    double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
+    double              _gyroMagConst = 29E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
     double              _iterToBeginShockwave;                  // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime
 
     int                 _iterationEnd;                          // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15

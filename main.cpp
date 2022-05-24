@@ -14,9 +14,9 @@ int main() {
 
     // Set simulation parameters
     GV.SetBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(4000));
-    GV.SetExchangeMinVal(43.5); // 132.0
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetNumSpins(static_cast<int>(200));
+    GV.SetExchangeMinVal(4.35); // 132.0
+    GV.SetExchangeMaxVal(4.35);
 
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
         std::cout << "Uniform Exchange\n";
