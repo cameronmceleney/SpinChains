@@ -9,7 +9,7 @@
 class Numerical_Methods_Class {
 
 private:
-//  Dtype               Member Name                             //Comment
+//  Dtype               Member Name                                Variable docstring
 
     double              _biasFieldDriving;                      // Driving field amplitude [T] (caution: papers often give in mT)
     double              _shockwaveScaling;                      // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
@@ -26,6 +26,9 @@ private:
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
     double              _iterToBeginShockwave;                  // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime
 
+    int                 _iterationEnd;                          // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15
+    int                 _iterationStart = 0;                    // The iteration step that the program will begin at. (Default: 0.0)
+    double              _maxMSummation = 1.0;                   // Test contain for [_mxInit + _myInit + _mzInit] > 1.0
     double              _magSat = 1.0;                          // Saturation Magnetisation [T]. Note: 1A/m = 1.254uT.
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time
 
@@ -41,42 +44,41 @@ private:
 
     double              _regionScaling = 0.05;                  // Calculate _drivingRegionWidth as a fraction of _numSpinsInChain
     double              _shockwaveGradientTime;                 // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[fs] when stepsize=1e-15
-    double              _shockwaveStepsize;
-    double              _shockwaveMax;
+    double              _shockwaveStepsize;                     // Size of incremental increase in shockwave amplitude.
+    double              _shockwaveMax;                          // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
 
     double              _shockwaveInit;
-    int                 _startIterVal = 0;                      // The iteration step that the program will begin at. (Default: 0.0)
     double              _stepsize;                              // Stepsize between values
     double              _stepsizeHalf;                          // Separately defined to avoid repeated unnecessary calculations inside loops
-
     std::string         _stepsizeString;                        // Object to string conversation for _stepsize
+
     std::string         _stopIterString;                        // Object to string conversion for _stopIterVal
-    int                 _stopIterVal;                           // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15
     double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks the 'real' time' of the simulation
 
     // ########################################################
 
-    bool                _lhsDrive;                              // If (false), code will drive from the RHS
-    bool                _useLLG;                                // If (false), code will revert to using Torque equation components.
-    bool                _hasShockwave;
-    bool                _isShockwaveOn = false;
-    bool                _isShockwaveAtMax = false;
+    bool                _lhsDrive;                              // Drive from the RHS if (true)
+    bool                _useLLG;                                // Uses the Torque equation components if (false).
+    bool                _hasShockwave;                          // Simulation contains a single driving bias field if (false).
+    bool                _isShockwaveOn = false;                 // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
+    bool                _isShockwaveAtMax = false;              // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
-    bool                _saveAllSpins;
-    bool                _onlyShowFinalState;
-    bool                _fixedPoints;
+    bool                _saveAllSpins;                          // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
+    bool                _shouldTrackMValues;
+    bool                _onlyShowFinalState;                    // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
+    bool                _fixedPoints;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
 
     std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
-    std::vector<double> _mxStartVal{0};                         // x-axis (x)
-    std::vector<double> _myStartVal{0};                         // y-axis (y)
-    std::vector<double> _mzStartVal{0};                         // z-axis (z)
+    std::vector<double> _mx0{0};                         // x-axis (x)
+    std::vector<double> _my0{0};                         // y-axis (y)
+    std::vector<double> _mz0{0};                         // z-axis (z)
 
     // Private functions
     void                CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
     void                CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
-    void                DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iterationIndex);
+    void                DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iteration);
     void                InformUserOfCodeType();
     void                SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
                                        std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState);
@@ -89,9 +91,10 @@ private:
 public:
 //  Dtype               Member Name                             // Comment
     void                NMSetup();
-    void                RK2();
-    void                RK2LLG();                               // Testing function to add nonlinearity test to original RK2 code
+    void                RK2Original();
+    void                RK2Midpoint();
     void                RK2LLGTestbed();
+    void                RK4();
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H

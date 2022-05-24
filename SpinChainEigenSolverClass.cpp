@@ -10,17 +10,13 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     _totalEquations = GV.GetNumSpins() * 2;
 
     _fileNameEigenSolver += GV.GetCurrentTime();
-    // Compares user's exchange integrals and appends an explanatory string to the filename
-    /*if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
-        _fileNameEigenSolver += "-lin"; // Equal J values means the system has linear exchange ('lin')
 
-    } else if (GV.GetExchangeMinVal() != GV.GetExchangeMaxVal()) {
-        _fileNameEigenSolver += "-nonlin"; // Unequal J values means the system has non-linear exchange ('nonlin')
+    /**
+     * if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal())
+     *   // Compares user's exchange integrals and appends an explanatory string to the filename
+     *   _fileNameEigenSolver += "-lin"; // Equal J values means the system has linear exchange ('lin')
+     */
 
-    } else {
-        // no statement
-    }
-    */
     std::cout << "Filename is: " << _fileNameEigenSolver << std::endl; // Informs user of filename to enable directory searching via file explorer search function
     std::cout << "\nFiles will be outputted to: " << GV.GetFilePath() << std::endl; // Showing the selected path will make it easier to find the file
 
@@ -31,10 +27,8 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     _matrixValues(_totalEquations, _totalEquations); // Generates the matrix but does not allocate memory. That is done as each element is calculated
     _matrixValues = populate_matrix();
-    // std::cout << "The populated matrix is :\n" << _matrixValues << std::endl;
 
     Eigen::EigenSolver <Matrix_xd> eigenSolverMatrixValues(_matrixValues);
-    // std::cout << "The eigenvalues are :\n" << eigenSolverMatrixValues.eigenvalues() << std::endl;
 
     auto stopTimeFindEigens = std::chrono::system_clock::now();
     auto durationTimeFindEigens = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeFindEigens - startTimeFindEigens);
@@ -48,8 +42,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     save_data( "eigenvalues_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvalues().imag());
 
     auto stopTimeSaveData = std::chrono::system_clock::now();
-    auto durationTimeSaveData = std::chrono::duration_cast<std::chrono::milliseconds>(
-            stopTimeSaveData - startTimeSaveData);
+    auto durationTimeSaveData = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeSaveData - startTimeSaveData);
     std::cout << "Time to write to files: " << durationTimeSaveData.count() << "[ms]." << std::endl;
 
     std::time_t stopTimeSaveData_cTimeUse = std::chrono::system_clock::to_time_t(stopTimeSaveData);
@@ -110,7 +103,6 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix()
 
     exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, false);
     exchangeValues.generate_array();
-    // _chainJValues = exchangeValues.build_spinchain();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
      * than using an eigen-solver library to find the roots of a characteristic equation populated by angular_frequency values. The outputted

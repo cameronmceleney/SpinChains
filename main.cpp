@@ -53,7 +53,7 @@ int main() {
 
     // SolverClass.CalculateEigFreqs();
     RK2_method_use.NMSetup();
-    RK2_method_use.RK2LLGTestbed();
+    RK2_method_use.RK2Midpoint();
 
     return 0;
 }
