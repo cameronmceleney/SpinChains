@@ -3,36 +3,37 @@
 void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Flags ######################
-    _hasShockwave = false;
+    _hasShockwave = true;
     _lhsDrive = false;
     _useLLG = true;
     _shouldTrackMValues = false;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 62.8 * 1e9;
+    _drivingFreq = 6.045 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(7e5);
+    _iterationEnd = static_cast<int>(1e7);
     _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
-    _iterStartShock = 0.5;
-    _shockwaveScaling = 6;
-    _shockwaveGradientTime = 50e3;
+    _iterStartShock = 0.0;
+    _shockwaveScaling = 1;
+    _shockwaveGradientTime = 70e3;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 100;
+    _numberOfDataPoints = 10000;
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
 
     // ###################### Damping Factors ######################
+    _gilbertConst  = 1e-4;
     _gilbertLower = _gilbertConst;
     _gilbertUpper = 1.0;
 
     // ###################### SpinChain Length Parameters ######################
     _drivingRegionWidth = 200;
-    _numSpinsDamped = 0;
+    _numSpinsDamped = 400;
     _numSpinsInChain = GV.GetNumSpins();
 
     // ###################### Computations based upon other inputs ######################
@@ -892,7 +893,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, st
 
     outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-    outputFileName << "Using LLG," << _useLLG << ", " << "Using Shockwave," << _hasShockwave << ", " << "Drive from LHS," << _lhsDrive << "Numerical Method Used," << methodUsed << "\n";
+    outputFileName << "Using LLG," << _useLLG << ",Using Shockwave," << _hasShockwave << ",Drive from LHS," << _lhsDrive << ",Numerical Method Used," << methodUsed << "\n";
 
     outputFileName << "\n";
 

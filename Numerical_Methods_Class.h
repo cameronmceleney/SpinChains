@@ -19,7 +19,7 @@ private:
     int                 _drivingRegionWidth;                    // Driving region width.
     double              _dynamicBiasField;                      // Driving field amplitude [T] (caution: papers often give in [mT]).
     int                 _forceStopAtIteration;                  // Legacy breakpoint variable. Set as a -ve value to deactivate.
-    double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor.
+    double              _gilbertConst;                   // Gilbert Damping Factor.
 
     double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain.
     double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain.
