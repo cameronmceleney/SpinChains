@@ -44,7 +44,7 @@ int main() {
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
-    GV.SetFileNameBase("LLGTest"+in_fileNameBase);
+    GV.SetFileNameBase("T"+in_fileNameBase);
 
     /* std::string in_filePath;
      * std::cout << "Enter the absolute path to the directory to save data: ";

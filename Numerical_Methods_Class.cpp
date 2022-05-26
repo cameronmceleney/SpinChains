@@ -4,12 +4,12 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Flags ######################
     _hasShockwave = false;
-    _lhsDrive = true;
+    _lhsDrive = false;
     _useLLG = true;
     _shouldTrackMValues = false;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 62.8 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _iterationEnd = static_cast<int>(7e5);
@@ -22,7 +22,6 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Data Output Parameters ######################
     _numberOfDataPoints = 100;
-
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
@@ -331,7 +330,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
-    CreateFileHeader(mxRK2File);
+    CreateFileHeader(mxRK2File, "RK2 Midpoint");
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -658,7 +657,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
     //########################################################################################################################
     
     std::ofstream mxRK4File(GV.GetFilePath() + "rk4_mx_" + GV.GetFileNameBase() + ".csv");
-    CreateFileHeader(mxRK4File);
+    CreateFileHeader(mxRK4File, "RK4 Midpoint");
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -885,7 +884,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName) {
+void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed) {
     /**
      * Write all non-data information to the output file.
      */
@@ -893,7 +892,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName) {
 
     outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-    outputFileName << "Using LLG," << _useLLG << ", " << "Using Shockwave," << _hasShockwave << ", " << "Drive from LHS," << _lhsDrive << "\n";
+    outputFileName << "Using LLG," << _useLLG << ", " << "Using Shockwave," << _hasShockwave << ", " << "Drive from LHS," << _lhsDrive << "Numerical Method Used," << methodUsed << "\n";
 
     outputFileName << "\n";
 

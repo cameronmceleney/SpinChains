@@ -78,7 +78,7 @@ private:
 
     // Private functions
     void                CreateColumnHeaders(std::ofstream &outputFileName);
-    void                CreateFileHeader(std::ofstream &outputFileName);
+    void                CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed);
     void                InformUserOfCodeType(const std::string& nameNumericalMethod);
     void                PrintVector(std::vector<double> &vectorToPrint);
     void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);
