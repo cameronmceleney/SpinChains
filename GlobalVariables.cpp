@@ -1,10 +1,10 @@
 #include "GlobalVariables.h"
 
-double GlobalVariablesClass::GetBiasField() {
-    return _biasField;
+double GlobalVariablesClass::GetStaticBiasField() {
+    return _staticBiasField;
 }
-void GlobalVariablesClass::SetBiasField(double biasField) {
-    _biasField = biasField;
+void GlobalVariablesClass::SetStaticBiasField(double staticBiasField) {
+    _staticBiasField = staticBiasField;
 }
 
 int GlobalVariablesClass::GetNumSpins() {

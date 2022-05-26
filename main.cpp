@@ -13,10 +13,10 @@ int main() {
     GV.SetFilePath();
 
     // Set simulation parameters
-    GV.SetBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(200));
-    GV.SetExchangeMinVal(4.35); // 132.0
-    GV.SetExchangeMaxVal(4.35);
+    GV.SetStaticBiasField(0.1);
+    GV.SetNumSpins(static_cast<int>(4000));
+    GV.SetExchangeMinVal(43.5); // 132.0
+    GV.SetExchangeMaxVal(132.0);
 
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
         std::cout << "Uniform Exchange\n";
@@ -53,7 +53,7 @@ int main() {
 
     // SolverClass.CalculateEigFreqs();
     RK2_method_use.NMSetup();
-    RK2_method_use.RK2Midpoint();
+    RK2_method_use.RK4Midpoint();
 
     return 0;
 }

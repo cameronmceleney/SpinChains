@@ -11,26 +11,26 @@ class Numerical_Methods_Class {
 private:
 //  Dtype               Member Name                                Variable docstring
 
-    double              _biasFieldDriving;                      // Driving field amplitude [T] (caution: papers often give in mT)
-    double              _shockwaveScaling;                      // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
-    double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field[rad*s^{-1}]
-    double              _drivingFreq;                           // Frequency of oscillatory driving field [GHz] (f_d in literature) (default: 10 * 6.045 * 1e9)
+    double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field [rad*s^{-1}].
+    double              _drivingFreq;                           // Frequency of oscillatory driving field. [GHz] (f_d in literature) (e.g.  42.5 * 1e9)
+    int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region.
+    int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region.
 
-    int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region
-    int                 _drivingRegionRHS;                      // The position of the spin which is rightmost in the driving region
-    int                 _drivingRegionWidth;                    // Driving region width
-    double              _gilbertConst = 1e-3;                   // Gilbert Damping Factor
+    int                 _drivingRegionWidth;                    // Driving region width.
+    double              _dynamicBiasField;                      // Driving field amplitude [T] (caution: papers often give in [mT]).
+    int                 _forceStopAtIteration;                  // Legacy breakpoint variable. Set as a -ve value to deactivate.
+    double              _gilbertConst = 1e-4;                   // Gilbert Damping Factor.
 
-    double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain
-    double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain
-    double              _gyroMagConst = 29E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
-    double              _iterToBeginShockwave;                  // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime
+    double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain.
+    double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain.
+    double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
+    double              _iterToBeginShockwave;                  // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
 
-    int                 _iterationEnd;                          // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15
+    int                 _iterationEnd;                          // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
     int                 _iterationStart = 0;                    // The iteration step that the program will begin at. (Default: 0.0)
-    double              _maxMSummation = 1.0;                   // Test contain for [_mxInit + _myInit + _mzInit] > 1.0
-    double              _magSat = 1.0;                          // Saturation Magnetisation [T]. Note: 1A/m = 1.254uT.
-    double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time
+    double              _largestMNorm = 1e-50;                  // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
+    double              _magSat = 1.0;                          // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
+    double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
     // The initial values of the squares of the magnetic moments (m) along each axis. [_mxInit + _myInit + _mzInit]  CANNOT sum to greater than 1.0
     double              _mxInit = 0.0;                          // x-direction. (Default: 0.0)
@@ -38,16 +38,17 @@ private:
     double              _mzInit = _magSat;                      // z-direction. (Default: _magSat = 1.0)
 
     int                 _numberOfDataPoints;                    // Number of datapoints sent to output file. Higher number gives greater precision, but drastically increases filesize. Set equal to _stopIterVal to save all data, else 100.
-    int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation
-    int                 _numSpinsDamped;                        // Number of spins in the damped regions (previously called _numGilbert)
-    int                 _numSpinsInChain;                       // The number of spin sites in the spin chain to be simulated
+    int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
+    int                 _numSpinsDamped;                        // Number of spins in the damped regions (previously called _numGilbert).
+    int                 _numSpinsInChain;                       // The number of spin sites in the spin chain to be simulated.
 
-    double              _regionScaling = 0.05;                  // Calculate _drivingRegionWidth as a fraction of _numSpinsInChain
-    double              _shockwaveGradientTime;                 // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[fs] when stepsize=1e-15
-    double              _shockwaveStepsize;                     // Size of incremental increase in shockwave amplitude.
+    double              _regionScaling = 0.05;                  // Calculate _drivingRegionWidth as a fraction [0.0, 1.0] of _numSpinsInChain.
+    double              _shockwaveGradientTime;                 // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[fs] when stepsize=1e-15.
+    double              _shockwaveInitialStrength;              // Initial strength of the shockwave before _shockwaveScaling occurs. (Default: = _dynamicBiasField)
     double              _shockwaveMax;                          // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
+    double              _shockwaveScaling;                      // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
 
-    double              _shockwaveInit;
+    double              _shockwaveStepsize;                     // Size of incremental increase in shockwave amplitude.
     double              _stepsize;                              // Stepsize between values
     double              _stepsizeHalf;                          // Separately defined to avoid repeated unnecessary calculations inside loops
     std::string         _stepsizeString;                        // Object to string conversation for _stepsize
@@ -68,33 +69,33 @@ private:
     bool                _onlyShowFinalState;                    // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
     bool                _fixedPoints;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
 
-    std::vector<double> _chainJVals;                            // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
+    std::vector<double> _exchangeVec;                           // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
-    std::vector<double> _mx0{0};                         // x-axis (x)
-    std::vector<double> _my0{0};                         // y-axis (y)
-    std::vector<double> _mz0{0};                         // z-axis (z)
+    std::vector<double> _mx0{0};                                // x-axis (x)
+    std::vector<double> _my0{0};                                // y-axis (y)
+    std::vector<double> _mz0{0};                                // z-axis (z)
 
     // Private functions
     void                CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
     void                CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
-    void                DebugOptions(std::vector<double> mxNextVal, std::vector<double> myNextVal, std::vector<double> mzNextVal, int spin, long iteration);
-    void                InformUserOfCodeType();
+    void                InformUserOfCodeType(const std::string& nameNumericalMethod);
+    void                PrintVector(std::vector<double> &vectorToPrint);
     void                SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
                                        std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState);
     void                SetDrivingRegion(bool &useLHSDrive);
-    void                SetShockwaveConditions(double current_iteration);
-    void                SetupVectors();
-    void                SetupVectorsExchange();
-    void                GilbertVectorsBothSides();
+    void                SetShockwaveConditions();
+    void                TestShockwaveConditions(double current_iteration);
+    void                SetExchangeVector();
+    void                SetDampingRegion();
 
 public:
 //  Dtype               Member Name                             // Comment
     void                NMSetup();
     void                RK2Original();
     void                RK2Midpoint();
-    void                RK2LLGTestbed();
-    void                RK4();
+    void                RK2MidpointForTesting();
+    void                RK4Midpoint();
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
