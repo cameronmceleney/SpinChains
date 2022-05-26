@@ -24,10 +24,10 @@ private:
     double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain.
     double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain.
     double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
-    double              _iterToBeginShockwave;                  // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
-
     int                 _iterationEnd;                          // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
+
     int                 _iterationStart = 0;                    // The iteration step that the program will begin at. (Default: 0.0)
+    double              _iterStartShock;                        // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
     double              _largestMNorm = 1e-50;                  // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
     double              _magSat = 1.0;                          // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
@@ -77,20 +77,19 @@ private:
     std::vector<double> _mz0{0};                                // z-axis (z)
 
     // Private functions
-    void                CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
-    void                CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState);
+    void                CreateColumnHeaders(std::ofstream &outputFileName);
+    void                CreateFileHeader(std::ofstream &outputFileName);
     void                InformUserOfCodeType(const std::string& nameNumericalMethod);
     void                PrintVector(std::vector<double> &vectorToPrint);
-    void                SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
-                                       std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState);
-    void                SetDrivingRegion(bool &useLHSDrive);
+    void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);
+    void                SetDrivingRegion();
     void                SetShockwaveConditions();
-    void                TestShockwaveConditions(double current_iteration);
+    void                TestShockwaveConditions(double iteration);
     void                SetExchangeVector();
     void                SetDampingRegion();
 
 public:
-//  Dtype               Member Name                             // Comment
+//  Dtype               Member Name                                Variable docstring
     void                NMSetup();
     void                RK2Original();
     void                RK2Midpoint();

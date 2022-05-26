@@ -18,6 +18,7 @@ int main() {
     GV.SetExchangeMinVal(43.5); // 132.0
     GV.SetExchangeMaxVal(132.0);
 
+    // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
         std::cout << "Uniform Exchange\n";
     } else {

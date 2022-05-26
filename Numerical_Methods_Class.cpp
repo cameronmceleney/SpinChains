@@ -9,19 +9,20 @@ void Numerical_Methods_Class::NMSetup() {
     _shouldTrackMValues = false;
 
     // ###################### Core Parameters ######################
-    _dynamicBiasField = 3e-3;
     _drivingFreq = 42.5 * 1e9;
-    _stepsize = 4e-16;
-    _iterationEnd = static_cast<int>(1.75e6);
+    _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
+    _iterationEnd = static_cast<int>(7e5);
+    _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
-    _iterToBeginShockwave = 0.5;
+    _iterStartShock = 0.5;
     _shockwaveScaling = 6;
     _shockwaveGradientTime = 50e3;
 
     // ###################### Data Output Parameters ######################
     _numberOfDataPoints = 100;
+
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
@@ -42,18 +43,61 @@ void Numerical_Methods_Class::NMSetup() {
     _stepsizeHalf = _stepsize / 2.0;
     GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
 
-    // ###################### Method Invocations ######################
+    // ###################### Core Method Invocations ######################
     SetShockwaveConditions();
     SetDampingRegion();
-    SetDrivingRegion(_lhsDrive);
+    SetDrivingRegion();
     SetExchangeVector();
 }
-void Numerical_Methods_Class::SetDrivingRegion(bool &useLHSDrive) {
+
+void Numerical_Methods_Class::SetShockwaveConditions() {
+
+    if (_hasShockwave) {
+        _shockwaveInitialStrength = _dynamicBiasField;
+        _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
+        _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
+    } else {
+        // Ensures, on the output file, all parameter read as zero; reduces confusion when no shockwave is applied.
+        _iterStartShock = 0;
+        _shockwaveScaling = 0;
+        _shockwaveGradientTime = 0;
+        _shockwaveInitialStrength = _dynamicBiasField;
+        _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
+        _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
+    }
+}
+void Numerical_Methods_Class::SetDampingRegion() {
+    /*
+     * Generate the damping regions that are appended to either end of the spin chain.
+     */
+    LinspaceClass DampingRegionLeft;
+    LinspaceClass DampingRegionRight;
+
+    if (_numSpinsDamped < 0) {
+        // Guard clause.
+        std::cout << "numGilbert is less than zero!";
+        exit(0);
+    }
+
+    std::vector<double> gilbertChain(_numSpinsInChain, _gilbertConst);
+
+    DampingRegionLeft.set_values(_gilbertUpper, _gilbertLower, _numSpinsDamped, true, false);
+    DampingRegionRight.set_values(_gilbertLower, _gilbertUpper, _numSpinsDamped, true, false);
+    std::vector<double> tempGilbertLHS = DampingRegionLeft.generate_array();
+    std::vector<double> tempGilbertRHS = DampingRegionRight.generate_array();
+
+    _gilbertVector.insert(_gilbertVector.end(), tempGilbertLHS.begin(), tempGilbertLHS.end());
+    _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
+    _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
+    _gilbertVector.push_back(0);
+
+}
+void Numerical_Methods_Class::SetDrivingRegion() {
     /**
      * Set up driving regions for the system. The LHS option is solely for drives from the left of the system. The RHS options contains the
      * drive from the right, as well as an option to drive from the centre.
      */
-    if (useLHSDrive) {
+    if (_lhsDrive) {
         //Drives from the LHS, starting at _drivingRegionLHS
         _drivingRegionLHS = _numSpinsDamped + 1;  // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
         // _drivingRegionWidth = static_cast<int>(_numSpinsInChain * _regionScaling);
@@ -112,32 +156,6 @@ void Numerical_Methods_Class::SetExchangeVector() {
     _mx0.push_back(0);
     _my0.push_back(0);
     _mz0.push_back(0);
-}
-void Numerical_Methods_Class::SetDampingRegion() {
-    /*
-     * Generate the damping regions that are appended to either end of the spin chain.
-     */
-    LinspaceClass DampingRegionLeft;
-    LinspaceClass DampingRegionRight;
-
-    if (_numSpinsDamped < 0) {
-        // Guard clause.
-        std::cout << "numGilbert is less than zero!";
-        exit(0);
-    }
-
-    std::vector<double> gilbertChain(_numSpinsInChain, _gilbertConst);
-
-    DampingRegionLeft.set_values(_gilbertUpper, _gilbertLower, _numSpinsDamped, true, false);
-    DampingRegionRight.set_values(_gilbertLower, _gilbertUpper, _numSpinsDamped, true, false);
-    std::vector<double> tempGilbertLHS = DampingRegionLeft.generate_array();
-    std::vector<double> tempGilbertRHS = DampingRegionRight.generate_array();
-
-    _gilbertVector.insert(_gilbertVector.end(), tempGilbertLHS.begin(), tempGilbertLHS.end());
-    _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
-    _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
-    _gilbertVector.push_back(0);
-
 }
 
 void Numerical_Methods_Class::RK2Original() {
@@ -313,7 +331,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
-    CreateFileHeader(mxRK2File, _saveAllSpins, _onlyShowFinalState);
+    CreateFileHeader(mxRK2File);
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -430,7 +448,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
         my1.clear();
         mz1.clear();
 
-        SaveDataToFile(_saveAllSpins, mxRK2File, mx2, iteration, _onlyShowFinalState);
+        SaveDataToFile(mxRK2File, mx2, iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         _mx0 = mx2;
@@ -640,7 +658,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
     //########################################################################################################################
     
     std::ofstream mxRK4File(GV.GetFilePath() + "rk4_mx_" + GV.GetFileNameBase() + ".csv");
-    CreateFileHeader(mxRK4File, _saveAllSpins, _onlyShowFinalState);
+    CreateFileHeader(mxRK4File);
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -843,7 +861,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
         mxK2Vec.clear(); myK2Vec.clear(); mzK2Vec.clear();
         mxK3Vec.clear(); myK3Vec.clear(); mzK3Vec.clear();
 
-        SaveDataToFile(_saveAllSpins, mxRK4File, mx4, iteration, _onlyShowFinalState);
+        SaveDataToFile(mxRK4File, mx4, iteration);
         // SaveDataToFile(_saveAllSpins, myRK4File, my4, iteration, _onlyShowFinalState);
         // SaveDataToFile(_saveAllSpins, mzRK4File, mz4, iteration, _onlyShowFinalState);
 
@@ -867,22 +885,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-void Numerical_Methods_Class::InformUserOfCodeType(const std::string& nameNumericalMethod) {
-    /**
-     * Informs the user of the code type they are running, including: solver type; special modules.
-     */
-    if (_useLLG)
-        std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (LLG) code";
-    else
-        std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (Torque) code";
-
-    if (_hasShockwave)
-        std::cout << " with shockwave module.\n";
-    else
-        std::cout << ".\n";
-
-}
-void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState) {
+void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName) {
     /**
      * Write all non-data information to the output file.
      */
@@ -905,7 +908,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
                    << _drivingFreq << ", " << _drivingRegionLHS - _numSpinsDamped << ", " << _drivingRegionRHS - _numSpinsDamped << ", " << _drivingRegionWidth << ", "
                    << _maxSimTime << ", " << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << _iterationEnd << ", " <<  _numberOfDataPoints << ", "
                    << _numSpinsInChain << ", "  << _numSpinsDamped << ", " << _numSpinsInChain + 2 * _numSpinsDamped << ", " << _stepsize << ", " << _gilbertConst << ", " << _gyroMagConst << ", "
-                   << _iterToBeginShockwave << ", " << _shockwaveGradientTime * _stepsize
+                   << _iterStartShock << ", " << _shockwaveGradientTime * _stepsize
                    << "\n";
 
     outputFileName << "\n";
@@ -920,16 +923,16 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, bo
 
     outputFileName << "\n";
 
-    CreateColumnHeaders(outputFileName, areAllSpinBeingSaved, onlyShowFinalState);
+    CreateColumnHeaders(outputFileName);
 
     std::cout << "\n";
 }
-void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName, bool &areAllSpinBeingSaved, bool &onlyShowFinalState) {
+void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName) {
     /**
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
      */
-    if (areAllSpinBeingSaved or onlyShowFinalState) {
+    if (_saveAllSpins or _onlyShowFinalState) {
         // Print column heading for every spin simulated.
         outputFileName << "Time [s]";
         for (int i = 1; i <= GV.GetNumSpins(); i++) {
@@ -938,14 +941,6 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName,
         outputFileName << std::endl;
 
     } else if (_fixedPoints) {
-        /*outputFileName << "Time" << ", "
-                       << _drivingRegionLHS << ","
-                       << static_cast<int>(_drivingRegionWidth / 2.0) << ","
-                       << _drivingRegionRHS << ","
-                       << static_cast<int>(1500) << ","
-                       << static_cast<int>(2500) << ","
-                       << static_cast<int>(3500) << ","
-                       << GV.GetNumSpins() << std::endl;*/
 
         outputFileName << "Time" << ", "
                        << static_cast<int>(400) << ","
@@ -964,6 +959,21 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName,
                        << GV.GetNumSpins() << std::endl;
     }
 }
+void Numerical_Methods_Class::InformUserOfCodeType(const std::string& nameNumericalMethod) {
+    /**
+     * Informs the user of the code type they are running, including: solver type; special modules.
+     */
+    if (_useLLG)
+        std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (LLG) code";
+    else
+        std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (Torque) code";
+
+    if (_hasShockwave)
+        std::cout << " with shockwave module.\n";
+    else
+        std::cout << ".\n";
+
+}
 void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint) {
 
     int count = 0;
@@ -976,9 +986,8 @@ void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint) {
     exit(0);
 
 }
-void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::ofstream &outputFileName,
-                                             std::vector<double> &arrayToWrite, int &iteration, bool &onlyShowFinalState) {
-    if (onlyShowFinalState) {
+void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
+    if (_onlyShowFinalState) {
         // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
         if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
         //if (iteration == _iterationEnd) {
@@ -1000,7 +1009,7 @@ void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::of
             outputFileName << std::endl;
         }
     } else {
-        if (areAllSpinBeingSaved)
+        if (_saveAllSpins)
         {
             for (int i = 0; i <= GV.GetNumSpins(); i++)
             {
@@ -1054,19 +1063,12 @@ void Numerical_Methods_Class::SaveDataToFile(bool &areAllSpinBeingSaved, std::of
         }
     }
 }
-void Numerical_Methods_Class::SetShockwaveConditions() {
+void Numerical_Methods_Class::TestShockwaveConditions(double iteration) {
 
-    _shockwaveInitialStrength = _dynamicBiasField;
-    _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
-    _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
-
-}
-void Numerical_Methods_Class::TestShockwaveConditions(double current_iteration) {
-
-    // If function is triggered, then the applied biasFieldDriving is increased by the scale factor _shockwaveScaling
+    // If method is triggered, then the applied biasFieldDriving is increased by the scale factor _shockwaveScaling
     if (_hasShockwave and not _isShockwaveOn)
     {
-        if (current_iteration >= _iterationEnd * _iterToBeginShockwave)
+        if (iteration >= _iterationEnd * _iterStartShock)
         {
             // Shockwave begins once simulation is a certain % complete
             _isShockwaveOn = true;
