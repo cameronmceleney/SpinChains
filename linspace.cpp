@@ -52,7 +52,7 @@ std::vector<double> LinspaceClass::generate_array() {
         _linspaceArray.push_back(_intervalEnd);
     }
 
-    build_spinchain();
+    if (_forExchangeVals) { build_spinchain(); }
 
     return _linspaceArray;
 }

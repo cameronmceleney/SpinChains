@@ -3,25 +3,25 @@
 void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Flags ######################
-    _hasShockwave = true;
-    _lhsDrive = false;
+    _hasShockwave = false;
+    _lhsDrive = true;
     _useLLG = true;
-    _shouldTrackMValues = false;
+    _shouldTrackMValues = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 6.045 * 1e9;
+    _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(1e7);
+    _iterationEnd = static_cast<int>(7e5);
     _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
     _iterStartShock = 0.0;
-    _shockwaveScaling = 1;
+    _shockwaveScaling = 5;
     _shockwaveGradientTime = 70e3;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 10000;
+    _numberOfDataPoints = 100;
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
@@ -33,13 +33,13 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### SpinChain Length Parameters ######################
     _drivingRegionWidth = 200;
-    _numSpinsDamped = 400;
+    _numSpinsDamped = 100;
     _numSpinsInChain = GV.GetNumSpins();
 
     // ###################### Computations based upon other inputs ######################
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _maxSimTime = _stepsize * _iterationEnd;
-    _numberOfSpinPairs = GV.GetNumSpins() - 1;
+    _numberOfSpinPairs = _numSpinsInChain - 1;
     _stepsizeHalf = _stepsize / 2.0;
     GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
 
@@ -90,7 +90,6 @@ void Numerical_Methods_Class::SetDampingRegion() {
     _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
     _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
     _gilbertVector.push_back(0);
-
 }
 void Numerical_Methods_Class::SetDrivingRegion() {
     /**
@@ -105,7 +104,7 @@ void Numerical_Methods_Class::SetDrivingRegion() {
     }
     else {
         // Drives from the RHS, starting at _drivingRegionRHS
-        _drivingRegionRHS = GV.GetNumSpins() - _numSpinsDamped;
+        _drivingRegionRHS = GV.GetNumSpins() - _numSpinsDamped - 1;
         // _drivingRegionWidth = static_cast<int>(_numSpinsInChain * _regionScaling);
         //_drivingRegionRHS = (_numSpinsInChain/2) +_numSpinsDamped + (_drivingRegionWidth / 2); // use for central drive
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth + 1;  // The +1 is to correct the offset of adding a zeroth spin
@@ -122,15 +121,8 @@ void Numerical_Methods_Class::SetExchangeVector() {
     SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, true);
     _exchangeVec = SpinChainExchange.generate_array();
 
-    /*
-    for (double i: _exchangeVec) {
-        std::cout << i << ", ";
-    }
-    exit(0);
-     */
-
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
-    std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
+    std::vector<double> mxInitCond(_numSpinsInChain, _mxInit), myInitCond(_numSpinsInChain, _myInit), mzInitCond(_numSpinsInChain, _mzInit);
     // mxInitCond[0] = _mxInit; // Only perturb initial spin
 
     //int spinsEitherSide = 0;
@@ -422,7 +414,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
             } else {
                 // The magnetic moment components' coupled equations (obtained from the torque equation)
                 mxK2 = -1.0 * _gyroMagConst * (my1MID * hZ1 - mz1MID * hY1);
-                myK2 =      _gyroMagConst * (mx1MID * hZ1 - mz1MID * hX1);
+                myK2 =        _gyroMagConst * (mx1MID * hZ1 - mz1MID * hX1);
                 mzK2 = -1.0 * _gyroMagConst * (mx1MID * hY1 - my1MID * hX1);
             }
 
@@ -901,7 +893,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, st
                       "Driving Frequency (f) [Hz],Driving Region Start Site,Driving Region End Site, Driving Region Width,"
                       "Max. Sim. Time [s],Min. Exchange Val (J)[T],Max. Exchange Val (J)[T],Max. Iterations,No. DataPoints,"
                       "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, Stepsize (h),Gilbert Damping Factor, Gyromagnetic Ratio (2Pi*Y),"
-                      "Shockwave Gradient Time (s), Shockwave Application Time (s)"
+                      "Shockwave Gradient Time (s), Shockwave Application Time [s]"
                       "\n";
 
     outputFileName << GV.GetStaticBiasField() << ", " << _dynamicBiasField << ", " << _shockwaveScaling << ", " << _dynamicBiasField * _shockwaveScaling << ", "
@@ -992,7 +984,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
         if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
         //if (iteration == _iterationEnd) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
-                // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
+                // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
                     outputFileName << (iteration * _stepsize) << ",";
