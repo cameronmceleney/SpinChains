@@ -3,21 +3,21 @@
 void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Flags ######################
-    _hasShockwave = false;
+    _hasShockwave = true;
     _lhsDrive = true;
     _useLLG = true;
     _shouldTrackMValues = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 6.045 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(7e5);
+    _iterationEnd = static_cast<int>(14e5);
     _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
-    _iterStartShock = 0.0;
-    _shockwaveScaling = 5;
+    _iterStartShock = 0.25;
+    _shockwaveScaling = 9;
     _shockwaveGradientTime = 70e3;
 
     // ###################### Data Output Parameters ######################
@@ -28,13 +28,14 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Damping Factors ######################
     _gilbertConst  = 1e-4;
-    _gilbertLower = _gilbertConst;
+    _gilbertLower = 1e-4;
     _gilbertUpper = 1.0;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 200;
-    _numSpinsDamped = 100;
+    _numSpinsDamped = 200; // Damping region currently doesn't work
     _numSpinsInChain = GV.GetNumSpins();
+
+    _drivingRegionWidth = 200; //static_cast<int>(_numSpinsInChain * 0.05);
 
     // ###################### Computations based upon other inputs ######################
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
@@ -48,6 +49,7 @@ void Numerical_Methods_Class::NMSetup() {
     SetDampingRegion();
     SetDrivingRegion();
     SetExchangeVector();
+    SetInitialMagneticMoments();
 }
 
 void Numerical_Methods_Class::SetShockwaveConditions() {
@@ -99,14 +101,12 @@ void Numerical_Methods_Class::SetDrivingRegion() {
     if (_lhsDrive) {
         //Drives from the LHS, starting at _drivingRegionLHS
         _drivingRegionLHS = _numSpinsDamped + 1;  // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
-        // _drivingRegionWidth = static_cast<int>(_numSpinsInChain * _regionScaling);
         _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth - 1;
     }
     else {
         // Drives from the RHS, starting at _drivingRegionRHS
         _drivingRegionRHS = GV.GetNumSpins() - _numSpinsDamped - 1;
-        // _drivingRegionWidth = static_cast<int>(_numSpinsInChain * _regionScaling);
-        //_drivingRegionRHS = (_numSpinsInChain/2) +_numSpinsDamped + (_drivingRegionWidth / 2); // use for central drive
+        // _drivingRegionRHS = (_numSpinsInChain/2) +_numSpinsDamped + (_drivingRegionWidth / 2); // use for central drive
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth + 1;  // The +1 is to correct the offset of adding a zeroth spin
     }
 }
@@ -117,12 +117,26 @@ void Numerical_Methods_Class::SetExchangeVector() {
      */
     LinspaceClass SpinChainExchange;
 
-    // The linearly spaced vector is saved as the class member '_exchangeVec' simply to increase code readability
-    SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, true);
-    _exchangeVec = SpinChainExchange.generate_array();
+    if (_numSpinsDamped > 0) {
+        SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, false);
+        _exchangeVec = SpinChainExchange.generate_array();
+
+        std::vector<double> dampingRegionLeftExchange(_numSpinsDamped, GV.GetExchangeMinVal()), dampingRegionRightExchange(_numSpinsDamped, GV.GetExchangeMaxVal());
+        dampingRegionLeftExchange.insert(dampingRegionLeftExchange.begin(), 0);
+        dampingRegionRightExchange.push_back(0);
+
+        _exchangeVec.insert(_exchangeVec.begin(), dampingRegionLeftExchange.begin(), dampingRegionLeftExchange.end());
+        _exchangeVec.insert(_exchangeVec.end(), dampingRegionRightExchange.begin(), dampingRegionRightExchange.end());
+    } else {
+        // The linearly spaced vector is saved as the class member '_exchangeVec' simply to increase code readability
+        SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, true);
+        _exchangeVec = SpinChainExchange.generate_array();
+    }
+}
+void Numerical_Methods_Class::SetInitialMagneticMoments(){
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
-    std::vector<double> mxInitCond(_numSpinsInChain, _mxInit), myInitCond(_numSpinsInChain, _myInit), mzInitCond(_numSpinsInChain, _mzInit);
+    std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
     // mxInitCond[0] = _mxInit; // Only perturb initial spin
 
     //int spinsEitherSide = 0;
@@ -195,7 +209,7 @@ void Numerical_Methods_Class::RK2Original() {
 
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-                HeffX1K1 = _exchangeVec[LHS_spin] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField*cos(_drivingAngFreq * t0);
+                HeffX1K1 = _exchangeVec[LHS_spin] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField;//*cos(_drivingAngFreq * t0);
             } else {
                 // The else statement includes all spins along x which are not within the driving region
                 HeffX1K1 = _exchangeVec[LHS_spin] * mx1LHS + _exchangeVec[spin] * mx1RHS;
@@ -241,7 +255,7 @@ void Numerical_Methods_Class::RK2Original() {
 
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // Driving region must be consistently applied at every stage of the RK2 method
-                HeffX2K2 = _exchangeVec[LHS_spin] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField*cos(_drivingAngFreq * t0HalfStep);
+                HeffX2K2 = _exchangeVec[LHS_spin] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField;//*cos(_drivingAngFreq * t0HalfStep);
             } else {
                 HeffX2K2 = _exchangeVec[LHS_spin] * mx2LHS + _exchangeVec[spin] * mx2RHS;
             }
@@ -627,8 +641,10 @@ void Numerical_Methods_Class::RK2MidpointForTesting() {
         _my0 = my2;
         _mz0 = mz2;
 
-        if (iteration == _forceStopAtIteration)
+        if (iteration == _forceStopAtIteration) {
+            std::cout << "Force Stop activated at iteration #" << iteration;
             exit(0);
+        }
 
         _totalTime += _stepsize; // Bob has stepsize increment at the start of the loop
     } // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
@@ -899,7 +915,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, st
     outputFileName << GV.GetStaticBiasField() << ", " << _dynamicBiasField << ", " << _shockwaveScaling << ", " << _dynamicBiasField * _shockwaveScaling << ", "
                    << _drivingFreq << ", " << _drivingRegionLHS - _numSpinsDamped << ", " << _drivingRegionRHS - _numSpinsDamped << ", " << _drivingRegionWidth << ", "
                    << _maxSimTime << ", " << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << _iterationEnd << ", " <<  _numberOfDataPoints << ", "
-                   << _numSpinsInChain << ", "  << _numSpinsDamped << ", " << _numSpinsInChain + 2 * _numSpinsDamped << ", " << _stepsize << ", " << _gilbertConst << ", " << _gyroMagConst << ", "
+                   << _numSpinsInChain << ", "  << _numSpinsDamped << ", " << GV.GetNumSpins() << ", " << _stepsize << ", " << _gilbertConst << ", " << _gyroMagConst << ", "
                    << _iterStartShock << ", " << _shockwaveGradientTime * _stepsize
                    << "\n";
 
@@ -966,7 +982,9 @@ void Numerical_Methods_Class::InformUserOfCodeType(const std::string& nameNumeri
         std::cout << ".\n";
 
 }
-void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint) {
+void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint, bool shouldExitAfterPrint) {
+
+    std::cout << "\n\n";
 
     int count = 0;
     for (double i: vectorToPrint) {
@@ -975,8 +993,8 @@ void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint) {
         else
             std::cout << std::setw(12) << i << ", ";
     }
-    exit(0);
 
+    if (shouldExitAfterPrint) { exit(0); }
 }
 void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
     if (_onlyShowFinalState) {

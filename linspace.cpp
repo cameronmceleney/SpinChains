@@ -1,7 +1,7 @@
 #include "linspace.h"
 
 // Setter function for linspace class
-void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool forExchangeVals){
+void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool shouldBuildSpinChain){
 
     _intervalStart = intervalStart;
 
@@ -11,7 +11,7 @@ void LinspaceClass::set_values(double intervalStart, double intervalEnd, int num
 
     _shouldIncludeEndpoint = shouldIncludeEndpoint;
 
-    _forExchangeVals = forExchangeVals;
+    _shouldBuildSpinChain = shouldBuildSpinChain;
 }
 
 // Getter function for linspace class
@@ -19,7 +19,7 @@ std::vector<double> LinspaceClass::generate_array() {
 
     if (_numberOfSamples == 0) {
         // If no range in inputted then empty vector is returned
-        if (_forExchangeVals) {
+        if (_shouldBuildSpinChain) {
             _linspaceArray.push_back(0);
             _linspaceArray.push_back(0);
         }
@@ -29,7 +29,7 @@ std::vector<double> LinspaceClass::generate_array() {
 
     if (_numberOfSamples == 1) {
         // If range is one then start value is the only element of the array returned
-        if (_forExchangeVals) {
+        if (_shouldBuildSpinChain) {
             _linspaceArray.push_back(0);
             _linspaceArray.push_back(_intervalStart);
             _linspaceArray.push_back(0);
@@ -52,7 +52,7 @@ std::vector<double> LinspaceClass::generate_array() {
         _linspaceArray.push_back(_intervalEnd);
     }
 
-    if (_forExchangeVals) { build_spinchain(); }
+    if (_shouldBuildSpinChain) { build_spinchain(); }
 
     return _linspaceArray;
 }

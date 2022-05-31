@@ -16,7 +16,7 @@ int main() {
     GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(static_cast<int>(4000));
     GV.SetExchangeMinVal(43.5); // 132.0
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetExchangeMaxVal(43.5);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {

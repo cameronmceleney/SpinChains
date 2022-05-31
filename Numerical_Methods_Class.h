@@ -77,16 +77,18 @@ private:
     std::vector<double> _mz0{0};                                // z-axis (z)
 
     // Private functions
+    void                SetShockwaveConditions();
+    void                SetDampingRegion();
+    void                SetDrivingRegion();
+    void                SetExchangeVector();
+    void                SetInitialMagneticMoments();
+
     void                CreateColumnHeaders(std::ofstream &outputFileName);
     void                CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed);
     void                InformUserOfCodeType(const std::string& nameNumericalMethod);
-    void                PrintVector(std::vector<double> &vectorToPrint);
+    void                PrintVector(std::vector<double> &vectorToPrint, bool shouldExitAfterPrint);
     void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);
-    void                SetDrivingRegion();
-    void                SetShockwaveConditions();
     void                TestShockwaveConditions(double iteration);
-    void                SetExchangeVector();
-    void                SetDampingRegion();
 
 public:
 //  Dtype               Member Name                                Variable docstring
