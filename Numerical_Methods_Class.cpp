@@ -3,16 +3,16 @@
 void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Flags ######################
-    _hasShockwave = true;
+    _hasShockwave = false;
     _lhsDrive = true;
     _useLLG = true;
     _shouldTrackMValues = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 6.045 * 1e9;
+    _drivingFreq = 25 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(14e5);
+    _iterationEnd = static_cast<int>(4e7);
     _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
@@ -27,18 +27,18 @@ void Numerical_Methods_Class::NMSetup() {
     _saveAllSpins = false;
 
     // ###################### Damping Factors ######################
-    _gilbertConst  = 1e-4;
-    _gilbertLower = 1e-4;
+    _gilbertConst  = 1e-3;
+    _gilbertLower = 1e-3;
     _gilbertUpper = 1.0;
 
     // ###################### SpinChain Length Parameters ######################
-    _numSpinsDamped = 200; // Damping region currently doesn't work
-    _numSpinsInChain = GV.GetNumSpins();
-
     _drivingRegionWidth = 200; //static_cast<int>(_numSpinsInChain * 0.05);
+    _numSpinsDamped = 200;
+    _numSpinsInChain = GV.GetNumSpins();
 
     // ###################### Computations based upon other inputs ######################
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
+    _gyroMagConst = 29E9 * 2 * M_PI;
     _maxSimTime = _stepsize * _iterationEnd;
     _numberOfSpinPairs = _numSpinsInChain - 1;
     _stepsizeHalf = _stepsize / 2.0;
@@ -438,7 +438,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
 
             if (_shouldTrackMValues) {
                 double mIterationNorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
-                if (_largestMNorm < mIterationNorm) { _largestMNorm = mIterationNorm; }
+                if (_largestMNorm < 1.0 - mIterationNorm) { _largestMNorm = mIterationNorm; }
             }
         }
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
@@ -857,7 +857,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
 
             if (_shouldTrackMValues) {
                 double mIterationNorm = sqrt(pow(mx4[spin], 2) + pow(my4[spin], 2) + pow(mz4[spin], 2));
-                if (_largestMNorm < mIterationNorm) { _largestMNorm = mIterationNorm; }
+                if (_largestMNorm < 1.0 - mIterationNorm) { _largestMNorm = mIterationNorm; }
             }
             
         }

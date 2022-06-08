@@ -23,7 +23,7 @@ private:
 
     double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain.
     double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain.
-    double              _gyroMagConst = 29.2E9 * 2 * M_PI;      // Gyromagnetic ratio of an electron [GHz/T].
+    double              _gyroMagConst;                          // Gyromagnetic ratio of an electron [GHz/T].
     int                 _iterationEnd;                          // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
 
     int                 _iterationStart = 0;                    // The iteration step that the program will begin at. (Default: 0.0)
