@@ -58,16 +58,17 @@ private:
 
     // ########################################################
 
-    bool                _lhsDrive;                              // Drive from the RHS if (true)
-    bool                _useLLG;                                // Uses the Torque equation components if (false).
+    bool                _fixedPoints;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
     bool                _hasShockwave;                          // Simulation contains a single driving bias field if (false).
+    bool                _hasStaticDrive;                        // Selects (if true) whether drive has sinusoidal term
     bool                _isShockwaveOn = false;                 // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
     bool                _isShockwaveAtMax = false;              // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
-    bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
-    bool                _saveAllSpins;                          // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
-    bool                _shouldTrackMValues;
+    bool                _lhsDrive;                              // Drive from the RHS if (true)
     bool                _onlyShowFinalState;                    // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
-    bool                _fixedPoints;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
+    bool                _saveAllSpins;                          // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
+    bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
+    bool                _shouldTrackMValues;
+    bool                _useLLG;                                // Uses the Torque equation components if (false).
 
     std::vector<double> _exchangeVec;                           // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};

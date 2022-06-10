@@ -4,12 +4,13 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Flags ######################
     _hasShockwave = false;
+    _hasStaticDrive = false;
     _lhsDrive = true;
-    _useLLG = true;
     _shouldTrackMValues = true;
+    _useLLG = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 25 * 1e9;
+    _drivingFreq = 5.0 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _iterationEnd = static_cast<int>(4e7);
@@ -21,14 +22,14 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveGradientTime = 70e3;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 100;
+    _numberOfDataPoints = 1000;
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
 
     // ###################### Damping Factors ######################
-    _gilbertConst  = 1e-3;
-    _gilbertLower = 1e-3;
+    _gilbertConst  = 1e-4;
+    _gilbertLower = 1e-4;
     _gilbertUpper = 1.0;
 
     // ###################### SpinChain Length Parameters ######################
@@ -209,7 +210,7 @@ void Numerical_Methods_Class::RK2Original() {
 
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-                HeffX1K1 = _exchangeVec[LHS_spin] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField;//*cos(_drivingAngFreq * t0);
+                HeffX1K1 = _exchangeVec[LHS_spin] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField*cos(_drivingAngFreq * t0);
             } else {
                 // The else statement includes all spins along x which are not within the driving region
                 HeffX1K1 = _exchangeVec[LHS_spin] * mx1LHS + _exchangeVec[spin] * mx1RHS;
@@ -255,7 +256,7 @@ void Numerical_Methods_Class::RK2Original() {
 
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // Driving region must be consistently applied at every stage of the RK2 method
-                HeffX2K2 = _exchangeVec[LHS_spin] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField;//*cos(_drivingAngFreq * t0HalfStep);
+                HeffX2K2 = _exchangeVec[LHS_spin] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField*cos(_drivingAngFreq * t0HalfStep);
             } else {
                 HeffX2K2 = _exchangeVec[LHS_spin] * mx2LHS + _exchangeVec[spin] * mx2RHS;
             }
@@ -364,10 +365,13 @@ void Numerical_Methods_Class::RK2Midpoint() {
             double mz0MID = _mz0[spin], mz0LHS = _mz0[spinLHS], mz0RHS = _mz0[spinRHS];
 
             double hX0; // The effective field (H_eff) component acting upon each spin
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)
+            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-                hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
-            else
+                if (_hasStaticDrive)
+                    hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField;
+                else if (!_hasStaticDrive)
+                    hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
+            } else
                 // All spins along x which are not within the driving region
                 hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS;
 
@@ -410,10 +414,13 @@ void Numerical_Methods_Class::RK2Midpoint() {
             double mz1MID = mz1[spin], mz2LHS = mz1[spinLHS], mz2RHS = mz1[spinRHS];
 
             double hX1; // The effective field (H_eff) component acting upon each spin
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)
+            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // If a spin is driven during Stage 1 of an RK method, then it must be driven throughout the rest of the method's stages. Note the different time value used
-                hX1 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField * cos(_drivingAngFreq * t0HalfStep);
-            else
+                if (_hasStaticDrive)
+                    hX1 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField;
+                else if (!_hasStaticDrive)
+                    hX1 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField * cos(_drivingAngFreq * t0HalfStep);
+            } else
                 hX1 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS;
 
             double hY1 = _exchangeVec[spinLHS] * my2LHS + _exchangeVec[spin] * my2RHS;
@@ -438,7 +445,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
 
             if (_shouldTrackMValues) {
                 double mIterationNorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
-                if (_largestMNorm < 1.0 - mIterationNorm) { _largestMNorm = mIterationNorm; }
+                if (_largestMNorm < (1.0 - mIterationNorm)) { _largestMNorm = mIterationNorm; }
             }
         }
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
@@ -520,10 +527,13 @@ void Numerical_Methods_Class::RK2MidpointForTesting() {
             double mz0MID = _mz0[spin], mz0LHS = _mz0[spinLHS], mz0RHS = _mz0[spinRHS];
 
             double hX0; // The effective field (H_eff) component acting upon each spin
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) 
+            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-                hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
-            else 
+                if (_hasStaticDrive)
+                    hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField;
+                else if (!_hasStaticDrive)
+                    hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
+            } else
                 // All spins along x which are not within the driving region
                 hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS;
 
@@ -534,18 +544,13 @@ void Numerical_Methods_Class::RK2MidpointForTesting() {
 
             double mxK1, myK1, mzK1; // These are the estimations of the slopes at the beginning of the interval
             if (_useLLG) {
-                /**
-                 * The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters
-                 * for the first stage of RK2.
-                 */
+                // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
+
                 mxK1 = _gyroMagConst * (- (_gilbertVector[spin] * hY0 * mx0MID * my0MID) + hY0 * mz0MID - hZ0 * (my0MID + _gilbertVector[spin]*mx0MID*mz0MID) + _gilbertVector[spin] * hX0 * (pow(my0MID,2) + pow(mz0MID,2)));
                 myK1 = _gyroMagConst * (-(hX0*mz0MID) + hZ0 * (mx0MID - _gilbertVector[spin] * my0MID * mz0MID) + _gilbertVector[spin] * (hY0 * pow(mx0MID,2) - hX0 * mx0MID * my0MID + hY0 * pow(mz0MID,2)));
                 mzK1 = _gyroMagConst * (hX0 * my0MID + _gilbertVector[spin] * hZ0*(pow(mx0MID,2) + pow(my0MID,2)) - _gilbertVector[spin]*hX0*mx0MID*mz0MID - hY0 * (mx0MID + _gilbertVector[spin] * my0MID * mz0MID));
             } else {
-                /**
-                 * The magnetic moment components' coupled equations (obtained from the torque equation) with the
-                 * parameters for the first stage of RK2.
-                 * */
+                // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
                 mxK1 = -1 * _gyroMagConst * (my0MID * hZ0 - mz0MID * hY0);
                 myK1 = _gyroMagConst * (mx0MID * hZ0 - mz0MID * hX0);
                 mzK1 = -1 * _gyroMagConst * (mx0MID * hY0 - my0MID * hX0);
@@ -584,10 +589,13 @@ void Numerical_Methods_Class::RK2MidpointForTesting() {
             double mz1MID = mz1[spin], mz2LHS = mz1[spinLHS], mz2RHS = mz1[spinRHS];
             
             double hX1; // The effective field (H_eff) component acting upon each spin
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)
+            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // If a spin is driven during Stage 1 of an RK method, then it must be driven throughout the rest of the method's stages. Note the different time value used
-                hX1 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField * cos(_drivingAngFreq * t0HalfStep);
-            else
+                if (_hasStaticDrive)
+                    hX1 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField;
+                else if (!_hasStaticDrive)
+                    hX1 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField * cos(_drivingAngFreq * t0HalfStep);
+            } else
                 hX1 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS;
 
             double hY1 = _exchangeVec[spinLHS] * my2LHS + _exchangeVec[spin] * my2RHS;
@@ -692,7 +700,10 @@ void Numerical_Methods_Class::RK4Midpoint() {
 
             double hX1; // The effective field (H_eff) component acting upon each spin
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)  {
-                hX1 = _exchangeVec[spinLHS] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
+                if (_hasStaticDrive)
+                    hX1 = _exchangeVec[spinLHS] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField;
+                else if (!_hasStaticDrive)
+                    hX1 = _exchangeVec[spinLHS] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
             } else {
                 hX1 = _exchangeVec[spinLHS] * mx1LHS + _exchangeVec[spin] * mx1RHS;
             }
@@ -736,7 +747,10 @@ void Numerical_Methods_Class::RK4Midpoint() {
 
             double hX2; // The effective field (H_eff) component acting upon each spin
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)  {
-                hX2 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField * cos(_drivingAngFreq * t0Half);
+                if (_hasStaticDrive)
+                    hX2 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField;
+                else if (!_hasStaticDrive)
+                    hX2 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField * cos(_drivingAngFreq * t0Half);
             } else {
                 hX2 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS;
             }
@@ -781,7 +795,10 @@ void Numerical_Methods_Class::RK4Midpoint() {
 
             double hX3; // The effective field (H_eff) component acting upon each spin
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)  {
-                hX3 = _exchangeVec[spinLHS] * mx3LHS + _exchangeVec[spin] * mx3RHS + _dynamicBiasField * cos(_drivingAngFreq * t0Half);
+                if (_hasStaticDrive)
+                    hX3 = _exchangeVec[spinLHS] * mx3LHS + _exchangeVec[spin] * mx3RHS + _dynamicBiasField;
+                else if (!_hasStaticDrive)
+                    hX3 = _exchangeVec[spinLHS] * mx3LHS + _exchangeVec[spin] * mx3RHS + _dynamicBiasField * cos(_drivingAngFreq * t0Half);
             } else {
                 hX3 = _exchangeVec[spinLHS] * mx3LHS + _exchangeVec[spin] * mx3RHS;
             }
@@ -826,7 +843,11 @@ void Numerical_Methods_Class::RK4Midpoint() {
 
             double hX4; // The effective field (H_eff) component acting upon each spin
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)  {
-                hX4 = _exchangeVec[spinLHS] * mx4LHS + _exchangeVec[spin] * mx4RHS + _dynamicBiasField * cos(_drivingAngFreq * t0h);
+                if (_hasStaticDrive)
+                    hX4 = _exchangeVec[spinLHS] * mx4LHS + _exchangeVec[spin] * mx4RHS + _dynamicBiasField;
+                if (!_hasStaticDrive)
+                    hX4 = _exchangeVec[spinLHS] * mx4LHS + _exchangeVec[spin] * mx4RHS + _dynamicBiasField * cos(_drivingAngFreq * t0h);
+
             } else {
                 hX4 = _exchangeVec[spinLHS] * mx4LHS + _exchangeVec[spin] * mx4RHS;
             }
@@ -857,7 +878,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
 
             if (_shouldTrackMValues) {
                 double mIterationNorm = sqrt(pow(mx4[spin], 2) + pow(my4[spin], 2) + pow(mz4[spin], 2));
-                if (_largestMNorm < 1.0 - mIterationNorm) { _largestMNorm = mIterationNorm; }
+                if (_largestMNorm < (1.0 - mIterationNorm)) { _largestMNorm = mIterationNorm; }
             }
             
         }
@@ -901,7 +922,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, st
 
     outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-    outputFileName << "Using LLG," << _useLLG << ",Using Shockwave," << _hasShockwave << ",Drive from LHS," << _lhsDrive << ",Numerical Method Used," << methodUsed << "\n";
+    outputFileName << "Using LLG," << _useLLG << ",Using Shockwave," << _hasShockwave << ",Drive from LHS," << _lhsDrive << ",Numerical Method Used," << methodUsed << ",Has Static Drive," << _hasStaticDrive << "\n";
 
     outputFileName << "\n";
 

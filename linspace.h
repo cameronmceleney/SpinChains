@@ -24,7 +24,7 @@ public:
     //  Dtype               Member Name                             //Comment
     void                    build_spinchain();
     std::vector<double>     generate_array();
-    void                    set_values (double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool forExchangeVals);
+    void                    set_values (double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool shouldBuildSpinChain);
 
 };
 
