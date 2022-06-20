@@ -14,7 +14,7 @@ int main() {
 
     // Set simulation parameters
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(2500));
+    GV.SetNumSpins(static_cast<int>(5000));
     GV.SetExchangeMinVal(13.25); // 132.0
     GV.SetExchangeMaxVal(13.25); // 0.37694 7.72137296
 

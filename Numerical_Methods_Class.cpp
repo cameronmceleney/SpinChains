@@ -10,10 +10,10 @@ void Numerical_Methods_Class::NMSetup() {
     _useLLG = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 5.0 * 1e9;
+    _drivingFreq = 2.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(4e7);
+    _iterationEnd = static_cast<int>(5e7);
     _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
@@ -22,7 +22,7 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveGradientTime = 70e3;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 1000;
+    _numberOfDataPoints = 10000;
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
@@ -34,7 +34,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### SpinChain Length Parameters ######################
     _drivingRegionWidth = 200; //static_cast<int>(_numSpinsInChain * 0.05);
-    _numSpinsDamped = 200;
+    _numSpinsDamped = 300;
     _numSpinsInChain = GV.GetNumSpins();
 
     // ###################### Computations based upon other inputs ######################
@@ -1018,6 +1018,9 @@ void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint, bo
     if (shouldExitAfterPrint) { exit(0); }
 }
 void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
+    std::cout.precision(6);
+    std::cout << std::scientific;
+
     if (_onlyShowFinalState) {
         // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
         if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
