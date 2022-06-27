@@ -10,10 +10,10 @@ void Numerical_Methods_Class::NMSetup() {
     _useLLG = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 2.5 * 1e9;
+    _drivingFreq = 5.0 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(5e7);
+    _iterationEnd = static_cast<int>(2e7);
     _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
@@ -43,7 +43,7 @@ void Numerical_Methods_Class::NMSetup() {
     _maxSimTime = _stepsize * _iterationEnd;
     _numberOfSpinPairs = _numSpinsInChain - 1;
     _stepsizeHalf = _stepsize / 2.0;
-    GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
+    GV.SetNumSpins(_numSpinsInChain + _numSpinsDamped);
 
     // ###################### Core Method Invocations ######################
     SetShockwaveConditions();
@@ -91,7 +91,7 @@ void Numerical_Methods_Class::SetDampingRegion() {
 
     _gilbertVector.insert(_gilbertVector.end(), tempGilbertLHS.begin(), tempGilbertLHS.end());
     _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
-    _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
+    // _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
     _gilbertVector.push_back(0);
 }
 void Numerical_Methods_Class::SetDrivingRegion() {
@@ -353,6 +353,10 @@ void Numerical_Methods_Class::RK2Midpoint() {
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
 
+        // _mx0[4900] = 0.0; _my0[5300] = 0.0; _mz0[5300] = 1.0;
+        // _mx0[4901] = 0.0; _my0[5301] = 0.0; _mz0[5301] = 1.0;
+        // _mx0[4902] = 0.0; _my0[5302] = 0.0; _mz0[5302] = 1.0;
+
         // Excludes the 0th and last spins as they will always be zero-valued (end, pinned spins)
         for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
             // RK2 Stage 1. Takes initial conditions as inputs.
@@ -400,6 +404,9 @@ void Numerical_Methods_Class::RK2Midpoint() {
         }
         // The estimations of the m-components' values for the next iteration.
         std::vector<double> mx2(GV.GetNumSpins() + 2,0), my2(GV.GetNumSpins() + 2,0), mz2(GV.GetNumSpins() + 2,0);
+        // mx1[4900] = 0.0; my1[5300] = 0.0; mz1[5300] = 1.0;
+        // mx1[4901] = 0.0; my1[5301] = 0.0; mz1[5301] = 1.0;
+        // mx1[4902] = 0.0; my1[5302] = 0.0; mz1[5302] = 1.0;
 
         for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
             /* RK2 Step 2. Uses the previously found m1 values, as well as the initial conditions, to determine the
