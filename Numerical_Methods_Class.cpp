@@ -3,23 +3,23 @@
 void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Flags ######################
-    _hasShockwave = false;
+    _hasShockwave = true;
     _hasStaticDrive = false;
     _lhsDrive = true;
     _shouldTrackMValues = true;
     _useLLG = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 5.0 * 1e9;
-    _dynamicBiasField = 3e-3;
+    _drivingFreq = 15 * 1e9;
+    _dynamicBiasField = 1e-7;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(2e7);
-    _stepsize = 1e-15;
+    _iterationEnd = static_cast<int>(7e6);
+    _stepsize = 2e-15;
 
     // ###################### Shockwave Parameters ######################
-    _iterStartShock = 0.25;
-    _shockwaveScaling = 9;
-    _shockwaveGradientTime = 70e3;
+    _iterStartShock = 0.0;
+    _shockwaveScaling = 5e4;
+    _shockwaveGradientTime = 0.125e2;
 
     // ###################### Data Output Parameters ######################
     _numberOfDataPoints = 10000;
@@ -33,17 +33,17 @@ void Numerical_Methods_Class::NMSetup() {
     _gilbertUpper = 1.0;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 200; //static_cast<int>(_numSpinsInChain * 0.05);
+    _drivingRegionWidth = 282; //static_cast<int>(_numSpinsInChain * 0.05);
     _numSpinsDamped = 300;
     _numSpinsInChain = GV.GetNumSpins();
 
     // ###################### Computations based upon other inputs ######################
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
-    _gyroMagConst = 29E9 * 2 * M_PI;
+    _gyroMagConst = 28.8E9 * 2 * M_PI;
     _maxSimTime = _stepsize * _iterationEnd;
     _numberOfSpinPairs = _numSpinsInChain - 1;
     _stepsizeHalf = _stepsize / 2.0;
-    GV.SetNumSpins(_numSpinsInChain + _numSpinsDamped);
+    GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
 
     // ###################### Core Method Invocations ######################
     SetShockwaveConditions();
@@ -91,7 +91,7 @@ void Numerical_Methods_Class::SetDampingRegion() {
 
     _gilbertVector.insert(_gilbertVector.end(), tempGilbertLHS.begin(), tempGilbertLHS.end());
     _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
-    // _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
+    _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
     _gilbertVector.push_back(0);
 }
 void Numerical_Methods_Class::SetDrivingRegion() {
