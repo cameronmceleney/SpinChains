@@ -10,19 +10,19 @@ void Numerical_Methods_Class::NMSetup() {
     _useLLG = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 15 * 1e9;
-    _dynamicBiasField = 1e-7;
+    _drivingFreq = 15.0 * 1e9;
+    _dynamicBiasField = 1e-12;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(7e6);
+    _iterationEnd = static_cast<int>(7.5e6);
     _stepsize = 2e-15;
 
     // ###################### Shockwave Parameters ######################
     _iterStartShock = 0.0;
-    _shockwaveScaling = 5e4;
-    _shockwaveGradientTime = 0.125e2;
+    _shockwaveScaling = 5e9;
+    _shockwaveGradientTime = 0.5e5;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 10000;
+    _numberOfDataPoints = 1000;
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
@@ -33,7 +33,7 @@ void Numerical_Methods_Class::NMSetup() {
     _gilbertUpper = 1.0;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 282; //static_cast<int>(_numSpinsInChain * 0.05);
+    _drivingRegionWidth = 200; //static_cast<int>(_numSpinsInChain * 0.05);
     _numSpinsDamped = 300;
     _numSpinsInChain = GV.GetNumSpins();
 
@@ -1047,7 +1047,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                     outputFileName << arrayToWrite[i] << ",";
             }
             // Take new line after current row is finished being written.
-            outputFileName << std::endl;
+            outputFileName << ', ' << _stepsize * _shockwaveGradientTime << std::endl;
         }
     } else {
         if (_saveAllSpins)
