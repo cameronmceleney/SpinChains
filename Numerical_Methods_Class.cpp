@@ -11,18 +11,20 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Core Parameters ######################
     _drivingFreq = 15.0 * 1e9;
-    _dynamicBiasField = 1e-12;
+    _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(7.5e6);
-    _stepsize = 2e-15;
+    _iterationEnd = static_cast<int>(5e6);
+    _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
     _iterStartShock = 0.0;
-    _shockwaveScaling = 5e9;
-    _shockwaveGradientTime = 0.5e5;
+    _shockwaveScaling = 1;
+    _shockwaveGradientTime = 2.5e1;
+    _shockwaveInitialStrength = 0;  // Set equal to _dynamicBiasField if NOT starting at time=0
+    _shockwaveMax = 3e-3;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 1000;
+    _numberOfDataPoints = 10000;
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
@@ -56,15 +58,15 @@ void Numerical_Methods_Class::NMSetup() {
 void Numerical_Methods_Class::SetShockwaveConditions() {
 
     if (_hasShockwave) {
-        _shockwaveInitialStrength = _dynamicBiasField;
-        _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
+        // _shockwaveInitialStrength = _dynamicBiasField;
+        // _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
         _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
     } else {
         // Ensures, on the output file, all parameter read as zero; reduces confusion when no shockwave is applied.
         _iterStartShock = 0;
         _shockwaveScaling = 0;
         _shockwaveGradientTime = 0;
-        _shockwaveInitialStrength = _dynamicBiasField;
+        _shockwaveInitialStrength = 0;
         _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
         _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
     }
@@ -940,7 +942,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, st
                       "Shockwave Gradient Time (s), Shockwave Application Time [s]"
                       "\n";
 
-    outputFileName << GV.GetStaticBiasField() << ", " << _dynamicBiasField << ", " << _shockwaveScaling << ", " << _dynamicBiasField * _shockwaveScaling << ", "
+    outputFileName << GV.GetStaticBiasField() << ", " << _dynamicBiasField << ", " << _shockwaveInitialStrength << ", " << _shockwaveMax << ", "
                    << _drivingFreq << ", " << _drivingRegionLHS - _numSpinsDamped << ", " << _drivingRegionRHS - _numSpinsDamped << ", " << _drivingRegionWidth << ", "
                    << _maxSimTime << ", " << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << _iterationEnd << ", " <<  _numberOfDataPoints << ", "
                    << _numSpinsInChain << ", "  << _numSpinsDamped << ", " << GV.GetNumSpins() << ", " << _stepsize << ", " << _gilbertConst << ", " << _gyroMagConst << ", "
@@ -970,9 +972,9 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName)
      */
     if (_saveAllSpins or _onlyShowFinalState) {
         // Print column heading for every spin simulated.
-        outputFileName << "Time [s]";
+        outputFileName << "Time [s], ";
         for (int i = 1; i <= GV.GetNumSpins(); i++) {
-            outputFileName << "," << i;
+            outputFileName << i << ", ";
         }
         outputFileName << std::endl;
 
@@ -1044,10 +1046,10 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
 
                 else
                     // For non-special values, write the data.
-                    outputFileName << arrayToWrite[i] << ",";
+                    outputFileName << arrayToWrite[i] << ", ";
             }
             // Take new line after current row is finished being written.
-            outputFileName << ', ' << _stepsize * _shockwaveGradientTime << std::endl;
+            outputFileName << std::endl;
         }
     } else {
         if (_saveAllSpins)
@@ -1113,6 +1115,7 @@ void Numerical_Methods_Class::TestShockwaveConditions(double iteration) {
         {
             // Shockwave begins once simulation is a certain % complete
             _isShockwaveOn = true;
+            _dynamicBiasField = _shockwaveInitialStrength;
         }
 
         return;
