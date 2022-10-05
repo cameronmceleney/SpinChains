@@ -11,6 +11,7 @@ class Numerical_Methods_Class {
 private:
 //  Dtype               Member Name                                Variable docstring
 
+    double              _anisotropyField;
     double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field [rad*s^{-1}].
     double              _drivingFreq;                           // Frequency of oscillatory driving field. [GHz] (f_d in literature) (e.g.  42.5 * 1e9)
     int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region.
@@ -98,6 +99,7 @@ public:
     void                RK2Midpoint();
     void                RK2MidpointForTesting();
     void                RK4Midpoint();
+    void                RK2MidpointAFM();
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H

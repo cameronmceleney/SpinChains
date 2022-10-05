@@ -14,9 +14,9 @@ int main() {
 
     // Set simulation parameters
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(5000));
-    GV.SetExchangeMinVal(53.0);
-    GV.SetExchangeMaxVal(53.0);
+    GV.SetNumSpins(static_cast<int>(200));
+    GV.SetExchangeMinVal(53);
+    GV.SetExchangeMaxVal(53);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
@@ -54,7 +54,7 @@ int main() {
 
     SolverClass.CalculateEigFreqs();
     //RK2_method_use.NMSetup();
-    //RK2_method_use.RK2Midpoint();
+    //RK2_method_use.RK2MidpointAFM();
 
     return 0;
 }
