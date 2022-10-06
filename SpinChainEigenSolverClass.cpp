@@ -136,19 +136,19 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                 if (row == 0) {
                     // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
                     matrixToFill(row, 0) = 0;
-                    matrixToFill(row, 1) = -1 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, 1) = -1.0 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
                     matrixToFill(row, 3) = -1.0 * _chainJValues[rowPair + 1];
                 } else if (row > 0 and row < totalEquations - 2) {
                     // Handles all other even-numbered rows
                     matrixToFill(row, row - 1) = -1.0 * _chainJValues[rowPair];
                     matrixToFill(row, row + 0) = 0;
-                    matrixToFill(row, row + 1) = -1 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, row + 1) = -1.0 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
                     matrixToFill(row, row + 3) = -1.0 * _chainJValues[rowPair + 1];
                 } else if (row == totalEquations - 2) {
                     // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                    matrixToFill(row, totalEquations - 1) = -1 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
+                    matrixToFill(row, totalEquations - 1) = -1.0 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
                     matrixToFill(row, totalEquations - 2) = 0;
-                    matrixToFill(row, totalEquations - 3) = _chainJValues[rowPair];
+                    matrixToFill(row, totalEquations - 3) = -1.0 * _chainJValues[rowPair];
                 } else {
                     // TODO Legacy error handling which needs updating (dm_x/dt rows)
                     std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
@@ -166,10 +166,10 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, 2) = _chainJValues[rowPair + 1];
                 } else if (row > 1 and row < totalEquations - 1) {
                     // Handles all other odd-numbered rows
-                    matrixToFill(row, row - 3) = -1.0 * _chainJValues[rowPair];
-                    matrixToFill(row, row - 1) = -1.0 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, row - 3) = _chainJValues[rowPair];
+                    matrixToFill(row, row - 1) = (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
                     matrixToFill(row, row + 0) = 0;
-                    matrixToFill(row, row + 1) = -1.0 * _chainJValues[rowPair + 1];
+                    matrixToFill(row, row + 1) = _chainJValues[rowPair + 1];
                 } else if (row == totalEquations - 1) {
                     // Exception for the final dm_y/dt row (final matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
                     matrixToFill(row, totalEquations - 1) = 0;
@@ -191,17 +191,17 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                 if (row == 0) {
                     // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
                     matrixToFill(row, 0) = 0;
-                    matrixToFill(row, 1) = -1 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, 1) = -1.0 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
                     matrixToFill(row, 3) = _chainJValues[rowPair + 1];
                 } else if (row > 0 and row < totalEquations - 2) {
                     // Handles all other even-numbered rows
                     matrixToFill(row, row - 1) = _chainJValues[rowPair];
                     matrixToFill(row, row + 0) = 0;
-                    matrixToFill(row, row + 1) = -1 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, row + 1) = -1.0 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
                     matrixToFill(row, row + 3) = _chainJValues[rowPair + 1];
                 } else if (row == totalEquations - 2) {
                     // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                    matrixToFill(row, totalEquations - 1) = -1 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
+                    matrixToFill(row, totalEquations - 1) = -1.0 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
                     matrixToFill(row, totalEquations - 2) = 0;
                     matrixToFill(row, totalEquations - 3) = _chainJValues[rowPair];
                 } else {

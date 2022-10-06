@@ -13,7 +13,7 @@ int main() {
     GV.SetFilePath();
 
     // Set simulation parameters
-    GV.SetStaticBiasField(0.1);
+    GV.SetStaticBiasField(-0.1);
     GV.SetNumSpins(static_cast<int>(200));
     GV.SetExchangeMinVal(53);
     GV.SetExchangeMaxVal(53);
