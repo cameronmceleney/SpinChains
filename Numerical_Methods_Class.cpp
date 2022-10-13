@@ -549,7 +549,7 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
             // No changes are made to the effective field in the y-direction
             double hY0 = -1.0 * (_exchangeVec[spinLHS] * my0LHS + _exchangeVec[spin] * my0RHS);
             // The static bias field is applied in the z-direction
-            double hZ0 = GV.GetStaticBiasField() + _anisotropyField * mz0MID + (_exchangeVec[spinLHS] * mz0LHS + _exchangeVec[spin] * mz0RHS);
+            double hZ0 = GV.GetStaticBiasField() + _anisotropyField * mz0MID - (_exchangeVec[spinLHS] * mz0LHS + _exchangeVec[spin] * mz0RHS);
 
             double mxK1, myK1, mzK1; // These are the estimations of the slopes at the beginning of the interval
             if (_useLLG) {
@@ -595,7 +595,7 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
                 hX1 = -1.0 * (_exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS);
 
             double hY1 = -1.0 * (_exchangeVec[spinLHS] * my2LHS + _exchangeVec[spin] * my2RHS);
-            double hZ1 = GV.GetStaticBiasField() + _anisotropyField * mz1MID + (_exchangeVec[spinLHS] * mz2LHS + _exchangeVec[spin] * mz2RHS);
+            double hZ1 = GV.GetStaticBiasField() + _anisotropyField * mz1MID - (_exchangeVec[spinLHS] * mz2LHS + _exchangeVec[spin] * mz2RHS);
 
             double mxK2, myK2, mzK2;
             if (_useLLG) {
