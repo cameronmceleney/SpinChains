@@ -62,6 +62,7 @@ private:
     bool                _fixedPoints;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
     bool                _hasShockwave;                          // Simulation contains a single driving bias field if (false).
     bool                _hasStaticDrive;                        // Selects (if true) whether drive has sinusoidal term
+    bool                _isAFM;
     bool                _isShockwaveOn = false;                 // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
     bool                _isShockwaveAtMax = false;              // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
     bool                _lhsDrive;                              // Drive from the RHS if (true)

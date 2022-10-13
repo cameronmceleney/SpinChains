@@ -9,14 +9,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     _totalEquations = GV.GetNumSpins() * 2;
     _isFerromagnet = false;
-
-    _fileNameEigenSolver += GV.GetCurrentTime();
-
-    /**
-     * if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal())
-     *   // Compares user's exchange integrals and appends an explanatory string to the filename
-     *   _fileNameEigenSolver += "-lin"; // Equal J values means the system has linear exchange ('lin')
-     */
+    _fileNameEigenSolver += GV.GetFileNameBase();
 
     std::cout << "Filename is: " << _fileNameEigenSolver << std::endl; // Informs user of filename to enable directory searching via file explorer search function
     std::cout << "\nFiles will be outputted to: " << GV.GetFilePath() << std::endl; // Showing the selected path will make it easier to find the file
