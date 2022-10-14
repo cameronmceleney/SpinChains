@@ -11,6 +11,7 @@ class Numerical_Methods_Class {
 private:
 //  Dtype               Member Name                                Variable docstring
 
+    double              _anisotropyField;
     double              _drivingAngFreq;                        // Angular frequency of oscillatory driving field [rad*s^{-1}].
     double              _drivingFreq;                           // Frequency of oscillatory driving field. [GHz] (f_d in literature) (e.g.  42.5 * 1e9)
     int                 _drivingRegionLHS;                      // The position of the spin which is leftmost in the driving region.
@@ -56,20 +57,23 @@ private:
     std::string         _stopIterString;                        // Object to string conversion for _stopIterVal
     double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks the 'real' time' of the simulation
 
-    // ########################################################
+    // ######## Booleans and other tests ########
 
     bool                _fixedPoints;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
+    bool                _centralDrive;                          // Drive from the centre of the chain if (true)
     bool                _hasShockwave;                          // Simulation contains a single driving bias field if (false).
     bool                _hasStaticDrive;                        // Selects (if true) whether drive has sinusoidal term
+    bool                _isAFM;
     bool                _isShockwaveOn = false;                 // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
     bool                _isShockwaveAtMax = false;              // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
-    bool                _lhsDrive;                              // Drive from the RHS if (true)
+    bool                _lhsDrive;                              // Drive from the RHS if (false)
     bool                _onlyShowFinalState;                    // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
     bool                _saveAllSpins;                          // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     bool                _shouldTrackMValues;
     bool                _useLLG;                                // Uses the Torque equation components if (false).
 
+    // ######## Private Functions ########
     std::vector<double> _exchangeVec;                           // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
@@ -95,9 +99,10 @@ public:
 //  Dtype               Member Name                                Variable docstring
     void                NMSetup();
     void                RK2Original();
-    void                RK2Midpoint();
+    void                RK2MidpointFM();
     void                RK2MidpointForTesting();
     void                RK4Midpoint();
+    void                RK2MidpointAFM();
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H

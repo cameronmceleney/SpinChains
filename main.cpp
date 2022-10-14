@@ -4,7 +4,7 @@
 
 int main() {
 
-    // GitHub Token: ***REMOVED*** (works as of 22 Mar 22)
+    // GitHub Token: ***REMOVED*** (works as of 14 Oct 22)
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
 
@@ -13,10 +13,12 @@ int main() {
     GV.SetFilePath();
 
     // Set simulation parameters
+    GV.SetAnisotropyField(0.787);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(5000));
-    GV.SetExchangeMinVal(13.25); // 132.0
-    GV.SetExchangeMaxVal(13.25); // 0.37694 7.72137296
+    GV.SetNumSpins(static_cast<int>(500));
+    GV.SetExchangeMinVal(53);
+    GV.SetExchangeMaxVal(53);
+    GV.SetGyromagneticConstant(28.8E9);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
@@ -54,7 +56,7 @@ int main() {
 
     // SolverClass.CalculateEigFreqs();
     RK2_method_use.NMSetup();
-    RK2_method_use.RK2Midpoint();
+    RK2_method_use.RK2MidpointAFM();
 
     return 0;
 }

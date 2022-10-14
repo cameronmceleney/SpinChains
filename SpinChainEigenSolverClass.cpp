@@ -8,15 +8,10 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     // rename all variables following https://manual.gromacs.org/documentation/5.1-current/dev-manual/naming.html
 
     _totalEquations = GV.GetNumSpins() * 2;
-
-    _fileNameEigenSolver += GV.GetCurrentTime();
-
-    /**
-     * if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal())
-     *   // Compares user's exchange integrals and appends an explanatory string to the filename
-     *   _fileNameEigenSolver += "-lin"; // Equal J values means the system has linear exchange ('lin')
-     */
-
+    _isFerromagnet = false;
+    _fileNameEigenSolver += GV.GetFileNameBase();
+    _anisotropyField = GV.GetAnisotropyField();
+    _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
     std::cout << "Filename is: " << _fileNameEigenSolver << std::endl; // Informs user of filename to enable directory searching via file explorer search function
     std::cout << "\nFiles will be outputted to: " << GV.GetFilePath() << std::endl; // Showing the selected path will make it easier to find the file
 
@@ -26,7 +21,11 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     std::cout << "\nBegan computation at: " << std::ctime(&startTimeFindEigens_cTimeUse) << std::endl; // Useful for long computations where the start time may be forgotten
 
     _matrixValues(_totalEquations, _totalEquations); // Generates the matrix but does not allocate memory. That is done as each element is calculated
-    _matrixValues = populate_matrix();
+
+    if (_isFerromagnet)
+        _matrixValues = populate_matrix_ferromagnets();
+    else
+        _matrixValues = populate_matrix_antiferromagnets();
 
     Eigen::EigenSolver <Matrix_xd> eigenSolverMatrixValues(_matrixValues);
 
@@ -53,7 +52,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
 }
 
-void SpinChainEigenSolverClass::PrintVector(std::vector<double> inputVector)
+void SpinChainEigenSolverClass::PrintVector(std::vector<double> inputVector, bool shouldExitAtEnd = false)
 {
     int count = 0;
 
@@ -70,6 +69,10 @@ void SpinChainEigenSolverClass::PrintVector(std::vector<double> inputVector)
         }
     }
     std::cout << std::endl;
+
+    if (shouldExitAtEnd) {
+        exit(0);
+    }
 }
 
 void SpinChainEigenSolverClass::save_data( std::string fileName, Matrix_xd generatedMatrix )
@@ -95,7 +98,149 @@ void SpinChainEigenSolverClass::save_data( std::string fileName, Matrix_xd gener
     }
 }
 
-Matrix_xd SpinChainEigenSolverClass::populate_matrix()
+Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
+{
+
+    LinspaceClass exchangeValues{};
+    std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
+
+    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, true);
+    _chainJValues = exchangeValues.generate_array();
+    // PrintVector(_chainJValues, true);
+    /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
+     * than using an eigen-solver library to find the roots of a characteristic equation populated by angular_frequency values. The outputted
+     * eigenvalues of this matrix (matrixToFill) are eigen-frequencies, however they are angular (w). To obtain  frequencies (f), you must find
+     * angular_frequency/(2*Pi) for each given eigenvalue. */
+
+    const long totalEquations = GV.GetNumSpins() * 2; // Each spin has an x- and y-axis dependent coupled equation normalised to the z-component. Thus, two equations total
+    Matrix_xd matrixToFill(totalEquations, totalEquations); // Each (spin) site location comprises two consecutive rows in matrixToFill
+
+    matrixToFill.setZero(); // Large matrix of known size so more computationally efficient to predefine size in memory
+
+    for (int row = 0, rowPair = 0; row < totalEquations; row++) {
+        // JVal ensures a spin has the same exchange integral values on its LHS and RHS used in the spin's associated coupled equations
+        /* Where an element is matrixToFill(index, index) = 0), this indicates that the element would be a diagonal
+         * element of the matrix. While the full computation would be matrixToFill(index, index) =  -1.0  * angular_frequency / _gyroscopicMagneticConstant;),
+         * this is an unnecessary series of computations as angular_frequency = 0 is strictly true in this code.*/
+
+        if (rowPair % 2 == 0) {
+            if (row % 2 == 0) {
+                // The dm_x/dt coupled equations are the even-numbered rows of the matrix (see notes for details)
+
+                if (row == 0) {
+                    // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
+                    matrixToFill(row, 0) = 0;
+                    matrixToFill(row, 1) = -1.0 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, 3) = -1.0 * _chainJValues[rowPair + 1];
+                } else if (row > 0 and row < totalEquations - 2) {
+                    // Handles all other even-numbered rows
+                    matrixToFill(row, row - 1) = -1.0 * _chainJValues[rowPair];
+                    matrixToFill(row, row + 0) = 0;
+                    matrixToFill(row, row + 1) = -1.0 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, row + 3) = -1.0 * _chainJValues[rowPair + 1];
+                } else if (row == totalEquations - 2) {
+                    // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
+                    matrixToFill(row, totalEquations - 1) = -1.0 * (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
+                    matrixToFill(row, totalEquations - 2) = 0;
+                    matrixToFill(row, totalEquations - 3) = -1.0 * _chainJValues[rowPair];
+                } else {
+                    // TODO Legacy error handling which needs updating (dm_x/dt rows)
+                    std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
+                    std::exit(3);
+                }
+                continue;
+            }
+            if (row % 2 == 1) {
+                // The dm_y/dt coupled equations are the odd-numbered rows of the matrix (see notes for details)
+
+                if (row == 1) {
+                    // Exception for the first dm_y/dt row (2nd matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
+                    matrixToFill(row, 0) = (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
+                    matrixToFill(row, 1) = 0;
+                    matrixToFill(row, 2) = _chainJValues[rowPair + 1];
+                } else if (row > 1 and row < totalEquations - 1) {
+                    // Handles all other odd-numbered rows
+                    matrixToFill(row, row - 3) = _chainJValues[rowPair];
+                    matrixToFill(row, row - 1) = (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, row + 0) = 0;
+                    matrixToFill(row, row + 1) = _chainJValues[rowPair + 1];
+                } else if (row == totalEquations - 1) {
+                    // Exception for the final dm_y/dt row (final matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
+                    matrixToFill(row, totalEquations - 1) = 0;
+                    matrixToFill(row, totalEquations - 2) = (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
+                    matrixToFill(row, totalEquations - 4) = _chainJValues[rowPair];
+                } else {
+                    // TODO Legacy error handling which needs updating (dm_y/dt rows)
+                    std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
+                    std::exit(3);
+                }
+                rowPair++;
+                continue;
+            }
+        }
+        else if (rowPair % 2 == 1) {
+            if (row % 2 == 0) {
+                // The dm_x/dt coupled equations are the even-numbered rows of the matrix (see notes for details)
+
+                if (row == 0) {
+                    // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
+                    matrixToFill(row, 0) = 0;
+                    matrixToFill(row, 1) = -1.0 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, 3) = _chainJValues[rowPair + 1];
+                } else if (row > 0 and row < totalEquations - 2) {
+                    // Handles all other even-numbered rows
+                    matrixToFill(row, row - 1) = _chainJValues[rowPair];
+                    matrixToFill(row, row + 0) = 0;
+                    matrixToFill(row, row + 1) = -1.0 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, row + 3) = _chainJValues[rowPair + 1];
+                } else if (row == totalEquations - 2) {
+                    // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
+                    matrixToFill(row, totalEquations - 1) = -1.0 * (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
+                    matrixToFill(row, totalEquations - 2) = 0;
+                    matrixToFill(row, totalEquations - 3) = _chainJValues[rowPair];
+                } else {
+                    // TODO Legacy error handling which needs updating (dm_x/dt rows)
+                    std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
+                    std::exit(3);
+                }
+                continue;
+            }
+            if (row % 2 == 1) {
+                // The dm_y/dt coupled equations are the odd-numbered rows of the matrix (see notes for details)
+
+                if (row == 1) {
+                    // Exception for the first dm_y/dt row (2nd matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
+                    matrixToFill(row, 0) = (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
+                    matrixToFill(row, 1) = 0;
+                    matrixToFill(row, 2) = -1.0 * _chainJValues[rowPair + 1];
+                } else if (row > 1 and row < totalEquations - 1) {
+                    // Handles all other odd-numbered rows
+                    matrixToFill(row, row - 3) = -1.0 * _chainJValues[rowPair];
+                    matrixToFill(row, row - 1) = (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1]));
+                    matrixToFill(row, row + 0) = 0;
+                    matrixToFill(row, row + 1) = -1.0 * _chainJValues[rowPair + 1];
+                } else if (row == totalEquations - 1) {
+                    // Exception for the final dm_y/dt row (final matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
+                    matrixToFill(row, totalEquations - 1) = 0;
+                    matrixToFill(row, totalEquations - 2) = (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
+                    matrixToFill(row, totalEquations - 4) = -1.0 * _chainJValues[rowPair];
+                } else {
+                    // TODO Legacy error handling which needs updating (dm_y/dt rows)
+                    std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
+                    std::exit(3);
+                }
+                rowPair++;
+                continue;
+            }
+        }
+    }
+
+    matrixToFill *= _gyroMagConst; // LLG equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
+
+    return matrixToFill;
+}
+
+Matrix_xd SpinChainEigenSolverClass::populate_matrix_ferromagnets()
 {
 
     LinspaceClass exchangeValues{};
