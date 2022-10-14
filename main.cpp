@@ -4,7 +4,7 @@
 
 int main() {
 
-    // GitHub Token: ***REMOVED*** (works as of 22 Mar 22)
+    // GitHub Token: ***REMOVED*** (works as of 14 Oct 22)
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
 
@@ -13,10 +13,12 @@ int main() {
     GV.SetFilePath();
 
     // Set simulation parameters
+    GV.SetAnisotropyField(0.787);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(1000));
+    GV.SetNumSpins(static_cast<int>(500));
     GV.SetExchangeMinVal(53);
     GV.SetExchangeMaxVal(53);
+    GV.SetGyromagneticConstant(28.8E9);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {

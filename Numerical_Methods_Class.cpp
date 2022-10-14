@@ -6,17 +6,18 @@ void Numerical_Methods_Class::NMSetup() {
     // ###################### Flags ######################
     _hasShockwave = false;
     _hasStaticDrive = false;
+    _isAFM = true;
     _lhsDrive = true;
+    _centralDrive = false;
     _shouldTrackMValues = true;
     _useLLG = true;
-    _isAFM = true;
 
     // ###################### Core Parameters ######################
-    _anisotropyField = 0.787;
-    _drivingFreq = 280 * 1e9;
+    _drivingFreq = 422 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
-    _iterationEnd = static_cast<int>(1e7);
+    _gyroMagConst = GV.GetGyromagneticConstant();
+    _iterationEnd = static_cast<int>(5e7);
     _stepsize = 1e-17;
 
     // ###################### Shockwave Parameters ######################
@@ -38,21 +39,24 @@ void Numerical_Methods_Class::NMSetup() {
     _gilbertUpper = 1e0;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 50;
-    _numSpinsDamped = 0;
-    _numSpinsInChain = GV.GetNumSpins();
+    _drivingRegionWidth = 25;
+    _numSpinsDamped = 250;
 
     // ###################### Computations based upon other inputs ######################
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
-    _gyroMagConst = 28.8E9 * 2 * M_PI;
     _maxSimTime = _stepsize * _iterationEnd;
+    _numSpinsInChain = GV.GetNumSpins();
     _numberOfSpinPairs = _numSpinsInChain - 1;
-    _stepsizeHalf = _stepsize / 2.0;
     GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
+    _stepsizeHalf = _stepsize / 2.0;
 
-    if (!_isAFM) {_anisotropyField = 0;}
+    if (_isAFM)
+        _anisotropyField = GV.GetAnisotropyField();
+    else if (!_isAFM)
+        _anisotropyField = 0;
 
     // ###################### Core Method Invocations ######################
+    // Order is intentional!
     SetShockwaveConditions();
     SetDampingRegion();
     SetDrivingRegion();
@@ -63,8 +67,6 @@ void Numerical_Methods_Class::NMSetup() {
 void Numerical_Methods_Class::SetShockwaveConditions() {
 
     if (_hasShockwave) {
-        // _shockwaveInitialStrength = _dynamicBiasField;
-        // _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
         _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
     } else {
         // Ensures, on the output file, all parameter read as zero; reduces confusion when no shockwave is applied.
@@ -77,9 +79,8 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
     }
 }
 void Numerical_Methods_Class::SetDampingRegion() {
-    /*
-     * Generate the damping regions that are appended to either end of the spin chain.
-     */
+    // Generate the damping regions that are appended to either end of the spin chain.
+
     LinspaceClass DampingRegionLeft;
     LinspaceClass DampingRegionRight;
 
@@ -96,6 +97,7 @@ void Numerical_Methods_Class::SetDampingRegion() {
     std::vector<double> tempGilbertLHS = DampingRegionLeft.generate_array();
     std::vector<double> tempGilbertRHS = DampingRegionRight.generate_array();
 
+    // Combine all damped regions to form vector which describes the entire spinchain.
     _gilbertVector.insert(_gilbertVector.end(), tempGilbertLHS.begin(), tempGilbertLHS.end());
     _gilbertVector.insert(_gilbertVector.end(), gilbertChain.begin(), gilbertChain.end());
     _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
@@ -106,16 +108,21 @@ void Numerical_Methods_Class::SetDrivingRegion() {
      * Set up driving regions for the system. The LHS option is solely for drives from the left of the system. The RHS options contains the
      * drive from the right, as well as an option to drive from the centre.
      */
-    if (_lhsDrive) {
-        //Drives from the LHS, starting at _drivingRegionLHS
-        _drivingRegionLHS = _numSpinsDamped + 1;  // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
-        _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth - 1;
+
+    if (_centralDrive) {
+        _drivingRegionLHS = (_numSpinsInChain/2) +_numSpinsDamped - (_drivingRegionWidth / 2);
+        _drivingRegionRHS = (_numSpinsInChain/2) +_numSpinsDamped + (_drivingRegionWidth / 2);
     }
-    else {
-        // Drives from the RHS, starting at _drivingRegionRHS
-        _drivingRegionRHS = GV.GetNumSpins() - _numSpinsDamped - 1;
-        // _drivingRegionRHS = (_numSpinsInChain/2) +_numSpinsDamped + (_drivingRegionWidth / 2); // use for central drive
-        _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth + 1;  // The +1 is to correct the offset of adding a zeroth spin
+    else if (!_centralDrive) {
+        if (_lhsDrive) {
+            // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
+            _drivingRegionLHS = _numSpinsDamped + 1;
+            _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth - 1;
+        } else if (!_lhsDrive) {
+            // The +1 is to correct the offset of adding a zeroth spin
+            _drivingRegionRHS = GV.GetNumSpins() - _numSpinsDamped - 1;
+            _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth + 1;
+        }
     }
 }
 void Numerical_Methods_Class::SetExchangeVector() {
@@ -148,12 +155,12 @@ void Numerical_Methods_Class::SetInitialMagneticMoments() {
     // mxInitCond[0] = _mxInit; // Only perturb initial spin
 
     /*
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < GV.GetNumSpins(); i++) {
         mxInitCond[i] = 0.003162277;
         // myInitCond[i] = 0.0;
         mzInitCond[i] = 0.999994999;
     }
-     */
+    */
 
     if (_isAFM) {
         for (int i = 0; i < GV.GetNumSpins(); i++) {
@@ -174,7 +181,7 @@ void Numerical_Methods_Class::SetInitialMagneticMoments() {
 }
 
 void Numerical_Methods_Class::RK2Original() {
-    
+
     SpinChainEigenSolverClass printtest;
 
     // Notifies the user of what code they are running
@@ -338,19 +345,19 @@ void Numerical_Methods_Class::RK2Original() {
     std::cout << "Finished RK2 with: stepSize = " << _stepsize << "; itermax = " << _iterationEnd << "; filename = " << GV.GetFileNameBase() <<  std::endl;
 }
 
-void Numerical_Methods_Class::RK2Midpoint() {
+void Numerical_Methods_Class::RK2MidpointFM() {
 
     progressbar bar(100);
 
-    InformUserOfCodeType("RK2 Midpoint");
+    InformUserOfCodeType("RK2 Midpoint (FM)");
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
     std::ofstream myRK2File(GV.GetFilePath() + "rk2_my_" + GV.GetFileNameBase() + ".csv");
     std::ofstream mzRK2File(GV.GetFilePath() + "rk2_mz_" + GV.GetFileNameBase() + ".csv");
-    CreateFileHeader(mxRK2File, "RK2 Midpoint");
-    CreateFileHeader(myRK2File, "RK2 Midpoint");
-    CreateFileHeader(mzRK2File, "RK2 Midpoint");
+    CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
+    CreateFileHeader(myRK2File, "RK2 Midpoint (FM)");
+    CreateFileHeader(mzRK2File, "RK2 Midpoint (FM)");
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -387,14 +394,12 @@ void Numerical_Methods_Class::RK2Midpoint() {
                 // All spins along x which are not within the driving region
                 hX0 = _exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS;
 
-            // No changes are made to the effective field in the y-direction
             double hY0 = _exchangeVec[spinLHS] * my0LHS + _exchangeVec[spin] * my0RHS;
-            // The static bias field is applied in the z-direction
             double hZ0 = _exchangeVec[spinLHS] * mz0LHS + _exchangeVec[spin] * mz0RHS + GV.GetStaticBiasField();
 
             double mxK1, myK1, mzK1; // These are the estimations of the slopes at the beginning of the interval
             if (_useLLG) {
-                 // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
+                // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
                 mxK1 = _gyroMagConst * (- (_gilbertVector[spin] * hY0 * mx0MID * my0MID) + hY0 * mz0MID - hZ0 * (my0MID + _gilbertVector[spin] * mx0MID * mz0MID) + _gilbertVector[spin] * hX0 * (pow(my0MID,2) + pow(mz0MID,2)));
                 myK1 = _gyroMagConst * (-(hX0 * mz0MID) + hZ0 * (mx0MID - _gilbertVector[spin] * my0MID * mz0MID) + _gilbertVector[spin] * (hY0 * pow(mx0MID,2) - hX0 * mx0MID * my0MID + hY0 * pow(mz0MID,2)));
                 mzK1 = _gyroMagConst * (hX0 * my0MID + _gilbertVector[spin] * hZ0 * (pow(mx0MID,2) + pow(my0MID,2)) - _gilbertVector[spin]*hX0*mx0MID*mz0MID - hY0 * (mx0MID + _gilbertVector[spin] * my0MID * mz0MID));
@@ -459,8 +464,6 @@ void Numerical_Methods_Class::RK2Midpoint() {
                 double mIterationNorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
                 if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
             }
-
-            // if (iteration % 10000 ==0) {std::cout << _largestMNorm << "|" << mz2[spin] << std::endl;}
         }
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
 
@@ -488,9 +491,7 @@ void Numerical_Methods_Class::RK2Midpoint() {
             exit(0);
 
         _totalTime += _stepsize;
-
-    }
-    // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
+    } // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
@@ -523,7 +524,6 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
         if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
             // Doesn't work on Windows due to different compiler. Doesn't work for fewer than 100 iterations
             bar.update();
-            int a = 1;
 
         TestShockwaveConditions(iteration);
 
@@ -554,15 +554,13 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
                 // All spins along x which are not within the driving region
                 hX0 = -1.0 * (_exchangeVec[spinLHS] * mx0LHS + _exchangeVec[spin] * mx0RHS);
 
-            // No changes are made to the effective field in the y-direction
             double hY0 = -1.0 * (_exchangeVec[spinLHS] * my0LHS + _exchangeVec[spin] * my0RHS);
-            // The static bias field is applied in the z-direction
 
             //double hZ0 = GV.GetStaticBiasField() + _anisotropyField * mz0MID + (_exchangeVec[spinLHS] * mz0LHS + _exchangeVec[spin] * mz0RHS);
-            double hZ0;
+            double hZ0 = 0;
             if (mz0MID > 0)
                 hZ0 = GV.GetStaticBiasField() + _anisotropyField - (_exchangeVec[spinLHS] * mz0LHS + _exchangeVec[spin] * mz0RHS);
-            else if (mz0MID > 0)
+            else if (mz0MID < 0)
                 hZ0 = GV.GetStaticBiasField() - _anisotropyField - (_exchangeVec[spinLHS] * mz0LHS + _exchangeVec[spin] * mz0RHS);
 
             double mxK1, myK1, mzK1; // These are the estimations of the slopes at the beginning of the interval
@@ -578,7 +576,6 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
                 mzK1 = -1.0 * _gyroMagConst * (mx0MID * hY0 - my0MID * hX0);
             }
 
-            // Find (m0 + k1/2) for each spin, which is used in the next stage.
             mx1[spin] = mx0MID + mxK1 * _stepsizeHalf;
             my1[spin] = my0MID + myK1 * _stepsizeHalf;
             mz1[spin] = mz0MID + mzK1 * _stepsizeHalf;
@@ -587,7 +584,8 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
         std::vector<double> mx2(GV.GetNumSpins() + 2,0), my2(GV.GetNumSpins() + 2,0), mz2(GV.GetNumSpins() + 2,0);
 
         for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            /* RK2 Step 2. Uses the previously found m1 values, as well as the initial conditions, to determine the
+            /*
+             * RK2 Step 2. Uses the previously found m1 values, as well as the initial conditions, to determine the
              * value of the slope (k2) at the midpoint. In RK2, the values of k1 and k2 can then be jointly used to
              * estimate the next point of the function through a weighted average of k1 & k2.
              */
@@ -598,7 +596,8 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
             double my1MID = my1[spin], my2LHS = my1[spinLHS], my2RHS = my1[spinRHS];
             double mz1MID = mz1[spin], mz2LHS = mz1[spinLHS], mz2RHS = mz1[spinRHS];
 
-            double hX1; // The effective field (H_eff) component acting upon each spin
+            // The effective field (H_eff) components acting upon each spin
+            double hX1;
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // If a spin is driven during Stage 1 of an RK method, then it must be driven throughout the rest of the method's stages. Note the different time value used
                 if (_hasStaticDrive)
@@ -609,14 +608,12 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
                 hX1 = -1.0 * (_exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS);
 
             double hY1 = -1.0 * (_exchangeVec[spinLHS] * my2LHS + _exchangeVec[spin] * my2RHS);
-            // double hZ1= GV.GetStaticBiasField() + _anisotropyField * mz1MID + (_exchangeVec[spinLHS] * mz2LHS + _exchangeVec[spin] * mz2RHS);
 
-            double hZ1;
+            double hZ1 = 0;
             if (mz1MID > 0)
                 hZ1= GV.GetStaticBiasField() + _anisotropyField - (_exchangeVec[spinLHS] * mz2LHS + _exchangeVec[spin] * mz2RHS);
             else if (mz1MID < 0)
                 hZ1= GV.GetStaticBiasField() - _anisotropyField - (_exchangeVec[spinLHS] * mz2LHS + _exchangeVec[spin] * mz2RHS);
-
 
             double mxK2, myK2, mzK2;
             if (_useLLG) {
@@ -634,19 +631,11 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
             mx2[spin] = _mx0[spin] + mxK2 * _stepsize;
             my2[spin] = _my0[spin] + myK2 * _stepsize;
             mz2[spin] = _mz0[spin] + mzK2 * _stepsize;
-            // mz2[spin] = _mz0_perm[spin];
-
-            double renorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
-            //mx2[spin] = mx2[spin] / renorm;
-            //my2[spin] = my2[spin] / renorm;
-            //mz2[spin] = mz2[spin] / renorm;
 
             if (_shouldTrackMValues) {
-                double mIterationNorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
-                if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+                double normOfIteration = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
+                if ((_largestMNorm) > (1.0 - normOfIteration)) { _largestMNorm = (1.0 - normOfIteration); }
             }
-
-            // if (iteration % 10000 ==0) {std::cout << _largestMNorm << "|" << mz2[spin] << std::endl;}
         }
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
 
@@ -666,7 +655,10 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
         //SaveDataToFile(mzRK2File, mz2, iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
-        if (std::isnan(mx2[310])) {std::cout << "\nNaN detected at itertion: " << iteration << std::endl; exit(1);}
+        if (std::isnan(mx2[10]) or std::isnan(my2[10]) or std::isnan(mz2[10])) {
+            std::cout << "\nNaN detected at iteration: " << iteration << std::endl; exit(1);
+        }
+
         _mx0 = mx2;
         _my0 = my2;
         _mz0 = mz2;
@@ -675,7 +667,6 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
             exit(0);
 
         _totalTime += _stepsize;
-
     }
     // Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
 
@@ -792,7 +783,7 @@ void Numerical_Methods_Class::RK2MidpointForTesting() {
             double mx1MID = mx1[spin], mx2LHS = mx1[spinLHS], mx2RHS = mx1[spinRHS];
             double my1MID = my1[spin], my2LHS = my1[spinLHS], my2RHS = my1[spinRHS];
             double mz1MID = mz1[spin], mz2LHS = mz1[spinLHS], mz2RHS = mz1[spinRHS];
-            
+
             double hX1; // The effective field (H_eff) component acting upon each spin
             if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
                 // If a spin is driven during Stage 1 of an RK method, then it must be driven throughout the rest of the method's stages. Note the different time value used
@@ -877,7 +868,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
     InformUserOfCodeType("RK4 Midpoint");
 
     //########################################################################################################################
-    
+
     std::ofstream mxRK4File(GV.GetFilePath() + "rk4_mx_" + GV.GetFileNameBase() + ".csv");
     CreateFileHeader(mxRK4File, "RK4 Midpoint");
 
@@ -1085,7 +1076,7 @@ void Numerical_Methods_Class::RK4Midpoint() {
                 double mIterationNorm = sqrt(pow(mx4[spin], 2) + pow(my4[spin], 2) + pow(mz4[spin], 2));
                 if (_largestMNorm < (1.0 - mIterationNorm)) { _largestMNorm = mIterationNorm; }
             }
-            
+
         }
         // Everything below here is part of the class method, but not the internal RK4 stage loops.
 
@@ -1229,7 +1220,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
     if (_onlyShowFinalState) {
         // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
         if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
-        //if (iteration == _iterationEnd) {
+            //if (iteration == _iterationEnd) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)

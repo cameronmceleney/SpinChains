@@ -1,5 +1,12 @@
 #include "GlobalVariables.h"
 
+double GlobalVariablesClass::GetAnisotropyField() {
+    return _anisotropyField;
+}
+void GlobalVariablesClass::SetAnisotropyField(double anisotropyField) {
+    _anisotropyField = anisotropyField;
+}
+
 double GlobalVariablesClass::GetStaticBiasField() {
     return _staticBiasField;
 }
@@ -41,6 +48,13 @@ double GlobalVariablesClass::GetExchangeMaxVal() {
 }
 void GlobalVariablesClass::SetExchangeMaxVal(double exchangeMaxVal) {
     _exchangeMaxVal = exchangeMaxVal;
+}
+
+double GlobalVariablesClass::GetGyromagneticConstant() {
+    return _gyromagneticConstant;
+}
+void GlobalVariablesClass::SetGyromagneticConstant(double gyromagneticConstant) {
+    _gyromagneticConstant = gyromagneticConstant * 2 * M_PI;
 }
 
 std::string GlobalVariablesClass::GetCurrentTime() {

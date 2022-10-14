@@ -10,7 +10,8 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     _totalEquations = GV.GetNumSpins() * 2;
     _isFerromagnet = false;
     _fileNameEigenSolver += GV.GetFileNameBase();
-
+    _anisotropyField = GV.GetAnisotropyField();
+    _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
     std::cout << "Filename is: " << _fileNameEigenSolver << std::endl; // Informs user of filename to enable directory searching via file explorer search function
     std::cout << "\nFiles will be outputted to: " << GV.GetFilePath() << std::endl; // Showing the selected path will make it easier to find the file
 
