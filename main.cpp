@@ -13,12 +13,12 @@ int main() {
     GV.SetFilePath();
 
     // Set simulation parameters
-    GV.SetAnisotropyField(0.787);
-    GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(500));
-    GV.SetExchangeMinVal(53);
-    GV.SetExchangeMaxVal(53);
-    GV.SetGyromagneticConstant(28.8E9);
+    GV.SetAnisotropyField(0);  // 638e-3
+    GV.SetStaticBiasField(1e-3);
+    GV.SetNumSpins(static_cast<int>(100));
+    GV.SetExchangeMinVal(8.29);
+    GV.SetExchangeMaxVal(8.29);
+    GV.SetGyromagneticConstant(1e9);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
@@ -54,9 +54,9 @@ int main() {
      * GV.SetFilePath(in_filePath);
      */
 
-    // SolverClass.CalculateEigFreqs();
-    RK2_method_use.NMSetup();
-    RK2_method_use.RK2MidpointAFM();
+    SolverClass.CalculateEigFreqs();
+    // RK2_method_use.NMSetup();
+    // RK2_method_use.RK2MidpointAFM();
 
     return 0;
 }

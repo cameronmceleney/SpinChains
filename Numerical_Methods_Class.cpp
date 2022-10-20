@@ -9,16 +9,17 @@ void Numerical_Methods_Class::NMSetup() {
     _isAFM = true;
     _lhsDrive = true;
     _centralDrive = false;
+    _dualDrive = false;
     _shouldTrackMValues = true;
     _useLLG = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 422 * 1e9;
-    _dynamicBiasField = 3e-3;
+    _drivingFreq = 280 * 1e9;
+    _dynamicBiasField = 16.6e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _iterationEnd = static_cast<int>(5e7);
-    _stepsize = 1e-17;
+    _iterationEnd = static_cast<int>(1.6e7);
+    _stepsize = 1e-18;
 
     // ###################### Shockwave Parameters ######################
     _iterStartShock = 0.0;
@@ -28,18 +29,18 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveMax = 3e-3;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 100;
+    _numberOfDataPoints = 1000;
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
 
     // ###################### Damping Factors ######################
-    _gilbertConst  = 1e-4;
-    _gilbertLower = 1e-4;
-    _gilbertUpper = 1e0;
+    _gilbertConst  = 1e-1;
+    _gilbertLower = 1e-1;
+    _gilbertUpper = 1e2;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 25;
+    _drivingRegionWidth = 50;
     _numSpinsDamped = 250;
 
     // ###################### Computations based upon other inputs ######################
@@ -113,6 +114,8 @@ void Numerical_Methods_Class::SetDrivingRegion() {
         _drivingRegionLHS = (_numSpinsInChain/2) +_numSpinsDamped - (_drivingRegionWidth / 2);
         _drivingRegionRHS = (_numSpinsInChain/2) +_numSpinsDamped + (_drivingRegionWidth / 2);
     }
+
+    if (_dualDrive) {}
     else if (!_centralDrive) {
         if (_lhsDrive) {
             // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
