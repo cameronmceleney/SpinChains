@@ -14,11 +14,11 @@ int main() {
 
     // Set simulation parameters
     GV.SetAnisotropyField(0);  // 638e-3
-    GV.SetStaticBiasField(1e-3);
+    GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(static_cast<int>(100));
-    GV.SetExchangeMinVal(8.29);
-    GV.SetExchangeMaxVal(8.29);
-    GV.SetGyromagneticConstant(1e9);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(43.5);
+    GV.SetGyromagneticConstant(29.2e9);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {

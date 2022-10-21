@@ -59,6 +59,7 @@ private:
 
     // ######## Booleans and other tests ########
 
+    bool                _dualDrive;
     bool                _fixedPoints;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
     bool                _centralDrive;                          // Drive from the centre of the chain if (true)
     bool                _hasShockwave;                          // Simulation contains a single driving bias field if (false).

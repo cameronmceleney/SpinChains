@@ -8,7 +8,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     // rename all variables following https://manual.gromacs.org/documentation/5.1-current/dev-manual/naming.html
 
     _totalEquations = GV.GetNumSpins() * 2;
-    _isFerromagnet = false;
+    _isFerromagnet = true;
     _fileNameEigenSolver += GV.GetFileNameBase();
     _anisotropyField = GV.GetAnisotropyField();
     _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
