@@ -8,7 +8,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     // rename all variables following https://manual.gromacs.org/documentation/5.1-current/dev-manual/naming.html
 
     _totalEquations = GV.GetNumSpins() * 2;
-    _isFerromagnet = true;
+    _isFerromagnet = false;
     _fileNameEigenSolver += GV.GetFileNameBase();
     _anisotropyField = GV.GetAnisotropyField();
     _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
@@ -246,7 +246,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_ferromagnets()
     LinspaceClass exchangeValues{};
     std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
 
-    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, false);
+    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, true);
     _chainJValues = exchangeValues.generate_array();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster

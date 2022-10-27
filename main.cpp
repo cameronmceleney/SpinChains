@@ -13,11 +13,11 @@ int main() {
     GV.SetFilePath();
 
     // Set simulation parameters
-    GV.SetAnisotropyField(0);  // 638e-3
+    GV.SetAnisotropyField(0.787);  // 638e-3
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(static_cast<int>(100));
-    GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(43.5);
+    GV.SetNumSpins(static_cast<int>(500));
+    GV.SetExchangeMinVal(53);
+    GV.SetExchangeMaxVal(53);
     GV.SetGyromagneticConstant(29.2e9);
 
     // I keep forgetting to check the exchanges, hence this warning

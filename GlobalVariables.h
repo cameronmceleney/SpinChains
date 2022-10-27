@@ -50,7 +50,7 @@ public:
     void                SetCurrentTime();                       // Finds the current time (ISO8601 format) at the moment the method was invoked.
 
     double              GetGyromagneticConstant();              // Get the gyromagnetic ratio
-    void                SetGyromagneticConstant(double gyromagneticConstant);   // Set the gyromagnetic ratio, called 'gamma'. Enter in [GHz / (2 PI)]!
+    void                SetGyromagneticConstant(double gyromagneticConstant);   // Set the gyromagnetic ratio, called 'gamma'. Enter in [GHz] as conversion is handled by method!
 
 
 };
