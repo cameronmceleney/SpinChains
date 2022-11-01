@@ -20,15 +20,15 @@ private:
     int                 _drivingRegionWidth;                    // Driving region width.
     double              _dynamicBiasField;                      // Driving field amplitude [T] (caution: papers often give in [mT]).
     int                 _forceStopAtIteration;                  // Legacy breakpoint variable. Set as a -ve value to deactivate.
-    double              _gilbertConst;                   // Gilbert Damping Factor.
-
+    double              _gilbertConst;                          // Gilbert Damping Factor.
     double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain.
+
     double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain.
     double              _gyroMagConst;                          // Gyromagnetic ratio of an electron [GHz/T].
     int                 _iterationEnd;                          // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
-
     int                 _iterationStart = 0;                    // The iteration step that the program will begin at. (Default: 0.0)
     double              _iterStartShock;                        // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
+
     double              _largestMNorm = 1e-50;                  // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
     double              _magSat = 1.0;                          // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
@@ -64,11 +64,13 @@ private:
     bool                _centralDrive;                          // Drive from the centre of the chain if (true)
     bool                _hasShockwave;                          // Simulation contains a single driving bias field if (false).
     bool                _hasStaticDrive;                        // Selects (if true) whether drive has sinusoidal term
+
     bool                _isAFM;
     bool                _isShockwaveOn = false;                 // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
     bool                _isShockwaveAtMax = false;              // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
     bool                _lhsDrive;                              // Drive from the RHS if (false)
     bool                _onlyShowFinalState;                    // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
+
     bool                _saveAllSpins;                          // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
     bool                _shouldTrackMValues;
@@ -77,6 +79,7 @@ private:
     // ######## Private Functions ########
     std::vector<double> _exchangeVec;                           // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};
+
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
     std::vector<double> _mx0{0};                                // x-axis (x)
     std::vector<double> _my0{0};                                // y-axis (y)
@@ -98,12 +101,13 @@ private:
 
 public:
 //  Dtype               Member Name                                Variable docstring
-    void                NMSetup();
-    void                RK2Original();
-    void                RK2MidpointFM();
-    void                RK2MidpointForTesting();
-    void                RK4Midpoint();
-    void                RK2MidpointAFM();
+    void                NMSetup();                              // Assignment of all values required for the simulation
+    void                RK2OriginalFM();                        // Original RK2 method that I wrote. Left here as legacy working version of RK2. NOTE: heavily outdated
+    void                RK2MidpointFM();                        // Evaluate the given system, using the Runge-Kutta (2nd Order) method, for a ferromagnetic material
+
+    void                RK2MidpointFMForTesting();              // Debugging case for RK-2 (ferromagnetic) where a large number of output statements allow for all used parameters to be tracked throughout the simulation.
+    void                RK4MidpointFM();                        // OUTDATED: Evaluate the given system, using the Runge-Kutta (4nd Order) method, for a ferromagnetic material
+    void                RK2MidpointAFM();                       // Evaluate the given system, using the Runge-Kutta (2nd Order) method, for an anti-ferromagnetic material
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H

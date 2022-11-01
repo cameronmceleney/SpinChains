@@ -6,7 +6,7 @@ void Numerical_Methods_Class::NMSetup() {
     // ###################### Flags ######################
     _hasShockwave = false;
     _hasStaticDrive = false;
-    _isAFM = true;
+    _isAFM = GV.GetIsFerromagnetic();
     _lhsDrive = true;
     _centralDrive = false;
     _dualDrive = false;
@@ -57,7 +57,7 @@ void Numerical_Methods_Class::NMSetup() {
         _anisotropyField = 0;
 
     // ###################### Core Method Invocations ######################
-    // Order is intentional!
+    // Order is intentional and must be maintained!
     SetShockwaveConditions();
     SetDampingRegion();
     SetDrivingRegion();
@@ -115,7 +115,9 @@ void Numerical_Methods_Class::SetDrivingRegion() {
         _drivingRegionRHS = (_numSpinsInChain/2) +_numSpinsDamped + (_drivingRegionWidth / 2);
     }
 
-    if (_dualDrive) {}
+    if (_dualDrive) {
+        // TODO: The IF statement for _dualdrive still needs to be written
+    }
     else if (!_centralDrive) {
         if (_lhsDrive) {
             // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
@@ -183,7 +185,7 @@ void Numerical_Methods_Class::SetInitialMagneticMoments() {
     _mz0.push_back(0);
 }
 
-void Numerical_Methods_Class::RK2Original() {
+void Numerical_Methods_Class::RK2OriginalFM() {
 
     SpinChainEigenSolverClass printtest;
 
@@ -685,7 +687,7 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-void Numerical_Methods_Class::RK2MidpointForTesting() {
+void Numerical_Methods_Class::RK2MidpointFMForTesting() {
 
     progressbar bar(100);
 
@@ -864,7 +866,7 @@ void Numerical_Methods_Class::RK2MidpointForTesting() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-void Numerical_Methods_Class::RK4Midpoint() {
+void Numerical_Methods_Class::RK4MidpointFM() {
 
     progressbar bar(100);
 
@@ -1214,7 +1216,8 @@ void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint, bo
             std::cout << std::setw(12) << i << ", ";
     }
 
-    if (shouldExitAfterPrint) { exit(0); }
+    if (shouldExitAfterPrint)
+        exit(0);
 }
 void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
     std::cout.precision(6);
@@ -1242,10 +1245,8 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
             outputFileName << std::endl;
         }
     } else {
-        if (_saveAllSpins)
-        {
-            for (int i = 0; i <= GV.GetNumSpins(); i++)
-            {
+        if (_saveAllSpins) {
+            for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
                     outputFileName << (iteration * _stepsize) << ","; // Print current time
@@ -1255,13 +1256,9 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                     outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
             }
             outputFileName << std::endl; // Take new line after current row is finished being written.
-        }
-        else
-        {
-            if (iteration % (_iterationEnd / _numberOfDataPoints) == 0)
-            {
-                if (_fixedPoints)
-                {
+        } else {
+            if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
+                if (_fixedPoints) {
                     /*
                     outputFileName << (iteration * _stepsize) << ","
                                    << arrayToWrite[_drivingRegionLHS] << ","
@@ -1278,11 +1275,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                                    << arrayToWrite[3000] << ","
                                    << arrayToWrite[4500] << ","
                                    << arrayToWrite[5600] << std::endl;
-
-
-                }
-                else
-                {
+                } else {
                     outputFileName << (iteration * _stepsize) << ","
                                    << arrayToWrite[_drivingRegionLHS] << ","
                                    << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","

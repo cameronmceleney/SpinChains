@@ -4,36 +4,47 @@
 #include "SpinChainEigenSolverClass.h"
 
 void SpinChainEigenSolverClass::CalculateEigFreqs() {
-    // TODO: rename variables
-    // rename all variables following https://manual.gromacs.org/documentation/5.1-current/dev-manual/naming.html
 
+    // ###################### Core Parameters ######################
     _totalEquations = GV.GetNumSpins() * 2;
-    _isFerromagnet = false;
+    _isFerromagnet = GV.GetIsFerromagnetic();;
     _fileNameEigenSolver += GV.GetFileNameBase();
     _anisotropyField = GV.GetAnisotropyField();
     _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
-    std::cout << "Filename is: " << _fileNameEigenSolver << std::endl; // Informs user of filename to enable directory searching via file explorer search function
-    std::cout << "\nFiles will be outputted to: " << GV.GetFilePath() << std::endl; // Showing the selected path will make it easier to find the file
 
-    auto startTimeFindEigens = std::chrono::system_clock::now(); // Separate start time (from system) for the computation of the eigenvalues
+    // Informs user of filename and file path to enable directory searching via their file explorer
+    std::cout << "Filename is: " << _fileNameEigenSolver
+              << "\n\nFiles will be outputted to: " << GV.GetFilePath() << std::endl;
+
+    // Separate start time (from system) for the computation of the eigenvalues
+    auto startTimeFindEigens = std::chrono::system_clock::now();
     std::time_t startTimeFindEigens_cTimeUse = std::chrono::system_clock::to_time_t( startTimeFindEigens);
-    std::cout << "\n------------------------------" << "\nEigenvalues and Eigenvectors";
-    std::cout << "\nBegan computation at: " << std::ctime(&startTimeFindEigens_cTimeUse) << std::endl; // Useful for long computations where the start time may be forgotten
+    std::cout << "\n------------------------------"
+              << "\nEigenvalues and Eigenvectors"
+              << "\nBegan computation at: " << std::ctime(&startTimeFindEigens_cTimeUse) << std::endl;
 
-    _matrixValues(_totalEquations, _totalEquations); // Generates the matrix but does not allocate memory. That is done as each element is calculated
+    // ###################### Invoke Methods to find eigenvalues ######################
 
+    // Generates the matrix but does not allocate memory. That is done as each element is calculated
+    _matrixValues(_totalEquations, _totalEquations);
+
+    // Currently supports FM and AFM materials. Should more be added this will be changed to a SWITCH case
     if (_isFerromagnet)
         _matrixValues = populate_matrix_ferromagnets();
     else
         _matrixValues = populate_matrix_antiferromagnets();
 
+    // Eigensolver must be applied after matrix population otherwise the program will crash
     Eigen::EigenSolver <Matrix_xd> eigenSolverMatrixValues(_matrixValues);
 
     auto stopTimeFindEigens = std::chrono::system_clock::now();
     auto durationTimeFindEigens = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeFindEigens - startTimeFindEigens);
     std::cout << "Duration to find eigenvectors and values: " << durationTimeFindEigens.count() << "[ms]." << std::endl;
 
-    _matrixValues.resize(0, 0); // Removes large matrix from memory; leads to faster write times for very large matrices
+    // Removes large matrix from memory; leads to faster write times for very large matrices
+    _matrixValues.resize(0, 0);
+
+    // ###################### Save data ######################
 
     auto startTimeSaveData = std::chrono::system_clock::now();
 
@@ -42,12 +53,14 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     auto stopTimeSaveData = std::chrono::system_clock::now();
     auto durationTimeSaveData = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeSaveData - startTimeSaveData);
-    std::cout << "Time to write to files: " << durationTimeSaveData.count() << "[ms]." << std::endl;
 
+    // Inform user of all remaining key data
     std::time_t stopTimeSaveData_cTimeUse = std::chrono::system_clock::to_time_t(stopTimeSaveData);
-    std::cout << "\nFinished computation at: " << std::ctime(&stopTimeSaveData_cTimeUse);
-    std::cout << "\n------------------------------\n";
+    std::cout << "Time to write to files: " << durationTimeSaveData.count() << "[ms]."
+              << "\n\nFinished computation at: " << std::ctime(&stopTimeSaveData_cTimeUse)
+              << "\n------------------------------\n";
 
+    // Way to test the quality of the results. Leave in code (commented out) for future debugging
     //std::cout << "Computing V * D * V^(-1) gives: " << std::endl << ces.eigenvectors() * ces.eigenvalues().asDiagonal() * ces.eigenvectors().inverse() << std::endl;
 
 }
@@ -106,7 +119,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
 
     exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, true);
     _chainJValues = exchangeValues.generate_array();
-    // PrintVector(_chainJValues, true);
+
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
      * than using an eigen-solver library to find the roots of a characteristic equation populated by angular_frequency values. The outputted
      * eigenvalues of this matrix (matrixToFill) are eigen-frequencies, however they are angular (w). To obtain  frequencies (f), you must find
