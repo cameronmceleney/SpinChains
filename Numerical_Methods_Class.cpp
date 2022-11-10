@@ -14,12 +14,12 @@ void Numerical_Methods_Class::NMSetup() {
     _useLLG = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 280 * 1e9;
-    _dynamicBiasField = 16.6e-3;
+    _drivingFreq = 42.5 * 1e9;
+    _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _iterationEnd = static_cast<int>(1.6e7);
-    _stepsize = 1e-18;
+    _iterationEnd = static_cast<int>(7e5);
+    _stepsize = 1e-16;
 
     // ###################### Shockwave Parameters ######################
     _iterStartShock = 0.0;
@@ -29,18 +29,18 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveMax = 3e-3;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 1000;
+    _numberOfDataPoints = 100;
     _fixedPoints = false;
     _onlyShowFinalState = true;
     _saveAllSpins = false;
 
     // ###################### Damping Factors ######################
-    _gilbertConst  = 1e-1;
-    _gilbertLower = 1e-1;
-    _gilbertUpper = 1e2;
+    _gilbertConst  = 1e-4;
+    _gilbertLower = 1e-4;
+    _gilbertUpper = 1e0;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 50;
+    _drivingRegionWidth = 200;
     _numSpinsDamped = 250;
 
     // ###################### Computations based upon other inputs ######################
@@ -358,11 +358,11 @@ void Numerical_Methods_Class::RK2MidpointFM() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
-    std::ofstream myRK2File(GV.GetFilePath() + "rk2_my_" + GV.GetFileNameBase() + ".csv");
-    std::ofstream mzRK2File(GV.GetFilePath() + "rk2_mz_" + GV.GetFileNameBase() + ".csv");
+    //std::ofstream myRK2File(GV.GetFilePath() + "rk2_my_" + GV.GetFileNameBase() + ".csv");
+    //std::ofstream mzRK2File(GV.GetFilePath() + "rk2_mz_" + GV.GetFileNameBase() + ".csv");
     CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
-    CreateFileHeader(myRK2File, "RK2 Midpoint (FM)");
-    CreateFileHeader(mzRK2File, "RK2 Midpoint (FM)");
+    //CreateFileHeader(myRK2File, "RK2 Midpoint (FM)");
+    //CreateFileHeader(mzRK2File, "RK2 Midpoint (FM)");
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -484,8 +484,8 @@ void Numerical_Methods_Class::RK2MidpointFM() {
         mz1.clear();
 
         SaveDataToFile(mxRK2File, mx2, iteration);
-        SaveDataToFile(myRK2File, my2, iteration);
-        SaveDataToFile(mzRK2File, mz2, iteration);
+        //SaveDataToFile(myRK2File, my2, iteration);
+        //SaveDataToFile(mzRK2File, mz2, iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         _mx0 = mx2;
@@ -500,8 +500,8 @@ void Numerical_Methods_Class::RK2MidpointFM() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
-    myRK2File.close();
-    mzRK2File.close();
+    //myRK2File.close();
+    //mzRK2File.close();
 
     if (_shouldTrackMValues)
         std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;

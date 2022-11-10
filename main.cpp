@@ -13,16 +13,16 @@ int main() {
     GV.SetFilePath();
 
     // Set global simulation parameters
-    GV.SetAnisotropyField(0.787);
+    GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(500);
-    GV.SetExchangeMinVal(53);
-    GV.SetExchangeMaxVal(53);
+    GV.SetNumSpins(4000);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2e9);
-    GV.SetIsFerromagnetic(false);
+    GV.SetIsFerromagnetic(true);
 
     // Select between eigenvalue derivation and numerical modelling
-    bool findEigenvalues = true;
+    bool findEigenvalues = false;
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
@@ -35,6 +35,10 @@ int main() {
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
+
+    RK2_method_use.NMSetup();
+    RK2_method_use.RK2MidpointFM();
+    exit(0);
 
     if (findEigenvalues)
         SolverClass.CalculateEigFreqs();
