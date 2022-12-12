@@ -1,5 +1,8 @@
 #include "Numerical_Methods_Class.h"
 #include <cmath>
+#include <iostream>
+#include <iomanip>
+#include <chrono>
 
 void Numerical_Methods_Class::NMSetup() {
 
@@ -7,19 +10,19 @@ void Numerical_Methods_Class::NMSetup() {
     _hasShockwave = false;
     _hasStaticDrive = false;
     _isFM = GV.GetIsFerromagnetic();
-    _lhsDrive = false;
+    _lhsDrive = true;
     _centralDrive = false;
     _dualDrive = false;
     _shouldTrackMValues = true;
     _useLLG = true;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 42.5 * 1e9;
-    _dynamicBiasField = 3e-3;
+    _drivingFreq = 12.5  * 1e9;
+    _dynamicBiasField = 3e-4;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _iterationEnd = static_cast<int>(7e5);
-    _stepsize = 1e-15;
+    _iterationEnd = static_cast<int>(7e5);  // 1e8
+    _stepsize = 1e-15;  // 1e-17
 
     // ###################### Shockwave Parameters ######################
     _iterStartShock = 0.0;
@@ -29,18 +32,19 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveMax = 3e-3;
 
     // ###################### Data Output Parameters ######################
-    _numberOfDataPoints = 100;
-    _fixedPoints = false;
-    _onlyShowFinalState = true;
+    _numberOfDataPoints = 1e2;  // 1e7
+    _fixed_output_sites = {14000, 16000, 18000, 20000};
+    _printFixedSites = false;
+    _printFixedLines = true;
     _saveAllSpins = false;
 
     // ###################### Damping Factors ######################
-    _gilbertConst  = 1e-4;
-    _gilbertLower = 1e-4;
+    _gilbertConst  = 1e-6;
+    _gilbertLower = 1e-6;
     _gilbertUpper = 1e0;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 200;
+    _drivingRegionWidth = 10;
     _numSpinsDamped = 0;
 
     // ###################### Computations based upon other inputs ######################
@@ -372,6 +376,10 @@ void Numerical_Methods_Class::RK2MidpointFM() {
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
     CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
 
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata();
+    }
+
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
         if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
@@ -506,6 +514,10 @@ void Numerical_Methods_Class::RK2MidpointFM() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata(true);
+    }
 
     if (_shouldTrackMValues)
         std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;
@@ -1096,8 +1108,8 @@ void Numerical_Methods_Class::RK4MidpointFM() {
         mxK3Vec.clear(); myK3Vec.clear(); mzK3Vec.clear();
 
         SaveDataToFile(mxRK4File, mx4, iteration);
-        // SaveDataToFile(_saveAllSpins, myRK4File, my4, iteration, _onlyShowFinalState);
-        // SaveDataToFile(_saveAllSpins, mzRK4File, mz4, iteration, _onlyShowFinalState);
+        // SaveDataToFile(_saveAllSpins, myRK4File, my4, iteration, _printFixedLines);
+        // SaveDataToFile(_saveAllSpins, mzRK4File, mz4, iteration, _printFixedLines);
 
         // Set final value of current iteration as the starting value for the next iteration
         _mx0 = mx4;
@@ -1119,33 +1131,62 @@ void Numerical_Methods_Class::RK4MidpointFM() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed) {
+void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
     /**
      * Write all non-data information to the output file.
      */
-    outputFileName << "Key Data\n";
+    if (is_metadata) {
+        outputFileName << "Key Data\n\n";
 
-    outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
+        outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-    outputFileName << "Using LLG," << _useLLG << ",Using Shockwave," << _hasShockwave << ",Drive from LHS," << _lhsDrive << ",Numerical Method Used," << methodUsed << ",Has Static Drive," << _hasStaticDrive << "\n";
+        outputFileName << "Using LLG: [" << _useLLG << "]\t\t\t\tUsing Shockwave: [" << _hasShockwave << "]\t\tDrive from LHS: [" << _lhsDrive <<
+                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << _hasStaticDrive << "]\n";
 
-    outputFileName << "\n";
+        outputFileName << "\n";
 
-    outputFileName << "Static Bias Field (H0) [T],Dynamic Bias Field (H_D1) [T],Dynamic Bias Field Scale Factor,Second Dynamic Bias Field (H_D2)[T],"
-                      "Driving Frequency (f) [Hz],Driving Region Start Site,Driving Region End Site, Driving Region Width,"
-                      "Max. Sim. Time [s],Min. Exchange Val (J)[T],Max. Exchange Val (J)[T],Max. Iterations,No. DataPoints,"
-                      "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, Stepsize (h),Gilbert Damping Factor, Gyromagnetic Ratio (2Pi*Y),"
-                      "Shockwave Gradient Time (s), Shockwave Application Time [s]"
-                      "\n";
+        outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t" << "Dynamic Bias Field (H_D1): " << _dynamicBiasField << " T\n" <<
+                          "Dynamic Bias Field Scale Factor: " << _shockwaveInitialStrength << "\t\t" << "Second Dynamic Bias Field (H_D2): " << _shockwaveMax << " T\n" <<
+                          "Driving Frequency (f): " << _drivingFreq << "Hz\t\t""Driving Region Start Site: " << _drivingRegionLHS - _numSpinsDamped << "\n" <<
+                          "Driving Region End Site: " << _drivingRegionRHS - _numSpinsDamped << " \t\t\t" << "Driving Region Width: " << _drivingRegionWidth << " \n" <<
+                          "Max. Sim. Time: " << _maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): " << GV.GetExchangeMinVal()  << " T\n" <<
+                          "Max. Exchange Val (J): " << GV.GetExchangeMaxVal() << " T\t\t\t" << "Max. Iterations: " << _iterationEnd << "\n" <<
+                          "No. DataPoints: " << _numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: " << _numSpinsInChain << "\n" <<
+                          "No. Damped Spins: " << _numSpinsDamped << "per side\t\t\t" << "No. Total Spins: " << GV.GetNumSpins() << " \n" <<
+                          "Stepsize (h): " << _stepsize << "\t\t\t\t" << "Gilbert Damping Factor: " << _gilbertConst << "\n" <<
+                          "Gyromagnetic Ratio (2Pi*Y): " << _gyroMagConst << "\t\t""Shockwave Gradient Time: " << _iterStartShock << "s\n" <<
+                          "Shockwave Application Time: " << _shockwaveGradientTime * _stepsize << "s\n" <<
+                          std::endl;
 
-    outputFileName << GV.GetStaticBiasField() << ", " << _dynamicBiasField << ", " << _shockwaveInitialStrength << ", " << _shockwaveMax << ", "
-                   << _drivingFreq << ", " << _drivingRegionLHS - _numSpinsDamped << ", " << _drivingRegionRHS - _numSpinsDamped << ", " << _drivingRegionWidth << ", "
-                   << _maxSimTime << ", " << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << _iterationEnd << ", " <<  _numberOfDataPoints << ", "
-                   << _numSpinsInChain << ", "  << _numSpinsDamped << ", " << GV.GetNumSpins() << ", " << _stepsize << ", " << _gilbertConst << ", " << _gyroMagConst << ", "
-                   << _iterStartShock << ", " << _shockwaveGradientTime * _stepsize
-                   << "\n";
+        return;
+    }
+    else {
 
-    outputFileName << "\n";
+        outputFileName << "Key Data\n";
+
+        outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
+
+        outputFileName << "Using LLG," << _useLLG << ",Using Shockwave," << _hasShockwave << ",Drive from LHS," << _lhsDrive <<
+                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << _hasStaticDrive << "\n";
+
+        outputFileName << "\n";
+
+        outputFileName << "Static Bias Field (H0) [T],Dynamic Bias Field (H_D1) [T],Dynamic Bias Field Scale Factor,Second Dynamic Bias Field (H_D2)[T],"
+                          "Driving Frequency (f) [Hz],Driving Region Start Site,Driving Region End Site, Driving Region Width,"
+                          "Max. Sim. Time [s],Min. Exchange Val (J)[T],Max. Exchange Val (J)[T],Max. Iterations,No. DataPoints,"
+                          "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, Stepsize (h),Gilbert Damping Factor, Gyromagnetic Ratio (2Pi*Y),"
+                          "Shockwave Gradient Time [s], Shockwave Application Time [s]"
+                          "\n";
+
+        outputFileName << GV.GetStaticBiasField() << ", " << _dynamicBiasField << ", " << _shockwaveInitialStrength << ", " << _shockwaveMax << ", "
+                       << _drivingFreq << ", " << _drivingRegionLHS - _numSpinsDamped << ", " << _drivingRegionRHS - _numSpinsDamped << ", " << _drivingRegionWidth << ", "
+                       << _maxSimTime << ", " << GV.GetExchangeMinVal() << ", " << GV.GetExchangeMaxVal() << ", " << _iterationEnd << ", " << _numberOfDataPoints << ", "
+                       << _numSpinsInChain << ", " << _numSpinsDamped << ", " << GV.GetNumSpins() << ", " << _stepsize << ", " << _gilbertConst << ", " << _gyroMagConst << ", "
+                       << _iterStartShock << ", " << _shockwaveGradientTime * _stepsize
+                       << "\n";
+
+        outputFileName << "\n";
+    }
 
     std::string notesComments;
     std::cout << "Enter any notes for this simulation: ";
@@ -1166,7 +1207,7 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName)
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
      */
-    if (_saveAllSpins or _onlyShowFinalState) {
+    if (_saveAllSpins or _printFixedLines) {
         // Print column heading for every spin simulated.
         outputFileName << "Time [s], ";
         for (int i = 1; i <= GV.GetNumSpins(); i++) {
@@ -1174,14 +1215,19 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName)
         }
         outputFileName << std::endl;
 
-    } else if (_fixedPoints) {
+    } else if (_printFixedSites) {
 
-        outputFileName << "Time" << ", "
-                       << static_cast<int>(400) << ","
-                       << static_cast<int>(1500) << ","
-                       << static_cast<int>(3000) << ","
-                       << static_cast<int>(4500) << ","
-                       << static_cast<int>(5600) << std::endl;
+        outputFileName << "Time" << ", ";
+        for (int & fixed_out_val : _fixed_output_sites)
+            std::cout << fixed_out_val << ", ";
+        outputFileName << std::endl;
+
+        //outputFileName << "Time" << ", "
+        //               << static_cast<int>(14000) << ","
+        //               << static_cast<int>(16000) << ","
+        //               << static_cast<int>(18000) << ","
+        //               << static_cast<int>(20000) << std::endl;
+
     } else {
         outputFileName << "Time" << ", "
                        << _drivingRegionLHS << ","
@@ -1227,7 +1273,59 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
     std::cout.precision(6);
     std::cout << std::scientific;
 
-    if (_onlyShowFinalState) {
+    if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
+        if (_printFixedLines) {
+            for (int i = 0; i <= GV.GetNumSpins(); i++) {
+                // Steps through vectors containing all mag. moment components and saves to files
+                if (i == 0)
+                    // Print current time
+                    outputFileName << (iteration * _stepsize) << ",";
+
+                else if (i == GV.GetNumSpins())
+                    // Ensures that the final line doesn't contain a comma.
+                    outputFileName << arrayToWrite[i] << std::flush;
+
+                else
+                    // For non-special values, write the data.
+                    outputFileName << arrayToWrite[i] << ", ";
+            }
+            // Take new line after current row is finished being written.
+            outputFileName << std::endl;
+            
+            return;
+        } else if (_printFixedSites) {
+            /*outputFileName << (iteration * _stepsize) << ","
+               << arrayToWrite[14000] << ","
+               << arrayToWrite[16000] << ","
+               << arrayToWrite[18000] << ","
+               << arrayToWrite[20000] << std::endl;
+               */
+            outputFileName << (iteration * _stepsize) << ", ";
+            for (int & fixed_out_val : _fixed_output_sites)
+                std::cout << arrayToWrite[fixed_out_val] << ", ";
+            outputFileName << std::endl;
+            
+            return;
+        }
+    }
+
+    if (_saveAllSpins) {
+        for (int i = 0; i <= GV.GetNumSpins(); i++) {
+            // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
+            if (i == 0)
+                outputFileName << (iteration * _stepsize) << ","; // Print current time
+            else if (i == GV.GetNumSpins())
+                outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
+            else
+                outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
+        }
+        outputFileName << std::endl;
+        
+        return;
+    }
+    
+    /*
+    if (_printFixedLines) {
         // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
         if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
             //if (iteration == _iterationEnd) {
@@ -1262,8 +1360,8 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
             if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
-                if (_fixedPoints) {
-                    /*
+                if (_printFixedSites) {
+                    
                     outputFileName << (iteration * _stepsize) << ","
                                    << arrayToWrite[_drivingRegionLHS] << ","
                                    << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
@@ -1272,7 +1370,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
                                    << arrayToWrite[GV.GetNumSpins()] << std::endl;
-                   */
+                   
                     outputFileName << (iteration * _stepsize) << ","
                                    << arrayToWrite[400] << ","
                                    << arrayToWrite[1500] << ","
@@ -1291,7 +1389,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                 }
             }
         }
-    }
+    } */
 }
 void Numerical_Methods_Class::TestShockwaveConditions(double iteration) {
 
@@ -1322,4 +1420,23 @@ void Numerical_Methods_Class::TestShockwaveConditions(double iteration) {
 
     }
 
+}
+void Numerical_Methods_Class::CreateMetadata(bool print_end_time) {
+
+    std::string file_name = "simulation_metadata.txt";
+
+    if (print_end_time) {
+        std::ofstream metadata_end;
+        metadata_end.open(GV.GetFilePath() + file_name, std::ios_base::app); // append instead of overwrite
+        auto end = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        metadata_end << "Finished at:\t" << std::put_time(localtime(&end), "%F %H-%M-%S") << std::endl;
+        metadata_end.close();
+    }
+    else {
+        std::ofstream metadata_start(GV.GetFilePath() + file_name);
+        CreateFileHeader(metadata_start, "NM 2", true);
+        auto start = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        metadata_start << "Started at:\t" << std::put_time(localtime(&start), "%F %H-%M-%S") << std::endl;
+        metadata_start.close();
+    }
 }

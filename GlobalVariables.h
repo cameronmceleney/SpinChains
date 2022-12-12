@@ -21,6 +21,7 @@ private:
     bool                _isFerromagnetic;                       // If the material is ferromagnetic [true] or antiferromagnetic [false]
     int                 _numSpins;                              // Number of sites (spins) in the chain.
 
+    bool                _shouldSendEmail;
     double              _staticBiasField;                       // Applied bias field [T]. Often written as H_0 or H_static in literature.
 
     // Private Functions
@@ -40,6 +41,8 @@ public:
     std::string         GetFileNameBase();                              // Get the custom suffix (base) name.
     void                SetFileNameBase(std::string fileNameBase);      // Set a custom suffix to all filenames for this simulation.
 
+    bool                GetEmailWhenCompleted();
+    void                SetEmailWhenCompleted(bool shouldSendEmail);
     double              GetExchangeMinVal();                            // Get the minimum exchange interaction strength [T].
     void                SetExchangeMinVal(double exchangeMinimum);      // Set the minimum exchange interaction strength [T].
 

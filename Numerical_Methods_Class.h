@@ -5,6 +5,7 @@
 #include "SpinChainEigenSolverClass.h"
 #include "CommonLibs.h"
 #include "progressbar.hpp"
+#include <list>
 
 class Numerical_Methods_Class {
 
@@ -19,6 +20,7 @@ private:
 
     int                 _drivingRegionWidth;                    // Driving region width.
     double              _dynamicBiasField;                      // Driving field amplitude [T] (caution: papers often give in [mT]).
+    std::list <int>     _fixed_output_sites;
     int                 _forceStopAtIteration;                  // Legacy breakpoint variable. Set as a -ve value to deactivate.
     double              _gilbertConst;                          // Gilbert Damping Factor.
     double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain.
@@ -60,7 +62,7 @@ private:
     // ######## Booleans and other tests ########
 
     bool                _dualDrive;
-    bool                _fixedPoints;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
+    bool                _printFixedSites;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
     bool                _centralDrive;                          // Drive from the centre of the chain if (true)
     bool                _hasShockwave;                          // Simulation contains a single driving bias field if (false).
     bool                _hasStaticDrive;                        // Selects (if true) whether drive has sinusoidal term
@@ -69,7 +71,7 @@ private:
     bool                _isShockwaveOn = false;                 // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
     bool                _isShockwaveAtMax = false;              // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
     bool                _lhsDrive;                              // Drive from the RHS if (false)
-    bool                _onlyShowFinalState;                    // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
+    bool                _printFixedLines;                    // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
 
     bool                _saveAllSpins;                          // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
     bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
@@ -93,7 +95,8 @@ private:
     void                SetInitialMagneticMoments();
 
     void                CreateColumnHeaders(std::ofstream &outputFileName);
-    void                CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed);
+    void                CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata=false);
+    void                CreateMetadata(bool print_end_time=false);
     void                InformUserOfCodeType(const std::string& nameNumericalMethod);
     void                PrintVector(std::vector<double> &vectorToPrint, bool shouldExitAfterPrint);
     void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);

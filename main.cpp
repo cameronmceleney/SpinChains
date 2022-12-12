@@ -1,7 +1,7 @@
 #include "SpinChainEigenSolverClass.h"
 #include "Numerical_Methods_Class.h"
 #include "CommonLibs.h"
-
+#include <list>
 int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 14 Oct 22)
@@ -15,14 +15,15 @@ int main() {
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(4000);
+    GV.SetNumSpins(200);
     GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetExchangeMaxVal(43.5);
     GV.SetGyromagneticConstant(29.2e9);
     GV.SetIsFerromagnetic(true);
 
     // Select between eigenvalue derivation and numerical modelling
     bool findEigenvalues = false;
+    GV.SetEmailWhenCompleted(false);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
