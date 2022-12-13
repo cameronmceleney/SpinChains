@@ -11,19 +11,19 @@ int main() {
 
     // Set global file-related parameters
     GV.SetCurrentTime();
-    GV.SetFilePath();
+    GV.SetFilePath("MacOS");
 
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
-    GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(4000);
-    GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132.0);
-    GV.SetGyromagneticConstant(29.2e9);
+    GV.SetStaticBiasField(1e-3);
+    GV.SetNumSpins(100);
+    GV.SetExchangeMinVal(21);
+    GV.SetExchangeMaxVal(21);
+    GV.SetGyromagneticConstant(28.2e9);
     GV.SetIsFerromagnetic(true);
 
     // Select between eigenvalue derivation and numerical modelling
-    bool findEigenvalues = false;
+    bool findEigenvalues = true;
     GV.SetEmailWhenCompleted(false);
 
     // I keep forgetting to check the exchanges, hence this warning

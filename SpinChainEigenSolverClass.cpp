@@ -7,7 +7,7 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     // ###################### Core Parameters ######################
     _totalEquations = GV.GetNumSpins() * 2;
-    _isFerromagnet = GV.GetIsFerromagnetic();;
+    _isFerromagnet = GV.GetIsFerromagnetic();
     _fileNameEigenSolver += GV.GetFileNameBase();
     _anisotropyField = GV.GetAnisotropyField();
     _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);

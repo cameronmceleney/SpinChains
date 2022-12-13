@@ -2,10 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "SpinChains.exe"
-		},
-		{
-			"path" : "SpinChains.pdb"
+			"path" : "SpinChains"
 		}
 	],
 	"backtrace" : 1,
@@ -45,17 +42,17 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O3 -DNDEBUG -fdiagnostics-color=always"
+					"fragment" : "-O3 -DNDEBUG -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk"
 				},
 				{
-					"fragment" : "-std=gnu++23"
+					"fragment" : "-std=gnu++2a"
 				}
 			],
 			"includes" : 
 			[
 				{
 					"backtrace" : 2,
-					"path" : "C:/Program Files/eigen-3.4.0"
+					"path" : "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3"
 				}
 			],
 			"language" : "CXX",
@@ -89,16 +86,12 @@
 			{
 				"fragment" : "",
 				"role" : "flags"
-			},
-			{
-				"fragment" : "-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32",
-				"role" : "libraries"
 			}
 		],
 		"language" : "CXX"
 	},
 	"name" : "SpinChains",
-	"nameOnDisk" : "SpinChains.exe",
+	"nameOnDisk" : "SpinChains",
 	"paths" : 
 	{
 		"build" : ".",

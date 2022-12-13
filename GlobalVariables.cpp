@@ -70,10 +70,15 @@ void GlobalVariablesClass::SetFileNameBase(std::string fileNameBase) {
 std::string GlobalVariablesClass::GetFilePath() {
     return _filePath;
 }
-void GlobalVariablesClass::SetFilePath() {
+void GlobalVariablesClass::SetFilePath(const std::string& os_name) {
 
-    //_filePath = "/Users/cameronmceleney/CLionProjects/Data/"+ FindDateToday() +"/Simulation_Data/"; // This filepath is for Mac!
-    _filePath = "D:/Data/" + FindDateToday() +"/Simulation_Data/"; // This filepath is for Windows
+    if (os_name == "MacOS") {
+        // Default Windows filepath for my laptop
+        _filePath = "/Users/cameronmceleney/CLionProjects/Data/" + FindDateToday() + "/Simulation_Data/";
+    } else if  (os_name == "Windows") {
+        // Default Windows filepath for my desktop
+        _filePath = "D:/Data/" + FindDateToday() + "/Simulation_Data/";
+    }
 }
 
 double GlobalVariablesClass::GetGyromagneticConstant() {
