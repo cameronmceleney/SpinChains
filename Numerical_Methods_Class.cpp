@@ -6,45 +6,51 @@
 
 void Numerical_Methods_Class::NMSetup() {
 
-    // ###################### Flags ######################
+    // ###################### Core Flags ######################
     _hasShockwave = false;
-    _hasStaticDrive = false;
     _isFM = GV.GetIsFerromagnetic();
-    _lhsDrive = true;
-    _centralDrive = false;
-    _dualDrive = false;
     _shouldTrackMValues = true;
     _useLLG = true;
 
+    // ###################### Drive Flags ######################
+    _centralDrive = false;
+    _dualDrive = false;
+    _lhsDrive = true;
+
+    _hasStaticDrive = false;
+    _shouldDriveCease = false;
+
     // ###################### Core Parameters ######################
-    _drivingFreq = 12.5  * 1e9;
-    _dynamicBiasField = 3e-4;
+    _drivingFreq = 62.8 * 1e9;
+    _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _iterationEnd = static_cast<int>(7e5);  // 1e8
-    _stepsize = 1e-15;  // 1e-17
+    _iterationEnd = static_cast<int>(7e5);
+    _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
     _iterStartShock = 0.0;
-    _shockwaveScaling = 1;
+    _iterEndShock = 0.0001;
     _shockwaveGradientTime = 5e3;
     _shockwaveInitialStrength = 0;  // Set equal to _dynamicBiasField if NOT starting at time=0
     _shockwaveMax = 3e-3;
+    _shockwaveScaling = 1;
 
     // ###################### Data Output Parameters ######################
+    _fixed_output_sites = {};
     _numberOfDataPoints = 1e2;  // 1e7
-    _fixed_output_sites = {14000, 16000, 18000, 20000};
-    _printFixedSites = false;
-    _printFixedLines = true;
-    _saveAllSpins = false;
+
+    _printAllData = false;
+    _printFixedLines = false;
+    _printFixedSites = true;
 
     // ###################### Damping Factors ######################
-    _gilbertConst  = 1e-6;
-    _gilbertLower = 1e-6;
+    _gilbertConst  = 1e-4;
+    _gilbertLower = _gilbertConst;
     _gilbertUpper = 1e0;
 
     // ###################### SpinChain Length Parameters ######################
-    _drivingRegionWidth = 10;
+    _drivingRegionWidth = 200;
     _numSpinsDamped = 0;
 
     // ###################### Computations based upon other inputs ######################
@@ -61,27 +67,13 @@ void Numerical_Methods_Class::NMSetup() {
         _anisotropyField = GV.GetAnisotropyField();
 
     // ###################### Core Method Invocations ######################
-    // Order is intentional and must be maintained!
+    // Order is intentional, and must be maintained!
+    FinalChecks();
     SetShockwaveConditions();
     SetDampingRegion();
     SetDrivingRegion();
     SetExchangeVector();
     SetInitialMagneticMoments();
-}
-
-void Numerical_Methods_Class::SetShockwaveConditions() {
-
-    if (_hasShockwave) {
-        _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
-    } else {
-        // Ensures, on the output file, all parameter read as zero; reduces confusion when no shockwave is applied.
-        _iterStartShock = 0;
-        _shockwaveScaling = 0;
-        _shockwaveGradientTime = 0;
-        _shockwaveInitialStrength = 0;
-        _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
-        _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
-    }
 }
 void Numerical_Methods_Class::SetDampingRegion() {
     // Generate the damping regions that are appended to either end of the spin chain.
@@ -113,12 +105,6 @@ void Numerical_Methods_Class::SetDrivingRegion() {
      * Set up driving regions for the system. The LHS option is solely for drives from the left of the system. The RHS options contains the
      * drive from the right, as well as an option to drive from the centre.
      */
-    if ((_lhsDrive && _centralDrive) || (_lhsDrive && _dualDrive) || (_centralDrive && _dualDrive)) {
-        std::cout << "Two (or more) conflicting driving region booleans were TRUE"
-                  << "\n_lhsDrive: " << _lhsDrive << "\n_centralDrive: " << _centralDrive << "\n_dualDrive: " << _dualDrive
-                  << "\n\nExiting...";
-        exit(1);
-    }
 
     if (_centralDrive) {
         _drivingRegionLHS = (_numSpinsInChain/2) +_numSpinsDamped - (_drivingRegionWidth / 2);
@@ -169,6 +155,43 @@ void Numerical_Methods_Class::SetExchangeVector() {
         _exchangeVec = SpinChainExchange.generate_array();
     }
 }
+void Numerical_Methods_Class::FinalChecks() {
+
+    if (_shouldDriveCease and _iterEndShock <= 0) {
+        std::cout << "Warning: [_shouldDriveCease: True] however [_iterEndShock: " << _iterEndShock << " ! > 0.0]"
+                  << std::endl;
+        exit(1);
+    }
+
+    if (_hasShockwave and _iterStartShock <= 0) {
+        std::cout << "Warning: [_hasShockwave: True] however [_iterStartShock: " << _iterStartShock << " ! > 0.0]"
+                  << std::endl;
+        exit(1);
+    }
+
+    if ((_printFixedSites and _printFixedLines) or (_printFixedSites and _printAllData) or
+        (_printFixedLines and _printAllData)) {
+        std::cout << "Warning: Multiple output flags detected. [_printFixedSites: " << _printFixedSites
+                  << "] | [_printFixedLines: " << _printFixedLines << "] | [_printAllData: " << _printAllData << "]"
+                  << std::endl;
+        exit(1);
+    }
+
+    if ((_lhsDrive && _centralDrive) || (_lhsDrive && _dualDrive) || (_centralDrive && _dualDrive)) {
+        std::cout << "Warning: two (or more) conflicting driving region booleans were TRUE"
+                  << "\n_lhsDrive: " << _lhsDrive << "\n_centralDrive: " << _centralDrive << "\n_dualDrive: " << _dualDrive
+                  << "\n\nExiting...";
+        exit(1);
+    }
+
+    if (_printFixedSites and _fixed_output_sites.empty()) {
+        std::cout << "Warning: Request to print fixed sites, but no sites were given [_fixed_output_sites: (";
+        for (int & fixed_out_val : _fixed_output_sites)
+                std::cout << fixed_out_val << ", ";
+        std::cout << ")].";
+        exit(1);
+    }
+}
 void Numerical_Methods_Class::SetInitialMagneticMoments() {
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
@@ -199,6 +222,20 @@ void Numerical_Methods_Class::SetInitialMagneticMoments() {
     _mx0.push_back(0);
     _my0.push_back(0);
     _mz0.push_back(0);
+}
+void Numerical_Methods_Class::SetShockwaveConditions() {
+
+    if (_hasShockwave) {
+        _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
+    } else {
+        // Ensures, on the output file, all parameter read as zero; reduces confusion when no shockwave is applied.
+        _iterStartShock = 0;
+        _shockwaveScaling = 0;
+        _shockwaveGradientTime = 0;
+        _shockwaveInitialStrength = 0;
+        _shockwaveMax = _shockwaveInitialStrength * _shockwaveScaling;
+        _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
+    }
 }
 
 void Numerical_Methods_Class::RK2OriginalFM() {
@@ -320,7 +357,7 @@ void Numerical_Methods_Class::RK2OriginalFM() {
         mzEstMid.clear();
 
         /* Output function to write magnetic moment components to the terminal and/or files. Modulus component of IF
-         * statement (default: 0.01 indicates how often the writing should occur. A value of 0.01 would mean writing
+         * statement (default: 0.01) indicates how often the writing should occur. A value of 0.01 would mean writing
          * should occur every 1% of progress through the simulation*/
         if ( iteration % int(_iterationEnd*0.01) == 0 ) {
             std::cout << "Reporting Point: " << iteration << " iterations." << std::endl;
@@ -436,7 +473,7 @@ void Numerical_Methods_Class::RK2MidpointFM() {
             my1[spin] = my0MID + myK1 * _stepsizeHalf;
             mz1[spin] = mz0MID + mzK1 * _stepsizeHalf;
         }
-        // The estimations of the m-components' values for the next iteration.
+        // The estimations of the m-components values for the next iteration.
         std::vector<double> mx2(GV.GetNumSpins() + 2,0), my2(GV.GetNumSpins() + 2,0), mz2(GV.GetNumSpins() + 2,0);
 
         for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
@@ -601,7 +638,7 @@ void Numerical_Methods_Class::RK2MidpointAFM() {
             my1[spin] = my0MID + myK1 * _stepsizeHalf;
             mz1[spin] = mz0MID + mzK1 * _stepsizeHalf;
         }
-        // The estimations of the m-components' values for the next iteration.
+        // The estimations of the m-components values for the next iteration.
         std::vector<double> mx2(GV.GetNumSpins() + 2,0), my2(GV.GetNumSpins() + 2,0), mz2(GV.GetNumSpins() + 2,0);
 
         for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
@@ -789,7 +826,7 @@ void Numerical_Methods_Class::RK2MidpointFMForTesting() {
         if (iteration == _forceStopAtIteration)
             SystemAllValuesPart1 << "\n\n\n\n\n\n\n\n\n\n";
 
-        // The estimations of the m-components' values for the next iteration.
+        // The estimations of the m-components values for the next iteration.
         std::vector<double> mx2(GV.GetNumSpins() + 2,0), my2(GV.GetNumSpins() + 2,0), mz2(GV.GetNumSpins() + 2,0);
 
         for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
@@ -1108,8 +1145,8 @@ void Numerical_Methods_Class::RK4MidpointFM() {
         mxK3Vec.clear(); myK3Vec.clear(); mzK3Vec.clear();
 
         SaveDataToFile(mxRK4File, mx4, iteration);
-        // SaveDataToFile(_saveAllSpins, myRK4File, my4, iteration, _printFixedLines);
-        // SaveDataToFile(_saveAllSpins, mzRK4File, mz4, iteration, _printFixedLines);
+        // SaveDataToFile(_printAllData, myRK4File, my4, iteration, _printFixedLines);
+        // SaveDataToFile(_printAllData, mzRK4File, mz4, iteration, _printFixedLines);
 
         // Set final value of current iteration as the starting value for the next iteration
         _mx0 = mx4;
@@ -1207,7 +1244,7 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName)
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
      */
-    if (_saveAllSpins or _printFixedLines) {
+    if (_printAllData or _printFixedLines) {
         // Print column heading for every spin simulated.
         outputFileName << "Time [s], ";
         for (int i = 1; i <= GV.GetNumSpins(); i++) {
@@ -1219,7 +1256,7 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName)
 
         outputFileName << "Time" << ", ";
         for (int & fixed_out_val : _fixed_output_sites)
-            std::cout << fixed_out_val << ", ";
+            outputFileName << fixed_out_val << ", ";
         outputFileName << std::endl;
 
         //outputFileName << "Time" << ", "
@@ -1228,15 +1265,6 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName)
         //               << static_cast<int>(18000) << ","
         //               << static_cast<int>(20000) << std::endl;
 
-    } else {
-        outputFileName << "Time" << ", "
-                       << _drivingRegionLHS << ","
-                       << static_cast<int>(_drivingRegionWidth / 2.0) << ","
-                       << _drivingRegionRHS << ","
-                       << static_cast<int>(GV.GetNumSpins() / 4.0) << ","
-                       << static_cast<int>(GV.GetNumSpins() / 2.0) << ","
-                       << static_cast<int>(3.0 * GV.GetNumSpins() / 4.0) << ","
-                       << GV.GetNumSpins() << std::endl;
     }
 }
 void Numerical_Methods_Class::InformUserOfCodeType(const std::string& nameNumericalMethod) {
@@ -1291,7 +1319,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
             }
             // Take new line after current row is finished being written.
             outputFileName << std::endl;
-            
+
             return;
         } else if (_printFixedSites) {
             /*outputFileName << (iteration * _stepsize) << ","
@@ -1302,14 +1330,14 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                */
             outputFileName << (iteration * _stepsize) << ", ";
             for (int & fixed_out_val : _fixed_output_sites)
-                std::cout << arrayToWrite[fixed_out_val] << ", ";
+                outputFileName << arrayToWrite[fixed_out_val] << ", ";
             outputFileName << std::endl;
-            
+
             return;
         }
     }
 
-    if (_saveAllSpins) {
+    if (_printAllData) {
         for (int i = 0; i <= GV.GetNumSpins(); i++) {
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if (i == 0)
@@ -1320,10 +1348,10 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                 outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
         }
         outputFileName << std::endl;
-        
+
         return;
     }
-    
+
     /*
     if (_printFixedLines) {
         // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
@@ -1347,7 +1375,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
             outputFileName << std::endl;
         }
     } else {
-        if (_saveAllSpins) {
+        if (_printAllData) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
@@ -1361,7 +1389,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
         } else {
             if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
                 if (_printFixedSites) {
-                    
+
                     outputFileName << (iteration * _stepsize) << ","
                                    << arrayToWrite[_drivingRegionLHS] << ","
                                    << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
@@ -1370,7 +1398,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
                                    << arrayToWrite[GV.GetNumSpins()] << std::endl;
-                   
+
                     outputFileName << (iteration * _stepsize) << ","
                                    << arrayToWrite[400] << ","
                                    << arrayToWrite[1500] << ","
@@ -1392,6 +1420,23 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
     } */
 }
 void Numerical_Methods_Class::TestShockwaveConditions(double iteration) {
+
+    if (_shouldDriveCease) {
+        // and (_isShockwaveOn and _isShockwaveAtMax)) {
+        if (_isShockwaveOn and not _isShockwaveAtMax) {
+            std::cout << "Shock not at maximum when cut-off" << std::endl;
+        }
+
+        if (iteration >= _iterationEnd * _iterEndShock) {
+            // Shockwave begins once simulation is a certain % complete
+            _hasShockwave = false;
+            _isShockwaveOn = false;
+            _dynamicBiasField = 0;
+        }
+
+        return;
+
+    }
 
     // If method is triggered, then the applied biasFieldDriving is increased by the scale factor _shockwaveScaling
     if (_hasShockwave and not _isShockwaveOn)

@@ -20,17 +20,18 @@ private:
 
     int                 _drivingRegionWidth;                    // Driving region width.
     double              _dynamicBiasField;                      // Driving field amplitude [T] (caution: papers often give in [mT]).
-    std::list <int>     _fixed_output_sites;
+    std::list <int>     _fixed_output_sites;                    // Sites to be printed if _printFixedSites is TRUE.
     int                 _forceStopAtIteration;                  // Legacy breakpoint variable. Set as a -ve value to deactivate.
     double              _gilbertConst;                          // Gilbert Damping Factor.
-    double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain.
 
+    double              _gilbertLower;                          // The lower boundary for the damped regions at either end of the spinchain.
     double              _gilbertUpper;                          // The upper boundary for the damped regions at either end of the spinchain.
     double              _gyroMagConst;                          // Gyromagnetic ratio of an electron [GHz/T].
     int                 _iterationEnd;                          // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
     int                 _iterationStart = 0;                    // The iteration step that the program will begin at. (Default: 0.0)
-    double              _iterStartShock;                        // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
 
+    double              _iterStartShock;                        // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
+    double              _iterEndShock;                          // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the _maxSimTime.
     double              _largestMNorm = 1e-50;                  // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
     double              _magSat = 1.0;                          // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
     double              _maxSimTime;                            // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
@@ -44,26 +45,23 @@ private:
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
     int                 _numSpinsDamped;                        // Number of spins in the damped regions (previously called _numGilbert).
     int                 _numSpinsInChain;                       // The number of spin sites in the spin chain to be simulated.
-
     double              _regionScaling = 0.05;                  // Calculate _drivingRegionWidth as a fraction [0.0, 1.0] of _numSpinsInChain.
+
     double              _shockwaveGradientTime;                 // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[fs] when stepsize=1e-15.
     double              _shockwaveInitialStrength;              // Initial strength of the shockwave before _shockwaveScaling occurs. (Default: = _dynamicBiasField)
     double              _shockwaveMax;                          // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
     double              _shockwaveScaling;                      // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
-
     double              _shockwaveStepsize;                     // Size of incremental increase in shockwave amplitude.
+
     double              _stepsize;                              // Stepsize between values
     double              _stepsizeHalf;                          // Separately defined to avoid repeated unnecessary calculations inside loops
     std::string         _stepsizeString;                        // Object to string conversation for _stepsize
-
     std::string         _stopIterString;                        // Object to string conversion for _stopIterVal
     double              _totalTime = 0;                         // Analogous to a stopwatch in a physical experiment. This tracks the 'real' time' of the simulation
 
     // ######## Booleans and other tests ########
-
-    bool                _dualDrive;
-    bool                _printFixedSites;                           // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
     bool                _centralDrive;                          // Drive from the centre of the chain if (true)
+    bool                _dualDrive;                             // Drive from both sides of the system
     bool                _hasShockwave;                          // Simulation contains a single driving bias field if (false).
     bool                _hasStaticDrive;                        // Selects (if true) whether drive has sinusoidal term
 
@@ -71,11 +69,13 @@ private:
     bool                _isShockwaveOn = false;                 // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
     bool                _isShockwaveAtMax = false;              // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
     bool                _lhsDrive;                              // Drive from the RHS if (false)
-    bool                _printFixedLines;                    // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
 
-    bool                _saveAllSpins;                          // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
-    bool                _shouldDebug = false;                   // Internal flag to indicate if debugging and output flags should be used, regardless of CMAKE build options
-    bool                _shouldTrackMValues;
+    bool                _printAllData;                          // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
+    bool                _printFixedLines;                       // Saves m-component(s) of every spin at regular intervals. Total savepoints are set by _numberOfDataPoints.
+    bool                _printFixedSites;                       // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
+    bool                _shouldDriveCease;                      // Internal flag to indicate if the driving field should cut-off at a given time.
+
+    bool                _shouldTrackMValues;                    // Monitor the norm of all the m-values; if approx. 1.0 then the error is likely to be massive; discard that dataset.
     bool                _useLLG;                                // Uses the Torque equation components if (false).
 
     // ######## Private Functions ########
@@ -88,6 +88,7 @@ private:
     std::vector<double> _mz0{0};                                // z-axis (z)
 
     // Private functions
+    void                FinalChecks();
     void                SetShockwaveConditions();
     void                SetDampingRegion();
     void                SetDrivingRegion();

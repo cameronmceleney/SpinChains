@@ -1,7 +1,8 @@
 #include "SpinChainEigenSolverClass.h"
 #include "Numerical_Methods_Class.h"
 #include "CommonLibs.h"
-#include <list>
+
+
 int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 14 Oct 22)
@@ -15,9 +16,9 @@ int main() {
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(200);
+    GV.SetNumSpins(4000);
     GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(43.5);
+    GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2e9);
     GV.SetIsFerromagnetic(true);
 
@@ -36,6 +37,8 @@ int main() {
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
+
+    std::cout << "\n";
 
     if (findEigenvalues)
         SolverClass.CalculateEigFreqs();
