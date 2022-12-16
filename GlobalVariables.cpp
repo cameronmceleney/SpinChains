@@ -85,7 +85,7 @@ double GlobalVariablesClass::GetGyromagneticConstant() {
     return _gyromagneticConstant;
 }
 void GlobalVariablesClass::SetGyromagneticConstant(double gyromagneticConstant) {
-    _gyromagneticConstant = gyromagneticConstant * 2 * M_PI;
+    _gyromagneticConstant = gyromagneticConstant * 1e9 * 2 * M_PI;
 }
 
 bool GlobalVariablesClass::GetIsFerromagnetic() {

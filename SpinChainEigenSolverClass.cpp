@@ -157,9 +157,8 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, totalEquations - 2) = 0;
                     matrixToFill(row, totalEquations - 3) = -1.0 * _chainJValues[rowPair];
                 } else {
-                    // TODO Legacy error handling which needs updating (dm_x/dt rows)
                     std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
-                    std::exit(3);
+                    std::exit(1);
                 }
                 continue;
             }
@@ -183,9 +182,8 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, totalEquations - 2) = (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
                     matrixToFill(row, totalEquations - 4) = _chainJValues[rowPair];
                 } else {
-                    // TODO Legacy error handling which needs updating (dm_y/dt rows)
                     std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
-                    std::exit(3);
+                    std::exit(1);
                 }
                 rowPair++;
                 continue;
@@ -212,9 +210,8 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, totalEquations - 2) = 0;
                     matrixToFill(row, totalEquations - 3) = _chainJValues[rowPair];
                 } else {
-                    // TODO Legacy error handling which needs updating (dm_x/dt rows)
                     std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
-                    std::exit(3);
+                    std::exit(1);
                 }
                 continue;
             }
@@ -238,9 +235,8 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, totalEquations - 2) = (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
                     matrixToFill(row, totalEquations - 4) = -1.0 * _chainJValues[rowPair];
                 } else {
-                    // TODO Legacy error handling which needs updating (dm_y/dt rows)
                     std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
-                    std::exit(3);
+                    std::exit(1);
                 }
                 rowPair++;
                 continue;
@@ -284,27 +280,26 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_ferromagnets()
 
             if (row == 0) {
                 // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
-                matrixToFill(row,0) = 0;
-                matrixToFill(row,1) = _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField(); //
+                // matrixToFill(row,0) = 0;  // Left to aid readability; this is the iw term
+                matrixToFill(row,1) = _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField();
                 matrixToFill(row,3) = -1.0 *  _chainJValues[JVal + 1];
             }
             else if (row > 0 and row < totalEquations - 2) {
                 // Handles all other even-numbered rows
                 matrixToFill(row,row - 1) = -1.0 *  _chainJValues[JVal];
-                matrixToFill(row,row + 0) = 0;
+                // matrixToFill(row,row + 0) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,row + 1) = _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetStaticBiasField();
                 matrixToFill(row,row + 3) = -1.0 *  _chainJValues[JVal + 1];
             }
             else if (row == totalEquations - 2) {
                 // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                matrixToFill(row,totalEquations - 1) =  _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField(); //
-                matrixToFill(row,totalEquations - 2) = 0;
+                matrixToFill(row,totalEquations - 1) =  _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField();
+                // matrixToFill(row,totalEquations - 2) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,totalEquations - 3) = -1.0 *  _chainJValues[JVal];
             }
             else {
-                // TODO Legacy error handling which needs updating (dm_x/dt rows)
                 std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
-                std::exit(3);
+                std::exit(1);
             }
             continue;
         }
@@ -313,27 +308,26 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_ferromagnets()
 
             if (row == 1) {
                 // Exception for the first dm_y/dt row (2nd matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
-                matrixToFill(row,0) = -1.0 * (_chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField()); //
-                matrixToFill(row,1) = 0;
+                matrixToFill(row,0) = -1.0 * _chainJValues[JVal] - _chainJValues[JVal + 1] - GV.GetStaticBiasField();
+                // matrixToFill(row,1) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,2) =  _chainJValues[JVal + 1];
             }
             else if (row > 1 and row < totalEquations - 1) {
                 // Handles all other odd-numbered rows
                 matrixToFill(row,row - 3) =  _chainJValues[JVal];
-                matrixToFill(row,row - 1) = -1.0 * ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetStaticBiasField());
-                matrixToFill(row,row + 0) = 0;
+                matrixToFill(row,row - 1) = -1.0 * _chainJValues[JVal] -  _chainJValues[JVal + 1] - GV.GetStaticBiasField();
+                // matrixToFill(row,row + 0) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,row + 1) =  _chainJValues[JVal + 1];
             }
             else if (row == totalEquations - 1) {
                 // Exception for the final dm_y/dt row (final matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                matrixToFill(row,totalEquations - 1) = 0;
-                matrixToFill(row,totalEquations - 2) = -1.0 * ( _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField()); //
+                // matrixToFill(row,totalEquations - 1) = 0;  // Left to aid readability; this is the iw term
+                matrixToFill(row,totalEquations - 2) = -1.0 * _chainJValues[JVal] - _chainJValues[JVal + 1] - GV.GetStaticBiasField();
                 matrixToFill(row,totalEquations - 4) =  _chainJValues[JVal];
             }
             else {
-                // TODO Legacy error handling which needs updating (dm_y/dt rows)
                 std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
-                std::exit(3);
+                std::exit(1);
             }
             JVal++;
             continue;

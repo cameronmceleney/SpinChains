@@ -15,15 +15,15 @@ int main() {
 
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
-    GV.SetStaticBiasField(1e-3);
-    GV.SetNumSpins(100);
-    GV.SetExchangeMinVal(21);
-    GV.SetExchangeMaxVal(21);
-    GV.SetGyromagneticConstant(28.2e9);
+    GV.SetStaticBiasField(0.1);
+    GV.SetNumSpins(3000);
+    GV.SetExchangeMinVal(13.25);
+    GV.SetExchangeMaxVal(13.25);
+    GV.SetGyromagneticConstant(28.8);
     GV.SetIsFerromagnetic(true);
 
     // Select between eigenvalue derivation and numerical modelling
-    bool findEigenvalues = true;
+    bool findEigenvalues = false;
     GV.SetEmailWhenCompleted(false);
 
     // I keep forgetting to check the exchanges, hence this warning
@@ -38,10 +38,10 @@ int main() {
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
 
-    std::cout << "\n";
-
-    if (findEigenvalues)
+    if (findEigenvalues) {
+        std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
         SolverClass.CalculateEigFreqs();
+    }
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnreachableCode"

@@ -21,11 +21,11 @@ void Numerical_Methods_Class::NMSetup() {
     _shouldDriveCease = false;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 62.8 * 1e9;
+    _drivingFreq = 54 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _iterationEnd = static_cast<int>(7e5);
+    _iterationEnd = static_cast<int>(2e6);
     _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
@@ -37,12 +37,12 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveScaling = 1;
 
     // ###################### Data Output Parameters ######################
-    _fixed_output_sites = {};
-    _numberOfDataPoints = 1e2;  // 1e7
+    _fixed_output_sites = {2400, 2500, 2600};
+    _numberOfDataPoints = 1e5;
 
     _printAllData = false;
-    _printFixedLines = false;
-    _printFixedSites = true;
+    _printFixedLines = true;
+    _printFixedSites = false;
 
     // ###################### Damping Factors ######################
     _gilbertConst  = 1e-4;
@@ -51,7 +51,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### SpinChain Length Parameters ######################
     _drivingRegionWidth = 200;
-    _numSpinsDamped = 0;
+    _numSpinsDamped = 300;
 
     // ###################### Computations based upon other inputs ######################
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
@@ -1254,9 +1254,9 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName)
 
     } else if (_printFixedSites) {
 
-        outputFileName << "Time" << ", ";
+        outputFileName << "Time";
         for (int & fixed_out_val : _fixed_output_sites)
-            outputFileName << fixed_out_val << ", ";
+            outputFileName << "," << fixed_out_val;
         outputFileName << std::endl;
 
         //outputFileName << "Time" << ", "
@@ -1328,9 +1328,9 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
                << arrayToWrite[18000] << ","
                << arrayToWrite[20000] << std::endl;
                */
-            outputFileName << (iteration * _stepsize) << ", ";
+            outputFileName << (iteration * _stepsize);
             for (int & fixed_out_val : _fixed_output_sites)
-                outputFileName << arrayToWrite[fixed_out_val] << ", ";
+                outputFileName << "," << arrayToWrite[fixed_out_val];
             outputFileName << std::endl;
 
             return;
