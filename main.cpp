@@ -9,22 +9,21 @@ int main() {
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
 
+    // Select between eigenvalue derivation and numerical modelling
+    bool findEigenvalues = true;
+    GV.SetEmailWhenCompleted(false);
+
     // Set global file-related parameters
     GV.SetCurrentTime();
-    GV.SetFilePath("MacOS");
 
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
-    GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(3000);
-    GV.SetExchangeMinVal(13.25);
-    GV.SetExchangeMaxVal(13.25);
-    GV.SetGyromagneticConstant(28.8);
+    GV.SetStaticBiasField(1e-3);
+    GV.SetNumSpins(300);
+    GV.SetExchangeMinVal(21);
+    GV.SetExchangeMaxVal(21);
+    GV.SetGyromagneticConstant(28.2);
     GV.SetIsFerromagnetic(true);
-
-    // Select between eigenvalue derivation and numerical modelling
-    bool findEigenvalues = false;
-    GV.SetEmailWhenCompleted(false);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
@@ -37,9 +36,10 @@ int main() {
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
+    GV.SetFilePath("MacOS", findEigenvalues);
 
     if (findEigenvalues) {
-        std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
+        // std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
         SolverClass.CalculateEigFreqs();
     }
 

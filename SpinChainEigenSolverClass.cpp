@@ -1,9 +1,9 @@
-#include <chrono>
-#include <ctime>
-#include "linspace.h"
 #include "SpinChainEigenSolverClass.h"
 
+
 void SpinChainEigenSolverClass::CalculateEigFreqs() {
+
+    CreateTextFile();
 
     // ###################### Core Parameters ######################
     _totalEquations = GV.GetNumSpins() * 2;
@@ -30,9 +30,9 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     // Currently supports FM and AFM materials. Should more be added this will be changed to a SWITCH case
     if (_isFerromagnet)
-        _matrixValues = populate_matrix_ferromagnets();
+        _matrixValues = PopulateMatrixFerromagnets();
     else
-        _matrixValues = populate_matrix_antiferromagnets();
+        _matrixValues = PopulateMatrixAntiferromagnets();
 
     // Eigensolver must be applied after matrix population otherwise the program will crash
     Eigen::EigenSolver <Matrix_xd> eigenSolverMatrixValues(_matrixValues);
@@ -48,8 +48,8 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
 
     auto startTimeSaveData = std::chrono::system_clock::now();
 
-    save_data( "eigenvectors_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvectors().real());
-    save_data( "eigenvalues_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvalues().imag());
+    SaveData( "eigenvectors_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvectors().real());
+    SaveData( "eigenvalues_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvalues().imag());
 
     auto stopTimeSaveData = std::chrono::system_clock::now();
     auto durationTimeSaveData = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeSaveData - startTimeSaveData);
@@ -88,7 +88,7 @@ void SpinChainEigenSolverClass::PrintVector(std::vector<double> inputVector, boo
     }
 }
 
-void SpinChainEigenSolverClass::save_data( std::string fileName, Matrix_xd generatedMatrix )
+void SpinChainEigenSolverClass::SaveData( std::string fileName, Matrix_xd generatedMatrix )
 {
     /* This class will take a given filename and filepath (supplied by the user), and use that information to create a
      * file for a matrix to be saved into. The matrix must come from the Eigen package and be consistently used throughout
@@ -111,7 +111,7 @@ void SpinChainEigenSolverClass::save_data( std::string fileName, Matrix_xd gener
     }
 }
 
-Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
+Matrix_xd SpinChainEigenSolverClass::PopulateMatrixAntiferromagnets()
 {
 
     LinspaceClass exchangeValues{};
@@ -249,7 +249,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
     return matrixToFill;
 }
 
-Matrix_xd SpinChainEigenSolverClass::populate_matrix_ferromagnets()
+Matrix_xd SpinChainEigenSolverClass::PopulateMatrixFerromagnets()
 {
 
     LinspaceClass exchangeValues{};
@@ -337,4 +337,27 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_ferromagnets()
     matrixToFill *= _gyroMagConst; // LLG equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
 
     return matrixToFill;
+}
+
+void SpinChainEigenSolverClass::CreateTextFile() {
+
+    std::ofstream eigenValsOutput(GV.GetFilePath() + "/metadata_" + GV.GetFileNameBase() + ".csv");
+    eigenValsOutput << "Key Data\n\n";
+
+    eigenValsOutput << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
+
+    eigenValsOutput << "Is a ferromagnet: [" << GV.GetIsFerromagnetic() << "]\n";
+
+    eigenValsOutput << "\n";
+
+    eigenValsOutput << "Static Bias Field (H0)," << GV.GetStaticBiasField() << " T," << "Anisotropic Field (H0), " << GV.GetAnisotropyField() << " T," <<
+                       "Min. Exchange Val (J), " << GV.GetExchangeMinVal()  << " T," <<
+                       "Max. Exchange Val (J), " << GV.GetExchangeMaxVal() << " T," << "No. Total Spins: " << GV.GetNumSpins() << "," <<
+                       "Gyromagnetic Ratio (Y), " << GV.GetGyromagneticConstant() / (2 * M_PI * 1e9) << std::endl;
+
+    std::string notesComments;
+    std::cout << "Enter any notes for this simulation: ";
+    std::cin.ignore();
+    std::getline(std::cin, notesComments );
+    eigenValsOutput << "Note(s):," << notesComments << "\n"; // Use comma to have the actual note in a separate cell
 }

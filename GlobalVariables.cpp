@@ -70,7 +70,7 @@ void GlobalVariablesClass::SetFileNameBase(std::string fileNameBase) {
 std::string GlobalVariablesClass::GetFilePath() {
     return _filePath;
 }
-void GlobalVariablesClass::SetFilePath(const std::string& os_name) {
+void GlobalVariablesClass::SetFilePath(const std::string& os_name, bool isEigenValues) {
 
     if (os_name == "MacOS") {
         // Default Windows filepath for my laptop
@@ -78,6 +78,19 @@ void GlobalVariablesClass::SetFilePath(const std::string& os_name) {
     } else if  (os_name == "Windows") {
         // Default Windows filepath for my desktop
         _filePath = "D:/Data/" + FindDateToday() + "/Simulation_Data/";
+    }
+
+    if (isEigenValues) {
+        std::filesystem::path filepath = _filePath;
+        bool filepathExists = std::filesystem::is_directory(filepath.parent_path());
+
+        if (!filepathExists) {
+
+        }
+
+        std::string filenameExtension = _fileNameBase + "_Eigens";
+        std::filesystem::create_directory(_filePath + filenameExtension);
+        _filePath += filenameExtension + "/";
     }
 }
 

@@ -4,6 +4,7 @@
 #include <Eigen/Eigenvalues> // header for Eigen
 #include <iomanip>
 #include <string>
+#include <filesystem>
 
 class GlobalVariablesClass{
 
@@ -36,7 +37,7 @@ public:
     void                SetNumSpins(int numSpins);                      // Set the number of spins in chain. Must always be updated every time a new region is added.
 
     std::string         GetFilePath();                                  // Get file path to today's directory.
-    void                SetFilePath(const std::string& os_name);        // Set file path to directory for writing data. Date is automatically found, but the remaining directory tree must be manually inserted.
+    void                SetFilePath(const std::string& os_name, bool isEigenValues);        // Set file path to directory for writing data. Date is automatically found, but the remaining directory tree must be manually inserted.
 
     std::string         GetFileNameBase();                              // Get the custom suffix (base) name.
     void                SetFileNameBase(std::string fileNameBase);      // Set a custom suffix to all filenames for this simulation.
