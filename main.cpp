@@ -18,12 +18,18 @@ int main() {
 
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
-    GV.SetStaticBiasField(1e-3);
-    GV.SetNumSpins(300);
-    GV.SetExchangeMinVal(21);
-    GV.SetExchangeMaxVal(21);
-    GV.SetGyromagneticConstant(28.2);
+    GV.SetStaticBiasField(0.057);
+    GV.SetNumSpins(500);
+    GV.SetExchangeMinVal(8.26 * 3);
+    GV.SetExchangeMaxVal(8.26 * 3);
+    GV.SetGyromagneticConstant(28.01);
     GV.SetIsFerromagnetic(true);
+
+    std::string in_fileNameBase; //Better name might be fileID
+    std::cout << "Enter the unique identifier for the file: ";
+    std::cin >> in_fileNameBase;
+    GV.SetFileNameBase("T"+in_fileNameBase);
+    GV.SetFilePath("MacOS", findEigenvalues);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
@@ -32,15 +38,9 @@ int main() {
         std::cout << "Non-Uniform Exchange\n";
     }
 
-    std::string in_fileNameBase; //Better name might be fileID
-    std::cout << "Enter the unique identifier for the file: ";
-    std::cin >> in_fileNameBase;
-    GV.SetFileNameBase("T"+in_fileNameBase);
-    GV.SetFilePath("MacOS", findEigenvalues);
-
     if (findEigenvalues) {
         // std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
-        SolverClass.CalculateEigFreqs();
+        SolverClass.CalculateEigenfrequencies();
     }
 
 #pragma clang diagnostic push

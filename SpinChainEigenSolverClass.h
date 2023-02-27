@@ -29,7 +29,7 @@ private:
 
 public:
 //  Dtype               Member Name                             // Comment
-    void                CalculateEigFreqs();                    // Automatically populate a matrix system in order to obtain eigenvalues and eigenmodes.
+    void                CalculateEigenfrequencies(bool hasAngularFrequency);                    // Automatically populate a matrix system in order to obtain eigenvalues and eigenmodes.
 };
 
 #endif //SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H

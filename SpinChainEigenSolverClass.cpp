@@ -1,8 +1,7 @@
 #include "SpinChainEigenSolverClass.h"
 
 
-void SpinChainEigenSolverClass::CalculateEigFreqs() {
-
+void SpinChainEigenSolverClass::CalculateEigenfrequencies(bool hasAngularFrequency=false) {
     CreateTextFile();
 
     // ###################### Core Parameters ######################
@@ -10,7 +9,14 @@ void SpinChainEigenSolverClass::CalculateEigFreqs() {
     _isFerromagnet = GV.GetIsFerromagnetic();
     _fileNameEigenSolver += GV.GetFileNameBase();
     _anisotropyField = GV.GetAnisotropyField();
-    _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
+
+    if (hasAngularFrequency) {
+        // Units of output are 'rad * Hz'f
+        _gyroMagConst = GV.GetGyromagneticConstant() / (1e9);
+    } else {
+        // Units of output are 'Hz'
+        _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
+    }
 
     // Informs user of filename and file path to enable directory searching via their file explorer
     std::cout << "Filename is: " << _fileNameEigenSolver
