@@ -7,7 +7,7 @@
 void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Core Flags ######################
-    _hasShockwave = false;
+    _hasShockwave = true;
     _isFM = GV.GetIsFerromagnetic();
     _shouldTrackMValues = true;
     _useLLG = true;
@@ -21,11 +21,11 @@ void Numerical_Methods_Class::NMSetup() {
     _shouldDriveCease = false;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 54 * 1e9;
+    _drivingFreq = 8 * 1e12;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _iterationEnd = static_cast<int>(2e6);
+    _maxSimTime = 1e-9;
     _stepsize = 1e-15;
 
     // ###################### Shockwave Parameters ######################
@@ -37,12 +37,12 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveScaling = 1;
 
     // ###################### Data Output Parameters ######################
-    _fixed_output_sites = {2400, 2500, 2600};
-    _numberOfDataPoints = 1e5;
+    _fixed_output_sites = {8205, 9787, 12158};
+    _numberOfDataPoints = 2e4;
 
     _printAllData = false;
-    _printFixedLines = true;
-    _printFixedSites = false;
+    _printFixedLines = false;
+    _printFixedSites = true;
 
     // ###################### Damping Factors ######################
     _gilbertConst  = 1e-4;
@@ -55,7 +55,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Computations based upon other inputs ######################
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
-    _maxSimTime = _stepsize * _iterationEnd;
+    _iterationEnd = static_cast<int>(_maxSimTime / _stepsize);
     _numSpinsInChain = GV.GetNumSpins();
     _numberOfSpinPairs = _numSpinsInChain - 1;
     GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
@@ -163,7 +163,7 @@ void Numerical_Methods_Class::FinalChecks() {
         exit(1);
     }
 
-    if (_hasShockwave and _iterStartShock <= 0) {
+    if (_hasShockwave and _iterStartShock < 0) {
         std::cout << "Warning: [_hasShockwave: True] however [_iterStartShock: " << _iterStartShock << " ! > 0.0]"
                   << std::endl;
         exit(1);
@@ -189,6 +189,11 @@ void Numerical_Methods_Class::FinalChecks() {
         for (int & fixed_out_val : _fixed_output_sites)
                 std::cout << fixed_out_val << ", ";
         std::cout << ")].";
+        exit(1);
+    }
+
+    if (_numberOfDataPoints > _iterationEnd) {
+        std::cout << "Warning: You tried to print more data than was generated [_numberOfDataPoints > _iterationEnd]";
         exit(1);
     }
 }

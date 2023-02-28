@@ -10,7 +10,7 @@ int main() {
     Numerical_Methods_Class RK2_method_use{};
 
     // Select between eigenvalue derivation and numerical modelling
-    bool findEigenvalues = true;
+    bool findEigenvalues = false;
     GV.SetEmailWhenCompleted(false);
 
     // Set global file-related parameters
@@ -18,18 +18,18 @@ int main() {
 
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
-    GV.SetStaticBiasField(0.057);
-    GV.SetNumSpins(500);
-    GV.SetExchangeMinVal(8.26 * 3);
-    GV.SetExchangeMaxVal(8.26 * 3);
-    GV.SetGyromagneticConstant(28.01);
+    GV.SetStaticBiasField(0.1);
+    GV.SetNumSpins(15811);
+    GV.SetExchangeMinVal(132.5);
+    GV.SetExchangeMaxVal(132.5);
+    GV.SetGyromagneticConstant(28.8);
     GV.SetIsFerromagnetic(true);
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
-    GV.SetFilePath("MacOS", findEigenvalues);
+    GV.SetFilePath("Windows", findEigenvalues);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
@@ -40,7 +40,7 @@ int main() {
 
     if (findEigenvalues) {
         // std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
-        SolverClass.CalculateEigenfrequencies();
+        SolverClass.CalculateEigenfrequencies(false);
     }
 
 #pragma clang diagnostic push
