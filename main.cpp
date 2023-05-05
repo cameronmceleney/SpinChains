@@ -14,7 +14,7 @@ int main() {
     GV.SetEmailWhenCompleted(false);
 
     // Set global file-related parameters
-    GV.SetCurrentTime();
+    GV.SetCurrentTime(); 
 
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
@@ -29,7 +29,7 @@ int main() {
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
-    GV.SetFilePath("Windows", findEigenvalues);
+    GV.SetFilePath("MacOS", findEigenvalues);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {

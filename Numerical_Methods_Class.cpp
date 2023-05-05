@@ -7,7 +7,7 @@
 void Numerical_Methods_Class::NMSetup() {
 
     // ###################### Core Flags ######################
-    _hasShockwave = true;
+    _hasShockwave = false;
     _isFM = GV.GetIsFerromagnetic();
     _shouldTrackMValues = true;
     _useLLG = true;
@@ -21,24 +21,25 @@ void Numerical_Methods_Class::NMSetup() {
     _shouldDriveCease = false;
 
     // ###################### Core Parameters ######################
-    _drivingFreq = 8 * 1e12;
+    _drivingFreq = 15 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 1e-9;
-    _stepsize = 1e-15;
+    _maxSimTime = 20e-9;
+    _stepsize = 1e-17;
+    _recordingInterval = 1e-16;
+    _numberOfDataPoints = static_cast<int>(_maxSimTime / _recordingInterval);
 
     // ###################### Shockwave Parameters ######################
     _iterStartShock = 0.0;
     _iterEndShock = 0.0001;
-    _shockwaveGradientTime = 5e3;
+    _shockwaveGradientTime = 1;
     _shockwaveInitialStrength = 0;  // Set equal to _dynamicBiasField if NOT starting at time=0
     _shockwaveMax = 3e-3;
     _shockwaveScaling = 1;
 
     // ###################### Data Output Parameters ######################
-    _fixed_output_sites = {8205, 9787, 12158};
-    _numberOfDataPoints = 2e4;
+    _fixed_output_sites = {12158, 14530, 15320};// {2800, 4050, 4800}; // {8205, 12158, 14530};
 
     _printAllData = false;
     _printFixedLines = false;
@@ -156,6 +157,14 @@ void Numerical_Methods_Class::SetExchangeVector() {
     }
 }
 void Numerical_Methods_Class::FinalChecks() {
+
+    double nyquistRate = 2 * _drivingFreq;
+    double nyquistInterval = 1 / (nyquistRate);
+    if (nyquistInterval <  _recordingInterval) {
+        std::cout << "Warning: Nyquist Criterion not fulfilled. Aliasing likely. [Nyquist Interval: " << nyquistInterval
+                  << " | Sampling Rate: " << _recordingInterval << "]" << std::endl;
+        exit(1);
+    }
 
     if (_shouldDriveCease and _iterEndShock <= 0) {
         std::cout << "Warning: [_shouldDriveCease: True] however [_iterEndShock: " << _iterEndShock << " ! > 0.0]"

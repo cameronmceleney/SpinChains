@@ -45,6 +45,7 @@ private:
     int                 _numberOfSpinPairs;                     // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
     int                 _numSpinsDamped;                        // Number of spins in the damped regions (previously called _numGilbert).
     int                 _numSpinsInChain;                       // The number of spin sites in the spin chain to be simulated.
+    double              _recordingInterval;
     double              _regionScaling = 0.05;                  // Calculate _drivingRegionWidth as a fraction [0.0, 1.0] of _numSpinsInChain.
 
     double              _shockwaveGradientTime;                 // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[ps] when stepsize=1e-15.
