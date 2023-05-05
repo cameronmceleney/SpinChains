@@ -5,55 +5,55 @@
 #include <chrono>
 
 void Numerical_Methods_Class::NMSetup() {
-
-    // ###################### Core Flags ######################
-    _hasShockwave = true;
+    // Core Flags
+    _hasShockwave = false;
     _isFM = GV.GetIsFerromagnetic();
     _shouldTrackMValues = true;
     _useLLG = true;
 
-    // ###################### Drive Flags ######################
+    // Drive Flags
     _centralDrive = false;
     _dualDrive = false;
     _lhsDrive = true;
-
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
-    // ###################### Core Parameters ######################
-    _drivingFreq = 8 * 1e12;
+    // Core Parameters
+    double recordingInterval = 1e-15;
+    _drivingFreq = 15 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 1e-9;
-    _stepsize = 1e-15;
+    _maxSimTime = 20e-9;
+    _stepsize = 1e-16;
 
-    // ###################### Shockwave Parameters ######################
+
+    // Shockwave Parameters
     _iterStartShock = 0.0;
     _iterEndShock = 0.0001;
-    _shockwaveGradientTime = 5e3;
+    _shockwaveGradientTime = 1;
     _shockwaveInitialStrength = 0;  // Set equal to _dynamicBiasField if NOT starting at time=0
     _shockwaveMax = 3e-3;
     _shockwaveScaling = 1;
 
-    // ###################### Data Output Parameters ######################
-    _fixed_output_sites = {8205, 9787, 12158};
-    _numberOfDataPoints = 2e4;
+    // Data Output Parameters
+    _fixed_output_sites = {12158, 14529, 15320};
+    _numberOfDataPoints = static_cast<int>(_maxSimTime / recordingInterval);
 
     _printAllData = false;
     _printFixedLines = false;
     _printFixedSites = true;
 
-    // ###################### Damping Factors ######################
+    // Damping Factors
     _gilbertConst  = 1e-4;
     _gilbertLower = _gilbertConst;
     _gilbertUpper = 1e0;
 
-    // ###################### SpinChain Length Parameters ######################
+    // SpinChain Length Parameters
     _drivingRegionWidth = 200;
     _numSpinsDamped = 300;
 
-    // ###################### Computations based upon other inputs ######################
+    // Computations based upon other inputs
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _iterationEnd = static_cast<int>(_maxSimTime / _stepsize);
     _numSpinsInChain = GV.GetNumSpins();

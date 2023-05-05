@@ -41,6 +41,7 @@ int main() {
     if (findEigenvalues) {
         // std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
         SolverClass.CalculateEigenfrequencies(false);
+        
     }
 
 #pragma clang diagnostic push
