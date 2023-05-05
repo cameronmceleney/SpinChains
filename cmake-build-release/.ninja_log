@@ -1,9 +1,10 @@
 # ninja log v5
-3344	3492	6992284112852804	SpinChains.exe	a31f4125d1bd8101
-19	313	1681744000257988623	build.ninja	6cb54a759e262d5a
-5564	5723	1678231321466610672	SpinChains	ec27c6b42ede7a72
-2	2377	1677597480686369756	CMakeFiles/SpinChains.dir/GlobalVariables.cpp.o	13384f7df92479b2
-5	5563	1678231321279482675	CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.o	66addf6a2c70808e
-0	1247	1677597479560621224	CMakeFiles/SpinChains.dir/linspace.cpp.o	5c1fad5b0fdd67ae
-3	1919	1678144943260253062	CMakeFiles/SpinChains.dir/main.cpp.o	1de731deb11f41c8
-2	9490	1677597487784509943	CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.o	7ef7778db3d5a474
+3727	3951	7000681749255081	SpinChains.exe	a31f4125d1bd8101
+2129	2234	1672937963445942615	SpinChains	ec27c6b42ede7a72
+19	313	1683300121442030396	build.ninja	6cb54a759e262d5a
+0	1326	1683300126656103187	CMakeFiles/SpinChains.dir/linspace.cpp.o	5c1fad5b0fdd67ae
+2	2442	1683300127765127552	CMakeFiles/SpinChains.dir/GlobalVariables.cpp.o	13384f7df92479b2
+0	2510	1683300127834241394	CMakeFiles/SpinChains.dir/main.cpp.o	1de731deb11f41c8
+1	4010	1683300129335287348	CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.o	66addf6a2c70808e
+1	16099	1683300141389958971	CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.o	7ef7778db3d5a474
+16100	16191	1683300141525987932	SpinChains	ec27c6b42ede7a72

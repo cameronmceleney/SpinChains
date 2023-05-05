@@ -5,32 +5,30 @@
 #include <chrono>
 
 void Numerical_Methods_Class::NMSetup() {
-
-    // ###################### Core Flags ######################
+    // Core Flags
     _hasShockwave = false;
     _isFM = GV.GetIsFerromagnetic();
     _shouldTrackMValues = true;
     _useLLG = true;
 
-    // ###################### Drive Flags ######################
+    // Drive Flags
     _centralDrive = false;
     _dualDrive = false;
     _lhsDrive = true;
-
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
-    // ###################### Core Parameters ######################
+    // Core Parameters
+    double recordingInterval = 1e-15;
     _drivingFreq = 15 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
     _maxSimTime = 20e-9;
-    _stepsize = 1e-17;
-    _recordingInterval = 1e-16;
-    _numberOfDataPoints = static_cast<int>(_maxSimTime / _recordingInterval);
+    _stepsize = 1e-16;
 
-    // ###################### Shockwave Parameters ######################
+
+    // Shockwave Parameters
     _iterStartShock = 0.0;
     _iterEndShock = 0.0001;
     _shockwaveGradientTime = 1;
@@ -38,23 +36,24 @@ void Numerical_Methods_Class::NMSetup() {
     _shockwaveMax = 3e-3;
     _shockwaveScaling = 1;
 
-    // ###################### Data Output Parameters ######################
-    _fixed_output_sites = {12158, 14530, 15320};// {2800, 4050, 4800}; // {8205, 12158, 14530};
+    // Data Output Parameters
+    _fixed_output_sites = {12158, 14529, 15320};
+    _numberOfDataPoints = static_cast<int>(_maxSimTime / recordingInterval);
 
     _printAllData = false;
     _printFixedLines = false;
     _printFixedSites = true;
 
-    // ###################### Damping Factors ######################
+    // Damping Factors
     _gilbertConst  = 1e-4;
     _gilbertLower = _gilbertConst;
     _gilbertUpper = 1e0;
 
-    // ###################### SpinChain Length Parameters ######################
+    // SpinChain Length Parameters
     _drivingRegionWidth = 200;
     _numSpinsDamped = 300;
 
-    // ###################### Computations based upon other inputs ######################
+    // Computations based upon other inputs
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _iterationEnd = static_cast<int>(_maxSimTime / _stepsize);
     _numSpinsInChain = GV.GetNumSpins();
@@ -157,14 +156,6 @@ void Numerical_Methods_Class::SetExchangeVector() {
     }
 }
 void Numerical_Methods_Class::FinalChecks() {
-
-    double nyquistRate = 2 * _drivingFreq;
-    double nyquistInterval = 1 / (nyquistRate);
-    if (nyquistInterval <  _recordingInterval) {
-        std::cout << "Warning: Nyquist Criterion not fulfilled. Aliasing likely. [Nyquist Interval: " << nyquistInterval
-                  << " | Sampling Rate: " << _recordingInterval << "]" << std::endl;
-        exit(1);
-    }
 
     if (_shouldDriveCease and _iterEndShock <= 0) {
         std::cout << "Warning: [_shouldDriveCease: True] however [_iterEndShock: " << _iterEndShock << " ! > 0.0]"

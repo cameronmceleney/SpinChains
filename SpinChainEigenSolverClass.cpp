@@ -1,6 +1,5 @@
 #include "SpinChainEigenSolverClass.h"
 
-
 void SpinChainEigenSolverClass::CalculateEigenfrequencies(bool hasAngularFrequency=false) {
     CreateTextFile();
 
@@ -283,31 +282,29 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixFerromagnets()
 
         if (row % 2 == 0) {
             // The dm_x/dt coupled equations are the even-numbered rows of the matrix (see notes for details)
-
             if (row == 0) {
                 // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
                 // matrixToFill(row,0) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,1) = _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField();
-                matrixToFill(row,3) = -1.0 *  _chainJValues[JVal + 1];
+                matrixToFill(row,3) = -_chainJValues[JVal + 1];
             }
-            else if (row > 0 and row < totalEquations - 2) {
+            else if (row < totalEquations - 2) {
                 // Handles all other even-numbered rows
-                matrixToFill(row,row - 1) = -1.0 *  _chainJValues[JVal];
+                matrixToFill(row,row - 1) = -_chainJValues[JVal];
                 // matrixToFill(row,row + 0) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,row + 1) = _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetStaticBiasField();
-                matrixToFill(row,row + 3) = -1.0 *  _chainJValues[JVal + 1];
+                matrixToFill(row,row + 3) = -_chainJValues[JVal + 1];
             }
             else if (row == totalEquations - 2) {
                 // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                matrixToFill(row,totalEquations - 1) =  _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField();
+                matrixToFill(row,totalEquations - 1) = _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField();
                 // matrixToFill(row,totalEquations - 2) = 0;  // Left to aid readability; this is the iw term
-                matrixToFill(row,totalEquations - 3) = -1.0 *  _chainJValues[JVal];
+                matrixToFill(row,totalEquations - 3) = -_chainJValues[JVal];
             }
             else {
-                std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
+                std::cerr << "Error: Generating dx/dt terms on row #" << row << std::endl;
                 std::exit(1);
             }
-            continue;
         }
         if (row % 2 == 1) {
             // The dm_y/dt coupled equations are the odd-numbered rows of the matrix (see notes for details)
@@ -318,25 +315,24 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixFerromagnets()
                 // matrixToFill(row,1) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,2) =  _chainJValues[JVal + 1];
             }
-            else if (row > 1 and row < totalEquations - 1) {
+            else if (row < totalEquations - 1) {
                 // Handles all other odd-numbered rows
-                matrixToFill(row,row - 3) =  _chainJValues[JVal];
-                matrixToFill(row,row - 1) = -1.0 * _chainJValues[JVal] -  _chainJValues[JVal + 1] - GV.GetStaticBiasField();
+                matrixToFill(row,row - 3) = _chainJValues[JVal];
+                matrixToFill(row,row - 1) = -_chainJValues[JVal] -  _chainJValues[JVal + 1] - GV.GetStaticBiasField();
                 // matrixToFill(row,row + 0) = 0;  // Left to aid readability; this is the iw term
-                matrixToFill(row,row + 1) =  _chainJValues[JVal + 1];
+                matrixToFill(row,row + 1) = _chainJValues[JVal + 1];
             }
             else if (row == totalEquations - 1) {
                 // Exception for the final dm_y/dt row (final matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
                 // matrixToFill(row,totalEquations - 1) = 0;  // Left to aid readability; this is the iw term
-                matrixToFill(row,totalEquations - 2) = -1.0 * _chainJValues[JVal] - _chainJValues[JVal + 1] - GV.GetStaticBiasField();
-                matrixToFill(row,totalEquations - 4) =  _chainJValues[JVal];
+                matrixToFill(row,totalEquations - 2) = -_chainJValues[JVal] - _chainJValues[JVal + 1] - GV.GetStaticBiasField();
+                matrixToFill(row,totalEquations - 4) = _chainJValues[JVal];
             }
             else {
-                std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
+                std::cerr << "Error: Generating dy/dt terms on row #" << row << std::endl;
                 std::exit(1);
             }
             JVal++;
-            continue;
         }
     }
 
@@ -347,7 +343,10 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixFerromagnets()
 
 void SpinChainEigenSolverClass::CreateTextFile() {
 
-    std::ofstream eigenValsOutput(GV.GetFilePath() + "/metadata_" + GV.GetFileNameBase() + ".csv");
+    std::filesystem::path filePath = GV.GetFilePath();
+    filePath /= "metadata_" + GV.GetFileNameBase() + ".csv";
+    std::ofstream eigenValsOutput(filePath);
+
     eigenValsOutput << "Key Data\n\n";
 
     eigenValsOutput << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
@@ -356,14 +355,19 @@ void SpinChainEigenSolverClass::CreateTextFile() {
 
     eigenValsOutput << "\n";
 
-    eigenValsOutput << "Static Bias Field (H0)," << GV.GetStaticBiasField() << " T," << "Anisotropic Field (H0), " << GV.GetAnisotropyField() << " T," <<
-                       "Min. Exchange Val (J), " << GV.GetExchangeMinVal()  << " T," <<
-                       "Max. Exchange Val (J), " << GV.GetExchangeMaxVal() << " T," << "No. Total Spins: " << GV.GetNumSpins() << "," <<
-                       "Gyromagnetic Ratio (Y), " << GV.GetGyromagneticConstant() / (2 * M_PI * 1e9) << std::endl;
+
+    eigenValsOutput << "Static Bias Field (H0)," << GV.GetStaticBiasField() << " T," <<
+                       "Anisotropic Field (H0), " << GV.GetAnisotropyField() << " T," <<
+                       "Min. Exchange Val (J_B), " << GV.GetExchangeMinVal()  << " T," <<
+                       "Max. Exchange Val (J_B), " << GV.GetExchangeMaxVal() << " T," <<
+                       "No. Total Spins, " << GV.GetNumSpins() << " ," <<
+                       "Gyromagnetic Ratio (Y), " << GV.GetGyromagneticConstant() / (2 * M_PI * 1e9) << "GHz / (2*Pi T)," <<
+                       std::endl;
 
     std::string notesComments;
-    std::cout << "Enter any notes for this simulation: ";
-    std::cin.ignore();
+    std::cout << "Enter any notes for this simulation (or leave blank): ";
     std::getline(std::cin, notesComments );
-    eigenValsOutput << "Note(s):," << notesComments << "\n"; // Use comma to have the actual note in a separate cell
+    if (!notesComments.empty()) {
+        eigenValsOutput << "Note(s):," << notesComments << "\n";
+    }
 }
