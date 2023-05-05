@@ -1,53 +1,71 @@
-#include <chrono>
-#include <ctime>
-#include "linspace.h"
 #include "SpinChainEigenSolverClass.h"
 
-void SpinChainEigenSolverClass::CalculateEigFreqs() {
-    // TODO: rename variables
-    // rename all variables following https://manual.gromacs.org/documentation/5.1-current/dev-manual/naming.html
+void SpinChainEigenSolverClass::CalculateEigenfrequencies(bool hasAngularFrequency=false) {
+    CreateTextFile();
 
+    // ###################### Core Parameters ######################
     _totalEquations = GV.GetNumSpins() * 2;
-    _isFerromagnet = false;
+    _isFerromagnet = GV.GetIsFerromagnetic();
     _fileNameEigenSolver += GV.GetFileNameBase();
     _anisotropyField = GV.GetAnisotropyField();
-    _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
-    std::cout << "Filename is: " << _fileNameEigenSolver << std::endl; // Informs user of filename to enable directory searching via file explorer search function
-    std::cout << "\nFiles will be outputted to: " << GV.GetFilePath() << std::endl; // Showing the selected path will make it easier to find the file
 
-    auto startTimeFindEigens = std::chrono::system_clock::now(); // Separate start time (from system) for the computation of the eigenvalues
+    if (hasAngularFrequency) {
+        // Units of output are 'rad * Hz'f
+        _gyroMagConst = GV.GetGyromagneticConstant() / (1e9);
+    } else {
+        // Units of output are 'Hz'
+        _gyroMagConst = GV.GetGyromagneticConstant() / (1e9 * 2 * M_PI);
+    }
+
+    // Informs user of filename and file path to enable directory searching via their file explorer
+    std::cout << "Filename is: " << _fileNameEigenSolver
+              << "\n\nFiles will be outputted to: " << GV.GetFilePath() << std::endl;
+
+    // Separate start time (from system) for the computation of the eigenvalues
+    auto startTimeFindEigens = std::chrono::system_clock::now();
     std::time_t startTimeFindEigens_cTimeUse = std::chrono::system_clock::to_time_t( startTimeFindEigens);
-    std::cout << "\n------------------------------" << "\nEigenvalues and Eigenvectors";
-    std::cout << "\nBegan computation at: " << std::ctime(&startTimeFindEigens_cTimeUse) << std::endl; // Useful for long computations where the start time may be forgotten
+    std::cout << "\n------------------------------"
+              << "\nEigenvalues and Eigenvectors"
+              << "\nBegan computation at: " << std::ctime(&startTimeFindEigens_cTimeUse) << std::endl;
 
-    _matrixValues(_totalEquations, _totalEquations); // Generates the matrix but does not allocate memory. That is done as each element is calculated
+    // ###################### Invoke Methods to find eigenvalues ######################
 
+    // Generates the matrix but does not allocate memory. That is done as each element is calculated
+    _matrixValues(_totalEquations, _totalEquations);
+
+    // Currently supports FM and AFM materials. Should more be added this will be changed to a SWITCH case
     if (_isFerromagnet)
-        _matrixValues = populate_matrix_ferromagnets();
+        _matrixValues = PopulateMatrixFerromagnets();
     else
-        _matrixValues = populate_matrix_antiferromagnets();
+        _matrixValues = PopulateMatrixAntiferromagnets();
 
+    // Eigensolver must be applied after matrix population otherwise the program will crash
     Eigen::EigenSolver <Matrix_xd> eigenSolverMatrixValues(_matrixValues);
 
     auto stopTimeFindEigens = std::chrono::system_clock::now();
     auto durationTimeFindEigens = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeFindEigens - startTimeFindEigens);
     std::cout << "Duration to find eigenvectors and values: " << durationTimeFindEigens.count() << "[ms]." << std::endl;
 
-    _matrixValues.resize(0, 0); // Removes large matrix from memory; leads to faster write times for very large matrices
+    // Removes large matrix from memory; leads to faster write times for very large matrices
+    _matrixValues.resize(0, 0);
+
+    // ###################### Save data ######################
 
     auto startTimeSaveData = std::chrono::system_clock::now();
 
-    save_data( "eigenvectors_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvectors().real());
-    save_data( "eigenvalues_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvalues().imag());
+    SaveData( "eigenvectors_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvectors().real());
+    SaveData( "eigenvalues_" + _fileNameEigenSolver + ".csv", eigenSolverMatrixValues.eigenvalues().imag());
 
     auto stopTimeSaveData = std::chrono::system_clock::now();
     auto durationTimeSaveData = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimeSaveData - startTimeSaveData);
-    std::cout << "Time to write to files: " << durationTimeSaveData.count() << "[ms]." << std::endl;
 
+    // Inform user of all remaining key data
     std::time_t stopTimeSaveData_cTimeUse = std::chrono::system_clock::to_time_t(stopTimeSaveData);
-    std::cout << "\nFinished computation at: " << std::ctime(&stopTimeSaveData_cTimeUse);
-    std::cout << "\n------------------------------\n";
+    std::cout << "Time to write to files: " << durationTimeSaveData.count() << "[ms]."
+              << "\n\nFinished computation at: " << std::ctime(&stopTimeSaveData_cTimeUse)
+              << "\n------------------------------\n";
 
+    // Way to test the quality of the results. Leave in code (commented out) for future debugging
     //std::cout << "Computing V * D * V^(-1) gives: " << std::endl << ces.eigenvectors() * ces.eigenvalues().asDiagonal() * ces.eigenvectors().inverse() << std::endl;
 
 }
@@ -75,7 +93,7 @@ void SpinChainEigenSolverClass::PrintVector(std::vector<double> inputVector, boo
     }
 }
 
-void SpinChainEigenSolverClass::save_data( std::string fileName, Matrix_xd generatedMatrix )
+void SpinChainEigenSolverClass::SaveData( std::string fileName, Matrix_xd generatedMatrix )
 {
     /* This class will take a given filename and filepath (supplied by the user), and use that information to create a
      * file for a matrix to be saved into. The matrix must come from the Eigen package and be consistently used throughout
@@ -98,7 +116,7 @@ void SpinChainEigenSolverClass::save_data( std::string fileName, Matrix_xd gener
     }
 }
 
-Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
+Matrix_xd SpinChainEigenSolverClass::PopulateMatrixAntiferromagnets()
 {
 
     LinspaceClass exchangeValues{};
@@ -106,7 +124,7 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
 
     exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, true);
     _chainJValues = exchangeValues.generate_array();
-    // PrintVector(_chainJValues, true);
+
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
      * than using an eigen-solver library to find the roots of a characteristic equation populated by angular_frequency values. The outputted
      * eigenvalues of this matrix (matrixToFill) are eigen-frequencies, however they are angular (w). To obtain  frequencies (f), you must find
@@ -144,9 +162,8 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, totalEquations - 2) = 0;
                     matrixToFill(row, totalEquations - 3) = -1.0 * _chainJValues[rowPair];
                 } else {
-                    // TODO Legacy error handling which needs updating (dm_x/dt rows)
                     std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
-                    std::exit(3);
+                    std::exit(1);
                 }
                 continue;
             }
@@ -170,9 +187,8 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, totalEquations - 2) = (GV.GetStaticBiasField() + _anisotropyField + (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
                     matrixToFill(row, totalEquations - 4) = _chainJValues[rowPair];
                 } else {
-                    // TODO Legacy error handling which needs updating (dm_y/dt rows)
                     std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
-                    std::exit(3);
+                    std::exit(1);
                 }
                 rowPair++;
                 continue;
@@ -199,9 +215,8 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, totalEquations - 2) = 0;
                     matrixToFill(row, totalEquations - 3) = _chainJValues[rowPair];
                 } else {
-                    // TODO Legacy error handling which needs updating (dm_x/dt rows)
                     std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
-                    std::exit(3);
+                    std::exit(1);
                 }
                 continue;
             }
@@ -225,9 +240,8 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
                     matrixToFill(row, totalEquations - 2) = (GV.GetStaticBiasField() - _anisotropyField - (_chainJValues[rowPair] + _chainJValues[rowPair + 1])); //
                     matrixToFill(row, totalEquations - 4) = -1.0 * _chainJValues[rowPair];
                 } else {
-                    // TODO Legacy error handling which needs updating (dm_y/dt rows)
                     std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
-                    std::exit(3);
+                    std::exit(1);
                 }
                 rowPair++;
                 continue;
@@ -240,13 +254,13 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_antiferromagnets()
     return matrixToFill;
 }
 
-Matrix_xd SpinChainEigenSolverClass::populate_matrix_ferromagnets()
+Matrix_xd SpinChainEigenSolverClass::PopulateMatrixFerromagnets()
 {
 
     LinspaceClass exchangeValues{};
     std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
 
-    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, false);
+    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, true);
     _chainJValues = exchangeValues.generate_array();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
@@ -268,66 +282,92 @@ Matrix_xd SpinChainEigenSolverClass::populate_matrix_ferromagnets()
 
         if (row % 2 == 0) {
             // The dm_x/dt coupled equations are the even-numbered rows of the matrix (see notes for details)
-
             if (row == 0) {
                 // Exception for the first dm_x/dt row (1st matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
-                matrixToFill(row,0) = 0;
-                matrixToFill(row,1) = _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField(); //
-                matrixToFill(row,3) = -1.0 *  _chainJValues[JVal + 1];
+                // matrixToFill(row,0) = 0;  // Left to aid readability; this is the iw term
+                matrixToFill(row,1) = _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField();
+                matrixToFill(row,3) = -_chainJValues[JVal + 1];
             }
-            else if (row > 0 and row < totalEquations - 2) {
+            else if (row < totalEquations - 2) {
                 // Handles all other even-numbered rows
-                matrixToFill(row,row - 1) = -1.0 *  _chainJValues[JVal];
-                matrixToFill(row,row + 0) = 0;
+                matrixToFill(row,row - 1) = -_chainJValues[JVal];
+                // matrixToFill(row,row + 0) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,row + 1) = _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetStaticBiasField();
-                matrixToFill(row,row + 3) = -1.0 *  _chainJValues[JVal + 1];
+                matrixToFill(row,row + 3) = -_chainJValues[JVal + 1];
             }
             else if (row == totalEquations - 2) {
                 // Exception for the final dm_x/dt row (penultimate matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                matrixToFill(row,totalEquations - 1) =  _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField(); //
-                matrixToFill(row,totalEquations - 2) = 0;
-                matrixToFill(row,totalEquations - 3) = -1.0 *  _chainJValues[JVal];
+                matrixToFill(row,totalEquations - 1) = _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField();
+                // matrixToFill(row,totalEquations - 2) = 0;  // Left to aid readability; this is the iw term
+                matrixToFill(row,totalEquations - 3) = -_chainJValues[JVal];
             }
             else {
-                // TODO Legacy error handling which needs updating (dm_x/dt rows)
-                std::cout << "Error with generating the dx/dt terms on row #{row}. Exiting..." << std::endl;
-                std::exit(3);
+                std::cerr << "Error: Generating dx/dt terms on row #" << row << std::endl;
+                std::exit(1);
             }
-            continue;
         }
         if (row % 2 == 1) {
             // The dm_y/dt coupled equations are the odd-numbered rows of the matrix (see notes for details)
 
             if (row == 1) {
                 // Exception for the first dm_y/dt row (2nd matrix row) as there is no spin on the LHS of this position and thus no exchange contribution from the LHS
-                matrixToFill(row,0) = -1.0 * (_chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField()); //
-                matrixToFill(row,1) = 0;
+                matrixToFill(row,0) = -1.0 * _chainJValues[JVal] - _chainJValues[JVal + 1] - GV.GetStaticBiasField();
+                // matrixToFill(row,1) = 0;  // Left to aid readability; this is the iw term
                 matrixToFill(row,2) =  _chainJValues[JVal + 1];
             }
-            else if (row > 1 and row < totalEquations - 1) {
+            else if (row < totalEquations - 1) {
                 // Handles all other odd-numbered rows
-                matrixToFill(row,row - 3) =  _chainJValues[JVal];
-                matrixToFill(row,row - 1) = -1.0 * ( _chainJValues[JVal] +  _chainJValues[JVal + 1] + GV.GetStaticBiasField());
-                matrixToFill(row,row + 0) = 0;
-                matrixToFill(row,row + 1) =  _chainJValues[JVal + 1];
+                matrixToFill(row,row - 3) = _chainJValues[JVal];
+                matrixToFill(row,row - 1) = -_chainJValues[JVal] -  _chainJValues[JVal + 1] - GV.GetStaticBiasField();
+                // matrixToFill(row,row + 0) = 0;  // Left to aid readability; this is the iw term
+                matrixToFill(row,row + 1) = _chainJValues[JVal + 1];
             }
             else if (row == totalEquations - 1) {
                 // Exception for the final dm_y/dt row (final matrix row) as there is no spin on the RHS of this position and thus no exchange contribution
-                matrixToFill(row,totalEquations - 1) = 0;
-                matrixToFill(row,totalEquations - 2) = -1.0 * ( _chainJValues[JVal] + _chainJValues[JVal + 1] + GV.GetStaticBiasField()); //
-                matrixToFill(row,totalEquations - 4) =  _chainJValues[JVal];
+                // matrixToFill(row,totalEquations - 1) = 0;  // Left to aid readability; this is the iw term
+                matrixToFill(row,totalEquations - 2) = -_chainJValues[JVal] - _chainJValues[JVal + 1] - GV.GetStaticBiasField();
+                matrixToFill(row,totalEquations - 4) = _chainJValues[JVal];
             }
             else {
-                // TODO Legacy error handling which needs updating (dm_y/dt rows)
-                std::cout << "Error with generating the dy/dt terms on row #{row}. Exiting..." << std::endl;
-                std::exit(3);
+                std::cerr << "Error: Generating dy/dt terms on row #" << row << std::endl;
+                std::exit(1);
             }
             JVal++;
-            continue;
         }
     }
 
     matrixToFill *= _gyroMagConst; // LLG equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
 
     return matrixToFill;
+}
+
+void SpinChainEigenSolverClass::CreateTextFile() {
+
+    std::filesystem::path filePath = GV.GetFilePath();
+    filePath /= "metadata_" + GV.GetFileNameBase() + ".csv";
+    std::ofstream eigenValsOutput(filePath);
+
+    eigenValsOutput << "Key Data\n\n";
+
+    eigenValsOutput << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
+
+    eigenValsOutput << "Is a ferromagnet: [" << GV.GetIsFerromagnetic() << "]\n";
+
+    eigenValsOutput << "\n";
+
+
+    eigenValsOutput << "Static Bias Field (H0)," << GV.GetStaticBiasField() << " T," <<
+                       "Anisotropic Field (H0), " << GV.GetAnisotropyField() << " T," <<
+                       "Min. Exchange Val (J_B), " << GV.GetExchangeMinVal()  << " T," <<
+                       "Max. Exchange Val (J_B), " << GV.GetExchangeMaxVal() << " T," <<
+                       "No. Total Spins, " << GV.GetNumSpins() << " ," <<
+                       "Gyromagnetic Ratio (Y), " << GV.GetGyromagneticConstant() / (2 * M_PI * 1e9) << "GHz / (2*Pi T)," <<
+                       std::endl;
+
+    std::string notesComments;
+    std::cout << "Enter any notes for this simulation (or leave blank): ";
+    std::getline(std::cin, notesComments );
+    if (!notesComments.empty()) {
+        eigenValsOutput << "Note(s):," << notesComments << "\n";
+    }
 }
