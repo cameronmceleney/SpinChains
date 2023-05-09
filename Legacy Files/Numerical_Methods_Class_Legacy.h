@@ -1,12 +1,10 @@
 #ifndef SPINCHAINS_NUMERICAL_METHODS_CLASS_H
 #define SPINCHAINS_NUMERICAL_METHODS_CLASS_H
 
-#include "linspace.h"
-#include "SpinChainEigenSolverClass.h"
-#include "CommonLibs.h"
-#include "progressbar.hpp"
-#include <chrono>
-#include <iomanip>
+#include "../linspace.h"
+#include "../SpinChainEigenSolverClass.h"
+#include "../CommonLibs.h"
+#include "../progressbar.hpp"
 #include <list>
 
 class Numerical_Methods_Class {
@@ -106,14 +104,6 @@ private:
     void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);
     void                TestShockwaveConditions(double iteration);
 
-    //test
-    double hX (int spin, double mx0LHS, double mx0RHS, double t0);
-    double hY (int spin, double my0LHS, double my0RHS);
-    double hZ (int spin, double mz0LHS, double mz0MID, double mz0RHS);
-    double mx (double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0);
-    double my (double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0);
-    double mz (double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0);
-
 public:
 //  Dtype               Member Name                                Variable docstring
     void                NMSetup();                              // Assignment of all values required for the simulation
@@ -123,9 +113,6 @@ public:
     void                RK2MidpointFMForTesting();              // Debugging case for RK-2 (ferromagnetic) where a large number of output statements allow for all used parameters to be tracked throughout the simulation.
     void                RK4MidpointFM();                        // OUTDATED: Evaluate the given system, using the Runge-Kutta (4nd Order) method, for a ferromagnetic material
     void                RK2MidpointAFM();                       // Evaluate the given system, using the Runge-Kutta (2nd Order) method, for an anti-ferromagnetic material
-
-    // test
-    void                RK2_new();
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H

@@ -31,4 +31,5 @@ add_executable(SpinChains
         Numerical_Methods_Class.cpp Numerical_Methods_Class.h
         GlobalVariables.cpp GlobalVariables.h
         progressbar.hpp
-        NewSolver.cpp NewSolver.h)
+        NewSolver.cpp NewSolver.h
+        "Legacy Files/Numerical_Methods_Class_Legacy.h" "Legacy Files/Numerical_Methods_Class_Legacy.cpp")
