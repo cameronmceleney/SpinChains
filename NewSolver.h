@@ -11,6 +11,7 @@ private:
 
 public:
     void solver_main();
+    void rework_old_solver();
 };
 
 

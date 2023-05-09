@@ -20,7 +20,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     // Core Parameters
     double recordingInterval = 1e-11;
-    _drivingFreq = 15 * 1e9;
+    _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
@@ -41,8 +41,8 @@ void Numerical_Methods_Class::NMSetup() {
     _numberOfDataPoints = static_cast<int>(_maxSimTime / recordingInterval);
 
     _printAllData = false;
-    _printFixedLines = false;
-    _printFixedSites = true;
+    _printFixedLines = true;
+    _printFixedSites = false;
 
     // Damping Factors
     _gilbertConst  = 1e-4;
@@ -51,7 +51,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     // SpinChain Length Parameters
     _drivingRegionWidth = 200;
-    _numSpinsDamped = 300;
+    _numSpinsDamped = 0;
 
     // Computations based upon other inputs
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
@@ -1172,6 +1172,8 @@ void Numerical_Methods_Class::RK4MidpointFM() {
     // Filename can be copy/pasted from C++ console to a Python console
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
+
+
 
 void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
     /**

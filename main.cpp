@@ -11,8 +11,8 @@ int main() {
 
     NewSolver main_solver{};
 
-    // main_solver.solver_main();
-    // exit(0);
+    //main_solver.rework_old_solver();
+    //exit(0);
 
     // Select between eigenvalue derivation and numerical modelling
     bool findEigenvalues = false;
@@ -24,9 +24,9 @@ int main() {
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(500);
-    GV.SetExchangeMinVal(132.5);
-    GV.SetExchangeMaxVal(132.5);
+    GV.SetNumSpins(4000);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(43.5);
     GV.SetGyromagneticConstant(28.8);
     GV.SetIsFerromagnetic(true);
 
@@ -34,7 +34,7 @@ int main() {
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
-    GV.SetFilePath("MacOS", findEigenvalues);
+    GV.SetFilePath("Windows", findEigenvalues);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
@@ -52,9 +52,10 @@ int main() {
 #pragma ide diagnostic ignored "UnreachableCode"
     else if (!findEigenvalues) {
         RK2_method_use.NMSetup();
-        if (GV.GetIsFerromagnetic())
-            RK2_method_use.RK2MidpointFM();
-        else
+        if (GV.GetIsFerromagnetic()) {
+            // RK2_method_use.RK2MidpointFM();
+            RK2_method_use.RK2_new();
+        } else
             RK2_method_use.RK2MidpointAFM();
     }
 #pragma clang diagnostic pop

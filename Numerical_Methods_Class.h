@@ -113,6 +113,7 @@ public:
     void                RK2MidpointFMForTesting();              // Debugging case for RK-2 (ferromagnetic) where a large number of output statements allow for all used parameters to be tracked throughout the simulation.
     void                RK4MidpointFM();                        // OUTDATED: Evaluate the given system, using the Runge-Kutta (4nd Order) method, for a ferromagnetic material
     void                RK2MidpointAFM();                       // Evaluate the given system, using the Runge-Kutta (2nd Order) method, for an anti-ferromagnetic material
+    void                RK2_new();
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
