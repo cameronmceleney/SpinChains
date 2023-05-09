@@ -14,12 +14,12 @@ void Numerical_Methods_Class::NMSetup() {
     // Drive Flags
     _centralDrive = false;
     _dualDrive = false;
-    _lhsDrive = true;
+    _lhsDrive = false;
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
     // Core Parameters
-    double recordingInterval = 1e-11;
+    double recordingInterval = .7e-11;
     _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
@@ -1174,6 +1174,197 @@ void Numerical_Methods_Class::RK4MidpointFM() {
 }
 
 
+
+
+double Numerical_Methods_Class::hX(int spin, double mx0LHS, double mx0RHS, double t0) {
+
+    double hX0; // The effective field (H_eff) component acting upon each spin
+
+    if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
+        // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
+        if (_hasStaticDrive)
+            hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField;
+        else if (!_hasStaticDrive)
+            hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
+    } else
+        // All spins along x which are not within the driving region
+        hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS;
+
+    return hX0;
+}
+
+double Numerical_Methods_Class::hY(int spin, double my0LHS, double my0RHS) {
+    double hY0 = _exchangeVec[spin - 1] * my0LHS + _exchangeVec[spin] * my0RHS;
+    
+    return hY0;
+}
+
+double Numerical_Methods_Class::hZ(int spin, double mz0LHS, double mz0RHS) {
+    double hZ0 = _exchangeVec[spin - 1] * mz0LHS + _exchangeVec[spin] * mz0RHS + GV.GetStaticBiasField();
+    
+    return hZ0;
+}
+
+double Numerical_Methods_Class::mx(double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0) {
+    
+    double mxK; // The magnetic moment component along the x-direction for the first stage of RK2
+    
+    if (_useLLG) {
+        // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
+        mxK = _gyroMagConst * (- (gilbert * hY0 * mx0MID * my0MID) + hY0 * mz0MID - hZ0 * (my0MID + gilbert * mx0MID * mz0MID) + gilbert * hX0 * (pow(my0MID,2) + pow(mz0MID,2)));
+    } else {
+        // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
+        mxK = -1.0 * _gyroMagConst * (my0MID * hZ0 - mz0MID * hY0);
+    }
+    
+    return mxK;
+}
+
+double Numerical_Methods_Class::my(double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0) {
+    
+    double myK;
+    
+    if (_useLLG) {
+        // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
+        myK = _gyroMagConst * (-(hX0 * mz0MID) + hZ0 * (mx0MID - gilbert * my0MID * mz0MID) + gilbert * (hY0 * pow(mx0MID,2) - hX0 * mx0MID * my0MID + hY0 * pow(mz0MID,2)));
+    } else {
+        // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
+        myK = _gyroMagConst * (mx0MID * hZ0 - mz0MID * hX0);
+    }
+    
+    return myK;
+}
+
+double Numerical_Methods_Class::mz(double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0) {
+    
+    double mzK; 
+    
+    if (_useLLG) {
+        // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
+        mzK = _gyroMagConst * (hX0 * my0MID + gilbert * hZ0 * (pow(mx0MID,2) + pow(my0MID,2)) - gilbert*hX0*mx0MID*mz0MID - hY0 * (mx0MID + gilbert * my0MID * mz0MID));
+    } else {
+        // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
+        mzK = -1.0 * _gyroMagConst * (mx0MID * hY0 - my0MID * hX0);
+    }
+    
+    return mzK;
+}
+
+void Numerical_Methods_Class::RK2_new() {
+    
+    progressbar bar(100);
+
+    InformUserOfCodeType("RK2 Midpoint New (FM)");
+
+    // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
+    std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+    CreateFileHeader(mxRK2File, "RK2 Midpoint New (FM)");
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata();
+    }
+    
+    for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
+
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
+            // Doesn't work on Windows due to different compiler. Doesn't work for fewer than 100 iterations
+            bar.update();
+
+        TestShockwaveConditions(iteration);
+
+        double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf;
+
+        // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
+        std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
+
+        // Excludes the 0th and last spins as they will always be zero-valued (end, pinned spins)
+        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
+            // RK2 Stage 1. Takes initial conditions as inputs.
+
+            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
+            int spinLHS = spin - 1, spinRHS = spin + 1;
+
+            // Effective field calculations for the target spin
+            double hX0 = hX(spin, _mx0[spinLHS], _mx0[spinRHS], t0);
+            double hY0 = hY(spin, _my0[spinLHS], _my0[spinRHS]);
+            double hZ0 = hZ(spin, _mz0[spinLHS], _mz0[spinRHS]);
+
+            // RK K-value calculations for the target spin
+            double mxK1 = mx(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX0, hY0, hZ0);
+            double myK1 = my(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX0, hY0, hZ0);
+            double mzK1 = mz(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX0, hY0, hZ0);
+                    
+            // Find (m0 + k1/2) for each spin, which is used in the next stage.
+            mx1[spin] = _mx0[spin] + _stepsizeHalf * mxK1;
+            my1[spin] = _my0[spin] + _stepsizeHalf * myK1;
+            mz1[spin] = _mz0[spin] + _stepsizeHalf * mzK1;
+        }
+        // The estimations of the m-components values for the next iteration.
+        std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
+
+        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
+
+            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
+            int spinLHS = spin - 1, spinRHS = spin + 1;
+
+            // Effective field calculations for the target spin
+            double hX1 = hX(spin, mx1[spinLHS], mx1[spinRHS], t0);
+            double hY1 = hY(spin, my1[spinLHS], my1[spinRHS]);
+            double hZ1 = hZ(spin, mz1[spinLHS], mz1[spinRHS]);
+
+            // RK K-value calculations for the target spin
+            double mxK2 = mx(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX1, hY1, hZ1);
+            double myK2 = my(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX1, hY1, hZ1);
+            double mzK2 = mz(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX1, hY1, hZ1);
+
+            mx2[spin] = _mx0[spin] + _stepsize * mxK2;
+            my2[spin] = _my0[spin] + _stepsize * myK2;
+            mz2[spin] = _mz0[spin] + _stepsize * mzK2;
+
+            if (_shouldTrackMValues) {
+                double mIterationNorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
+                if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+            }
+        }
+        // Everything below here is part of the class method, but not the internal RK2 stage loops.
+
+        /**
+         * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
+         * these between loop iterations sometimes led to incorrect values cropping up.
+         */
+        _mx0.clear();
+        _my0.clear();
+        _mz0.clear();
+        mx1.clear();
+        my1.clear();
+        mz1.clear();
+
+        SaveDataToFile(mxRK2File, mx2, iteration);
+
+        //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
+        _mx0 = mx2;
+        _my0 = my2;
+        _mz0 = mz2;
+
+        if (iteration == _forceStopAtIteration)
+            exit(0);
+
+        _totalTime += _stepsize;
+    }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
+
+    // Ensures files are closed; sometimes are left open if the writing process above fails
+    mxRK2File.close();
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata(true);
+    }
+
+    if (_shouldTrackMValues)
+        std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;
+
+    // Filename can be copy/pasted from C++ console to Python function's console.
+    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+}
 
 void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
     /**

@@ -26,8 +26,8 @@ int main() {
     GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(4000);
     GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(43.5);
-    GV.SetGyromagneticConstant(28.8);
+    GV.SetExchangeMaxVal(132.0);
+    GV.SetGyromagneticConstant(29.2);
     GV.SetIsFerromagnetic(true);
 
     std::string in_fileNameBase; //Better name might be fileID
@@ -53,8 +53,8 @@ int main() {
     else if (!findEigenvalues) {
         RK2_method_use.NMSetup();
         if (GV.GetIsFerromagnetic()) {
-            // RK2_method_use.RK2MidpointFM();
-            RK2_method_use.RK2_new();
+            RK2_method_use.RK2MidpointFM();
+            // RK2_method_use.RK2_new();
         } else
             RK2_method_use.RK2MidpointAFM();
     }
