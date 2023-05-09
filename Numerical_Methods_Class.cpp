@@ -15,7 +15,7 @@ void Numerical_Methods_Class::NMSetup() {
     _shouldDriveCease = false;
 
     // Core Parameters
-    double recordingInterval = .7e-11;
+    _recordingInterval = .7e-11;
     _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
@@ -33,7 +33,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     // Data Output Parameters
     _fixed_output_sites = {12158, 14529, 15320};
-    _numberOfDataPoints = static_cast<int>(_maxSimTime / recordingInterval);
+    _numberOfDataPoints = static_cast<int>(_maxSimTime / _recordingInterval);
 
     _printAllData = false;
     _printFixedLines = true;
@@ -238,349 +238,100 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
     }
 }
 
-void Numerical_Methods_Class::RK4MidpointFM() {
-
-    progressbar bar(100);
-
-    InformUserOfCodeType("RK4 Midpoint");
-
-    //########################################################################################################################
-
-    std::ofstream mxRK4File(GV.GetFilePath() + "rk4_mx_" + GV.GetFileNameBase() + ".csv");
-    CreateFileHeader(mxRK4File, "RK4 Midpoint");
-
-    for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
-
-        double t0 = _totalTime, t0Half = _totalTime + _stepsizeHalf, t0h = _totalTime + _stepsize;
-
-        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
-            // Doesn't work on Windows due to different compiler. Doesn't work for fewer than 100 iterations
-            bar.update();
-
-        TestShockwaveConditions(iteration);
-
-        std::vector<double> mx1(GV.GetNumSpins()+2, 0), my1(GV.GetNumSpins()+2, 0), mz1(GV.GetNumSpins()+2, 0);
-        std::vector<double> mxK1Vec (GV.GetNumSpins() + 2, 0), myK1Vec (GV.GetNumSpins() + 2, 0), mzK1Vec (GV.GetNumSpins() + 2, 0);
-
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK4 Step 1
-            int spinLHS = spin - 1, spinRHS = spin + 1;
-
-            // The m-components for the first stage for the: current spin site (MID); site to the left (LHS); site to the right (RHS)
-            double mx1MID = _mx0[spin], mx1LHS = _mx0[spinLHS], mx1RHS = _mx0[spinRHS];
-            double my1MID = _my0[spin], my1LHS = _my0[spinLHS], my1RHS = _my0[spinRHS];
-            double mz1MID = _mz0[spin], mz1LHS = _mz0[spinLHS], mz1RHS = _mz0[spinRHS];
-
-            double hX1; // The effective field (H_eff) component acting upon each spin
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)  {
-                if (_hasStaticDrive)
-                    hX1 = _exchangeVec[spinLHS] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField;
-                else if (!_hasStaticDrive)
-                    hX1 = _exchangeVec[spinLHS] * mx1LHS + _exchangeVec[spin] * mx1RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
-            } else {
-                hX1 = _exchangeVec[spinLHS] * mx1LHS + _exchangeVec[spin] * mx1RHS;
-            }
-            double hY1 = _exchangeVec[spinLHS] * my1LHS + _exchangeVec[spin] * my1RHS;
-            double hZ1 = _exchangeVec[spinLHS] * mz1LHS + _exchangeVec[spin] * mz1RHS + GV.GetStaticBiasField();
-
-            double mxK1, myK1, mzK1; // These are the estimations of the slopes at the beginning of the interval
-            if (_useLLG) {
-                // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK4.
-                mxK1 = _gyroMagConst * (- (_gilbertVector[spin] * hY1 * mx1MID * my1MID) + hY1 * mz1MID - hZ1 * (my1MID + _gilbertVector[spin] * mx1MID * mz1MID) + _gilbertVector[spin] * hX1 * (pow(my1MID,2) + pow(mz1MID,2)));
-                myK1 = _gyroMagConst * (-(hX1 * mz1MID) + hZ1 * (mx1MID - _gilbertVector[spin] * my1MID * mz1MID) + _gilbertVector[spin] * (hY1 * pow(mx1MID,2) - hX1 * mx1MID * my1MID + hY1 * pow(mz1MID,2)));
-                mzK1 = _gyroMagConst * (hX1 * my1MID + _gilbertVector[spin] * hZ1 * (pow(mx1MID,2) + pow(my1MID,2)) - _gilbertVector[spin] * hX1 * mx1MID * mz1MID - hY1 * (mx1MID + _gilbertVector[spin] * my1MID * mz1MID));
-            } else {
-                // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK4.
-                mxK1 = -1.0 * _gyroMagConst * (my1MID * hZ1 - mz1MID * hY1);
-                myK1 =        _gyroMagConst * (mx1MID * hZ1 - mz1MID * hX1);
-                mzK1 = -1.0 * _gyroMagConst * (mx1MID * hY1 - my1MID * hX1);
-            }
-
-            mxK1Vec[spin] = mxK1;
-            myK1Vec[spin] = myK1;
-            mzK1Vec[spin] = mzK1;
-
-            // Find (m0 + k1/2) for each spin, which is used in the next stage.
-            mx1[spin] = mx1MID + mxK1 * _stepsizeHalf;
-            my1[spin] = my1MID + myK1 * _stepsizeHalf;
-            mz1[spin] = mz1MID + mzK1 * _stepsizeHalf;
-        }
-
-        std::vector<double> mx2 (GV.GetNumSpins() + 2, 0), my2 (GV.GetNumSpins() + 2, 0), mz2 (GV.GetNumSpins() + 2, 0);
-        std::vector<double> mxK2Vec (GV.GetNumSpins() + 2, 0), myK2Vec (GV.GetNumSpins() + 2, 0), mzK2Vec (GV.GetNumSpins() + 2, 0);
-
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK4 Step 2
-            int spinLHS = spin - 1, spinRHS = spin + 1;
-
-            // The m-components for the second stage for the: current spin site (MID); site to the left (LHS); site to the right (RHS)
-            double mx2MID = mx1[spin], mx2LHS = mx1[spinLHS], mx2RHS = mx1[spinRHS];
-            double my2MID = my1[spin], my2LHS = my1[spinLHS], my2RHS = my1[spinRHS];
-            double mz2MID = mz1[spin], mz2LHS = mz1[spinLHS], mz2RHS = mz1[spinRHS];
-
-            double hX2; // The effective field (H_eff) component acting upon each spin
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)  {
-                if (_hasStaticDrive)
-                    hX2 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField;
-                else if (!_hasStaticDrive)
-                    hX2 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS + _dynamicBiasField * cos(_drivingAngFreq * t0Half);
-            } else {
-                hX2 = _exchangeVec[spinLHS] * mx2LHS + _exchangeVec[spin] * mx2RHS;
-            }
-            double hY2 = _exchangeVec[spinLHS] * my2LHS + _exchangeVec[spin] * my2RHS;
-            double hZ2 = _exchangeVec[spinLHS] * mz2LHS + _exchangeVec[spin] * mz2RHS + GV.GetStaticBiasField();
-
-            double mxK2, myK2, mzK2; // These are the estimations of the slopes at the beginning of the interval
-            if (_useLLG) {
-                // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the second stage of RK4.
-                mxK2 = _gyroMagConst * (- (_gilbertVector[spin] * hY2 * mx2MID * my2MID) + hY2 * mz2MID - hZ2 * (my2MID + _gilbertVector[spin] * mx2MID * mz2MID) + _gilbertVector[spin] * hX2 * (pow(my2MID,2) + pow(mz2MID,2)));
-                myK2 = _gyroMagConst * (-(hX2 * mz2MID) + hZ2 * (mx2MID - _gilbertVector[spin] * my2MID * mz2MID) + _gilbertVector[spin] * (hY2 * pow(mx2MID,2) - hX2 * mx2MID * my2MID + hY2 * pow(mz2MID,2)));
-                mzK2 = _gyroMagConst * (hX2 * my2MID + _gilbertVector[spin] * hZ2 * (pow(mx2MID,2) + pow(my2MID,2)) - _gilbertVector[spin] * hX2 * mx2MID * mz2MID - hY2 * (mx2MID + _gilbertVector[spin] * my2MID * mz2MID));
-            } else {
-                // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the second stage of RK4.
-                mxK2 = -1.0 * _gyroMagConst * (my2MID * hZ2 - mz2MID * hY2);
-                myK2 =        _gyroMagConst * (mx2MID * hZ2 - mz2MID * hX2);
-                mzK2 = -1.0 * _gyroMagConst * (mx2MID * hY2 - my2MID * hX2);
-            }
-
-            mxK2Vec[spin] = mxK2;
-            myK2Vec[spin] = myK2;
-            mzK2Vec[spin] = mzK2;
-
-            // Find (m0 + k2/2) for each spin, which is used in the next stage.
-            mx2[spin] = _mx0[spin] + mxK2 * _stepsizeHalf;
-            my2[spin] = _my0[spin] + myK2 * _stepsizeHalf;
-            mz2[spin] = _mz0[spin] + mzK2 * _stepsizeHalf;
-        }
-
-        mx1.clear(); my1.clear(); mz1.clear(); // No longer required so memory can be freed
-        std::vector<double> mx3 (GV.GetNumSpins() + 2, 0), my3 (GV.GetNumSpins() + 2, 0), mz3 (GV.GetNumSpins() + 2, 0);
-        std::vector<double> mxK3Vec (GV.GetNumSpins() + 2, 0), myK3Vec (GV.GetNumSpins() + 2, 0), mzK3Vec (GV.GetNumSpins() + 2, 0);
-
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK4 Step 3
-            int spinLHS = spin - 1, spinRHS = spin + 1;
-
-            // The m-components for the third stage for the: current spin site (MID); site to the left (LHS); site to the right (RHS)
-            double mx3MID = mx2[spin], mx3LHS = mx2[spinLHS], mx3RHS = mx2[spinRHS];
-            double my3MID = my2[spin], my3LHS = my2[spinLHS], my3RHS = my2[spinRHS];
-            double mz3MID = mz2[spin], mz3LHS = mz2[spinLHS], mz3RHS = mz2[spinRHS];
-
-            double hX3; // The effective field (H_eff) component acting upon each spin
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)  {
-                if (_hasStaticDrive)
-                    hX3 = _exchangeVec[spinLHS] * mx3LHS + _exchangeVec[spin] * mx3RHS + _dynamicBiasField;
-                else if (!_hasStaticDrive)
-                    hX3 = _exchangeVec[spinLHS] * mx3LHS + _exchangeVec[spin] * mx3RHS + _dynamicBiasField * cos(_drivingAngFreq * t0Half);
-            } else {
-                hX3 = _exchangeVec[spinLHS] * mx3LHS + _exchangeVec[spin] * mx3RHS;
-            }
-            double hY3 = _exchangeVec[spinLHS] * my3LHS + _exchangeVec[spin] * my3RHS;
-            double hZ3 = _exchangeVec[spinLHS] * mz3LHS + _exchangeVec[spin] * mz3RHS + GV.GetStaticBiasField();
-
-            double mxK3, myK3, mzK3; // These are the estimations of the slopes at the beginning of the interval
-            if (_useLLG) {
-                // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK4.
-                mxK3 = _gyroMagConst * (- (_gilbertVector[spin] * hY3 * mx3MID * my3MID) + hY3 * mz3MID - hZ3 * (my3MID + _gilbertVector[spin] * mx3MID * mz3MID) + _gilbertVector[spin] * hX3 * (pow(my3MID,2) + pow(mz3MID,2)));
-                myK3 = _gyroMagConst * (-(hX3 * mz3MID) + hZ3 * (mx3MID - _gilbertVector[spin] * my3MID * mz3MID) + _gilbertVector[spin] * (hY3 * pow(mx3MID,2) - hX3 * mx3MID * my3MID + hY3 * pow(mz3MID,2)));
-                mzK3 = _gyroMagConst * (hX3 * my3MID + _gilbertVector[spin] * hZ3 * (pow(mx3MID,2) + pow(my3MID,2)) - _gilbertVector[spin] * hX3 * mx3MID * mz3MID - hY3 * (mx3MID + _gilbertVector[spin] * my3MID * mz3MID));
-            } else {
-                // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK4.
-                mxK3 = -1.0 * _gyroMagConst * (my3MID * hZ3 - mz3MID * hY3);
-                myK3 =        _gyroMagConst * (mx3MID * hZ3 - mz3MID * hX3);
-                mzK3 = -1.0 * _gyroMagConst * (mx3MID * hY3 - my3MID * hX3);
-            }
-
-            mxK3Vec[spin] = mxK3;
-            myK3Vec[spin] = myK3;
-            mzK3Vec[spin] = mzK3;
-
-            // Find (m0 + k3) for each spin, which is used in the next stage.
-            mx3[spin] = _mx0[spin] + mxK3 * _stepsize;
-            my3[spin] = _my0[spin] + myK3 * _stepsize;
-            mz3[spin] = _mz0[spin] + mzK3 * _stepsize;
-        }
-
-        mx2.clear(); my2.clear(); mz2.clear(); // No longer required so memory can be freed
-        std::vector<double> mx4 (GV.GetNumSpins() + 2, 0), my4 (GV.GetNumSpins() + 2, 0), mz4 (GV.GetNumSpins() + 2, 0);
-        std::vector<double> mxK (GV.GetNumSpins() + 2, 0), myK (GV.GetNumSpins() + 2, 0), mzK (GV.GetNumSpins() + 2, 0);
-
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK4 Step 4
-            int spinLHS = spin - 1, spinRHS = spin + 1;
-
-            // The m-components for the fourth stage for the: current spin site (MID); site to the left (LHS); site to the right (RHS)
-            double mx4MID = mx3[spin], mx4LHS = mx3[spinLHS], mx4RHS = mx3[spinRHS];
-            double my4MID = my3[spin], my4LHS = my3[spinLHS], my4RHS = my3[spinRHS];
-            double mz4MID = mz3[spin], mz4LHS = mz3[spinLHS], mz4RHS = mz3[spinRHS];
-
-            double hX4; // The effective field (H_eff) component acting upon each spin
-            if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS)  {
-                if (_hasStaticDrive)
-                    hX4 = _exchangeVec[spinLHS] * mx4LHS + _exchangeVec[spin] * mx4RHS + _dynamicBiasField;
-                if (!_hasStaticDrive)
-                    hX4 = _exchangeVec[spinLHS] * mx4LHS + _exchangeVec[spin] * mx4RHS + _dynamicBiasField * cos(_drivingAngFreq * t0h);
-
-            } else {
-                hX4 = _exchangeVec[spinLHS] * mx4LHS + _exchangeVec[spin] * mx4RHS;
-            }
-            double hY4 = _exchangeVec[spinLHS] * my4LHS + _exchangeVec[spin] * my4RHS;
-            double hZ4 = _exchangeVec[spinLHS] * mz4LHS + _exchangeVec[spin] * mz4RHS + GV.GetStaticBiasField();
-
-            double mxK4, myK4, mzK4; // These are the estimations of the slopes at the beginning of the interval
-            if (_useLLG) {
-                // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK4.
-                mxK4 = _gyroMagConst * (- (_gilbertVector[spin] * hY4 * mx4MID * my4MID) + hY4 * mz4MID - hZ4 * (my4MID + _gilbertVector[spin] * mx4MID * mz4MID) + _gilbertVector[spin] * hX4 * (pow(my4MID,2) + pow(mz4MID,2)));
-                myK4 = _gyroMagConst * (-(hX4 * mz4MID) + hZ4 * (mx4MID - _gilbertVector[spin] * my4MID * mz4MID) + _gilbertVector[spin] * (hY4 * pow(mx4MID,2) - hX4 * mx4MID * my4MID + hY4 * pow(mz4MID,2)));
-                mzK4 = _gyroMagConst * (hX4 * my4MID + _gilbertVector[spin] * hZ4 * (pow(mx4MID,2) + pow(my4MID,2)) - _gilbertVector[spin] * hX4 * mx4MID * mz4MID - hY4 * (mx4MID + _gilbertVector[spin] * my4MID * mz4MID));
-            } else {
-                // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK4.
-                mxK4 = -1.0 * _gyroMagConst * (my4MID * hZ4 - mz4MID * hY4);
-                myK4 =        _gyroMagConst * (mx4MID * hZ4 - mz4MID * hX4);
-                mzK4 = -1.0 * _gyroMagConst * (mx4MID * hY4 - my4MID * hX4);
-            }
-
-            mxK[spin] = (mxK1Vec[spin] + 2.0 * mxK2Vec[spin] + 2.0 * mxK3Vec[spin] + mxK4) * (_stepsize / 6.0);
-            myK[spin] = (myK1Vec[spin] + 2.0 * myK2Vec[spin] + 2.0 * myK3Vec[spin] + myK4) * (_stepsize / 6.0);
-            mzK[spin] = (mzK1Vec[spin] + 2.0 * mzK2Vec[spin] + 2.0 * mzK3Vec[spin] + mzK4) * (_stepsize / 6.0);
-
-            // Find (m0 + (k1 + 2 * k2 + 2 * k3 + k4) / 6) for each spin, as per the Runge-Kutta formula
-            mx4[spin] = _mx0[spin] + mxK[spin];
-            my4[spin] = _my0[spin] + myK[spin];
-            mz4[spin] = _mz0[spin] + mzK[spin];
-
-            if (_shouldTrackMValues) {
-                double mIterationNorm = sqrt(pow(mx4[spin], 2) + pow(my4[spin], 2) + pow(mz4[spin], 2));
-                if (_largestMNorm < (1.0 - mIterationNorm)) { _largestMNorm = mIterationNorm; }
-            }
-
-        }
-        // Everything below here is part of the class method, but not the internal RK4 stage loops.
-
-        // Clear all remaining vectors not required for writing processes
-        mx3.clear(); my3.clear(); mz3.clear();
-        mxK1Vec.clear(); myK1Vec.clear(); mzK1Vec.clear();
-        mxK2Vec.clear(); myK2Vec.clear(); mzK2Vec.clear();
-        mxK3Vec.clear(); myK3Vec.clear(); mzK3Vec.clear();
-
-        SaveDataToFile(mxRK4File, mx4, iteration);
-        // SaveDataToFile(_printAllData, myRK4File, my4, iteration, _printFixedLines);
-        // SaveDataToFile(_printAllData, mzRK4File, mz4, iteration, _printFixedLines);
-
-        // Set final value of current iteration as the starting value for the next iteration
-        _mx0 = mx4;
-        _my0 = my4;
-        _mz0 = mz4;
-
-        _totalTime += _stepsize;
-    }
-    // Final line of RK2 solver for all iterations. Everything below here occurs after RK4 method is complete.
-
-    // Ensure files are closed in case of writing error.
-    mxRK4File.close();
-    // myRK4File.close();
-    // mzRK4File.close();
-
-    if (_shouldTrackMValues)
-        std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;
-    // Filename can be copy/pasted from C++ console to a Python console
-    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
-}
-
-double Numerical_Methods_Class::hX(int spin, double mx0LHS, double mx0RHS, double t0) {
-
-    double hX0; // The effective field (H_eff) component acting upon each spin
+double Numerical_Methods_Class::effectiveFieldX(int site, double mxLHS, double mxRHS, double current_time) {
+    // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
+    double hx;
 
     if (_isFM) {
-        if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
+        if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             if (_hasStaticDrive)
-                hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField;
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + _dynamicBiasField;
             else if (!_hasStaticDrive)
-                hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS +
-                      _dynamicBiasField * cos(_drivingAngFreq * t0);
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS +
+                      _dynamicBiasField * cos(_drivingAngFreq * current_time);
         } else
             // All spins along x which are not within the driving region
-            hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS;
+            hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS;
     } else if (!_isFM) {
-        if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
+        if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             if (_hasStaticDrive)
-                hX0 = -1.0 * (_exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField);
+                hx = -1.0 * (_exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + _dynamicBiasField);
             else if (!_hasStaticDrive)
-                hX0 = -1.0 * (_exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS) + _dynamicBiasField * cos(_drivingAngFreq * t0);
+                hx = -1.0 * (_exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS) + _dynamicBiasField * cos(_drivingAngFreq * current_time);
         } else
             // All spins along x which are not within the driving region
-            hX0 = -1.0 * (_exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS);
+            hx = -1.0 * (_exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS);
     }
 
-    return hX0;
+    return hx;
 }
-double Numerical_Methods_Class::hY(int spin, double my0LHS, double my0RHS) {
-
-    double hY0;
+double Numerical_Methods_Class::effectiveFieldY(int site, double myLHS, double myRHS) {
+    // The effective field (H_eff) y-component acting upon a given magnetic moment (site), abbreviated to 'hy'
+    double hy;
 
     if (_isFM) {
-        hY0 = _exchangeVec[spin - 1] * my0LHS + _exchangeVec[spin] * my0RHS;
+        hy = _exchangeVec[site - 1] * myLHS + _exchangeVec[site] * myRHS;
     } else if (!_isFM) {
-        hY0 = -1.0 * (_exchangeVec[spin - 1] * my0LHS + _exchangeVec[spin] * my0RHS);
+        hy = -1.0 * (_exchangeVec[site - 1] * myLHS + _exchangeVec[site] * myRHS);
     }
     
-    return hY0;
+    return hy;
 }
-double Numerical_Methods_Class::hZ(int spin, double mz0LHS, double mz0MID, double mz0RHS) {
-    double hZ0;
+double Numerical_Methods_Class::effectiveFieldZ(int site, double mzLHS, double mzMID, double mzRHS) {
+    // The effective field (H_eff) z-component acting upon a given magnetic moment (site), abbreviated to 'hz'
+    double hz;
 
     if (_isFM) {
-        hZ0 = _exchangeVec[spin - 1] * mz0LHS + _exchangeVec[spin] * mz0RHS + GV.GetStaticBiasField();
+        hz = _exchangeVec[site - 1] * mzLHS + _exchangeVec[site] * mzRHS + GV.GetStaticBiasField();
     } else if (!_isFM) {
-        if (mz0MID > 0)
-            hZ0 = GV.GetStaticBiasField() + _anisotropyField - (_exchangeVec[spin - 1] * mz0LHS + _exchangeVec[spin] * mz0RHS);
-        else if (mz0MID < 0)
-            hZ0 = GV.GetStaticBiasField() - _anisotropyField - (_exchangeVec[spin - 1] * mz0LHS + _exchangeVec[spin] * mz0RHS);
+        if (mzMID > 0)
+            hz = GV.GetStaticBiasField() + _anisotropyField - (_exchangeVec[site - 1] * mzLHS + _exchangeVec[site] * mzRHS);
+        else if (mzMID < 0)
+            hz = GV.GetStaticBiasField() - _anisotropyField - (_exchangeVec[site - 1] * mzLHS + _exchangeVec[site] * mzRHS);
     }
     
-    return hZ0;
+    return hz;
 }
 
-double Numerical_Methods_Class::mx(double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0) {
+double Numerical_Methods_Class::magneticMomentX(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
     
     double mxK; // The magnetic moment component along the x-direction for the first stage of RK2
     
     if (_useLLG) {
         // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
-        mxK = _gyroMagConst * (- (gilbert * hY0 * mx0MID * my0MID) + hY0 * mz0MID - hZ0 * (my0MID + gilbert * mx0MID * mz0MID) + gilbert * hX0 * (pow(my0MID,2) + pow(mz0MID,2)));
+        mxK = _gyroMagConst * (- (_gilbertVector[site] * hyMID * mxMID * myMID) + hyMID * mzMID - hzMID * (myMID + _gilbertVector[site] * mxMID * mzMID) + _gilbertVector[site] * hxMID * (pow(myMID,2) + pow(mzMID,2)));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
-        mxK = -1.0 * _gyroMagConst * (my0MID * hZ0 - mz0MID * hY0);
+        mxK = -1.0 * _gyroMagConst * (myMID * hzMID - mzMID * hyMID);
     }
     
     return mxK;
 }
-double Numerical_Methods_Class::my(double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0) {
-    
+double Numerical_Methods_Class::magneticMomentY(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
     double myK;
     
     if (_useLLG) {
         // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
-        myK = _gyroMagConst * (-(hX0 * mz0MID) + hZ0 * (mx0MID - gilbert * my0MID * mz0MID) + gilbert * (hY0 * pow(mx0MID,2) - hX0 * mx0MID * my0MID + hY0 * pow(mz0MID,2)));
+        myK = _gyroMagConst * (-(hxMID * mzMID) + hzMID * (mxMID - _gilbertVector[site] * myMID * mzMID) + _gilbertVector[site] * (hyMID * pow(mxMID,2) - hxMID * mxMID * myMID + hyMID * pow(mzMID,2)));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
-        myK = _gyroMagConst * (mx0MID * hZ0 - mz0MID * hX0);
+        myK = _gyroMagConst * (mxMID * hzMID - mzMID * hxMID);
     }
     
     return myK;
 }
-double Numerical_Methods_Class::mz(double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0) {
+double Numerical_Methods_Class::magneticMomentZ(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
     
     double mzK; 
     
     if (_useLLG) {
         // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
-        mzK = _gyroMagConst * (hX0 * my0MID + gilbert * hZ0 * (pow(mx0MID,2) + pow(my0MID,2)) - gilbert*hX0*mx0MID*mz0MID - hY0 * (mx0MID + gilbert * my0MID * mz0MID));
+        mzK = _gyroMagConst * (hxMID * myMID + _gilbertVector[site] * hzMID * (pow(mxMID,2) + pow(myMID,2)) - _gilbertVector[site]*hxMID*mxMID*mzMID - hyMID * (mxMID + _gilbertVector[site] * myMID * mzMID));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
-        mzK = -1.0 * _gyroMagConst * (mx0MID * hY0 - my0MID * hX0);
+        mzK = -1.0 * _gyroMagConst * (mxMID * hyMID - myMID * hxMID);
     }
     
     return mzK;
@@ -592,11 +343,11 @@ void Numerical_Methods_Class::solveRK2() {
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
 
     if (_isFM) {
-        InformUserOfCodeType("RK2 Midpoint New (FM)");
-        CreateFileHeader(mxRK2File, "RK2 Midpoint New (FM)");
+        InformUserOfCodeType("RK2 Midpoint (FM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
     } else if (!_isFM) {
-        InformUserOfCodeType("RK2 Midpoint New (AFM)");
-        CreateFileHeader(mxRK2File, "RK2 Midpoint New (AFM)");
+        InformUserOfCodeType("RK2 Midpoint (AFM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
     }
 
     if (GV.GetEmailWhenCompleted()) {
@@ -618,52 +369,53 @@ void Numerical_Methods_Class::solveRK2() {
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
 
-        // Excludes the 0th and last spins as they will always be zero-valued (end, pinned spins)
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK2 Stage 1. Takes initial conditions as inputs.
+        // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
+        // RK4 Stage 1. Takes initial conditions as inputs.
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
 
-            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
-            int spinLHS = spin - 1, spinRHS = spin + 1;
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
 
-            // Effective field calculations for the target spin
-            double hX0 = hX(spin, _mx0[spinLHS], _mx0[spinRHS], t0);
-            double hY0 = hY(spin, _my0[spinLHS], _my0[spinRHS]);
-            double hZ0 = hZ(spin, _mz0[spinLHS], _mz0[spin], _mz0[spinRHS]);
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK0 = effectiveFieldX(site, _mx0[spinLHS], _mx0[spinRHS], t0);
+            double hyK0 = effectiveFieldY(site, _my0[spinLHS], _my0[spinRHS]);
+            double hzK0 = effectiveFieldZ(site, _mz0[spinLHS], _mz0[site], _mz0[spinRHS]);
 
-            // RK K-value calculations for the target spin
-            double mxK1 = mx(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX0, hY0, hZ0);
-            double myK1 = my(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX0, hY0, hZ0);
-            double mzK1 = mz(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX0, hY0, hZ0);
+            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK1 = magneticMomentX(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
+            double myK1 = magneticMomentY(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
+            double mzK1 = magneticMomentZ(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
                     
-            // Find (m0 + k1/2) for each spin, which is used in the next stage.
-            mx1[spin] = _mx0[spin] + _stepsizeHalf * mxK1;
-            my1[spin] = _my0[spin] + _stepsizeHalf * myK1;
-            mz1[spin] = _mz0[spin] + _stepsizeHalf * mzK1;
+            // Find (m0 + k1/2) for each site, which is used in the next stage.
+            mx1[site] = _mx0[site] + _stepsizeHalf * mxK1;
+            my1[site] = _my0[site] + _stepsizeHalf * myK1;
+            mz1[site] = _mz0[site] + _stepsizeHalf * mzK1;
         }
         // The estimations of the m-components values for the next iteration.
         std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
 
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
+        // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
 
-            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
-            int spinLHS = spin - 1, spinRHS = spin + 1;
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
 
-            // Effective field calculations for the target spin
-            double hX1 = hX(spin, mx1[spinLHS], mx1[spinRHS], t0);
-            double hY1 = hY(spin, my1[spinLHS], my1[spinRHS]);
-            double hZ1 = hZ(spin, mz1[spinLHS], mz1[spin], mz1[spinRHS]);
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK1 = effectiveFieldX(site, mx1[spinLHS], mx1[spinRHS], t0);
+            double hyK1 = effectiveFieldY(site, my1[spinLHS], my1[spinRHS]);
+            double hzK1 = effectiveFieldZ(site, mz1[spinLHS], mz1[site], mz1[spinRHS]);
 
-            // RK K-value calculations for the target spin
-            double mxK2 = mx(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX1, hY1, hZ1);
-            double myK2 = my(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX1, hY1, hZ1);
-            double mzK2 = mz(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX1, hY1, hZ1);
+            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK2 = magneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
+            double myK2 = magneticMomentY(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
+            double mzK2 = magneticMomentZ(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
 
-            mx2[spin] = _mx0[spin] + _stepsize * mxK2;
-            my2[spin] = _my0[spin] + _stepsize * myK2;
-            mz2[spin] = _mz0[spin] + _stepsize * mzK2;
+            mx2[site] = _mx0[site] + _stepsize * mxK2;
+            my2[site] = _my0[site] + _stepsize * myK2;
+            mz2[site] = _mz0[site] + _stepsize * mzK2;
 
             if (_shouldTrackMValues) {
-                double mIterationNorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
+                double mIterationNorm = sqrt(pow(mx2[site], 2) + pow(my2[site], 2) + pow(mz2[site], 2));
                 if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
             }
         }
@@ -673,19 +425,13 @@ void Numerical_Methods_Class::solveRK2() {
          * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
          * these between loop iterations sometimes led to incorrect values cropping up.
          */
-        _mx0.clear();
-        _my0.clear();
-        _mz0.clear();
-        mx1.clear();
-        my1.clear();
-        mz1.clear();
+        _mx0.clear(); _my0.clear(); _mz0.clear();
+        mx1.clear(); my1.clear(); mz1.clear();
 
         SaveDataToFile(mxRK2File, mx2, iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
-        _mx0 = mx2;
-        _my0 = my2;
-        _mz0 = mz2;
+        _mx0 = mx2; _my0 = my2; _mz0 = mz2;
 
         if (iteration == _forceStopAtIteration)
             exit(0);
@@ -710,19 +456,18 @@ void Numerical_Methods_Class::solveRK2() {
 void Numerical_Methods_Class::solveRK4() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
-    std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+    std::ofstream mxRK4File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
 
     if (_isFM) {
-        InformUserOfCodeType("RK4 Midpoint New (FM)");
-        CreateFileHeader(mxRK2File, "RK4 Midpoint New (FM)");
+        InformUserOfCodeType("RK4 Midpoint (FM)");
+        CreateFileHeader(mxRK4File, "RK4 Midpoint (FM)");
     } else if (!_isFM) {
-        InformUserOfCodeType("RK4 Midpoint New (AFM)");
-        CreateFileHeader(mxRK2File, "RK4 Midpoint New (AFM)");
+        InformUserOfCodeType("RK4 Midpoint (AFM)");
+        CreateFileHeader(mxRK4File, "RK4 Midpoint (AFM)");
     }
 
-    if (GV.GetEmailWhenCompleted()) {
+    if (GV.GetEmailWhenCompleted())
         CreateMetadata();
-    }
 
     progressbar bar(100);
 
@@ -736,123 +481,123 @@ void Numerical_Methods_Class::solveRK4() {
 
         double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf, t0h = _totalTime + _stepsize;
 
+        // Loops below exclude the 0th and last spins as they will always be zero-valued (end, pinned spins)
+
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
-        std::vector<double> mxK1Vec (GV.GetNumSpins() + 2, 0), myK1Vec (GV.GetNumSpins() + 2, 0), mzK1Vec (GV.GetNumSpins() + 2, 0);
+        std::vector<double> mxKSum (GV.GetNumSpins() + 2, 0), myKSum (GV.GetNumSpins() + 2, 0), mzKSum (GV.GetNumSpins() + 2, 0);
 
-        // Excludes the 0th and last spins as they will always be zero-valued (end, pinned spins)
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK4 Stage 1. Takes initial conditions as inputs.
+        // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
+        // RK4 Stage 1. Takes initial conditions as inputs.
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
 
-            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
-            int spinLHS = spin - 1, spinRHS = spin + 1;
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
 
-            // Effective field calculations for the target spin
-            double hX1 = hX(spin, _mx0[spinLHS], _mx0[spinRHS], t0);
-            double hY1 = hY(spin, _my0[spinLHS], _my0[spinRHS]);
-            double hZ1 = hZ(spin, _mz0[spinLHS], _mz0[spin], _mz0[spinRHS]);
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK1 = effectiveFieldX(site, _mx0[spinLHS], _mx0[spinRHS], t0);
+            double hyK1 = effectiveFieldY(site, _my0[spinLHS], _my0[spinRHS]);
+            double hzK1 = effectiveFieldZ(site, _mz0[spinLHS], _mz0[site], _mz0[spinRHS]);
 
-            // RK K-value calculations for the target spin
-            double mxK1 = mx(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX1, hY1, hZ1);
-            double myK1 = my(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX1, hY1, hZ1);
-            double mzK1 = mz(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX1, hY1, hZ1);
+            // RK4 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK1 = magneticMomentX(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
+            double myK1 = magneticMomentY(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
+            double mzK1 = magneticMomentZ(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
+            
+            mxKSum[site] += mxK1;
+            myKSum[site] += myK1;
+            mzKSum[site] += mzK1;
 
-            mxK1Vec[spin] = mxK1;
-            myK1Vec[spin] = myK1;
-            mzK1Vec[spin] = mzK1;
-
-            // Find (m0 + k1/2) for each spin, which is used in the next stage.
-            mx1[spin] = _mx0[spin] + _stepsizeHalf * mxK1;
-            my1[spin] = _my0[spin] + _stepsizeHalf * myK1;
-            mz1[spin] = _mz0[spin] + _stepsizeHalf * mzK1;
+            // Find (m0 + k1/2) for each site, which is used in the next stage.
+            mx1[site] = _mx0[site] + _stepsizeHalf * mxK1;
+            my1[site] = _my0[site] + _stepsizeHalf * myK1;
+            mz1[site] = _mz0[site] + _stepsizeHalf * mzK1;
         }
 
         std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
-        std::vector<double> mxK2Vec (GV.GetNumSpins() + 2, 0), myK2Vec (GV.GetNumSpins() + 2, 0), mzK2Vec (GV.GetNumSpins() + 2, 0);
 
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK4 Stage 2. Takes (m0 + k1/2) as inputs.
+        // RK4 Stage 2. Takes (m0 + k1/2) as inputs.
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
 
-            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
-            int spinLHS = spin - 1, spinRHS = spin + 1;
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
 
-            // Effective field calculations for the target spin
-            double hX2 = hX(spin, mx1[spinLHS], mx1[spinRHS], t0HalfStep);
-            double hY2 = hY(spin, my1[spinLHS], my1[spinRHS]);
-            double hZ2 = hZ(spin, mz1[spinLHS], mz1[spin], mz1[spinRHS]);
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK2 = effectiveFieldX(site, mx1[spinLHS], mx1[spinRHS], t0HalfStep);
+            double hyK2 = effectiveFieldY(site, my1[spinLHS], my1[spinRHS]);
+            double hzK2 = effectiveFieldZ(site, mz1[spinLHS], mz1[site], mz1[spinRHS]);
 
-            // RK K-value calculations for the target spin
-            double mxK2 = mx(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX2, hY2, hZ2);
-            double myK2 = my(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX2, hY2, hZ2);
-            double mzK2 = mz(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX2, hY2, hZ2);
+            // RK4 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK2 = magneticMomentX(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
+            double myK2 = magneticMomentY(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
+            double mzK2 = magneticMomentZ(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
 
-            mxK2Vec[spin] = mxK2;
-            myK2Vec[spin] = myK2;
-            mzK2Vec[spin] = mzK2;
+            mxKSum[site] += 2.0 * mxK2;
+            myKSum[site] += 2.0 * myK2;
+            mzKSum[site] += 2.0 * mzK2;
 
-            mx2[spin] = _mx0[spin] + _stepsizeHalf * mxK2;
-            my2[spin] = _my0[spin] + _stepsizeHalf * myK2;
-            mz2[spin] = _mz0[spin] + _stepsizeHalf * mzK2;
+            mx2[site] = _mx0[site] + _stepsizeHalf * mxK2;
+            my2[site] = _my0[site] + _stepsizeHalf * myK2;
+            mz2[site] = _mz0[site] + _stepsizeHalf * mzK2;
         }
 
         mx1.clear(); my1.clear(); mz1.clear(); // No longer required so memory can be freed
         std::vector<double> mx3 (GV.GetNumSpins() + 2, 0), my3 (GV.GetNumSpins() + 2, 0), mz3 (GV.GetNumSpins() + 2, 0);
-        std::vector<double> mxK3Vec (GV.GetNumSpins() + 2, 0), myK3Vec (GV.GetNumSpins() + 2, 0), mzK3Vec (GV.GetNumSpins() + 2, 0);
 
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK4 Stage 3. Takes (m0 + k2/2) as inputs.
+        // RK4 Stage 3. Takes (m0 + k2/2) as inputs.
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
 
-            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
-            int spinLHS = spin - 1, spinRHS = spin + 1;
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
 
-            // Effective field calculations for the target spin
-            double hX3 = hX(spin, mx2[spinLHS], mx2[spinRHS], t0HalfStep);
-            double hY3 = hY(spin, my2[spinLHS], my2[spinRHS]);
-            double hZ3 = hZ(spin, mz2[spinLHS], mz2[spin], mz2[spinRHS]);
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK3 = effectiveFieldX(site, mx2[spinLHS], mx2[spinRHS], t0HalfStep);
+            double hyK3 = effectiveFieldY(site, my2[spinLHS], my2[spinRHS]);
+            double hzK3 = effectiveFieldZ(site, mz2[spinLHS], mz2[site], mz2[spinRHS]);
 
-            // RK K-value calculations for the target spin
-            double mxK3 = mx(mx2[spin], my2[spin], mz2[spin], _gilbertVector[spin], hX3, hY3, hZ3);
-            double myK3 = my(mx2[spin], my2[spin], mz2[spin], _gilbertVector[spin], hX3, hY3, hZ3);
-            double mzK3 = mz(mx2[spin], my2[spin], mz2[spin], _gilbertVector[spin], hX3, hY3, hZ3);
+            // RK4 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK3 = magneticMomentX(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
+            double myK3 = magneticMomentY(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
+            double mzK3 = magneticMomentZ(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
 
-            mxK3Vec[spin] = mxK3;
-            myK3Vec[spin] = myK3;
-            mzK3Vec[spin] = mzK3;
+            mxKSum[site] += 2.0 * mxK3;
+            myKSum[site] += 2.0 * myK3;
+            mzKSum[site] += 2.0 * mzK3;
 
-            mx3[spin] = _mx0[spin] + _stepsize * mxK3;
-            my3[spin] = _my0[spin] + _stepsize * myK3;
-            mz3[spin] = _mz0[spin] + _stepsize * mzK3;
+            mx3[site] = _mx0[site] + _stepsize * mxK3;
+            my3[site] = _my0[site] + _stepsize * myK3;
+            mz3[site] = _mz0[site] + _stepsize * mzK3;
         }
 
         mx2.clear(); my2.clear(); mz2.clear(); // No longer required so memory can be freed
         std::vector<double> mx4 (GV.GetNumSpins() + 2, 0), my4 (GV.GetNumSpins() + 2, 0), mz4 (GV.GetNumSpins() + 2, 0);
-        std::vector<double> mxK (GV.GetNumSpins() + 2, 0), myK (GV.GetNumSpins() + 2, 0), mzK (GV.GetNumSpins() + 2, 0);
 
-        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
-            // RK4 Stage 4. Takes (m0 + k3) as inputs.
-            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
-            int spinLHS = spin - 1, spinRHS = spin + 1;
+        // RK4 Stage 4. Takes (m0 + k3) as inputs.
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
 
-            // Effective field calculations for the target spin
-            double hX4 = hX(spin, mx3[spinLHS], mx3[spinRHS], t0h);
-            double hY4 = hY(spin, my3[spinLHS], my3[spinRHS]);
-            double hZ4 = hZ(spin, mz3[spinLHS], mz3[spin], mz3[spinRHS]);
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
 
-            // RK K-value calculations for the target spin
-            double mxK4 = mx(mx3[spin], my3[spin], mz3[spin], _gilbertVector[spin], hX4, hY4, hZ4);
-            double myK4 = my(mx3[spin], my3[spin], mz3[spin], _gilbertVector[spin], hX4, hY4, hZ4);
-            double mzK4 = mz(mx3[spin], my3[spin], mz3[spin], _gilbertVector[spin], hX4, hY4, hZ4);
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hXK4 = effectiveFieldX(site, mx3[spinLHS], mx3[spinRHS], t0h);
+            double hYK4 = effectiveFieldY(site, my3[spinLHS], my3[spinRHS]);
+            double hZK4 = effectiveFieldZ(site, mz3[spinLHS], mz3[site], mz3[spinRHS]);
 
-            mxK[spin] = (mxK1Vec[spin] + 2.0 * mxK2Vec[spin] + 2.0 * mxK3Vec[spin] + mxK4) * (_stepsize / 6.0);
-            myK[spin] = (myK1Vec[spin] + 2.0 * myK2Vec[spin] + 2.0 * myK3Vec[spin] + myK4) * (_stepsize / 6.0);
-            mzK[spin] = (mzK1Vec[spin] + 2.0 * mzK2Vec[spin] + 2.0 * mzK3Vec[spin] + mzK4) * (_stepsize / 6.0);
+            // RK4 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK4 = magneticMomentX(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
+            double myK4 = magneticMomentY(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
+            double mzK4 = magneticMomentZ(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
 
-            mx4[spin] = _mx0[spin] + mxK[spin];
-            my4[spin] = _my0[spin] + myK[spin];
-            mz4[spin] = _mz0[spin] + mzK[spin];
+            mxKSum[site] += mxK4; mxKSum[site] *= (_stepsize / 6.0);
+            myKSum[site] += myK4; myKSum[site] *= (_stepsize / 6.0);
+            mzKSum[site] += mzK4; mzKSum[site] *= (_stepsize / 6.0);
+
+            mx4[site] = _mx0[site] + mxKSum[site];
+            my4[site] = _my0[site] + myKSum[site];
+            mz4[site] = _mz0[site] + mzKSum[site];
 
             if (_shouldTrackMValues) {
-                double mIterationNorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
+                double mIterationNorm = sqrt(pow(mx4[site], 2) + pow(my4[site], 2) + pow(mz4[site], 2));
                 if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
             }
         }
@@ -865,17 +610,14 @@ void Numerical_Methods_Class::solveRK4() {
          */
 
         // Clear all remaining vectors not required for writing processes
+        _mx0.clear(); _my0.clear(); _mz0.clear();
         mx3.clear(); my3.clear(); mz3.clear();
-        mxK1Vec.clear(); myK1Vec.clear(); mzK1Vec.clear();
-        mxK2Vec.clear(); myK2Vec.clear(); mzK2Vec.clear();
-        mxK3Vec.clear(); myK3Vec.clear(); mzK3Vec.clear();
+        mxKSum.clear(); myKSum.clear(); mzKSum.clear();
 
-        SaveDataToFile(mxRK2File, mx4, iteration);
+        SaveDataToFile(mxRK4File, mx4, iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
-        _mx0 = mx4;
-        _my0 = my4;
-        _mz0 = mz4;
+        _mx0 = mx4; _my0 = my4; _mz0 = mz4;
 
         if (iteration == _forceStopAtIteration)
             exit(0);
@@ -884,7 +626,7 @@ void Numerical_Methods_Class::solveRK4() {
     }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
-    mxRK2File.close();
+    mxRK4File.close();
 
     if (GV.GetEmailWhenCompleted()) {
         CreateMetadata(true);

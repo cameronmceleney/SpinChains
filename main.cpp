@@ -1,7 +1,6 @@
 #include "SpinChainEigenSolverClass.h"
 #include "Numerical_Methods_Class.h"
 #include "CommonLibs.h"
-#include "NewSolver.h"
 
 int main() {
 
@@ -24,6 +23,7 @@ int main() {
     GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2);
     GV.SetIsFerromagnetic(true);
+    std::string method = "RK2";
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier for the file: ";
@@ -38,17 +38,23 @@ int main() {
         std::cout << "Non-Uniform Exchange\n";
     }
 
+    #pragma clang diagnostic push
+    #pragma ide diagnostic ignored "UnreachableCode"
     if (findEigenvalues) {
         // std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
         SolverClass.CalculateEigenfrequencies(false);
     }
+    #pragma clang diagnostic pop
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "UnreachableCode"
+    #pragma clang diagnostic push
+    #pragma ide diagnostic ignored "UnreachableCode"
     else if (!findEigenvalues) {
         RK2_method_use.NMSetup();
-        RK2_method_use.solveRK4();
+        if (method == "RK2")
+            RK2_method_use.solveRK2();
+        else if (method == "RK4")
+            RK2_method_use.solveRK4();
     }
-#pragma clang diagnostic pop
+    #pragma clang diagnostic pop
     return 0;
 }
