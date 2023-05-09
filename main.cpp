@@ -1,13 +1,18 @@
 #include "SpinChainEigenSolverClass.h"
 #include "Numerical_Methods_Class.h"
 #include "CommonLibs.h"
-
+#include "NewSolver.h"
 
 int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 14 Oct 22)
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
+
+    NewSolver main_solver{};
+
+    // main_solver.solver_main();
+    // exit(0);
 
     // Select between eigenvalue derivation and numerical modelling
     bool findEigenvalues = false;
@@ -19,7 +24,7 @@ int main() {
     // Set global simulation parameters
     GV.SetAnisotropyField(0.0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(15811);
+    GV.SetNumSpins(500);
     GV.SetExchangeMinVal(132.5);
     GV.SetExchangeMaxVal(132.5);
     GV.SetGyromagneticConstant(28.8);

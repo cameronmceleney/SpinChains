@@ -19,13 +19,13 @@ void Numerical_Methods_Class::NMSetup() {
     _shouldDriveCease = false;
 
     // Core Parameters
-    double recordingInterval = 1e-15;
+    double recordingInterval = 1e-11;
     _drivingFreq = 15 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 20e-9;
-    _stepsize = 1e-16;
+    _maxSimTime = 0.7e-9;
+    _stepsize = 1e-15;
 
 
     // Shockwave Parameters

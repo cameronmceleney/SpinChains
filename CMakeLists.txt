@@ -30,4 +30,5 @@ add_executable(SpinChains
         SpinChainEigenSolverClass.cpp SpinChainEigenSolverClass.h
         Numerical_Methods_Class.cpp Numerical_Methods_Class.h
         GlobalVariables.cpp GlobalVariables.h
-        progressbar.hpp)
+        progressbar.hpp
+        NewSolver.cpp NewSolver.h)
