@@ -47,11 +47,7 @@ int main() {
 #pragma ide diagnostic ignored "UnreachableCode"
     else if (!findEigenvalues) {
         RK2_method_use.NMSetup();
-        if (GV.GetIsFerromagnetic()) {
-            RK2_method_use.RK2MidpointFM();
-            // RK2_method_use.RK2_new();
-        } else
-            RK2_method_use.RK2MidpointAFM();
+        RK2_method_use.solveRK4();
     }
 #pragma clang diagnostic pop
     return 0;

@@ -117,15 +117,9 @@ private:
 public:
 //  Dtype               Member Name                                Variable docstring
     void                NMSetup();                              // Assignment of all values required for the simulation
-    void                RK2OriginalFM();                        // Original RK2 method that I wrote. Left here as legacy working version of RK2. NOTE: heavily outdated
-    void                RK2MidpointFM();                        // Evaluate the given system, using the Runge-Kutta (2nd Order) method, for a ferromagnetic material
-
-    void                RK2MidpointFMForTesting();              // Debugging case for RK-2 (ferromagnetic) where a large number of output statements allow for all used parameters to be tracked throughout the simulation.
     void                RK4MidpointFM();                        // OUTDATED: Evaluate the given system, using the Runge-Kutta (4nd Order) method, for a ferromagnetic material
-    void                RK2MidpointAFM();                       // Evaluate the given system, using the Runge-Kutta (2nd Order) method, for an anti-ferromagnetic material
-
-    // test
-    void                RK2_new();
+    void                solveRK2();                             // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+    void                solveRK4();                             // Evaluate the given system, using the Runge-Kutta (4nd Order) method
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H

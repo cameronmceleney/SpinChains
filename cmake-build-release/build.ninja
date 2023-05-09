@@ -91,13 +91,6 @@ build CMakeFiles/SpinChains.dir/NewSolver.cpp.obj: CXX_COMPILER__SpinChains_Rele
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
 
-build CMakeFiles/SpinChains.dir/Legacy_Files/Numerical_Methods_Class_Legacy.cpp.obj: CXX_COMPILER__SpinChains_Release C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/Legacy$ Files/Numerical_Methods_Class_Legacy.cpp || cmake_object_order_depends_target_SpinChains
-  DEP_FILE = CMakeFiles\SpinChains.dir\Legacy_Files\Numerical_Methods_Class_Legacy.cpp.obj.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++23
-  INCLUDES = -I"C:/Program Files/eigen-3.4.0"
-  OBJECT_DIR = CMakeFiles\SpinChains.dir
-  OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir\Legacy_Files
-
 
 # =============================================================================
 # Link build statements for EXECUTABLE target SpinChains
@@ -106,7 +99,7 @@ build CMakeFiles/SpinChains.dir/Legacy_Files/Numerical_Methods_Class_Legacy.cpp.
 #############################################
 # Link the executable SpinChains.exe
 
-build SpinChains.exe: CXX_EXECUTABLE_LINKER__SpinChains_Release CMakeFiles/SpinChains.dir/main.cpp.obj CMakeFiles/SpinChains.dir/linspace.cpp.obj CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.obj CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.obj CMakeFiles/SpinChains.dir/GlobalVariables.cpp.obj CMakeFiles/SpinChains.dir/NewSolver.cpp.obj CMakeFiles/SpinChains.dir/Legacy_Files/Numerical_Methods_Class_Legacy.cpp.obj
+build SpinChains.exe: CXX_EXECUTABLE_LINKER__SpinChains_Release CMakeFiles/SpinChains.dir/main.cpp.obj CMakeFiles/SpinChains.dir/linspace.cpp.obj CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.obj CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.obj CMakeFiles/SpinChains.dir/GlobalVariables.cpp.obj CMakeFiles/SpinChains.dir/NewSolver.cpp.obj
   FLAGS = -O3 -DNDEBUG
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\SpinChains.dir

@@ -16,7 +16,7 @@ void Numerical_Methods_Class::NMSetup() {
 
     // Core Parameters
     double recordingInterval = .7e-11;
-    _drivingFreq = 62.8 * 1e9;
+    _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
@@ -516,7 +516,6 @@ double Numerical_Methods_Class::hX(int spin, double mx0LHS, double mx0RHS, doubl
 
     return hX0;
 }
-
 double Numerical_Methods_Class::hY(int spin, double my0LHS, double my0RHS) {
 
     double hY0;
@@ -529,7 +528,6 @@ double Numerical_Methods_Class::hY(int spin, double my0LHS, double my0RHS) {
     
     return hY0;
 }
-
 double Numerical_Methods_Class::hZ(int spin, double mz0LHS, double mz0MID, double mz0RHS) {
     double hZ0;
 
@@ -559,7 +557,6 @@ double Numerical_Methods_Class::mx(double mx0MID, double my0MID, double mz0MID, 
     
     return mxK;
 }
-
 double Numerical_Methods_Class::my(double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0) {
     
     double myK;
@@ -574,7 +571,6 @@ double Numerical_Methods_Class::my(double mx0MID, double my0MID, double mz0MID, 
     
     return myK;
 }
-
 double Numerical_Methods_Class::mz(double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0) {
     
     double mzK; 
@@ -590,7 +586,7 @@ double Numerical_Methods_Class::mz(double mx0MID, double my0MID, double mz0MID, 
     return mzK;
 }
 
-void Numerical_Methods_Class::RK2_new() {
+void Numerical_Methods_Class::solveRK2() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -690,6 +686,196 @@ void Numerical_Methods_Class::RK2_new() {
         _mx0 = mx2;
         _my0 = my2;
         _mz0 = mz2;
+
+        if (iteration == _forceStopAtIteration)
+            exit(0);
+
+        _totalTime += _stepsize;
+    }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
+
+    // Ensures files are closed; sometimes are left open if the writing process above fails
+    mxRK2File.close();
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata(true);
+    }
+
+    if (_shouldTrackMValues)
+        std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;
+
+    // Filename can be copy/pasted from C++ console to Python function's console.
+    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+}
+
+void Numerical_Methods_Class::solveRK4() {
+
+    // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
+    std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+
+    if (_isFM) {
+        InformUserOfCodeType("RK4 Midpoint New (FM)");
+        CreateFileHeader(mxRK2File, "RK4 Midpoint New (FM)");
+    } else if (!_isFM) {
+        InformUserOfCodeType("RK4 Midpoint New (AFM)");
+        CreateFileHeader(mxRK2File, "RK4 Midpoint New (AFM)");
+    }
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata();
+    }
+
+    progressbar bar(100);
+
+    for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
+
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
+            // Doesn't work on Windows due to different compiler. Doesn't work for fewer than 100 iterations
+            bar.update();
+
+        TestShockwaveConditions(iteration);
+
+        double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf, t0h = _totalTime + _stepsize;
+
+        // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
+        std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
+        std::vector<double> mxK1Vec (GV.GetNumSpins() + 2, 0), myK1Vec (GV.GetNumSpins() + 2, 0), mzK1Vec (GV.GetNumSpins() + 2, 0);
+
+        // Excludes the 0th and last spins as they will always be zero-valued (end, pinned spins)
+        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
+            // RK4 Stage 1. Takes initial conditions as inputs.
+
+            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
+            int spinLHS = spin - 1, spinRHS = spin + 1;
+
+            // Effective field calculations for the target spin
+            double hX1 = hX(spin, _mx0[spinLHS], _mx0[spinRHS], t0);
+            double hY1 = hY(spin, _my0[spinLHS], _my0[spinRHS]);
+            double hZ1 = hZ(spin, _mz0[spinLHS], _mz0[spin], _mz0[spinRHS]);
+
+            // RK K-value calculations for the target spin
+            double mxK1 = mx(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX1, hY1, hZ1);
+            double myK1 = my(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX1, hY1, hZ1);
+            double mzK1 = mz(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX1, hY1, hZ1);
+
+            mxK1Vec[spin] = mxK1;
+            myK1Vec[spin] = myK1;
+            mzK1Vec[spin] = mzK1;
+
+            // Find (m0 + k1/2) for each spin, which is used in the next stage.
+            mx1[spin] = _mx0[spin] + _stepsizeHalf * mxK1;
+            my1[spin] = _my0[spin] + _stepsizeHalf * myK1;
+            mz1[spin] = _mz0[spin] + _stepsizeHalf * mzK1;
+        }
+
+        std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
+        std::vector<double> mxK2Vec (GV.GetNumSpins() + 2, 0), myK2Vec (GV.GetNumSpins() + 2, 0), mzK2Vec (GV.GetNumSpins() + 2, 0);
+
+        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
+            // RK4 Stage 2. Takes (m0 + k1/2) as inputs.
+
+            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
+            int spinLHS = spin - 1, spinRHS = spin + 1;
+
+            // Effective field calculations for the target spin
+            double hX2 = hX(spin, mx1[spinLHS], mx1[spinRHS], t0HalfStep);
+            double hY2 = hY(spin, my1[spinLHS], my1[spinRHS]);
+            double hZ2 = hZ(spin, mz1[spinLHS], mz1[spin], mz1[spinRHS]);
+
+            // RK K-value calculations for the target spin
+            double mxK2 = mx(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX2, hY2, hZ2);
+            double myK2 = my(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX2, hY2, hZ2);
+            double mzK2 = mz(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX2, hY2, hZ2);
+
+            mxK2Vec[spin] = mxK2;
+            myK2Vec[spin] = myK2;
+            mzK2Vec[spin] = mzK2;
+
+            mx2[spin] = _mx0[spin] + _stepsizeHalf * mxK2;
+            my2[spin] = _my0[spin] + _stepsizeHalf * myK2;
+            mz2[spin] = _mz0[spin] + _stepsizeHalf * mzK2;
+        }
+
+        mx1.clear(); my1.clear(); mz1.clear(); // No longer required so memory can be freed
+        std::vector<double> mx3 (GV.GetNumSpins() + 2, 0), my3 (GV.GetNumSpins() + 2, 0), mz3 (GV.GetNumSpins() + 2, 0);
+        std::vector<double> mxK3Vec (GV.GetNumSpins() + 2, 0), myK3Vec (GV.GetNumSpins() + 2, 0), mzK3Vec (GV.GetNumSpins() + 2, 0);
+
+        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
+            // RK4 Stage 3. Takes (m0 + k2/2) as inputs.
+
+            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
+            int spinLHS = spin - 1, spinRHS = spin + 1;
+
+            // Effective field calculations for the target spin
+            double hX3 = hX(spin, mx2[spinLHS], mx2[spinRHS], t0HalfStep);
+            double hY3 = hY(spin, my2[spinLHS], my2[spinRHS]);
+            double hZ3 = hZ(spin, mz2[spinLHS], mz2[spin], mz2[spinRHS]);
+
+            // RK K-value calculations for the target spin
+            double mxK3 = mx(mx2[spin], my2[spin], mz2[spin], _gilbertVector[spin], hX3, hY3, hZ3);
+            double myK3 = my(mx2[spin], my2[spin], mz2[spin], _gilbertVector[spin], hX3, hY3, hZ3);
+            double mzK3 = mz(mx2[spin], my2[spin], mz2[spin], _gilbertVector[spin], hX3, hY3, hZ3);
+
+            mxK3Vec[spin] = mxK3;
+            myK3Vec[spin] = myK3;
+            mzK3Vec[spin] = mzK3;
+
+            mx3[spin] = _mx0[spin] + _stepsize * mxK3;
+            my3[spin] = _my0[spin] + _stepsize * myK3;
+            mz3[spin] = _mz0[spin] + _stepsize * mzK3;
+        }
+
+        mx2.clear(); my2.clear(); mz2.clear(); // No longer required so memory can be freed
+        std::vector<double> mx4 (GV.GetNumSpins() + 2, 0), my4 (GV.GetNumSpins() + 2, 0), mz4 (GV.GetNumSpins() + 2, 0);
+        std::vector<double> mxK (GV.GetNumSpins() + 2, 0), myK (GV.GetNumSpins() + 2, 0), mzK (GV.GetNumSpins() + 2, 0);
+
+        for (int spin = 1; spin <= GV.GetNumSpins(); spin++) {
+            // RK4 Stage 4. Takes (m0 + k3) as inputs.
+            // Relative to the current spin (spin); site to the left (LHS); site to the right (RHS)
+            int spinLHS = spin - 1, spinRHS = spin + 1;
+
+            // Effective field calculations for the target spin
+            double hX4 = hX(spin, mx3[spinLHS], mx3[spinRHS], t0h);
+            double hY4 = hY(spin, my3[spinLHS], my3[spinRHS]);
+            double hZ4 = hZ(spin, mz3[spinLHS], mz3[spin], mz3[spinRHS]);
+
+            // RK K-value calculations for the target spin
+            double mxK4 = mx(mx3[spin], my3[spin], mz3[spin], _gilbertVector[spin], hX4, hY4, hZ4);
+            double myK4 = my(mx3[spin], my3[spin], mz3[spin], _gilbertVector[spin], hX4, hY4, hZ4);
+            double mzK4 = mz(mx3[spin], my3[spin], mz3[spin], _gilbertVector[spin], hX4, hY4, hZ4);
+
+            mxK[spin] = (mxK1Vec[spin] + 2.0 * mxK2Vec[spin] + 2.0 * mxK3Vec[spin] + mxK4) * (_stepsize / 6.0);
+            myK[spin] = (myK1Vec[spin] + 2.0 * myK2Vec[spin] + 2.0 * myK3Vec[spin] + myK4) * (_stepsize / 6.0);
+            mzK[spin] = (mzK1Vec[spin] + 2.0 * mzK2Vec[spin] + 2.0 * mzK3Vec[spin] + mzK4) * (_stepsize / 6.0);
+
+            mx4[spin] = _mx0[spin] + mxK[spin];
+            my4[spin] = _my0[spin] + myK[spin];
+            mz4[spin] = _mz0[spin] + mzK[spin];
+
+            if (_shouldTrackMValues) {
+                double mIterationNorm = sqrt(pow(mx2[spin], 2) + pow(my2[spin], 2) + pow(mz2[spin], 2));
+                if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+            }
+        }
+
+        // Everything below here is part of the class method, but not the internal RK2 stage loops.
+
+        /**
+         * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
+         * these between loop iterations sometimes led to incorrect values cropping up.
+         */
+
+        // Clear all remaining vectors not required for writing processes
+        mx3.clear(); my3.clear(); mz3.clear();
+        mxK1Vec.clear(); myK1Vec.clear(); mzK1Vec.clear();
+        mxK2Vec.clear(); myK2Vec.clear(); mzK2Vec.clear();
+        mxK3Vec.clear(); myK3Vec.clear(); mzK3Vec.clear();
+
+        SaveDataToFile(mxRK2File, mx4, iteration);
+
+        //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
+        _mx0 = mx4;
+        _my0 = my4;
+        _mz0 = mz4;
 
         if (iteration == _forceStopAtIteration)
             exit(0);
