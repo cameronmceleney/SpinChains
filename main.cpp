@@ -9,11 +9,6 @@ int main() {
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class RK2_method_use{};
 
-    NewSolver main_solver{};
-
-    //main_solver.rework_old_solver();
-    //exit(0);
-
     // Select between eigenvalue derivation and numerical modelling
     bool findEigenvalues = false;
     GV.SetEmailWhenCompleted(false);
@@ -22,7 +17,7 @@ int main() {
     GV.SetCurrentTime(); 
 
     // Set global simulation parameters
-    GV.SetAnisotropyField(0.0);
+    GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(4000);
     GV.SetExchangeMinVal(43.5);

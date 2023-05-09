@@ -107,7 +107,7 @@ private:
     //test
     double hX (int spin, double mx0LHS, double mx0RHS, double t0);
     double hY (int spin, double my0LHS, double my0RHS);
-    double hZ (int spin, double mz0LHS, double mz0RHS);
+    double hZ (int spin, double mz0LHS, double mz0MID, double mz0RHS);
     double mx (double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0);
     double my (double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0);
     double mz (double mx0MID, double my0MID, double mz0MID, double gilbert, double hX0, double hY0, double hZ0);

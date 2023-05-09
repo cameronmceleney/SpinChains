@@ -14,19 +14,18 @@ void Numerical_Methods_Class::NMSetup() {
     // Drive Flags
     _centralDrive = false;
     _dualDrive = false;
-    _lhsDrive = false;
+    _lhsDrive = true;
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
     // Core Parameters
     double recordingInterval = .7e-11;
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 62.8 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
     _maxSimTime = 0.7e-9;
     _stepsize = 1e-15;
-
 
     // Shockwave Parameters
     _iterStartShock = 0.0;
@@ -1173,34 +1172,60 @@ void Numerical_Methods_Class::RK4MidpointFM() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-
-
-
 double Numerical_Methods_Class::hX(int spin, double mx0LHS, double mx0RHS, double t0) {
 
     double hX0; // The effective field (H_eff) component acting upon each spin
 
-    if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
-        // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-        if (_hasStaticDrive)
-            hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField;
-        else if (!_hasStaticDrive)
-            hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField * cos(_drivingAngFreq * t0);
-    } else
-        // All spins along x which are not within the driving region
-        hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS;
+    if (_isFM) {
+        if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
+            // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
+            if (_hasStaticDrive)
+                hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField;
+            else if (!_hasStaticDrive)
+                hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS +
+                      _dynamicBiasField * cos(_drivingAngFreq * t0);
+        } else
+            // All spins along x which are not within the driving region
+            hX0 = _exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS;
+    } else if (!_isFM) {
+        if (spin >= _drivingRegionLHS && spin <= _drivingRegionRHS) {
+            // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
+            if (_hasStaticDrive)
+                hX0 = -1.0 * (_exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS + _dynamicBiasField);
+            else if (!_hasStaticDrive)
+                hX0 = -1.0 * (_exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS) + _dynamicBiasField * cos(_drivingAngFreq * t0);
+        } else
+            // All spins along x which are not within the driving region
+            hX0 = -1.0 * (_exchangeVec[spin - 1] * mx0LHS + _exchangeVec[spin] * mx0RHS);
+    }
 
     return hX0;
 }
 
 double Numerical_Methods_Class::hY(int spin, double my0LHS, double my0RHS) {
-    double hY0 = _exchangeVec[spin - 1] * my0LHS + _exchangeVec[spin] * my0RHS;
+
+    double hY0;
+
+    if (_isFM) {
+        hY0 = _exchangeVec[spin - 1] * my0LHS + _exchangeVec[spin] * my0RHS;
+    } else if (!_isFM) {
+        hY0 = -1.0 * (_exchangeVec[spin - 1] * my0LHS + _exchangeVec[spin] * my0RHS);
+    }
     
     return hY0;
 }
 
-double Numerical_Methods_Class::hZ(int spin, double mz0LHS, double mz0RHS) {
-    double hZ0 = _exchangeVec[spin - 1] * mz0LHS + _exchangeVec[spin] * mz0RHS + GV.GetStaticBiasField();
+double Numerical_Methods_Class::hZ(int spin, double mz0LHS, double mz0MID, double mz0RHS) {
+    double hZ0;
+
+    if (_isFM) {
+        hZ0 = _exchangeVec[spin - 1] * mz0LHS + _exchangeVec[spin] * mz0RHS + GV.GetStaticBiasField();
+    } else if (!_isFM) {
+        if (mz0MID > 0)
+            hZ0 = GV.GetStaticBiasField() + _anisotropyField - (_exchangeVec[spin - 1] * mz0LHS + _exchangeVec[spin] * mz0RHS);
+        else if (mz0MID < 0)
+            hZ0 = GV.GetStaticBiasField() - _anisotropyField - (_exchangeVec[spin - 1] * mz0LHS + _exchangeVec[spin] * mz0RHS);
+    }
     
     return hZ0;
 }
@@ -1251,18 +1276,23 @@ double Numerical_Methods_Class::mz(double mx0MID, double my0MID, double mz0MID, 
 }
 
 void Numerical_Methods_Class::RK2_new() {
-    
-    progressbar bar(100);
-
-    InformUserOfCodeType("RK2 Midpoint New (FM)");
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
-    CreateFileHeader(mxRK2File, "RK2 Midpoint New (FM)");
+
+    if (_isFM) {
+        InformUserOfCodeType("RK2 Midpoint New (FM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint New (FM)");
+    } else if (!_isFM) {
+        InformUserOfCodeType("RK2 Midpoint New (AFM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint New (AFM)");
+    }
 
     if (GV.GetEmailWhenCompleted()) {
         CreateMetadata();
     }
+
+    progressbar bar(100);
     
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -1287,7 +1317,7 @@ void Numerical_Methods_Class::RK2_new() {
             // Effective field calculations for the target spin
             double hX0 = hX(spin, _mx0[spinLHS], _mx0[spinRHS], t0);
             double hY0 = hY(spin, _my0[spinLHS], _my0[spinRHS]);
-            double hZ0 = hZ(spin, _mz0[spinLHS], _mz0[spinRHS]);
+            double hZ0 = hZ(spin, _mz0[spinLHS], _mz0[spin], _mz0[spinRHS]);
 
             // RK K-value calculations for the target spin
             double mxK1 = mx(_mx0[spin], _my0[spin], _mz0[spin], _gilbertVector[spin], hX0, hY0, hZ0);
@@ -1310,7 +1340,7 @@ void Numerical_Methods_Class::RK2_new() {
             // Effective field calculations for the target spin
             double hX1 = hX(spin, mx1[spinLHS], mx1[spinRHS], t0);
             double hY1 = hY(spin, my1[spinLHS], my1[spinRHS]);
-            double hZ1 = hZ(spin, mz1[spinLHS], mz1[spinRHS]);
+            double hZ1 = hZ(spin, mz1[spinLHS], mz1[spin], mz1[spinRHS]);
 
             // RK K-value calculations for the target spin
             double mxK2 = mx(mx1[spin], my1[spin], mz1[spin], _gilbertVector[spin], hX1, hY1, hZ1);
