@@ -6,6 +6,7 @@ void Numerical_Methods_Class::NMSetup() {
     _isFM = GV.GetIsFerromagnetic();
     _shouldTrackMValues = true;
     _useLLG = true;
+    _useDipolar = true;
 
     // Drive Flags
     _centralDrive = false;
@@ -238,21 +239,53 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
     }
 }
 
-double Numerical_Methods_Class::effectiveFieldX(int site, double mxLHS, double mxRHS, double current_time) {
+std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(double magneticMoment1, double magneticMoment2,
+                                                                  int originSite, int targetSite) {
+    double exchangeStiffness = 5.3e-17;
+    double latticeConstant = sqrt(exchangeStiffness / _exchangeVec[originSite - 1]);
+
+    std::vector<double> positionVector = {std::abs(targetSite - originSite)* latticeConstant, 0.0, 0.0};
+    double positionVectorMagnitude = std::sqrt(positionVector[0] * positionVector[0] + positionVector[1] * positionVector[1] + positionVector[2] * positionVector[2]);
+
+    double mu1_dot_r12 = magneticMoment1 * positionVector[0];
+    double mu2_dot_r12 = magneticMoment2 * positionVector[0];
+    double mu1_dot_mu2 = magneticMoment1 * magneticMoment2;
+
+    std::vector<double> hDipoleTerms(3);
+    double gConstant = (_permFreeSpace / (4.0 * M_PI * std::pow(positionVectorMagnitude, 5)));
+    for (int i = 1; i < 2; i++) {
+        hDipoleTerms[i] =
+                gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]);
+    }
+    return hDipoleTerms;
+}
+
+double Numerical_Methods_Class::EffectiveFieldX(int site, double mxLHS, double mxMID, double mxRHS, double current_time) {
     // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
     double hx;
+
+    // Calculate the dipole-dipole field acting upon the site
+    double hDipoleTerms[3];
+    if (_useDipolar) {
+        std::vector<double> DipoleFunctionOut1 = DipoleDipoleCoupling(mxMID, mxLHS, site, site-1);
+        std::vector<double> DipoleFunctionOut2 = DipoleDipoleCoupling(mxMID, mxRHS, site, site+1);
+        hDipoleTerms[0] = DipoleFunctionOut1[0] + DipoleFunctionOut2[0];
+        hDipoleTerms[1] = DipoleFunctionOut1[1] + DipoleFunctionOut2[1];
+        hDipoleTerms[2] = DipoleFunctionOut1[2] + DipoleFunctionOut2[2];
+    } else
+        hDipoleTerms[0] = hDipoleTerms[1] = hDipoleTerms[2] = 0.0;
 
     if (_isFM) {
         if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             if (_hasStaticDrive)
-                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + _dynamicBiasField;
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + hDipoleTerms[0] + _dynamicBiasField;
             else if (!_hasStaticDrive)
-                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS +
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + hDipoleTerms[0] +
                       _dynamicBiasField * cos(_drivingAngFreq * current_time);
         } else
             // All spins along x which are not within the driving region
-            hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS;
+            hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + hDipoleTerms[0];
     } else if (!_isFM) {
         if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
@@ -267,7 +300,7 @@ double Numerical_Methods_Class::effectiveFieldX(int site, double mxLHS, double m
 
     return hx;
 }
-double Numerical_Methods_Class::effectiveFieldY(int site, double myLHS, double myRHS) {
+double Numerical_Methods_Class::EffectiveFieldY(int site, double myLHS, double myMID, double myRHS) {
     // The effective field (H_eff) y-component acting upon a given magnetic moment (site), abbreviated to 'hy'
     double hy;
 
@@ -279,7 +312,7 @@ double Numerical_Methods_Class::effectiveFieldY(int site, double myLHS, double m
     
     return hy;
 }
-double Numerical_Methods_Class::effectiveFieldZ(int site, double mzLHS, double mzMID, double mzRHS) {
+double Numerical_Methods_Class::EffectiveFieldZ(int site, double mzLHS, double mzMID, double mzRHS) {
     // The effective field (H_eff) z-component acting upon a given magnetic moment (site), abbreviated to 'hz'
     double hz;
 
@@ -295,7 +328,7 @@ double Numerical_Methods_Class::effectiveFieldZ(int site, double mzLHS, double m
     return hz;
 }
 
-double Numerical_Methods_Class::magneticMomentX(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
+double Numerical_Methods_Class::MagneticMomentX(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
     
     double mxK; // The magnetic moment component along the x-direction for the first stage of RK2
     
@@ -309,7 +342,7 @@ double Numerical_Methods_Class::magneticMomentX(int site, double mxMID, double m
     
     return mxK;
 }
-double Numerical_Methods_Class::magneticMomentY(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
+double Numerical_Methods_Class::MagneticMomentY(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
     double myK;
     
     if (_useLLG) {
@@ -322,7 +355,7 @@ double Numerical_Methods_Class::magneticMomentY(int site, double mxMID, double m
     
     return myK;
 }
-double Numerical_Methods_Class::magneticMomentZ(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
+double Numerical_Methods_Class::MagneticMomentZ(int site, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID) {
     
     double mzK; 
     
@@ -337,7 +370,7 @@ double Numerical_Methods_Class::magneticMomentZ(int site, double mxMID, double m
     return mzK;
 }
 
-void Numerical_Methods_Class::solveRK2() {
+void Numerical_Methods_Class::SolveRK2() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -377,14 +410,14 @@ void Numerical_Methods_Class::solveRK2() {
             int spinLHS = site - 1, spinRHS = site + 1;
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK0 = effectiveFieldX(site, _mx0[spinLHS], _mx0[spinRHS], t0);
-            double hyK0 = effectiveFieldY(site, _my0[spinLHS], _my0[spinRHS]);
-            double hzK0 = effectiveFieldZ(site, _mz0[spinLHS], _mz0[site], _mz0[spinRHS]);
+            double hxK0 = EffectiveFieldX(site, _mx0[spinLHS], _mx0[site], _mx0[spinRHS], t0);
+            double hyK0 = EffectiveFieldY(site, _my0[spinLHS], _my0[site], _my0[spinRHS]);
+            double hzK0 = EffectiveFieldZ(site, _mz0[spinLHS], _mz0[site], _mz0[spinRHS]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK1 = magneticMomentX(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
-            double myK1 = magneticMomentY(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
-            double mzK1 = magneticMomentZ(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
+            double mxK1 = MagneticMomentX(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
+            double myK1 = MagneticMomentY(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
+            double mzK1 = MagneticMomentZ(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
                     
             // Find (m0 + k1/2) for each site, which is used in the next stage.
             mx1[site] = _mx0[site] + _stepsizeHalf * mxK1;
@@ -401,14 +434,14 @@ void Numerical_Methods_Class::solveRK2() {
             int spinLHS = site - 1, spinRHS = site + 1;
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK1 = effectiveFieldX(site, mx1[spinLHS], mx1[spinRHS], t0);
-            double hyK1 = effectiveFieldY(site, my1[spinLHS], my1[spinRHS]);
-            double hzK1 = effectiveFieldZ(site, mz1[spinLHS], mz1[site], mz1[spinRHS]);
+            double hxK1 = EffectiveFieldX(site, mx1[spinLHS], mx1[site], mx1[spinRHS], t0);
+            double hyK1 = EffectiveFieldY(site, my1[spinLHS], my1[site], my1[spinRHS]);
+            double hzK1 = EffectiveFieldZ(site, mz1[spinLHS], mz1[site], mz1[spinRHS]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK2 = magneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
-            double myK2 = magneticMomentY(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
-            double mzK2 = magneticMomentZ(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
+            double mxK2 = MagneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
+            double myK2 = MagneticMomentY(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
+            double mzK2 = MagneticMomentZ(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
 
             mx2[site] = _mx0[site] + _stepsize * mxK2;
             my2[site] = _my0[site] + _stepsize * myK2;
@@ -453,7 +486,7 @@ void Numerical_Methods_Class::solveRK2() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-void Numerical_Methods_Class::solveRK4() {
+void Numerical_Methods_Class::SolveRK4() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK4File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -495,14 +528,14 @@ void Numerical_Methods_Class::solveRK4() {
             int spinLHS = site - 1, spinRHS = site + 1;
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK1 = effectiveFieldX(site, _mx0[spinLHS], _mx0[spinRHS], t0);
-            double hyK1 = effectiveFieldY(site, _my0[spinLHS], _my0[spinRHS]);
-            double hzK1 = effectiveFieldZ(site, _mz0[spinLHS], _mz0[site], _mz0[spinRHS]);
+            double hxK1 = EffectiveFieldX(site, _mx0[spinLHS], _mx0[site], _mx0[spinRHS], t0);
+            double hyK1 = EffectiveFieldY(site, _my0[spinLHS], _my0[site], _my0[spinRHS]);
+            double hzK1 = EffectiveFieldZ(site, _mz0[spinLHS], _mz0[site], _mz0[spinRHS]);
 
             // RK4 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK1 = magneticMomentX(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
-            double myK1 = magneticMomentY(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
-            double mzK1 = magneticMomentZ(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
+            double mxK1 = MagneticMomentX(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
+            double myK1 = MagneticMomentY(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
+            double mzK1 = MagneticMomentZ(site, _mx0[site], _my0[site], _mz0[site], hxK1, hyK1, hzK1);
             
             mxKSum[site] += mxK1;
             myKSum[site] += myK1;
@@ -523,14 +556,14 @@ void Numerical_Methods_Class::solveRK4() {
             int spinLHS = site - 1, spinRHS = site + 1;
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK2 = effectiveFieldX(site, mx1[spinLHS], mx1[spinRHS], t0HalfStep);
-            double hyK2 = effectiveFieldY(site, my1[spinLHS], my1[spinRHS]);
-            double hzK2 = effectiveFieldZ(site, mz1[spinLHS], mz1[site], mz1[spinRHS]);
+            double hxK2 = EffectiveFieldX(site, mx1[spinLHS], mx1[site], mx1[spinRHS], t0HalfStep);
+            double hyK2 = EffectiveFieldY(site, my1[spinLHS], my1[site], my1[spinRHS]);
+            double hzK2 = EffectiveFieldZ(site, mz1[spinLHS], mz1[site], mz1[spinRHS]);
 
             // RK4 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK2 = magneticMomentX(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
-            double myK2 = magneticMomentY(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
-            double mzK2 = magneticMomentZ(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
+            double mxK2 = MagneticMomentX(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
+            double myK2 = MagneticMomentY(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
+            double mzK2 = MagneticMomentZ(site, mx1[site], my1[site], mz1[site], hxK2, hyK2, hzK2);
 
             mxKSum[site] += 2.0 * mxK2;
             myKSum[site] += 2.0 * myK2;
@@ -551,14 +584,14 @@ void Numerical_Methods_Class::solveRK4() {
             int spinLHS = site - 1, spinRHS = site + 1;
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK3 = effectiveFieldX(site, mx2[spinLHS], mx2[spinRHS], t0HalfStep);
-            double hyK3 = effectiveFieldY(site, my2[spinLHS], my2[spinRHS]);
-            double hzK3 = effectiveFieldZ(site, mz2[spinLHS], mz2[site], mz2[spinRHS]);
+            double hxK3 = EffectiveFieldX(site, mx2[spinLHS], mx2[site],mx2[spinRHS], t0HalfStep);
+            double hyK3 = EffectiveFieldY(site, my2[spinLHS], my2[site], my2[spinRHS]);
+            double hzK3 = EffectiveFieldZ(site, mz2[spinLHS], mz2[site], mz2[spinRHS]);
 
             // RK4 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK3 = magneticMomentX(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
-            double myK3 = magneticMomentY(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
-            double mzK3 = magneticMomentZ(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
+            double mxK3 = MagneticMomentX(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
+            double myK3 = MagneticMomentY(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
+            double mzK3 = MagneticMomentZ(site, mx2[site], my2[site], mz2[site], hxK3, hyK3, hzK3);
 
             mxKSum[site] += 2.0 * mxK3;
             myKSum[site] += 2.0 * myK3;
@@ -579,14 +612,14 @@ void Numerical_Methods_Class::solveRK4() {
             int spinLHS = site - 1, spinRHS = site + 1;
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hXK4 = effectiveFieldX(site, mx3[spinLHS], mx3[spinRHS], t0h);
-            double hYK4 = effectiveFieldY(site, my3[spinLHS], my3[spinRHS]);
-            double hZK4 = effectiveFieldZ(site, mz3[spinLHS], mz3[site], mz3[spinRHS]);
+            double hXK4 = EffectiveFieldX(site, mx3[spinLHS], mx3[site], mx3[spinRHS], t0h);
+            double hYK4 = EffectiveFieldY(site, my3[spinLHS], my3[site], my3[spinRHS]);
+            double hZK4 = EffectiveFieldZ(site, mz3[spinLHS], mz3[site], mz3[spinRHS]);
 
             // RK4 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK4 = magneticMomentX(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
-            double myK4 = magneticMomentY(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
-            double mzK4 = magneticMomentZ(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
+            double mxK4 = MagneticMomentX(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
+            double myK4 = MagneticMomentY(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
+            double mzK4 = MagneticMomentZ(site, mx3[site], my3[site], mz3[site], hXK4, hYK4, hZK4);
 
             mxKSum[site] += mxK4; mxKSum[site] *= (_stepsize / 6.0);
             myKSum[site] += myK4; myKSum[site] *= (_stepsize / 6.0);

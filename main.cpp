@@ -20,7 +20,7 @@ int main() {
     GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(4000);
     GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetExchangeMaxVal(43.5);
     GV.SetGyromagneticConstant(29.2);
     GV.SetIsFerromagnetic(true);
     std::string method = "RK2";
@@ -51,9 +51,9 @@ int main() {
     else if (!findEigenvalues) {
         RK2_method_use.NMSetup();
         if (method == "RK2")
-            RK2_method_use.solveRK2();
+            RK2_method_use.SolveRK2();
         else if (method == "RK4")
-            RK2_method_use.solveRK4();
+            RK2_method_use.SolveRK4();
     }
     #pragma clang diagnostic pop
     return 0;

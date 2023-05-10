@@ -49,6 +49,7 @@ private:
     int                 _numSpinsInChain;                          // The number of spin sites in the spin chain to be simulated.
     double              _recordingInterval;
 
+    double              _permFreeSpace = 1.25663706212e-6;         // Permeability of free space [H/m] (mu_0)
     double              _shockwaveGradientTime;                    // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[ps] when stepsize=1e-15.
     double              _shockwaveInitialStrength;                 // Initial strength of the shockwave before _shockwaveScaling occurs. (Default: = _dynamicBiasField)
     double              _shockwaveMax;                             // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
@@ -79,7 +80,7 @@ private:
 
     bool                _shouldTrackMValues;                       // Monitor the norm of all the m-values; if approx. 1.0 then the error is likely to be massive; discard that dataset.
     bool                _useLLG;                                   // Uses the Torque equation components if (false).
-
+    bool                _useDipolar;
     // ######## Private Functions ########
     std::vector<double> _exchangeVec;                              // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};
@@ -105,19 +106,24 @@ private:
     void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);
     void                TestShockwaveConditions(double iteration);
 
-    double              effectiveFieldX (int spin, double mxLHS, double mxRHS, double current_time);
-    double              effectiveFieldY (int spin, double myLHS, double myRHS);
-    double              effectiveFieldZ (int spin, double mzLHS, double mzMID, double mzRHS);
+    std::vector<double> DipoleDipoleCoupling(double magneticMoment1, double magneticMoment2,
+                                                                  int originSite, int targetSite);
+    double              EffectiveFieldX (int spin, double mxLHS, double mxMID, double mxRHS, double current_time);
+    double              EffectiveFieldY (int spin, double myLHS, double myMID, double myRHS);
+    double              EffectiveFieldZ (int spin, double mzLHS, double mzMID, double mzRHS);
 
-    double              magneticMomentX (int spin, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID);
-    double              magneticMomentY (int spin, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID);
-    double              magneticMomentZ (int spin, double mxMID, double myMID, double mzMID, double hxMID, double hyMID, double hzMID);
+    double              MagneticMomentX (int spin, double mxMID, double myMID, double mzMID,
+                                         double hxMID, double hyMID, double hzMID);
+    double              MagneticMomentY (int spin, double mxMID, double myMID, double mzMID,
+                                         double hxMID, double hyMID, double hzMID);
+    double              MagneticMomentZ (int spin, double mxMID, double myMID, double mzMID,
+                                         double hxMID, double hyMID, double hzMID);
 
 public:
 //  Dtype               Member Name                                Variable docstring
     void                NMSetup();                                 // Assignment of all values required for the simulation
-    void                solveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    void                solveRK4();                                // Evaluate the given system, using the Runge-Kutta (4th Order) method
+    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+    void                SolveRK4();                                // Evaluate the given system, using the Runge-Kutta (4th Order) method
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
