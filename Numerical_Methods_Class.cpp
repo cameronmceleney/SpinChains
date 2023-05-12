@@ -265,13 +265,19 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
         double positionVector_cubed = std::pow(positionVector_norm, 3);
         double positionVector_fifth = std::pow(positionVector_norm, 5);
 
+        double mu1_dot_r12 = mxTerms[1] * positionVector[0];
+        double mu2_dot_r12 = mxTerms[i] * positionVector[0];
+        double mu1_dot_mu2 = mxTerms[1] * mxTerms[i];
+
         double mu2DotPosition = mxTerms[i] * positionVector[0] + myTerms[i] * positionVector[1] + mzTerms[i] * positionVector[2];
 
         double gConstant = _permFreeSpace / (4.0 * M_PI);
-        std::vector<double> DipoleValues = {gConstant* ((3 * positionVector[0] * mu2DotPosition)/positionVector_fifth - mxTerms[i]/positionVector_cubed),
-                                            gConstant* ((3 * positionVector[1] * mu2DotPosition)/positionVector_fifth - myTerms[i]/positionVector_cubed),
-                                            gConstant* ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)};
-
+        // std::vector<double> DipoleValues = {gConstant* ((3 * positionVector[0] * mu2DotPosition)/positionVector_fifth - mxTerms[i]/positionVector_cubed),
+        //                                     gConstant* ((3 * positionVector[1] * mu2DotPosition)/positionVector_fifth - myTerms[i]/positionVector_cubed),
+        //                                     gConstant* ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)};
+        std::vector<double> DipoleValues = { gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]),
+                                              gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]),
+                                               gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i])};
         totalDipoleTerms[0] += DipoleValues[0];
         totalDipoleTerms[1] += DipoleValues[1];
         totalDipoleTerms[2] += DipoleValues[2];
