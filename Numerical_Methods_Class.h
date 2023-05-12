@@ -106,11 +106,11 @@ private:
     void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);
     void                TestShockwaveConditions(double iteration);
 
-    std::vector<double> DipoleDipoleCoupling(double magneticMoment1, double magneticMoment2,
-                                                                  int originSite, int targetSite);
-    double              EffectiveFieldX (int spin, double mxLHS, double mxMID, double mxRHS, double current_time);
-    double              EffectiveFieldY (int spin, double myLHS, double myMID, double myRHS);
-    double              EffectiveFieldZ (int spin, double mzLHS, double mzMID, double mzRHS);
+    std::vector<double> DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
+                                             std::vector<double> mzTerms, std::vector<int> sitePositions);
+    double              EffectiveFieldX (int spin, double mxLHS, double mxMID, double mxRHS, double dipoleTerm, double current_time);
+    double              EffectiveFieldY (int spin, double myLHS, double myMID, double myRHS, double dipoleTerm);
+    double              EffectiveFieldZ (int spin, double mzLHS, double mzMID, double mzRHS, double dipoleTerm);
 
     double              MagneticMomentX (int spin, double mxMID, double myMID, double mzMID,
                                          double hxMID, double hyMID, double hzMID);
@@ -122,8 +122,7 @@ private:
 public:
 //  Dtype               Member Name                                Variable docstring
     void                NMSetup();                                 // Assignment of all values required for the simulation
-    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    void                SolveRK4();                                // Evaluate the given system, using the Runge-Kutta (4th Order) method
+    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid                SolveRK4();                                // Evaluate the given system, using the Runge-Kutta (4th Order) method
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
