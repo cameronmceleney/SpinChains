@@ -6,7 +6,8 @@ void Numerical_Methods_Class::NMSetup() {
     _isFM = GV.GetIsFerromagnetic();
     _shouldTrackMValues = true;
     _useLLG = true;
-    _useDipolar = true;
+    _useDipolar = false;
+    _useBilayer = false;
 
     // Drive Flags
     _centralDrive = false;
@@ -196,7 +197,7 @@ void Numerical_Methods_Class::FinalChecks() {
 void Numerical_Methods_Class::SetInitialMagneticMoments() {
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
-    std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
+    std::vector<double> mxInitCond(GV.GetNumSpins(), _mx0Init), myInitCond(GV.GetNumSpins(), _my0Init), mzInitCond(GV.GetNumSpins(), _mz0Init);
     // mxInitCond[0] = _mxInit; // Only perturb initial spin
 
     /*
@@ -238,6 +239,39 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
         _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
     }
 }
+
+void Numerical_Methods_Class::SetInitialMagneticMomentsMultilayer(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
+                                                                  int layer, double mxInit, double myInit, double mzInit) {
+    layer -= 1;
+    // mxInitCond[0] = _mxInit; // Only perturb initial spin
+
+    /*
+    for (int i = 0; i < GV.GetNumSpins(); i++) {
+        mxInitCond[i] = 0.003162277;
+        // myInitCond[i] = 0.0;
+        mzInitCond[i] = 0.999994999;
+    }
+    */
+
+    for (int i = 0; i < GV.GetNumSpins(); i++) {
+        nestedNestedVector[layer].push_back({mxInit, myInit, mzInit});
+    }
+
+    // This zero is the (N+1)th spin on the RHS of the chain
+    nestedNestedVector[layer].push_back({0.0, 0.0, 0.0});
+
+}
+std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::initializeNestedNestedVector(int numLayers, bool includeEnd) {
+    std::vector<std::vector<std::vector<double>>> innerNestedVector;
+    for (int j = 0; j < numLayers; j++) {
+        std::vector<std::vector<double>> innerVector;
+        std::vector<double> innermostVector = {0.0, 0.0, 0.0};
+        innerVector.push_back(innermostVector);
+        innerNestedVector.push_back(innerVector);
+    }
+    return innerNestedVector;
+}
+
 
 std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                                   std::vector<double> mzTerms, std::vector<int> sitePositions) {
@@ -568,6 +602,178 @@ void Numerical_Methods_Class::SolveRK2() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
+void Numerical_Methods_Class::SolveRK2Bilayer() {
+
+    // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
+    std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+
+    if (_isFM) {
+        InformUserOfCodeType("RK2 Midpoint (FM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
+    } else if (!_isFM) {
+        InformUserOfCodeType("RK2 Midpoint (AFM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
+    }
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata();
+    }
+
+    progressbar bar(100);
+
+    // Initialise mapping
+    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested1;
+
+    // Assign name to nested-nested vector
+    mValsNested1["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
+
+    // Assign name to nested-nested vector
+    std::vector<std::vector<std::vector<double>>> m0Nest = mValsNested1["nestedNestedVector1"];
+
+    // Invoke method to set initial magnetic moments. To call: mValsNest[layer][site][component]
+    SetInitialMagneticMomentsMultilayer(m0Nest, 1, 0, 0 , 1);
+
+    for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
+
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
+            // Doesn't work on Windows due to different compiler. Doesn't work for fewer than 100 iterations
+            bar.update();
+
+        TestShockwaveConditions(iteration);
+
+        double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf;
+
+        // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
+        std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested2;
+        mValsNested2["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
+        std::vector<std::vector<std::vector<double>>> m1Nest = mValsNested2["nestedNestedVector1"];
+        SetInitialMagneticMomentsMultilayer(m1Nest, 1, 0, 0 , 0);
+
+        // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
+        // RK4 Stage 1. Takes initial conditions as inputs.
+
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
+
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
+
+            double dipoleX, dipoleY, dipoleZ;
+            if (_useDipolar) {
+                std::vector<double> mxTermsForDipole = {m0Nest[0][spinLHS][0], m0Nest[0][site][0], m0Nest[0][spinRHS][0]};
+                std::vector<double> myTermsForDipole = {m0Nest[0][spinLHS][1], m0Nest[0][site][1], m0Nest[0][spinRHS][1]};
+                std::vector<double> mzTermsForDipole = {m0Nest[0][spinLHS][2], m0Nest[0][site][2], m0Nest[0][spinRHS][2]};
+                std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
+
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling(mxTermsForDipole, myTermsForDipole,
+                                                                       mzTermsForDipole, siteTermsForDipole);
+
+                dipoleX = dipoleTerms[0];
+                dipoleY = dipoleTerms[1];
+                dipoleZ = dipoleTerms[2];
+            } else {
+                dipoleX = 0;
+                dipoleY = 0;
+                dipoleZ = 0;
+            }
+
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK0 = EffectiveFieldX(site, m0Nest[0][spinLHS][0], m0Nest[0][site][0], m0Nest[0][spinRHS][0], dipoleX, t0);
+            double hyK0 = EffectiveFieldY(site, m0Nest[0][spinLHS][1], m0Nest[0][site][1], m0Nest[0][spinRHS][1], dipoleY);
+            double hzK0 = EffectiveFieldZ(site, m0Nest[0][spinLHS][2], m0Nest[0][site][2], m0Nest[0][spinRHS][2], dipoleZ);
+
+            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK1 = MagneticMomentX(site, m0Nest[0][site][0], m0Nest[0][site][1], m0Nest[0][site][2], hxK0, hyK0, hzK0);
+            double myK1 = MagneticMomentY(site, m0Nest[0][site][0], m0Nest[0][site][1], m0Nest[0][site][2], hxK0, hyK0, hzK0);
+            double mzK1 = MagneticMomentZ(site, m0Nest[0][site][0], m0Nest[0][site][1], m0Nest[0][site][2], hxK0, hyK0, hzK0);
+
+            // Find (m0 + k1/2) for each site, which is used in the next stage.
+            m1Nest[0][site][0] =  m0Nest[0][site][0] + _stepsizeHalf * mxK1;
+            m1Nest[0][site][1] =  m0Nest[0][site][1] + _stepsizeHalf * myK1;
+            m1Nest[0][site][2] =  m0Nest[0][site][2] + _stepsizeHalf * mzK1;
+        }
+        // The estimations of the m-components values for the next iteration.
+        std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;
+        mValsNested3["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
+        std::vector<std::vector<std::vector<double>>> m2Nest = mValsNested3["nestedNestedVector1"];
+        SetInitialMagneticMomentsMultilayer(m2Nest, 1, 0, 0 , 0);
+
+        // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
+
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
+
+            double dipoleX, dipoleY, dipoleZ;
+            if (_useDipolar) {
+                std::vector<double> mxTermsForDipole = {m1Nest[0][spinLHS][0], m1Nest[0][site][0], m1Nest[0][spinRHS][0]};
+                std::vector<double> myTermsForDipole = {m1Nest[0][spinLHS][1], m1Nest[0][site][1], m1Nest[0][spinRHS][1]};
+                std::vector<double> mzTermsForDipole = {m1Nest[0][spinLHS][2], m1Nest[0][site][2], m1Nest[0][spinRHS][2]};
+                std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
+
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling(mxTermsForDipole, myTermsForDipole,
+                                                                       mzTermsForDipole, siteTermsForDipole);
+
+                dipoleX = dipoleTerms[0];
+                dipoleY = dipoleTerms[1];
+                dipoleZ = dipoleTerms[2];
+            } else {
+                dipoleX = 0;
+                dipoleY = 0;
+                dipoleZ = 0;
+            }
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK1 = EffectiveFieldX(site, m1Nest[0][spinLHS][0], m1Nest[0][site][0], m1Nest[0][spinRHS][0], dipoleX, t0);
+            double hyK1 = EffectiveFieldY(site, m1Nest[0][spinLHS][1], m1Nest[0][site][1], m1Nest[0][spinRHS][1], dipoleY);
+            double hzK1 = EffectiveFieldZ(site, m1Nest[0][spinLHS][2], m1Nest[0][site][2], m1Nest[0][spinRHS][2], dipoleZ);
+
+            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK2 = MagneticMomentX(site, m1Nest[0][site][0], m1Nest[0][site][1], m1Nest[0][spinRHS][2], hxK1, hyK1, hzK1);
+            double myK2 = MagneticMomentY(site, m1Nest[0][site][0], m1Nest[0][site][1], m1Nest[0][spinRHS][2], hxK1, hyK1, hzK1);
+            double mzK2 = MagneticMomentZ(site, m1Nest[0][site][0], m1Nest[0][site][1], m1Nest[0][spinRHS][2], hxK1, hyK1, hzK1);
+
+            m2Nest[0][site][0] = m0Nest[0][site][0] + _stepsize * mxK2;
+            m2Nest[0][site][1] = m0Nest[0][site][1] + _stepsize * myK2;
+            m2Nest[0][site][2] = m0Nest[0][site][2] + _stepsize * mzK2;
+
+            if (_shouldTrackMValues) {
+                double mIterationNorm = sqrt(pow(m2Nest[0][site][0], 2) + pow(m2Nest[0][site][1], 2) + pow(m2Nest[0][site][2], 2));
+                if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+            }
+        }
+        // Everything below here is part of the class method, but not the internal RK2 stage loops.
+
+        /**
+         * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
+         * these between loop iterations sometimes led to incorrect values cropping up.
+         */
+        m0Nest.shrink_to_fit();
+        m1Nest.shrink_to_fit();
+
+        SaveDataToFileMultilayer(mxRK2File, m2Nest[0], iteration);
+
+        //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
+        m0Nest = m2Nest;
+
+        if (iteration == _forceStopAtIteration)
+            exit(0);
+
+        _totalTime += _stepsize;
+    }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
+
+    // Ensures files are closed; sometimes are left open if the writing process above fails
+    mxRK2File.close();
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata(true);
+    }
+
+    if (_shouldTrackMValues)
+        std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;
+
+    // Filename can be copy/pasted from C++ console to Python function's console.
+    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+}
+
 void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
     /**
      * Write all non-data information to the output file.
@@ -697,9 +903,165 @@ void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint, bo
     if (shouldExitAfterPrint)
         exit(0);
 }
+void Numerical_Methods_Class::PrintNestedNestedVector(std::vector<std::vector<std::vector<double>>> nestedNestedVector){
+        // Print the contents of nestedNestedVector1
+    std::cout << "{";
+    for (size_t i = 0; i < nestedNestedVector.size(); ++i) {
+        std::cout << "{";
+        for (size_t j = 0; j < nestedNestedVector[i].size(); ++j) {
+            std::cout << "{";
+            for (size_t k = 0; k < nestedNestedVector[i][j].size(); ++k) {
+                std::cout << nestedNestedVector[i][j][k];
+                if (k < nestedNestedVector[i][j].size() - 1) {
+                    std::cout << ",";
+                }
+            }
+            std::cout << "}";
+            if (j < nestedNestedVector[i].size() - 1) {
+                std::cout << ",";
+            }
+        }
+        std::cout << "}";
+        if (i < nestedNestedVector.size() - 1) {
+            std::cout << ",";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "}" << std::endl;
+}
 void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
     std::cout.precision(6);
     std::cout << std::scientific;
+
+    if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
+        if (_printFixedLines) {
+            for (int i = 0; i <= GV.GetNumSpins(); i++) {
+                // Steps through vectors containing all mag. moment components and saves to files
+                if (i == 0)
+                    // Print current time
+                    outputFileName << (iteration * _stepsize) << ",";
+
+                else if (i == GV.GetNumSpins())
+                    // Ensures that the final line doesn't contain a comma.
+                    outputFileName << arrayToWrite[i] << std::flush;
+
+                else
+                    // For non-special values, write the data.
+                    outputFileName << arrayToWrite[i] << ", ";
+            }
+            // Take new line after current row is finished being written.
+            outputFileName << std::endl;
+
+            return;
+        } else if (_printFixedSites) {
+            /*outputFileName << (iteration * _stepsize) << ","
+               << arrayToWrite[14000] << ","
+               << arrayToWrite[16000] << ","
+               << arrayToWrite[18000] << ","
+               << arrayToWrite[20000] << std::endl;
+               */
+            outputFileName << (iteration * _stepsize);
+            for (int & fixed_out_val : _fixed_output_sites)
+                outputFileName << "," << arrayToWrite[fixed_out_val];
+            outputFileName << std::endl;
+
+            return;
+        }
+    }
+
+    if (_printAllData) {
+        for (int i = 0; i <= GV.GetNumSpins(); i++) {
+            // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
+            if (i == 0)
+                outputFileName << (iteration * _stepsize) << ","; // Print current time
+            else if (i == GV.GetNumSpins())
+                outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
+            else
+                outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
+        }
+        outputFileName << std::endl;
+
+        return;
+    }
+
+    /*
+    if (_printFixedLines) {
+        // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
+        if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
+            //if (iteration == _iterationEnd) {
+            for (int i = 0; i <= GV.GetNumSpins(); i++) {
+                // Steps through vectors containing all mag. moment components and saves to files
+                if (i == 0)
+                    // Print current time
+                    outputFileName << (iteration * _stepsize) << ",";
+
+                else if (i == GV.GetNumSpins())
+                    // Ensures that the final line doesn't contain a comma.
+                    outputFileName << arrayToWrite[i] << std::flush;
+
+                else
+                    // For non-special values, write the data.
+                    outputFileName << arrayToWrite[i] << ", ";
+            }
+            // Take new line after current row is finished being written.
+            outputFileName << std::endl;
+        }
+    } else {
+        if (_printAllData) {
+            for (int i = 0; i <= GV.GetNumSpins(); i++) {
+                // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
+                if (i == 0)
+                    outputFileName << (iteration * _stepsize) << ","; // Print current time
+                else if (i == GV.GetNumSpins())
+                    outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
+                else
+                    outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
+            }
+            outputFileName << std::endl; // Take new line after current row is finished being written.
+        } else {
+            if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
+                if (_printFixedSites) {
+
+                    outputFileName << (iteration * _stepsize) << ","
+                                   << arrayToWrite[_drivingRegionLHS] << ","
+                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[_drivingRegionRHS] << ","
+                                   << arrayToWrite[static_cast<int>(1500)] << ","
+                                   << arrayToWrite[static_cast<int>(2500)] << ","
+                                   << arrayToWrite[static_cast<int>(3500)] << ","
+                                   << arrayToWrite[GV.GetNumSpins()] << std::endl;
+
+                    outputFileName << (iteration * _stepsize) << ","
+                                   << arrayToWrite[400] << ","
+                                   << arrayToWrite[1500] << ","
+                                   << arrayToWrite[3000] << ","
+                                   << arrayToWrite[4500] << ","
+                                   << arrayToWrite[5600] << std::endl;
+                } else {
+                    outputFileName << (iteration * _stepsize) << ","
+                                   << arrayToWrite[_drivingRegionLHS] << ","
+                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[_drivingRegionRHS] << ","
+                                   << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
+                                   << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 2.0)] << ","
+                                   << arrayToWrite[3 * static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
+                                   << arrayToWrite[GV.GetNumSpins()] << std::endl;
+                }
+            }
+        }
+    } */
+}
+void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration) {
+    std::cout.precision(6);
+    std::cout << std::scientific;
+
+    std::vector<double> arrayToWrite;
+    // Extract the first element from each nested vector
+    for (const auto& innerVector : nestedArrayToWrite) {
+        if (!innerVector.empty()) {
+            arrayToWrite.push_back(innerVector[0]);
+        }
+    }
 
     if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
         if (_printFixedLines) {

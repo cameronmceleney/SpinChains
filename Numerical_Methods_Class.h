@@ -8,6 +8,8 @@
 #include <chrono>
 #include <iomanip>
 #include <list>
+#include <map>
+
 
 class Numerical_Methods_Class {
 
@@ -39,9 +41,12 @@ private:
     double              _maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
     // The initial values of the squares of the magnetic moments (m) along each axis. [_mxInit + _myInit + _mzInit]  CANNOT sum to greater than 1.0
-    double              _mxInit = 0.0;                             // x-direction. (Default: 0.0)
-    double              _myInit = 0.0;                             // y-direction. (Default: 0.0)
-    double              _mzInit = _magSat;                         // z-direction. (Default: _magSat = 1.0)
+    double              _mx0Init = 0.0;                             // x-direction. (Default: 0.0)
+    double              _my0Init = 0.0;                             // y-direction. (Default: 0.0)
+    double              _mz0Init = _magSat;                         // z-direction. (Default: _magSat = 1.0)
+    double              _mx1Init = 0.0;                             // x-direction. (Default: 0.0)
+    double              _my1Init = 0.0;                             // y-direction. (Default: 0.0)
+    double              _mz1Init = _magSat;                         // z-direction. (Default: _magSat = 1.0)
 
     int                 _numberOfDataPoints;                       // Number of datapoints sent to output file. Higher number gives greater precision, but drastically increases filesize. Set equal to _stopIterVal to save all data, else 100.
     int                 _numberOfSpinPairs;                        // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
@@ -81,6 +86,8 @@ private:
     bool                _shouldTrackMValues;                       // Monitor the norm of all the m-values; if approx. 1.0 then the error is likely to be massive; discard that dataset.
     bool                _useLLG;                                   // Uses the Torque equation components if (false).
     bool                _useDipolar;
+    bool                _useBilayer;
+
     // ######## Private Functions ########
     std::vector<double> _exchangeVec;                              // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};
@@ -89,6 +96,9 @@ private:
     std::vector<double> _mx0{0};                                   // x-axis (x)
     std::vector<double> _my0{0};                                   // y-axis (y)
     std::vector<double> _mz0{0};                                   // z-axis (z)
+    std::vector<double> _mx1{0};                                   // x-axis (x)
+    std::vector<double> _my1{0};                                   // y-axis (y)
+    std::vector<double> _mz1{0};                                   // z-axis (z)
 
     // Private functions
     void                FinalChecks();
@@ -98,11 +108,17 @@ private:
     void                SetExchangeVector();
     void                SetInitialMagneticMoments();
 
+    void                SetInitialMagneticMomentsMultilayer(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
+                                                            int layer, double mxInit, double myInit, double mzInit);  // test
+    std::vector<std::vector<std::vector<double>>> initializeNestedNestedVector(int numSites, bool includeEnd);
+    void                SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration);
+
     void                CreateColumnHeaders(std::ofstream &outputFileName);
     void                CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata=false);
     void                CreateMetadata(bool print_end_time=false);
     void                InformUserOfCodeType(const std::string& nameNumericalMethod);
     void                PrintVector(std::vector<double> &vectorToPrint, bool shouldExitAfterPrint);
+    void                PrintNestedNestedVector(std::vector<std::vector<std::vector<double>>> nestedNestedVector);
     void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);
     void                TestShockwaveConditions(double iteration);
 
@@ -122,7 +138,8 @@ private:
 public:
 //  Dtype               Member Name                                Variable docstring
     void                NMSetup();                                 // Assignment of all values required for the simulation
-    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid                SolveRK4();                                // Evaluate the given system, using the Runge-Kutta (4th Order) method
+    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid
+    void                SolveRK2Bilayer();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid  //              SolveRK4();                                // Evaluate the given system, using the Runge-Kutta (4th Order) method
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
