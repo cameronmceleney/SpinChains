@@ -242,14 +242,13 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
 std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                                   std::vector<double> mzTerms, std::vector<int> sitePositions) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
-    double mu1x = mxTerms[1];
-    double mu1y = myTerms[1];
-    double mu1z = mzTerms[1];
-    std::vector<int> r = {sitePositions[0] + 1, 0, 0};
+    //double mu1x = mxTerms[1];
+    //double mu1y = myTerms[1];
+    //double mu1z = mzTerms[1];
 
     double exchangeStiffness = 5.3e-17;
 
-    for (int i = 0; i <= mxTerms.size(); i++) {
+    for (int i = 0; i < mxTerms.size(); i++) {
 
         if (i == 1) {
             continue;
@@ -257,55 +256,63 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
 
         double latticeConstant = sqrt(exchangeStiffness / _exchangeVec[i]);
 
-        std::vector<double> positionVector = {  (mxTerms[i] -  mu1x) * latticeConstant,
-                                                (myTerms[i] -  mu1y) * latticeConstant,
-                                                (mzTerms[i] -  mu1z) * latticeConstant};
+        std::vector<double> positionVector = {(sitePositions[i] - sitePositions[1]) * latticeConstant, 0, 0};
+
+        //std::vector<double> positionVector = {  (mxTerms[i] -  mu1x) * latticeConstant,
+        //                                        (myTerms[i] -  mu1y) * latticeConstant,
+        //                                        (mzTerms[i] -  mu1z) * latticeConstant};
 
         double positionVector_norm = std::sqrt(positionVector[0] * positionVector[0] + positionVector[1] * positionVector[1] + positionVector[2] * positionVector[2]);
         double positionVector_cubed = std::pow(positionVector_norm, 3);
         double positionVector_fifth = std::pow(positionVector_norm, 5);
 
-        double mu1_dot_r12 = mxTerms[1] * positionVector[0];
-        double mu2_dot_r12 = mxTerms[i] * positionVector[0];
+        double mu1DotPosition = mxTerms[1] * positionVector[0] + myTerms[1] * positionVector[1] + mzTerms[1] * positionVector[2];
+        double mu2DotPosition = mxTerms[i] * positionVector[0] + myTerms[i] * positionVector[1] + mzTerms[i] * positionVector[2];
         double mu1_dot_mu2 = mxTerms[1] * mxTerms[i];
 
-        double mu2DotPosition = mxTerms[i] * positionVector[0] + myTerms[i] * positionVector[1] + mzTerms[i] * positionVector[2];
-
         double gConstant = _permFreeSpace / (4.0 * M_PI);
-        // std::vector<double> DipoleValues = {gConstant* ((3 * positionVector[0] * mu2DotPosition)/positionVector_fifth - mxTerms[i]/positionVector_cubed),
-        //                                     gConstant* ((3 * positionVector[1] * mu2DotPosition)/positionVector_fifth - myTerms[i]/positionVector_cubed),
-        //                                     gConstant* ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)};
-        std::vector<double> DipoleValues = { gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]),
-                                              gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]),
-                                               gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i])};
+        std::vector<double> DipoleValues = {gConstant* ((3 * positionVector[0] * mu2DotPosition)/positionVector_fifth - mxTerms[i]/positionVector_cubed),
+                                            gConstant* ((3 * positionVector[1] * mu2DotPosition)/positionVector_fifth - myTerms[i]/positionVector_cubed),
+                                            gConstant* ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)};
+        //std::vector<double> DipoleValues = { gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[i] - mu1_dot_mu2 * positionVector[i]),
+        //                                     gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[i] - mu1_dot_mu2 * positionVector[i]),
+        //                                     gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[i] - mu1_dot_mu2 * positionVector[i])};
+
+        //gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]);
+        //gConstant * ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)
         totalDipoleTerms[0] += DipoleValues[0];
         totalDipoleTerms[1] += DipoleValues[1];
         totalDipoleTerms[2] += DipoleValues[2];
-
-        return totalDipoleTerms;
     }
 
+    return totalDipoleTerms;
+}
 
-    /*
+/*
+std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(double magneticMoment1, double magneticMoment2,
+                                                                  int originSite, int targetSite) {
     double exchangeStiffness = 5.3e-17;
     double latticeConstant = sqrt(exchangeStiffness / _exchangeVec[originSite - 1]);
 
     std::vector<double> positionVector = {std::abs(targetSite - originSite)* latticeConstant, 0.0, 0.0};
     double positionVectorMagnitude = std::sqrt(positionVector[0] * positionVector[0] + positionVector[1] * positionVector[1] + positionVector[2] * positionVector[2]);
 
-    double mu1_dot_r12 = magneticMoment1 * positionVector[0];
-    double mu2_dot_r12 = magneticMoment2 * positionVector[0];
-    double mu1_dot_mu2 = magneticMoment1 * magneticMoment2;
+    double mu1_dot_r12 = magneticMoment1 * positionVector[0]; // + magneticMoment1[1] * positionVector[1] + magneticMoment1[2] * positionVector[2];
+    double mu2_dot_r12 = magneticMoment2 * positionVector[0]; // + magneticMoment2[1] * positionVector[1] + magneticMoment2[2] * positionVector[2];
+    double mu1_dot_mu2 = magneticMoment1 * magneticMoment2; // + magneticMoment1[1] * magneticMoment2[1] + magneticMoment1[2] * magneticMoment2[2];
 
     std::vector<double> hDipoleTerms(3);
     double gConstant = (_permFreeSpace / (4.0 * M_PI * std::pow(positionVectorMagnitude, 5)));
-    for (int i = 1; i < 2; i++) {
+    for (int i = 0; i < 2; i++) {
+        if (i == 1)
+            continue;
+
         hDipoleTerms[i] =
                 gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]);
     }
     return hDipoleTerms;
-    */
 }
+*/
 
 double Numerical_Methods_Class::EffectiveFieldX(int site, double mxLHS, double mxMID, double mxRHS, double dipoleTerm, double current_time) {
     // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
