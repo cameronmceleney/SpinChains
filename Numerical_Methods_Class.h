@@ -41,12 +41,9 @@ private:
     double              _maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
     // The initial values of the squares of the magnetic moments (m) along each axis. [_mxInit + _myInit + _mzInit]  CANNOT sum to greater than 1.0
-    double              _mx0Init = 0.0;                             // x-direction. (Default: 0.0)
-    double              _my0Init = 0.0;                             // y-direction. (Default: 0.0)
-    double              _mz0Init = _magSat;                         // z-direction. (Default: _magSat = 1.0)
-    double              _mx1Init = 0.0;                             // x-direction. (Default: 0.0)
-    double              _my1Init = 0.0;                             // y-direction. (Default: 0.0)
-    double              _mz1Init = _magSat;                         // z-direction. (Default: _magSat = 1.0)
+    double              _mxInit = 0.0;                             // x-direction. (Default: 0.0)
+    double              _myInit = 0.0;                             // y-direction. (Default: 0.0)
+    double              _mzInit = _magSat;                         // z-direction. (Default: _magSat = 1.0)
 
     int                 _numberOfDataPoints;                       // Number of datapoints sent to output file. Higher number gives greater precision, but drastically increases filesize. Set equal to _stopIterVal to save all data, else 100.
     int                 _numberOfSpinPairs;                        // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
@@ -96,9 +93,6 @@ private:
     std::vector<double> _mx0{0};                                   // x-axis (x)
     std::vector<double> _my0{0};                                   // y-axis (y)
     std::vector<double> _mz0{0};                                   // z-axis (z)
-    std::vector<double> _mx1{0};                                   // x-axis (x)
-    std::vector<double> _my1{0};                                   // y-axis (y)
-    std::vector<double> _mz1{0};                                   // z-axis (z)
 
     // Private functions
     void                FinalChecks();
@@ -124,22 +118,26 @@ private:
 
     std::vector<double> DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                              std::vector<double> mzTerms, std::vector<int> sitePositions);
-    double              EffectiveFieldX (int spin, double mxLHS, double mxMID, double mxRHS, double dipoleTerm, double current_time);
-    double              EffectiveFieldY (int spin, double myLHS, double myMID, double myRHS, double dipoleTerm);
-    double              EffectiveFieldZ (int spin, double mzLHS, double mzMID, double mzRHS, double dipoleTerm);
+    double              EffectiveFieldX (const int& site, const double& mxLHS, const double& mxMID,
+                                         const double& mxRHS, const double& dipoleTerm, const double& current_time);
+    double              EffectiveFieldY (const int& site, const double& myLHS, const double& myMID, const double& myRHS,
+                                         const double& dipoleTerm);
+    double              EffectiveFieldZ (const int& site, const double& mzLHS, const double& mzMID, const double& mzRHS,
+                                         const double& dipoleTerm);
 
-    double              MagneticMomentX (int spin, double mxMID, double myMID, double mzMID,
-                                         double hxMID, double hyMID, double hzMID);
-    double              MagneticMomentY (int spin, double mxMID, double myMID, double mzMID,
-                                         double hxMID, double hyMID, double hzMID);
-    double              MagneticMomentZ (int spin, double mxMID, double myMID, double mzMID,
-                                         double hxMID, double hyMID, double hzMID);
+    double              MagneticMomentX (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
+    double              MagneticMomentY (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
+    double              MagneticMomentZ (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
 
 public:
 //  Dtype               Member Name                                Variable docstring
     void                NMSetup();                                 // Assignment of all values required for the simulation
-    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid
-    void                SolveRK2Bilayer();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid  //              SolveRK4();                                // Evaluate the given system, using the Runge-Kutta (4th Order) method
+    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+    void                SolveRK2Bilayer();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+    void                SolveRK2BilayerTest();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
