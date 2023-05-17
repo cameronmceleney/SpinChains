@@ -803,12 +803,22 @@ void Numerical_Methods_Class::SolveRK2BilayerTest() {
 
     // Assign name to nested-nested vector
     mValsNested1["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
-
     // Assign name to nested-nested vector
     std::vector<std::vector<std::vector<double>>> m0Nest = mValsNested1["nestedNestedVector1"];
-
     // Invoke method to set initial magnetic moments. To call: mValsNest[layer][site][component]
     SetInitialMagneticMomentsMultilayer(m0Nest, 1, 0, 0 , 1);
+
+    // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
+    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested2;
+    mValsNested2["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
+    std::vector<std::vector<std::vector<double>>> m1Nest = mValsNested2["nestedNestedVector1"];
+    SetInitialMagneticMomentsMultilayer(m1Nest, 1, 0, 0 , 0);
+
+    // The estimations of the m-components values for the next iteration.
+    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;
+    mValsNested3["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
+    std::vector<std::vector<std::vector<double>>> m2Nest = mValsNested3["nestedNestedVector1"];
+    SetInitialMagneticMomentsMultilayer(m2Nest, 1, 0, 0 , 0);
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -819,12 +829,6 @@ void Numerical_Methods_Class::SolveRK2BilayerTest() {
         TestShockwaveConditions(iteration);
 
         double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf;
-
-        // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
-        std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested2;
-        mValsNested2["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
-        std::vector<std::vector<std::vector<double>>> m1Nest = mValsNested2["nestedNestedVector1"];
-        SetInitialMagneticMomentsMultilayer(m1Nest, 1, 0, 0 , 0);
 
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
         // RK2 Stage 1. Takes initial conditions as inputs.
@@ -872,11 +876,6 @@ void Numerical_Methods_Class::SolveRK2BilayerTest() {
             m1Nest[0][site][1] =  m0Nest[0][site][1] + _stepsizeHalf * myK1;
             m1Nest[0][site][2] =  m0Nest[0][site][2] + _stepsizeHalf * mzK1;
         }
-        // The estimations of the m-components values for the next iteration.
-        std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;
-        mValsNested3["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
-        std::vector<std::vector<std::vector<double>>> m2Nest = mValsNested3["nestedNestedVector1"];
-        SetInitialMagneticMomentsMultilayer(m2Nest, 1, 0, 0 , 0);
 
         // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
         for (int site = 1; site <= GV.GetNumSpins(); site++) {
@@ -931,17 +930,6 @@ void Numerical_Methods_Class::SolveRK2BilayerTest() {
          * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
          * these between loop iterations sometimes led to incorrect values cropping up.
          */
-
-        for(auto& v : m0Nest) {
-            v.clear();
-            v.shrink_to_fit();
-        }
-        for(auto& v : m1Nest) {
-            v.clear();
-            v.shrink_to_fit();
-        }
-        m0Nest.clear(); m0Nest.shrink_to_fit();
-        m1Nest.clear(); m1Nest.shrink_to_fit();
 
         SaveDataToFileMultilayer(mxRK2File, m2Nest[0], iteration);
 

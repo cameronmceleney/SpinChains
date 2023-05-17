@@ -51,7 +51,7 @@ int main() {
     else if (!findEigenvalues) {
         RK2_method_use.NMSetup();
         if (method == "RK2")
-            RK2_method_use.SolveRK2BilayerTest();
+            RK2_method_use.SolveRK2Bilayer();
     }
     #pragma clang diagnostic pop
     return 0;
