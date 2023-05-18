@@ -280,6 +280,7 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
     //double mu1z = mzTerms[1];
 
     double exchangeStiffness = 5.3e-17;
+    double gConstant = _permFreeSpace / (4.0 * M_PI);
 
     for (int i = 0; i < mxTerms.size(); i++) {
 
@@ -301,15 +302,18 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
 
         double mu1DotPosition = mxTerms[1] * positionVector[0] + myTerms[1] * positionVector[1] + mzTerms[1] * positionVector[2];
         double mu2DotPosition = mxTerms[i] * positionVector[0] + myTerms[i] * positionVector[1] + mzTerms[i] * positionVector[2];
-        double mu1_dot_mu2 = mxTerms[1] * mxTerms[i];
+        double mu1Dotmu2 = mxTerms[1] * mxTerms[i] + myTerms[1] * myTerms[i] + mzTerms[1] * mzTerms[i];
 
-        double gConstant = _permFreeSpace / (4.0 * M_PI);
-        std::vector<double> DipoleValues = {gConstant* ((3 * positionVector[0] * mu2DotPosition)/positionVector_fifth - mxTerms[i]/positionVector_cubed),
-                                            gConstant* ((3 * positionVector[1] * mu2DotPosition)/positionVector_fifth - myTerms[i]/positionVector_cubed),
-                                            gConstant* ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)};
-        //std::vector<double> DipoleValues = { gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[i] - mu1_dot_mu2 * positionVector[i]),
-        //                                     gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[i] - mu1_dot_mu2 * positionVector[i]),
-        //                                     gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[i] - mu1_dot_mu2 * positionVector[i])};
+        std::vector<double> DipoleValues = { (3.0 * mu1DotPosition * mu1DotPosition - mu1Dotmu2 * positionVector[0] * positionVector[0] ),
+                                             (3.0 * mu1DotPosition * mu1DotPosition - mu1Dotmu2 * positionVector[0] * positionVector[0] ),
+                                             (3.0 * mu1DotPosition * mu1DotPosition - mu1Dotmu2 * positionVector[0] * positionVector[0] )};
+
+        //std::vector<double> DipoleValues = {((3 * positionVector[0] * mu2DotPosition)/positionVector_fifth - mxTerms[i]/positionVector_cubed),
+        //                                    ((3 * positionVector[1] * mu2DotPosition)/positionVector_fifth - myTerms[i]/positionVector_cubed),
+        //                                    ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)};
+        //std::vector<double> DipoleValues = { gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[0] - mu1_dot_mu2 * positionVector[0]),
+        //                                     gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[0] - mu1_dot_mu2 * positionVector[0]),
+        //                                     gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[0] - mu1_dot_mu2 * positionVector[0])};
 
         //gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]);
         //gConstant * ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)
@@ -318,6 +322,9 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
         totalDipoleTerms[2] += DipoleValues[2];
     }
 
+    totalDipoleTerms[0] *= gConstant;
+    totalDipoleTerms[1] *= gConstant;
+    totalDipoleTerms[2] *= gConstant;
     return totalDipoleTerms;
 }
 
