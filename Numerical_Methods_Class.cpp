@@ -1,13 +1,37 @@
 #include <unordered_map>
 #include "Numerical_Methods_Class.h"
 
-void Numerical_Methods_Class::NMSetup() {
-    // Core Flags
-    _hasShockwave = false;
-    _isFM = GV.GetIsFerromagnetic();
+void Numerical_Methods_Class::NumericalMethodsMain() {
+
+    NumericalMethodsFlags();
+    NumericalMethodsParameters();
+    NumericalMethodsProcessing();
+
+    // ###################### Core Method Invocations ######################
+    // Order is intentional, and must be maintained!
+    FinalChecks();
+    SetShockwaveConditions();
+    SetDampingRegion();
+    SetDrivingRegion();
+    SetExchangeVector();
+    SetInitialMagneticMoments();
+}
+void Numerical_Methods_Class::NumericalMethodsFlags() {
+
+    // Debugging Flags
     _shouldTrackMValues = true;
+
+    // Model Type
     _useLLG = true;
+    _useSLLG = false;
+
+    // Interaction Flags
+    _hasShockwave = false;
     _useDipolar = true;
+    _useZeeman = true;
+
+    // Material Flags
+    _isFM = GV.GetIsFerromagnetic();
     _useMultilayer = false;
 
     // Drive Flags
@@ -17,13 +41,21 @@ void Numerical_Methods_Class::NMSetup() {
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
-    // Core Parameters
-    _recordingInterval = .7e-11;
+    // Output Flags
+    _printAllData = false;
+    _printFixedLines = true;
+    _printFixedSites = false;
+}
+void Numerical_Methods_Class::NumericalMethodsParameters() {
+
+    // Main Parameters
+    _ambientTemperature = 273;
     _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
     _maxSimTime = 0.7e-9;
+    _satMag = 0.010032;
     _stepsize = 1e-15;
 
     // Shockwave Parameters
@@ -37,10 +69,7 @@ void Numerical_Methods_Class::NMSetup() {
     // Data Output Parameters
     _fixed_output_sites = {12158, 14529, 15320};
     _numberOfDataPoints = 100; //static_cast<int>(_maxSimTime / _recordingInterval);
-
-    _printAllData = false;
-    _printFixedLines = true;
-    _printFixedSites = false;
+    _recordingInterval = .7e-11;
 
     // Damping Factors
     _gilbertConst  = 1e-4;
@@ -51,18 +80,8 @@ void Numerical_Methods_Class::NMSetup() {
     _drivingRegionWidth = 200;
     _numSpinsDamped = 0;
     _totalLayers = 1;
-
-    // ###################### Core Method Invocations ######################
-    // Order is intentional, and must be maintained!
-    NMSetupComputations();
-    FinalChecks();
-    SetShockwaveConditions();
-    SetDampingRegion();
-    SetDrivingRegion();
-    SetExchangeVector();
-    SetInitialMagneticMoments();
 }
-void Numerical_Methods_Class::NMSetupComputations() {
+void Numerical_Methods_Class::NumericalMethodsProcessing() {
     // Computations based upon other inputs
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _iterationEnd = static_cast<int>(_maxSimTime / _stepsize);
@@ -75,6 +94,57 @@ void Numerical_Methods_Class::NMSetupComputations() {
         _anisotropyField = 0;
     else if (!_isFM)
         _anisotropyField = GV.GetAnisotropyField();
+
+    if (!_useZeeman)
+        GV.SetStaticBiasField(0);
+}
+
+void Numerical_Methods_Class::FinalChecks() {
+
+    if (_shouldDriveCease and _iterEndShock <= 0) {
+        std::cout << "Warning: [_shouldDriveCease: True] however [_iterEndShock: " << _iterEndShock << " ! > 0.0]"
+                  << std::endl;
+        exit(1);
+    }
+
+    if (_hasShockwave and _iterStartShock < 0) {
+        std::cout << "Warning: [_hasShockwave: True] however [_iterStartShock: " << _iterStartShock << " ! > 0.0]"
+                  << std::endl;
+        exit(1);
+    }
+
+    if ((_printFixedSites and _printFixedLines) or (_printFixedSites and _printAllData) or
+        (_printFixedLines and _printAllData)) {
+        std::cout << "Warning: Multiple output flags detected. [_printFixedSites: " << _printFixedSites
+                  << "] | [_printFixedLines: " << _printFixedLines << "] | [_printAllData: " << _printAllData << "]"
+                  << std::endl;
+        exit(1);
+    }
+
+    if ((_lhsDrive && _centralDrive) || (_lhsDrive && _dualDrive) || (_centralDrive && _dualDrive)) {
+        std::cout << "Warning: two (or more) conflicting driving region booleans were TRUE"
+                  << "\n_lhsDrive: " << _lhsDrive << "\n_centralDrive: " << _centralDrive << "\n_dualDrive: " << _dualDrive
+                  << "\n\nExiting...";
+        exit(1);
+    }
+
+    if (_printFixedSites and _fixed_output_sites.empty()) {
+        std::cout << "Warning: Request to print fixed sites, but no sites were given [_fixed_output_sites: (";
+        for (int & fixed_out_val : _fixed_output_sites)
+                std::cout << fixed_out_val << ", ";
+        std::cout << ")].";
+        exit(1);
+    }
+
+    if (_numberOfDataPoints > _iterationEnd) {
+        std::cout << "Warning: You tried to print more data than was generated [_numberOfDataPoints > _iterationEnd]";
+        exit(1);
+    }
+
+    if (_useLLG and _useSLLG) {
+        std::cout << "Warning: You cannot use both the LLG and sLLG equations. Please choose one or the other.";
+        exit(1);
+    }
 }
 void Numerical_Methods_Class::SetDampingRegion() {
     // Generate the damping regions that are appended to either end of the spin chain.
@@ -153,48 +223,6 @@ void Numerical_Methods_Class::SetExchangeVector() {
         // The linearly spaced vector is saved as the class member '_exchangeVec' simply to increase code readability
         SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, true);
         _exchangeVec = SpinChainExchange.generate_array();
-    }
-}
-void Numerical_Methods_Class::FinalChecks() {
-
-    if (_shouldDriveCease and _iterEndShock <= 0) {
-        std::cout << "Warning: [_shouldDriveCease: True] however [_iterEndShock: " << _iterEndShock << " ! > 0.0]"
-                  << std::endl;
-        exit(1);
-    }
-
-    if (_hasShockwave and _iterStartShock < 0) {
-        std::cout << "Warning: [_hasShockwave: True] however [_iterStartShock: " << _iterStartShock << " ! > 0.0]"
-                  << std::endl;
-        exit(1);
-    }
-
-    if ((_printFixedSites and _printFixedLines) or (_printFixedSites and _printAllData) or
-        (_printFixedLines and _printAllData)) {
-        std::cout << "Warning: Multiple output flags detected. [_printFixedSites: " << _printFixedSites
-                  << "] | [_printFixedLines: " << _printFixedLines << "] | [_printAllData: " << _printAllData << "]"
-                  << std::endl;
-        exit(1);
-    }
-
-    if ((_lhsDrive && _centralDrive) || (_lhsDrive && _dualDrive) || (_centralDrive && _dualDrive)) {
-        std::cout << "Warning: two (or more) conflicting driving region booleans were TRUE"
-                  << "\n_lhsDrive: " << _lhsDrive << "\n_centralDrive: " << _centralDrive << "\n_dualDrive: " << _dualDrive
-                  << "\n\nExiting...";
-        exit(1);
-    }
-
-    if (_printFixedSites and _fixed_output_sites.empty()) {
-        std::cout << "Warning: Request to print fixed sites, but no sites were given [_fixed_output_sites: (";
-        for (int & fixed_out_val : _fixed_output_sites)
-                std::cout << fixed_out_val << ", ";
-        std::cout << ")].";
-        exit(1);
-    }
-
-    if (_numberOfDataPoints > _iterationEnd) {
-        std::cout << "Warning: You tried to print more data than was generated [_numberOfDataPoints > _iterationEnd]";
-        exit(1);
     }
 }
 void Numerical_Methods_Class::SetInitialMagneticMoments() {
@@ -390,6 +418,34 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
         }
     }
     return totalDipoleTerms;
+}
+
+double Numerical_Methods_Class::generateGaussianNoise(const double &mean, const double &stddev) {
+    // Function to generate random numbers from a Gaussian distribution
+    static std::mt19937 generator(std::random_device{}());
+    std::normal_distribution<double> distribution(mean, stddev);
+    return distribution(generator);
+}
+
+std::vector<double> Numerical_Methods_Class::stochasticTerm(const int& site, const double &timeStep) {
+    // Function to compute the stochastic term
+
+    // Compute the standard deviation for the Gaussian noise
+    double stddev = std::sqrt(2.0 * _gilbertVector[site] * _boltzmannConstant * _ambientTemperature / (_gyroMagConst * _satMag * timeStep));
+
+    // Generate Gaussian noise for each direction
+    double xi_x = generateGaussianNoise(0.0, stddev);
+    double xi_y = generateGaussianNoise(0.0, stddev);
+    double xi_z = generateGaussianNoise(0.0, stddev);
+
+    return {xi_x, xi_y, xi_z};
+}
+
+std::vector<double> Numerical_Methods_Class::computeStochasticTerm(const int& site, const double &timeStep) {
+    // Function to compute the stochastic term
+    std::vector<double> noise = stochasticTerm(site, timeStep);
+    std::vector<double> stochasticField = {noise[0], noise[1], noise[2]};
+    return stochasticField;
 }
 
 double Numerical_Methods_Class::EffectiveFieldX(const int& site, const double& mxLHS, const double& mxMID,

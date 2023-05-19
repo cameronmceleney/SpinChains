@@ -49,7 +49,7 @@ int main() {
     #pragma clang diagnostic push
     #pragma ide diagnostic ignored "UnreachableCode"
     else if (!findEigenvalues) {
-        NumericalMethods.NMSetup();
+        NumericalMethods.NumericalMethodsMain();
 
         if (method == "RK2")
             NumericalMethods.SolveRK2();

@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <list>
 #include <map>
+#include <random>
 
 
 class Numerical_Methods_Class {
@@ -16,7 +17,9 @@ class Numerical_Methods_Class {
 private:
 //  Dtype               Member Name                                Variable docstring
 
+    double              _ambientTemperature;
     double              _anisotropyField;
+    double              _boltzmannConstant = 1.380649e-23;         // Boltzmann Constant [m^{2} kg s^{-2} K^{-1}].
     double              _drivingAngFreq;                           // Angular frequency of oscillatory driving field [rad*s^{-1}].
     double              _drivingFreq;                              // Frequency of oscillatory driving field. [GHz] (f_d in literature) (e.g.  42.5 * 1e9)
     int                 _drivingRegionLHS;                         // The position of the spin which is leftmost in the driving region.
@@ -37,13 +40,12 @@ private:
     double              _iterStartShock;                           // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
     double              _iterEndShock;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the _maxSimTime.
     double              _largestMNorm = 1e-50;                     // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
-    double              _magSat = 1.0;                             // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
     double              _maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
     // The initial values of the squares of the magnetic moments (m) along each axis. [_mxInit + _myInit + _mzInit]  CANNOT sum to greater than 1.0
     double              _mxInit = 0.0;                             // x-direction. (Default: 0.0)
     double              _myInit = 0.0;                             // y-direction. (Default: 0.0)
-    double              _mzInit = _magSat;                         // z-direction. (Default: _magSat = 1.0)
+    double              _mzInit = 1.0;                             // z-direction. (Default: _magSat = 1.0)
 
     int                 _numberOfDataPoints;                       // Number of datapoints sent to output file. Higher number gives greater precision, but drastically increases filesize. Set equal to _stopIterVal to save all data, else 100.
     int                 _numberOfSpinPairs;                        // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
@@ -52,6 +54,7 @@ private:
     double              _recordingInterval;
 
     double              _permFreeSpace = 1.25663706212e-6;         // Permeability of free space [H/m] (mu_0)
+    double              _satMag;                                   // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
     double              _shockwaveGradientTime;                    // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[ps] when stepsize=1e-15.
     double              _shockwaveInitialStrength;                 // Initial strength of the shockwave before _shockwaveScaling occurs. (Default: = _dynamicBiasField)
     double              _shockwaveMax;                             // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
@@ -82,7 +85,9 @@ private:
 
     bool                _shouldTrackMValues;                       // Monitor the norm of all the m-values; if approx. 1.0 then the error is likely to be massive; discard that dataset.
     bool                _useLLG;                                   // Uses the Torque equation components if (false).
+    bool                _useSLLG;
     bool                _useDipolar;
+    bool                _useZeeman;
     bool                _useMultilayer;
 
     // ######## Private Functions ########
@@ -95,7 +100,9 @@ private:
     std::vector<double> _mz0{0};                                   // z-axis (z)
 
     // Private functions
-    void                NMSetupComputations();
+    void                NumericalMethodsFlags();
+    void                NumericalMethodsParameters();
+    void                NumericalMethodsProcessing();
     void                FinalChecks();
     void                SetShockwaveConditions();
     void                SetDampingRegion();
@@ -117,8 +124,15 @@ private:
     void                SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration);
     void                TestShockwaveConditions(double iteration);
 
+    // Terms to work out stochastic component of LLG (WORK IN PROGRESS!!)
+    double generateGaussianNoise(const double &mean, const double &stddev);
+    std::vector<double> stochasticTerm(const int& site, const double &timeStep);
+    std::vector<double> computeStochasticTerm(const int& site, const double &timeStep);
+
+    // Terms for dipolar coupling
     std::vector<double> DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                              std::vector<double> mzTerms, std::vector<int> sitePositions);
+    // Terms to calculate the (total) effective field
     double              EffectiveFieldX (const int& site, const double& mxLHS, const double& mxMID,
                                          const double& mxRHS, const double& dipoleTerm, const double& current_time);
     double              EffectiveFieldY (const int& site, const double& myLHS, const double& myMID, const double& myRHS,
@@ -126,6 +140,7 @@ private:
     double              EffectiveFieldZ (const int& site, const double& mzLHS, const double& mzMID, const double& mzRHS,
                                          const double& dipoleTerm);
 
+    // Terms to calculate the magnetic moments of the atoms (doesn't yet include sLLG
     double              MagneticMomentX (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
                                          const double& hxMID, const double& hyMID, const double& hzMID);
     double              MagneticMomentY (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
@@ -135,7 +150,7 @@ private:
 
 public:
 //  Dtype               Member Name                                Variable docstring
-    void                NMSetup();                                 // Assignment of all values required for the simulation
+    void                NumericalMethodsMain();                                 // Assignment of all values required for the simulation
     void                SolveRK2Classic();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
     void                SolveRK2();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid                SolveRK2Bilayer();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint
 };
