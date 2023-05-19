@@ -6,7 +6,7 @@ int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 14 Oct 22)
     SpinChainEigenSolverClass SolverClass{};
-    Numerical_Methods_Class RK2_method_use{};
+    Numerical_Methods_Class NumericalMethods{};
 
     // Select between eigenvalue derivation and numerical modelling
     bool findEigenvalues = false;
@@ -49,9 +49,12 @@ int main() {
     #pragma clang diagnostic push
     #pragma ide diagnostic ignored "UnreachableCode"
     else if (!findEigenvalues) {
-        RK2_method_use.NMSetup();
+        NumericalMethods.NMSetup();
+
         if (method == "RK2")
-            RK2_method_use.SolveRK2BilayerTest();
+            NumericalMethods.SolveRK2();
+        else if (method == "RK2c")
+            NumericalMethods.SolveRK2Classic();
     }
     #pragma clang diagnostic pop
     return 0;

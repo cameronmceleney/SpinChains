@@ -63,7 +63,7 @@ private:
     std::string         _stepsizeString;                           // Object to string conversation for _stepsize
     std::string         _stopIterString;                           // Object to string conversion for _stopIterVal
     double              _totalTime = 0;                            // Analogous to a stopwatch in a physical experiment. This tracks the 'real time' of the simulation
-
+    int                 _totalLayers;
     // ######## Booleans including tests ########
     bool                _centralDrive;                             // Drive from the centre of the chain if (true)
     bool                _dualDrive;                                // Drive from both sides of the system
@@ -83,7 +83,7 @@ private:
     bool                _shouldTrackMValues;                       // Monitor the norm of all the m-values; if approx. 1.0 then the error is likely to be massive; discard that dataset.
     bool                _useLLG;                                   // Uses the Torque equation components if (false).
     bool                _useDipolar;
-    bool                _useBilayer;
+    bool                _useMultilayer;
 
     // ######## Private Functions ########
     std::vector<double> _exchangeVec;                              // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
@@ -95,6 +95,7 @@ private:
     std::vector<double> _mz0{0};                                   // z-axis (z)
 
     // Private functions
+    void                NMSetupComputations();
     void                FinalChecks();
     void                SetShockwaveConditions();
     void                SetDampingRegion();
@@ -135,9 +136,8 @@ private:
 public:
 //  Dtype               Member Name                                Variable docstring
     void                NMSetup();                                 // Assignment of all values required for the simulation
-    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    void                SolveRK2Bilayer();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    void                SolveRK2BilayerTest();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint
+    void                SolveRK2Classic();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+    void                SolveRK2();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid                SolveRK2Bilayer();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
