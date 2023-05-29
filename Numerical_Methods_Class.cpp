@@ -501,6 +501,84 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling2(std::vector<d
         }
     return totalDipoleTerms;
 }
+std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling3(std::vector<double> mTerms, int sitePositions) {
+    std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
+    // std::vector<std::vector<double>> mTerms = mTermsLocal; // Aim to then only pull into stack the relevant terms
+
+    // mTerms.clear();
+
+    double muMagnitude = 2.22; // Magnetic moment in µB for iron
+    double bohrMagneton = 9.274e-24; // Bohr magneton in Am^{2} (equiv. to J T^{-1})
+    muMagnitude *= bohrMagneton;  // Conversion to Am^2
+    int fullSize = GV.GetNumSpins() + 2;
+
+    int numberNeighbours = 1;
+
+    /*
+    for (int i = 0; i < mTerms.size(); i++) {
+        for (int j = 0; j < 3; j++) {
+            mTerms[i][j] *= muMagnitude;
+        }
+    }
+     */
+
+    double exchangeStiffness = 5.3e-17;
+    double gConstant = _permFreeSpace / (4.0 * M_PI);
+
+    // Reference moments
+    //std::vector<double> originSite = {mTerms[currentSite][0], mTerms[currentSite][1], mTerms[currentSite][2]};
+
+
+    for (int i = 0; i < mTerms.size(); i++) {
+            mTerms[i] *= muMagnitude;
+    }
+    std::vector<double> originSite = {mTerms[sitePositions], mTerms[sitePositions + fullSize], mTerms[sitePositions + fullSize * 2]};
+    // Start of the loop over the neighbours
+    //for (int i = currentSite - numberNeighbours; i <= currentSite + numberNeighbours; i++) {
+    for (int i = sitePositions - 1; i <= sitePositions + 1; i++) {
+            //std::cout << "Debug Output: i = " << i << std::endl;  // Add debug output
+
+            if (i == 1) {
+                // Guard clause to ensure that the origin site is not included in the calculation
+                continue;
+            }
+
+            if (_exchangeVec[sitePositions] == 0) {
+                // Guard clause to ensure that the exchange vector is not zero
+                continue;
+            }
+
+            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[sitePositions]);
+
+            if (std::isinf(latticeConstant)) {
+                // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
+                continue;
+            }
+
+            std::vector<double> positionVector = {(i - sitePositions) * latticeConstant, 0, 0};
+
+            double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
+                    + std::pow(positionVector[2], 2));
+
+            double positionVector_cubed = std::pow(positionVector_norm, 3);
+            double positionVector_fifth = std::pow(positionVector_norm, 5);
+
+            // Moment at site i
+            // std::vector<double> influencingSite = {mTerms[i][0], mTerms[i][1], mTerms[i][2]};
+            std::vector<double> influencingSite = {mTerms[i], mTerms[i + fullSize], mTerms[i + fullSize * 2]};
+            //std::cout << "Debug Output: influencingSite = (" << influencingSite[0] << ", " << influencingSite[1] << ", " << influencingSite[2] << ")" << std::endl;  // Add debug output
+
+            // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0] + originSite[1] * influencingSite[1] + originSite[2] * influencingSite[2];
+            double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1] + originSite[2] * positionVector[2];
+            double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
+
+            for (int j = 0; j < 3; j++) {
+                double DipoleValue = gConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
+                totalDipoleTerms[j] += DipoleValue;
+            }
+        }
+    return totalDipoleTerms;
+}
 double Numerical_Methods_Class::generateGaussianNoise(const double &mean, const double &stddev) {
     // Function to generate random numbers from a Gaussian distribution
     static std::mt19937 generator(std::random_device{}());
@@ -859,8 +937,10 @@ void Numerical_Methods_Class::SolveRK2() {
                 std::vector<double> mzTermsForDipole = {mzLHS, mzMID, mzRHS};
                 std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
                 // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m1Nest[0], site);
-                std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
-                                                                       mzTermsForDipole, siteTermsForDipole);
+                std::vector<double> flattenedVector = flattenNestedVector(m0Nest[0]);
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling3(flattenedVector, site);
+                //std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
+                //                                                       mzTermsForDipole, siteTermsForDipole);
 
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];
@@ -904,8 +984,11 @@ void Numerical_Methods_Class::SolveRK2() {
                 std::vector<double> mzTermsForDipole = {mzLHS, mzMID, mzRHS};
                 std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
                 // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m1Nest[0], site);
-                std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
-                                                                       mzTermsForDipole, siteTermsForDipole);
+                //std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
+                //                                                       mzTermsForDipole, siteTermsForDipole);
+
+                std::vector<double> flattenedVector = flattenNestedVector(m1Nest[0]);
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling3(flattenedVector, site);
 
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];
@@ -1439,3 +1522,19 @@ void Numerical_Methods_Class::CreateMetadata(bool print_end_time) {
         metadata_start.close();
     }
 }
+
+std::vector<double> Numerical_Methods_Class::flattenNestedVector(const std::vector<std::vector<double>>& nestedVector) {
+    std::vector<double> flattenedVector;
+
+    for (const auto& innerVector : nestedVector) {
+        flattenedVector.insert(flattenedVector.end(), innerVector.begin(), innerVector.end());
+    }
+
+    return flattenedVector;
+}
+
+
+
+
+
+
