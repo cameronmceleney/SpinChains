@@ -49,7 +49,7 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Main Parameters
-    _ambientTemperature = 273;
+    _ambientTemperature = 273; // Kelvin
     _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
@@ -302,7 +302,6 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::initializ
     }
     return innerNestedVector;
 }
-
 /*
 std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                                   std::vector<double> mzTerms, std::vector<int> sitePositions) {
@@ -360,18 +359,21 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
     return totalDipoleTerms;
 }
 */
+
 std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                                   std::vector<double> mzTerms, std::vector<int> sitePositions) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
 
     double muMagnitude = 2.22; // Magnetic moment in µB for iron
-    muMagnitude *= 9.274e-24;  // Conversion to Am^2
+    double bohrMagneton = 9.274e-24; // Bohr magneton in Am^{2} (equiv. to J T^{-1}
+    muMagnitude *= bohrMagneton;  // Conversion to Am^2
 
     for (int i = 0; i < mxTerms.size(); i++) {
         mxTerms[i] *= muMagnitude;
         myTerms[i] *= muMagnitude;
         mzTerms[i] *= muMagnitude;
-}
+    }
+
     double exchangeStiffness = 5.3e-17;
     double gConstant = _permFreeSpace / (4.0 * M_PI);
     double exchangeValue;
@@ -419,7 +421,86 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
     }
     return totalDipoleTerms;
 }
+std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling2(std::vector<double> mxTermsTest, std::vector<double> myTermsTest,
+                                                                  std::vector<double> mzTermsTest, std::vector<int> sitePositions) {
+    std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
+    // std::vector<std::vector<double>> mTerms = mTermsLocal; // Aim to then only pull into stack the relevant terms
 
+    // mTerms.clear();
+
+    double muMagnitude = 2.22; // Magnetic moment in µB for iron
+    double bohrMagneton = 9.274e-24; // Bohr magneton in Am^{2} (equiv. to J T^{-1})
+    muMagnitude *= bohrMagneton;  // Conversion to Am^2
+
+    int numberNeighbours = 1;
+
+    /*
+    for (int i = 0; i < mTerms.size(); i++) {
+        for (int j = 0; j < 3; j++) {
+            mTerms[i][j] *= muMagnitude;
+        }
+    }
+     */
+
+    double exchangeStiffness = 5.3e-17;
+    double gConstant = _permFreeSpace / (4.0 * M_PI);
+
+    // Reference moments
+    //std::vector<double> originSite = {mTerms[currentSite][0], mTerms[currentSite][1], mTerms[currentSite][2]};
+
+
+    for (int i = 0; i < mxTermsTest.size(); i++) {
+            mxTermsTest[i] *= muMagnitude;
+            myTermsTest[i] *= muMagnitude;
+            mzTermsTest[i] *= muMagnitude;
+    }
+    std::vector<double> originSite = {mxTermsTest[1], myTermsTest[1], mzTermsTest[1]};
+    // Start of the loop over the neighbours
+    //for (int i = currentSite - numberNeighbours; i <= currentSite + numberNeighbours; i++) {
+    for (int i = 0; i < mxTermsTest.size(); i++) {
+            //std::cout << "Debug Output: i = " << i << std::endl;  // Add debug output
+
+            if (i == 1) {
+                // Guard clause to ensure that the origin site is not included in the calculation
+                continue;
+            }
+
+            if (_exchangeVec[sitePositions[i]] == 0) {
+                // Guard clause to ensure that the exchange vector is not zero
+                continue;
+            }
+
+            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[sitePositions[i]]);
+
+            if (std::isinf(latticeConstant)) {
+                // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
+                continue;
+            }
+
+            std::vector<double> positionVector = {(sitePositions[i] - sitePositions[1]) * latticeConstant, 0, 0};
+
+            double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
+                    + std::pow(positionVector[2], 2));
+
+            double positionVector_cubed = std::pow(positionVector_norm, 3);
+            double positionVector_fifth = std::pow(positionVector_norm, 5);
+
+            // Moment at site i
+            // std::vector<double> influencingSite = {mTerms[i][0], mTerms[i][1], mTerms[i][2]};
+            std::vector<double> influencingSite = {mxTermsTest[i], myTermsTest[i], mzTermsTest[i]};
+            //std::cout << "Debug Output: influencingSite = (" << influencingSite[0] << ", " << influencingSite[1] << ", " << influencingSite[2] << ")" << std::endl;  // Add debug output
+
+            // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0] + originSite[1] * influencingSite[1] + originSite[2] * influencingSite[2];
+            double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1] + originSite[2] * positionVector[2];
+            double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
+
+            for (int j = 0; j < 3; j++) {
+                double DipoleValue = gConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
+                totalDipoleTerms[j] += DipoleValue;
+            }
+        }
+    return totalDipoleTerms;
+}
 double Numerical_Methods_Class::generateGaussianNoise(const double &mean, const double &stddev) {
     // Function to generate random numbers from a Gaussian distribution
     static std::mt19937 generator(std::random_device{}());
@@ -554,6 +635,7 @@ double Numerical_Methods_Class::MagneticMomentZ(const int& site, const double& m
 }
 
 void Numerical_Methods_Class::SolveRK2Classic() {
+    // Only uses a single spin chain to solve the RK2 midpoint method.
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -709,6 +791,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 }
 
 void Numerical_Methods_Class::SolveRK2() {
+    // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -729,13 +812,9 @@ void Numerical_Methods_Class::SolveRK2() {
 
     // Initialise mapping
     std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested1;
-
-    // Assign name to nested-nested vector
-    mValsNested1["nestedNestedVector1"] = initializeNestedNestedVector(1, true);
-    // Assign name to nested-nested vector
+    mValsNested1["nestedNestedVector1"] = initializeNestedNestedVector(1, true);  // Assign name to nested-nested vector
     std::vector<std::vector<std::vector<double>>> m0Nest = mValsNested1["nestedNestedVector1"];
-    // Invoke method to set initial magnetic moments. To call: mValsNest[layer][site][component]
-    SetInitialMagneticMomentsMultilayer(m0Nest, 1, 0, 0 , 1);
+    SetInitialMagneticMomentsMultilayer(m0Nest, 1, 0, 0 , 1); // Invoke method to set initial magnetic moments. To call: mValsNest[layer][site][component]
 
     // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
     std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested2;
@@ -773,12 +852,14 @@ void Numerical_Methods_Class::SolveRK2() {
 
             double dipoleX, dipoleY, dipoleZ;
             if (_useDipolar) {
-                std::vector<double> mxTermsForDipole = {m0Nest[0][spinLHS][0], m0Nest[0][site][0], m0Nest[0][spinRHS][0]};
-                std::vector<double> myTermsForDipole = {m0Nest[0][spinLHS][1], m0Nest[0][site][1], m0Nest[0][spinRHS][1]};
-                std::vector<double> mzTermsForDipole = {m0Nest[0][spinLHS][2], m0Nest[0][site][2], m0Nest[0][spinRHS][2]};
-                std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
 
-                std::vector<double> dipoleTerms = DipoleDipoleCoupling(mxTermsForDipole, myTermsForDipole,
+                // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m0Nest[0], site);
+                std::vector<double> mxTermsForDipole = {mxLHS, mxMID, mxRHS};
+                std::vector<double> myTermsForDipole = {myLHS, myMID, myRHS};
+                std::vector<double> mzTermsForDipole = {mzLHS, mzMID, mzRHS};
+                std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
+                // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m1Nest[0], site);
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
                                                                        mzTermsForDipole, siteTermsForDipole);
 
                 dipoleX = dipoleTerms[0];
@@ -801,9 +882,9 @@ void Numerical_Methods_Class::SolveRK2() {
             double mzK1 = MagneticMomentZ(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
 
             // Find (m0 + k1/2) for each site, which is used in the next stage.
-            m1Nest[0][site][0] =  m0Nest[0][site][0] + _stepsizeHalf * mxK1;
-            m1Nest[0][site][1] =  m0Nest[0][site][1] + _stepsizeHalf * myK1;
-            m1Nest[0][site][2] =  m0Nest[0][site][2] + _stepsizeHalf * mzK1;
+            m1Nest[0][site][0] =  mxMID + _stepsizeHalf * mxK1;
+            m1Nest[0][site][1] =  myMID + _stepsizeHalf * myK1;
+            m1Nest[0][site][2] =  mzMID + _stepsizeHalf * mzK1;
         }
 
         // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
@@ -818,12 +899,12 @@ void Numerical_Methods_Class::SolveRK2() {
 
             double dipoleX, dipoleY, dipoleZ;
             if (_useDipolar) {
-                std::vector<double> mxTermsForDipole = {m1Nest[0][spinLHS][0], m1Nest[0][site][0], m1Nest[0][spinRHS][0]};
-                std::vector<double> myTermsForDipole = {m1Nest[0][spinLHS][1], m1Nest[0][site][1], m1Nest[0][spinRHS][1]};
-                std::vector<double> mzTermsForDipole = {m1Nest[0][spinLHS][2], m1Nest[0][site][2], m1Nest[0][spinRHS][2]};
+                std::vector<double> mxTermsForDipole = {mxLHS, mxMID, mxRHS};
+                std::vector<double> myTermsForDipole = {myLHS, myMID, myRHS};
+                std::vector<double> mzTermsForDipole = {mzLHS, mzMID, mzRHS};
                 std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
-
-                std::vector<double> dipoleTerms = DipoleDipoleCoupling(mxTermsForDipole, myTermsForDipole,
+                // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m1Nest[0], site);
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
                                                                        mzTermsForDipole, siteTermsForDipole);
 
                 dipoleX = dipoleTerms[0];

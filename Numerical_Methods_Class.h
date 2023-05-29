@@ -7,6 +7,7 @@
 #include "progressbar.hpp"
 #include <chrono>
 #include <iomanip>
+#include <iostream>
 #include <list>
 #include <map>
 #include <random>
@@ -132,6 +133,8 @@ private:
     // Terms for dipolar coupling
     std::vector<double> DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                              std::vector<double> mzTerms, std::vector<int> sitePositions);
+    std::vector<double> DipoleDipoleCoupling2(std::vector<double> mxTermsTest, std::vector<double> myTermsTest,
+                                              std::vector<double> mzTermsTest, std::vector<int> sitePositions);
     // Terms to calculate the (total) effective field
     double              EffectiveFieldX (const int& site, const double& mxLHS, const double& mxMID,
                                          const double& mxRHS, const double& dipoleTerm, const double& current_time);

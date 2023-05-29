@@ -29,7 +29,7 @@ int main() {
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
-    GV.SetFilePath("MacOS", findEigenvalues);
+    GV.SetFilePath("Windows", findEigenvalues);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
