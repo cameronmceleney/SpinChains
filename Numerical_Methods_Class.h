@@ -113,8 +113,9 @@ private:
     void                SetInitialMagneticMoments();
 
     void                SetInitialMagneticMomentsMultilayer(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
-                                                            int layer, double mxInit, double myInit, double mzInit);  // test
+                                                            int layer, double mxInit, double myInit, double mzInit);
     std::vector<std::vector<std::vector<double>>> initializeNestedNestedVector(int numSites, bool includeEnd);
+    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors(int layer, double mxInit, double myInit, double mzInit);
     void                SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration);
 
     void                CreateColumnHeaders(std::ofstream &outputFileName);

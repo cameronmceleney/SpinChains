@@ -42,8 +42,8 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _shouldDriveCease = false;
 
     // Output Flags
-    _printAllData = true;
-    _printFixedLines = false;
+    _printAllData = false;
+    _printFixedLines = true;
     _printFixedSites = false;
 }
 void Numerical_Methods_Class::NumericalMethodsParameters() {
@@ -303,6 +303,22 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::initializ
     }
     return innerNestedVector;
 }
+std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::InitialiseNestedVectors(int layer, double mxInit, double myInit, double mzInit) {
+
+    // Initialise mapping
+    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested;
+
+    // Assign name to nested-nested vector
+    mValsNested["nestedNestedVector"] = initializeNestedNestedVector(1, true);
+
+    // Assign key of map to nested-nested vector
+    std::vector<std::vector<std::vector<double>>> mNest = mValsNested["nestedNestedVector"];
+
+    // Invoke method to set initial magnetic moments. To call: mValsNest[layer][site][component]
+    SetInitialMagneticMomentsMultilayer(mNest, layer, mxInit, myInit , mzInit);
+
+    return mNest;
+}
 
 std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                                   std::vector<double> mzTerms, std::vector<int> sitePositions) {
@@ -526,7 +542,6 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling3(std::vector<d
         }
     return totalDipoleTerms;
 }
-
 std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling4(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
                                                                   int& currentSite) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
@@ -585,7 +600,7 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling4(std::vector<s
                 continue;
             }
 
-            std::vector<double> positionVector = {(sitePositions[i] - currentSite) * latticeConstant, 0, 0};
+            std::vector<double> positionVector = {(sitePositions[i] - sitePositions[midPoint]) * latticeConstant, 0, 0};
 
             double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
                     + std::pow(positionVector[2], 2));
@@ -895,7 +910,6 @@ void Numerical_Methods_Class::SolveRK2Classic() {
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
-
 void Numerical_Methods_Class::SolveRK2() {
     // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
 
@@ -1111,7 +1125,6 @@ void Numerical_Methods_Class::SolveRK2() {
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
-
 void Numerical_Methods_Class::SolveRK2Test() {
     // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
 
@@ -1132,23 +1145,9 @@ void Numerical_Methods_Class::SolveRK2Test() {
 
     progressbar bar(100);
 
-    // Initialise mapping
-    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested1;
-    mValsNested1["nestedNestedVector1"] = initializeNestedNestedVector(1, true);  // Assign name to nested-nested vector
-    std::vector<std::vector<std::vector<double>>> m0Nest = mValsNested1["nestedNestedVector1"];
-    SetInitialMagneticMomentsMultilayer(m0Nest, 1, 0, 0 , 1); // Invoke method to set initial magnetic moments. To call: mValsNest[layer][site][component]
-
-    // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
-    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested2;
-    mValsNested2["nestedNestedVector2"] = initializeNestedNestedVector(1, true);
-    std::vector<std::vector<std::vector<double>>> m1Nest = mValsNested2["nestedNestedVector2"];
-    SetInitialMagneticMomentsMultilayer(m1Nest, 1, 0, 0 , 0);
-
-    // The estimations of the m-components values for the next iteration.
-    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;
-    mValsNested3["nestedNestedVector3"] = initializeNestedNestedVector(1, true);
-    std::vector<std::vector<std::vector<double>>> m2Nest = mValsNested3["nestedNestedVector3"];
-    SetInitialMagneticMomentsMultilayer(m2Nest, 1, 0, 0 , 0);
+    std::vector<std::vector<std::vector<double>>> m0Nest = InitialiseNestedVectors(1, 0, 0, 1);
+    std::vector<std::vector<std::vector<double>>> m1Nest = InitialiseNestedVectors(1, 0, 0, 0);
+    std::vector<std::vector<std::vector<double>>> m2Nest = InitialiseNestedVectors(1, 0, 0, 0);
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -1759,9 +1758,3 @@ std::vector<double> Numerical_Methods_Class::flattenNestedVector(std::vector<std
 
     return flattenedVector;
 }
-
-
-
-
-
-
