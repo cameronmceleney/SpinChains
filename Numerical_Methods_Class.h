@@ -134,9 +134,9 @@ private:
     std::vector<double> DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                              std::vector<double> mzTerms, std::vector<int> sitePositions);
     std::vector<double> DipoleDipoleCoupling2(std::vector<double> mxTermsTest, std::vector<double> myTermsTest,
-                                              std::vector<double> mzTermsTest, std::vector<int> sitePositions);
+                                              std::vector<double> mzTermsTest, std::vector<int> sitePositions, int currentSite);
 
-    std::vector<double> DipoleDipoleCoupling3(std::vector<double> mTerms, int sitePositions);
+    std::vector<double> DipoleDipoleCoupling3(std::vector<double>& mTerms, int sitePositions);
     // Terms to calculate the (total) effective field
     double              EffectiveFieldX (const int& site, const double& mxLHS, const double& mxMID,
                                          const double& mxRHS, const double& dipoleTerm, const double& current_time);
@@ -153,7 +153,7 @@ private:
     double              MagneticMomentZ (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
                                          const double& hxMID, const double& hyMID, const double& hzMID);
 
-    std::vector<double> flattenNestedVector(const std::vector<std::vector<double>>& nestedVector);
+    std::vector<double> flattenNestedVector(std::vector<std::vector<double>> nestedVector);
 
 public:
 //  Dtype               Member Name                                Variable docstring

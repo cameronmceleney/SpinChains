@@ -42,8 +42,8 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _shouldDriveCease = false;
 
     // Output Flags
-    _printAllData = false;
-    _printFixedLines = true;
+    _printAllData = true;
+    _printFixedLines = false;
     _printFixedSites = false;
 }
 void Numerical_Methods_Class::NumericalMethodsParameters() {
@@ -422,7 +422,8 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<do
     return totalDipoleTerms;
 }
 std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling2(std::vector<double> mxTermsTest, std::vector<double> myTermsTest,
-                                                                  std::vector<double> mzTermsTest, std::vector<int> sitePositions) {
+                                                                  std::vector<double> mzTermsTest, std::vector<int> sitePositions,
+                                                                  int currentSite) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
     // std::vector<std::vector<double>> mTerms = mTermsLocal; // Aim to then only pull into stack the relevant terms
 
@@ -449,35 +450,35 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling2(std::vector<d
     //std::vector<double> originSite = {mTerms[currentSite][0], mTerms[currentSite][1], mTerms[currentSite][2]};
 
 
-    for (int i = 0; i < mxTermsTest.size(); i++) {
+    for (int i = currentSite - 1; i <= currentSite + 1; i++) {
             mxTermsTest[i] *= muMagnitude;
             myTermsTest[i] *= muMagnitude;
             mzTermsTest[i] *= muMagnitude;
     }
-    std::vector<double> originSite = {mxTermsTest[1], myTermsTest[1], mzTermsTest[1]};
+    std::vector<double> originSite = {mxTermsTest[currentSite], myTermsTest[currentSite], mzTermsTest[currentSite]};
     // Start of the loop over the neighbours
     //for (int i = currentSite - numberNeighbours; i <= currentSite + numberNeighbours; i++) {
-    for (int i = 0; i < mxTermsTest.size(); i++) {
+    for (int i = currentSite - 1; i <= currentSite + 1; i++) {
             //std::cout << "Debug Output: i = " << i << std::endl;  // Add debug output
 
-            if (i == 1) {
+            if (i == currentSite) {
                 // Guard clause to ensure that the origin site is not included in the calculation
                 continue;
             }
 
-            if (_exchangeVec[sitePositions[i]] == 0) {
+            if (_exchangeVec[i] == 0) {
                 // Guard clause to ensure that the exchange vector is not zero
                 continue;
             }
 
-            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[sitePositions[i]]);
+            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[currentSite]);
 
             if (std::isinf(latticeConstant)) {
                 // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
                 continue;
             }
 
-            std::vector<double> positionVector = {(sitePositions[i] - sitePositions[1]) * latticeConstant, 0, 0};
+            std::vector<double> positionVector = {(i - currentSite) * latticeConstant, 0, 0};
 
             double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
                     + std::pow(positionVector[2], 2));
@@ -501,7 +502,7 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling2(std::vector<d
         }
     return totalDipoleTerms;
 }
-std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling3(std::vector<double> mTerms, int sitePositions) {
+std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling3(std::vector<double>& mTerms, int sitePositions) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
     // std::vector<std::vector<double>> mTerms = mTermsLocal; // Aim to then only pull into stack the relevant terms
 
@@ -510,7 +511,7 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling3(std::vector<d
     double muMagnitude = 2.22; // Magnetic moment in µB for iron
     double bohrMagneton = 9.274e-24; // Bohr magneton in Am^{2} (equiv. to J T^{-1})
     muMagnitude *= bohrMagneton;  // Conversion to Am^2
-    int fullSize = GV.GetNumSpins() + 2;
+    int fullSize = 4002;
 
     int numberNeighbours = 1;
 
@@ -529,26 +530,26 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling3(std::vector<d
     //std::vector<double> originSite = {mTerms[currentSite][0], mTerms[currentSite][1], mTerms[currentSite][2]};
 
 
-    for (int i = 0; i < mTerms.size(); i++) {
-            mTerms[i] *= muMagnitude;
-    }
-    std::vector<double> originSite = {mTerms[sitePositions], mTerms[sitePositions + fullSize], mTerms[sitePositions + fullSize * 2]};
+    //for (int i = 0; i < mTerms.size(); i++) {
+    //        mTerms[i] *= muMagnitude;
+    //}
+    std::vector<double> originSite = {mTerms[sitePositions] * muMagnitude, mTerms[sitePositions + fullSize] * muMagnitude, mTerms[sitePositions + fullSize * 2] * muMagnitude};
     // Start of the loop over the neighbours
     //for (int i = currentSite - numberNeighbours; i <= currentSite + numberNeighbours; i++) {
-    for (int i = sitePositions - 1; i <= sitePositions + 1; i++) {
+    for (int i = sitePositions - numberNeighbours; i <= sitePositions + numberNeighbours; i++) {
             //std::cout << "Debug Output: i = " << i << std::endl;  // Add debug output
 
-            if (i == 1) {
+            if (i == sitePositions) {
                 // Guard clause to ensure that the origin site is not included in the calculation
                 continue;
             }
 
-            if (_exchangeVec[sitePositions] == 0) {
+            if (_exchangeVec[i] == 0) {
                 // Guard clause to ensure that the exchange vector is not zero
                 continue;
             }
 
-            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[sitePositions]);
+            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[i]);
 
             if (std::isinf(latticeConstant)) {
                 // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
@@ -565,7 +566,7 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling3(std::vector<d
 
             // Moment at site i
             // std::vector<double> influencingSite = {mTerms[i][0], mTerms[i][1], mTerms[i][2]};
-            std::vector<double> influencingSite = {mTerms[i], mTerms[i + fullSize], mTerms[i + fullSize * 2]};
+            std::vector<double> influencingSite = {mTerms[i] * muMagnitude, mTerms[i + fullSize] * muMagnitude, mTerms[i + fullSize * 2] * muMagnitude};
             //std::cout << "Debug Output: influencingSite = (" << influencingSite[0] << ", " << influencingSite[1] << ", " << influencingSite[2] << ")" << std::endl;  // Add debug output
 
             // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0] + originSite[1] * influencingSite[1] + originSite[2] * influencingSite[2];
@@ -932,15 +933,28 @@ void Numerical_Methods_Class::SolveRK2() {
             if (_useDipolar) {
 
                 // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m0Nest[0], site);
-                std::vector<double> mxTermsForDipole = {mxLHS, mxMID, mxRHS};
-                std::vector<double> myTermsForDipole = {myLHS, myMID, myRHS};
-                std::vector<double> mzTermsForDipole = {mzLHS, mzMID, mzRHS};
+                //std::vector<double> mxTermsForDipole = {mxLHS, mxMID, mxRHS};
+                //std::vector<double> myTermsForDipole = {myLHS, myMID, myRHS};
+                //std::vector<double> mzTermsForDipole = {mzLHS, mzMID, mzRHS};
                 std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
+                std::vector<double> mxTermsForDipole;
+                std::vector<double> myTermsForDipole;
+                std::vector<double> mzTermsForDipole;
+
+                for (const auto& subVector : m0Nest[0]) {
+                    if (!subVector.empty()) {
+                        mxTermsForDipole.push_back(subVector[0]);
+                        myTermsForDipole.push_back(subVector[1]);
+                        mzTermsForDipole.push_back(subVector[2]);
+                    }
+                }
                 // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m1Nest[0], site);
-                std::vector<double> flattenedVector = flattenNestedVector(m0Nest[0]);
-                std::vector<double> dipoleTerms = DipoleDipoleCoupling3(flattenedVector, site);
-                //std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
-                //                                                       mzTermsForDipole, siteTermsForDipole);
+
+                //std::vector<double> flattenedVector = flattenNestedVector(m0Nest[0]);
+                //std::vector<double> dipoleTerms = DipoleDipoleCoupling3(flattenedVector, site);
+
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
+                                                                        mzTermsForDipole, siteTermsForDipole, site);
 
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];
@@ -979,16 +993,36 @@ void Numerical_Methods_Class::SolveRK2() {
 
             double dipoleX, dipoleY, dipoleZ;
             if (_useDipolar) {
-                std::vector<double> mxTermsForDipole = {mxLHS, mxMID, mxRHS};
-                std::vector<double> myTermsForDipole = {myLHS, myMID, myRHS};
-                std::vector<double> mzTermsForDipole = {mzLHS, mzMID, mzRHS};
-                std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
+                //std::vector<double> mxTermsForDipole = {mxLHS, mxMID, mxRHS};
+                //std::vector<double> myTermsForDipole = {myLHS, myMID, myRHS};
+                //std::vector<double> mzTermsForDipole = {mzLHS, mzMID, mzRHS};
+                //std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
                 // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m1Nest[0], site);
                 //std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
                 //                                                       mzTermsForDipole, siteTermsForDipole);
 
-                std::vector<double> flattenedVector = flattenNestedVector(m1Nest[0]);
-                std::vector<double> dipoleTerms = DipoleDipoleCoupling3(flattenedVector, site);
+                //std::vector<double> flattenedVector = flattenNestedVector(m1Nest[0]);
+                //std::vector<double> dipoleTerms = DipoleDipoleCoupling3(flattenedVector, site);
+
+                std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
+                std::vector<double> mxTermsForDipole;
+                std::vector<double> myTermsForDipole;
+                std::vector<double> mzTermsForDipole;
+
+                for (const auto& subVector : m1Nest[0]) {
+                    if (!subVector.empty()) {
+                        mxTermsForDipole.push_back(subVector[0]);
+                        myTermsForDipole.push_back(subVector[1]);
+                        mzTermsForDipole.push_back(subVector[2]);
+                    }
+                }
+                // std::vector<double> dipoleTerms = DipoleDipoleCoupling2(m1Nest[0], site);
+
+                //std::vector<double> flattenedVector = flattenNestedVector(m0Nest[0]);
+                //std::vector<double> dipoleTerms = DipoleDipoleCoupling3(flattenedVector, site);
+
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
+                                                                        mzTermsForDipole, siteTermsForDipole, site);
 
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];
@@ -1523,7 +1557,7 @@ void Numerical_Methods_Class::CreateMetadata(bool print_end_time) {
     }
 }
 
-std::vector<double> Numerical_Methods_Class::flattenNestedVector(const std::vector<std::vector<double>>& nestedVector) {
+std::vector<double> Numerical_Methods_Class::flattenNestedVector(std::vector<std::vector<double>> nestedVector) {
     std::vector<double> flattenedVector;
 
     for (const auto& innerVector : nestedVector) {
