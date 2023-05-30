@@ -115,7 +115,7 @@ private:
     void                SetInitialMagneticMomentsMultilayer(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
                                                             int layer, double mxInit, double myInit, double mzInit);
     std::vector<std::vector<std::vector<double>>> initializeNestedNestedVector(int numSites, bool includeEnd);
-    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors(int layer, double mxInit, double myInit, double mzInit);
+    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors(int& layer, double& mxInit, double& myInit, double& mzInit);
     void                SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration);
 
     void                CreateColumnHeaders(std::ofstream &outputFileName);
@@ -133,14 +133,11 @@ private:
     std::vector<double> computeStochasticTerm(const int& site, const double &timeStep);
 
     // Terms for dipolar coupling
-    std::vector<double> DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
+    std::vector<double> DipoleDipoleCouplingClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
                                              std::vector<double> mzTerms, std::vector<int> sitePositions);
-    std::vector<double> DipoleDipoleCoupling2(std::vector<double> mxTermsTest, std::vector<double> myTermsTest,
-                                              std::vector<double> mzTermsTest, std::vector<int> sitePositions, int currentSite);
-
-    std::vector<double> DipoleDipoleCoupling3(std::vector<double>& mTerms, int sitePositions);
-    std::vector<double> DipoleDipoleCoupling4(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
+    std::vector<double> DipoleDipoleCoupling(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
                                               int& currentSite);
+
     // Terms to calculate the (total) effective field
     double              EffectiveFieldX (const int& site, const double& mxLHS, const double& mxMID,
                                          const double& mxRHS, const double& dipoleTerm, const double& current_time);
@@ -157,14 +154,15 @@ private:
     double              MagneticMomentZ (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
                                          const double& hxMID, const double& hyMID, const double& hzMID);
 
-    std::vector<double> flattenNestedVector(std::vector<std::vector<double>> nestedVector);
+    std::vector<double> flattenNestedVector(const std::vector<std::vector<double>>& nestedVector);
 
 public:
 //  Dtype               Member Name                                Variable docstring
-    void                NumericalMethodsMain();                                 // Assignment of all values required for the simulation
-    void                SolveRK2Classic();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    void                SolveRK2();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid                SolveRK2Bilayer();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint
-    void                SolveRK2Test();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid                SolveRK2Bilayer();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint
+    void                NumericalMethodsMain();                    // Assignment of all values required for the simulation
+    void                SolveRK2Classic();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+    void                SolveRK2();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+    void                SolveRK2Test();                            // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+
 
 };
 

@@ -18,18 +18,18 @@ int main() {
     // Set global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(2000);
+    GV.SetNumSpins(500);
     GV.SetExchangeMinVal(43.5);
     GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2);
     GV.SetIsFerromagnetic(true);
-    std::string method = "RK2t";
+    std::string method = "RK2";
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
-    GV.SetFilePath("MacOS", findEigenvalues);
+    GV.SetFilePath("Windows", findEigenvalues);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {
