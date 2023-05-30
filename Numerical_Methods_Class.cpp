@@ -78,7 +78,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Spin chain and multi-layer Parameters
     _drivingRegionWidth = 200;
-    _numberNeighbours = 3;
+    _numberNeighbours = 1;
     _numSpinsDamped = 0;
     _totalLayers = 1;
 }
@@ -548,6 +548,12 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling4(std::vector<s
 
     int iFV = 0; // index flat vector
     for (int i = currentSite - numNeighbours; i <= currentSite + numNeighbours; i++) {
+
+        if (i < 0) {
+            // Guard clause to skip trying assignment of any element when the index is negative
+            continue;
+        }
+
         // Flatting the vectors
         mxTerms[iFV] = mTerms[i][0] * muMagnitude;
         myTerms[iFV] = mTerms[i][1] * muMagnitude;
