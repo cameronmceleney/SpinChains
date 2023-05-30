@@ -78,6 +78,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Spin chain and multi-layer Parameters
     _drivingRegionWidth = 200;
+    _numberNeighbours = 3;
     _numSpinsDamped = 0;
     _totalLayers = 1;
 }
@@ -302,63 +303,6 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::initializ
     }
     return innerNestedVector;
 }
-/*
-std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
-                                                                  std::vector<double> mzTerms, std::vector<int> sitePositions) {
-    std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
-    //double mu1x = mxTerms[1];
-    //double mu1y = myTerms[1];
-    //double mu1z = mzTerms[1];
-
-    double exchangeStiffness = 5.3e-17;
-    double gConstant = _permFreeSpace / (4.0 * M_PI);
-
-    for (int i = 0; i < mxTerms.size(); i++) {
-
-        if (i == 1){
-            continue;
-        }
-
-        double latticeConstant = sqrt(exchangeStiffness / _exchangeVec[sitePositions[i]]);
-
-        std::vector<double> positionVector = {(sitePositions[i] - sitePositions[1]) * latticeConstant, 0, 0};
-
-        //std::vector<double> positionVector = {  (mxTerms[i] -  mu1x) * latticeConstant,
-        //                                        (myTerms[i] -  mu1y) * latticeConstant,
-        //                                        (mzTerms[i] -  mu1z) * latticeConstant};
-
-        double positionVector_norm = std::sqrt(positionVector[0] * positionVector[0] + positionVector[1] * positionVector[1] + positionVector[2] * positionVector[2]);
-        double positionVector_cubed = std::pow(positionVector_norm, 3);
-        double positionVector_fifth = std::pow(positionVector_norm, 5);
-
-        double mu1DotPosition = mxTerms[1] * positionVector[0] + myTerms[1] * positionVector[1] + mzTerms[1] * positionVector[2];
-        double mu2DotPosition = mxTerms[i] * positionVector[0] + myTerms[i] * positionVector[1] + mzTerms[i] * positionVector[2];
-        double mu1Dotmu2 = mxTerms[1] * mxTerms[i] + myTerms[1] * myTerms[i] + mzTerms[1] * mzTerms[i];
-
-        //std::vector<double> DipoleValues = { (3.0 * mu1DotPosition * mu1DotPosition - mu1Dotmu2 * positionVector[0] * positionVector[0] ),
-        //                                     (3.0 * mu1DotPosition * mu1DotPosition - mu1Dotmu2 * positionVector[0] * positionVector[0] ),
-        //                                     (3.0 * mu1DotPosition * mu1DotPosition - mu1Dotmu2 * positionVector[0] * positionVector[0] )};
-
-        std::vector<double> DipoleValues = {((3.0 * positionVector[0] * mu2DotPosition)/positionVector_fifth - mxTerms[i]/positionVector_cubed),
-                                            ((3.0 * positionVector[1] * mu2DotPosition)/positionVector_fifth - myTerms[i]/positionVector_cubed),
-                                            ((3.0 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)};
-        //std::vector<double> DipoleValues = { gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[0] - mu1_dot_mu2 * positionVector[0]),
-        //                                     gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[0] - mu1_dot_mu2 * positionVector[0]),
-        //                                     gConstant * (3.0 * mu1DotPosition * mu1DotPosition * positionVector[0] - mu1_dot_mu2 * positionVector[0])};
-
-        //gConstant * (3.0 * mu1_dot_r12 * mu2_dot_r12 * positionVector[i] - mu1_dot_mu2 * positionVector[i]);
-        //gConstant * ((3 * positionVector[2] * mu2DotPosition)/positionVector_fifth - mzTerms[i]/positionVector_cubed)
-        totalDipoleTerms[0] += DipoleValues[0];
-        totalDipoleTerms[1] += DipoleValues[1];
-        totalDipoleTerms[2] += DipoleValues[2];
-    }
-
-    totalDipoleTerms[0] *= gConstant;
-    totalDipoleTerms[1] *= gConstant;
-    totalDipoleTerms[2] *= gConstant;
-    return totalDipoleTerms;
-}
-*/
 
 std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                                   std::vector<double> mzTerms, std::vector<int> sitePositions) {
@@ -582,6 +526,82 @@ std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling3(std::vector<d
         }
     return totalDipoleTerms;
 }
+
+std::vector<double> Numerical_Methods_Class::DipoleDipoleCoupling4(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
+                                                                  int& currentSite) {
+    std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
+
+    double exchangeStiffness = 5.3e-17;
+    double gConstant = _permFreeSpace / (4.0 * M_PI);
+    double muMagnitude = 2.22; // Magnetic moment in µB for iron
+    double bohrMagneton = 9.274e-24; // Bohr magneton in Am^{2} (equiv. to J T^{-1})
+    muMagnitude *= bohrMagneton;  // Conversion to Am^2
+
+    int vecLength = 2 * numNeighbours + 1;
+    int midPoint = vecLength / 2 + 1;
+
+    // Could combine these to be a single vector for memory improvements
+    std::vector<double> mxTerms(vecLength, 0);
+    std::vector<double> myTerms(vecLength, 0);
+    std::vector<double> mzTerms(vecLength, 0);
+    std::vector<int> sitePositions(vecLength, 0);
+
+    int iFV = 0; // index flat vector
+    for (int i = currentSite - numNeighbours; i <= currentSite + numNeighbours; i++) {
+        // Flatting the vectors
+        mxTerms[iFV] = mTerms[i][0] * muMagnitude;
+        myTerms[iFV] = mTerms[i][1] * muMagnitude;
+        mzTerms[iFV] = mTerms[i][2] * muMagnitude;
+        sitePositions[iFV] = i;
+        iFV++;
+    }
+
+    // Here to improve readability; could be removed to improve performance
+    std::vector<double> originSite = {mxTerms[midPoint], myTerms[midPoint], mzTerms[midPoint]};
+
+    // Start of the loop over the neighbours
+    for (int i = 0; i < vecLength; i++) {
+
+            if (i == midPoint) {
+                // Guard clause to ensure that the origin site is not included in the calculation
+                continue;
+            }
+
+            if (_exchangeVec[sitePositions[i]] == 0) {
+                // Guard clause to ensure that the exchange vector is not zero
+                continue;
+            }
+
+            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[sitePositions[i]]);
+
+            if (std::isinf(latticeConstant)) {
+                // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
+                continue;
+            }
+
+            std::vector<double> positionVector = {(sitePositions[i] - currentSite) * latticeConstant, 0, 0};
+
+            double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
+                    + std::pow(positionVector[2], 2));
+
+            double positionVector_cubed = std::pow(positionVector_norm, 3);
+            double positionVector_fifth = std::pow(positionVector_norm, 5);
+
+            // Moment at site i. Here to improve readability; could be removed to improve performance
+            std::vector<double> influencingSite = {mxTerms[i], myTerms[i], mzTerms[i]};
+
+            // Calculate the dot products
+            double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1] + originSite[2] * positionVector[2];
+            double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
+
+            for (int j = 0; j < 3; j++) {
+                // Calculate the dipole-dipole coupling term
+                double DipoleValue = gConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
+                totalDipoleTerms[j] += DipoleValue;
+            }
+        }
+    return totalDipoleTerms;
+}
 double Numerical_Methods_Class::generateGaussianNoise(const double &mean, const double &stddev) {
     // Function to generate random numbers from a Gaussian distribution
     static std::mt19937 generator(std::random_device{}());
@@ -766,10 +786,9 @@ void Numerical_Methods_Class::SolveRK2Classic() {
                 std::vector<double> dipoleTerms = DipoleDipoleCoupling(mxTermsForDipole, myTermsForDipole,
                                                                        mzTermsForDipole, siteTermsForDipole);
 
-
-                double dipoleX = dipoleTerms[0];
-                double dipoleY = dipoleTerms[1];
-                double dipoleZ = dipoleTerms[2];
+                dipoleX = dipoleTerms[0];
+                dipoleY = dipoleTerms[1];
+                dipoleZ = dipoleTerms[2];
             } else {
                 dipoleX = 0;
                 dipoleY = 0;
@@ -1027,6 +1046,170 @@ void Numerical_Methods_Class::SolveRK2() {
 
                 std::vector<double> dipoleTerms = DipoleDipoleCoupling2(mxTermsForDipole, myTermsForDipole,
                                                                         mzTermsForDipole, siteTermsForDipole, site);
+
+                dipoleX = dipoleTerms[0];
+                dipoleY = dipoleTerms[1];
+                dipoleZ = dipoleTerms[2];
+            } else {
+                dipoleX = 0;
+                dipoleY = 0;
+                dipoleZ = 0;
+            }
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK1 = EffectiveFieldX(site, mxLHS, mxMID, mxRHS, dipoleX, t0);
+            double hyK1 = EffectiveFieldY(site, myLHS, myMID, myRHS, dipoleY);
+            double hzK1 = EffectiveFieldZ(site, mzLHS, mzMID, mzRHS, dipoleZ);
+
+            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK2 = MagneticMomentX(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
+            double myK2 = MagneticMomentY(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
+            double mzK2 = MagneticMomentZ(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
+
+            m2Nest[0][site][0] = m0Nest[0][site][0] + _stepsize * mxK2;
+            m2Nest[0][site][1] = m0Nest[0][site][1] + _stepsize * myK2;
+            m2Nest[0][site][2] = m0Nest[0][site][2] + _stepsize * mzK2;
+
+            if (_shouldTrackMValues) {
+                double mIterationNorm = sqrt(pow(m2Nest[0][site][0], 2) + pow(m2Nest[0][site][1], 2) + pow(m2Nest[0][site][2], 2));
+                if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+            }
+        }
+        // Everything below here is part of the class method, but not the internal RK2 stage loops.
+
+        /**
+         * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
+         * these between loop iterations sometimes led to incorrect values cropping up.
+         */
+
+        SaveDataToFileMultilayer(mxRK2File, m2Nest[0], iteration);
+
+        //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
+        m0Nest = m2Nest;
+
+        if (iteration == _forceStopAtIteration)
+            exit(0);
+
+        _totalTime += _stepsize;
+    }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
+
+    // Ensures files are closed; sometimes are left open if the writing process above fails
+    mxRK2File.close();
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata(true);
+    }
+
+    if (_shouldTrackMValues)
+        std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;
+
+    // Filename can be copy/pasted from C++ console to Python function's console.
+    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+}
+
+void Numerical_Methods_Class::SolveRK2Test() {
+    // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
+
+    // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
+    std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+
+    if (_isFM) {
+        InformUserOfCodeType("RK2 Midpoint (FM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
+    } else if (!_isFM) {
+        InformUserOfCodeType("RK2 Midpoint (AFM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
+    }
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata();
+    }
+
+    progressbar bar(100);
+
+    // Initialise mapping
+    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested1;
+    mValsNested1["nestedNestedVector1"] = initializeNestedNestedVector(1, true);  // Assign name to nested-nested vector
+    std::vector<std::vector<std::vector<double>>> m0Nest = mValsNested1["nestedNestedVector1"];
+    SetInitialMagneticMomentsMultilayer(m0Nest, 1, 0, 0 , 1); // Invoke method to set initial magnetic moments. To call: mValsNest[layer][site][component]
+
+    // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
+    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested2;
+    mValsNested2["nestedNestedVector2"] = initializeNestedNestedVector(1, true);
+    std::vector<std::vector<std::vector<double>>> m1Nest = mValsNested2["nestedNestedVector2"];
+    SetInitialMagneticMomentsMultilayer(m1Nest, 1, 0, 0 , 0);
+
+    // The estimations of the m-components values for the next iteration.
+    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;
+    mValsNested3["nestedNestedVector3"] = initializeNestedNestedVector(1, true);
+    std::vector<std::vector<std::vector<double>>> m2Nest = mValsNested3["nestedNestedVector3"];
+    SetInitialMagneticMomentsMultilayer(m2Nest, 1, 0, 0 , 0);
+
+    for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
+
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
+            // Doesn't work on Windows due to different compiler. Doesn't work for fewer than 100 iterations
+            bar.update();
+
+        TestShockwaveConditions(iteration);
+
+        double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf;
+
+        // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
+        // RK2 Stage 1. Takes initial conditions as inputs.
+
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
+
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
+
+            double mxLHS = m0Nest[0][spinLHS][0], mxMID = m0Nest[0][site][0], mxRHS = m0Nest[0][spinRHS][0];
+            double myLHS = m0Nest[0][spinLHS][1], myMID = m0Nest[0][site][1], myRHS = m0Nest[0][spinRHS][1];
+            double mzLHS = m0Nest[0][spinLHS][2], mzMID = m0Nest[0][site][2], mzRHS = m0Nest[0][spinRHS][2];
+
+            double dipoleX, dipoleY, dipoleZ;
+            if (_useDipolar) {
+
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling4(m0Nest[0], _numberNeighbours, site);
+                dipoleX = dipoleTerms[0];
+                dipoleY = dipoleTerms[1];
+                dipoleZ = dipoleTerms[2];
+            } else {
+                dipoleX = 0;
+                dipoleY = 0;
+                dipoleZ = 0;
+            }
+
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK0 = EffectiveFieldX(site, mxLHS, mxMID, mxRHS, dipoleX, t0);
+            double hyK0 = EffectiveFieldY(site, myLHS, myMID, myRHS, dipoleY);
+            double hzK0 = EffectiveFieldZ(site, mzLHS, mzMID, mzRHS, dipoleZ);
+
+            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK1 = MagneticMomentX(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
+            double myK1 = MagneticMomentY(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
+            double mzK1 = MagneticMomentZ(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
+
+            // Find (m0 + k1/2) for each site, which is used in the next stage.
+            m1Nest[0][site][0] =  mxMID + _stepsizeHalf * mxK1;
+            m1Nest[0][site][1] =  myMID + _stepsizeHalf * myK1;
+            m1Nest[0][site][2] =  mzMID + _stepsizeHalf * mzK1;
+        }
+
+        // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
+
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
+
+            double mxLHS = m1Nest[0][spinLHS][0], mxMID = m1Nest[0][site][0], mxRHS = m1Nest[0][spinRHS][0];
+            double myLHS = m1Nest[0][spinLHS][1], myMID = m1Nest[0][site][1], myRHS = m1Nest[0][spinRHS][1];
+            double mzLHS = m1Nest[0][spinLHS][2], mzMID = m1Nest[0][site][2], mzRHS = m1Nest[0][spinRHS][2];
+
+            double dipoleX, dipoleY, dipoleZ;
+            if (_useDipolar) {
+
+                int numNeighbours = 3;
+                std::vector<double> dipoleTerms = DipoleDipoleCoupling4(m1Nest[0], _numberNeighbours, site);
 
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];

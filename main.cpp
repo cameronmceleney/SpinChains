@@ -55,6 +55,8 @@ int main() {
             NumericalMethods.SolveRK2();
         else if (method == "RK2c")
             NumericalMethods.SolveRK2Classic();
+        else if (method == "RK2t")
+            NumericalMethods.SolveRK2Test();
     }
     #pragma clang diagnostic pop
     return 0;

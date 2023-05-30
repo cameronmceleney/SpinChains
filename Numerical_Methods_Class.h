@@ -48,6 +48,7 @@ private:
     double              _myInit = 0.0;                             // y-direction. (Default: 0.0)
     double              _mzInit = 1.0;                             // z-direction. (Default: _magSat = 1.0)
 
+    int                 _numberNeighbours;
     int                 _numberOfDataPoints;                       // Number of datapoints sent to output file. Higher number gives greater precision, but drastically increases filesize. Set equal to _stopIterVal to save all data, else 100.
     int                 _numberOfSpinPairs;                        // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
     int                 _numSpinsDamped;                           // Number of spins in the damped regions (previously called _numGilbert).
@@ -137,6 +138,8 @@ private:
                                               std::vector<double> mzTermsTest, std::vector<int> sitePositions, int currentSite);
 
     std::vector<double> DipoleDipoleCoupling3(std::vector<double>& mTerms, int sitePositions);
+    std::vector<double> DipoleDipoleCoupling4(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
+                                              int& currentSite);
     // Terms to calculate the (total) effective field
     double              EffectiveFieldX (const int& site, const double& mxLHS, const double& mxMID,
                                          const double& mxRHS, const double& dipoleTerm, const double& current_time);
@@ -160,6 +163,8 @@ public:
     void                NumericalMethodsMain();                                 // Assignment of all values required for the simulation
     void                SolveRK2Classic();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
     void                SolveRK2();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid                SolveRK2Bilayer();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint
+    void                SolveRK2Test();                         // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint methodvoid                SolveRK2Bilayer();                                // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint
+
 };
 
 #endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
