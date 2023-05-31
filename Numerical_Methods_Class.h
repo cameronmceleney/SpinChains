@@ -41,6 +41,9 @@ private:
     double              _iterStartShock;                           // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
     double              _iterEndShock;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the _maxSimTime.
     double              _largestMNorm = 1e-50;                     // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
+    std::vector<double> _largestMNormMulti = {1e-50, 1e-50};       // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
+    std::vector<int>    _layerLengths;
+    int                 _layerOfInterest;
     double              _maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
     // The initial values of the squares of the magnetic moments (m) along each axis. [_mxInit + _myInit + _mzInit]  CANNOT sum to greater than 1.0
@@ -115,7 +118,7 @@ private:
     void                SetInitialMagneticMomentsMultilayer(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
                                                             int layer, double mxInit, double myInit, double mzInit);
     std::vector<std::vector<std::vector<double>>> initializeNestedNestedVector(int numSites, bool includeEnd);
-    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors(int& layer, double& mxInit, double& myInit, double& mzInit);
+    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors(int& totalLayer, double& mxInit, double& myInit, double& mzInit);
     void                SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration);
 
     void                CreateColumnHeaders(std::ofstream &outputFileName);

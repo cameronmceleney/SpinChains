@@ -26,7 +26,7 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Interaction Flags
     _hasShockwave = false;
-    _useDipolar = true;
+    _useDipolar = false;
     _useZeeman = true;
 
     // Material Flags
@@ -69,6 +69,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _fixed_output_sites = {12158, 14529, 15320};
     _numberOfDataPoints = 100; //static_cast<int>(_maxSimTime / _recordingInterval);
     _recordingInterval = 0.7e-11;
+    _layerOfInterest = 2;
 
     // Damping Factors
     _gilbertConst  = 1e-4;
@@ -79,16 +80,20 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _drivingRegionWidth = 200;
     _numberNeighbours = -1;
     _numSpinsDamped = 0;
-    _totalLayers = 1;
+    _totalLayers = 2;
 }
 void Numerical_Methods_Class::NumericalMethodsProcessing() {
     // Computations based upon other inputs
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
+
     _iterationEnd = static_cast<int>(_maxSimTime / _stepsize);
+    _stepsizeHalf = _stepsize / 2.0;
+
     _numSpinsInChain = GV.GetNumSpins();
     _numberOfSpinPairs = _numSpinsInChain - 1;
     GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
-    _stepsizeHalf = _stepsize / 2.0;
+    _layerLengths =  {_drivingRegionWidth, GV.GetNumSpins()};
+    _layerOfInterest -= 1;  // To correct for 0-indexing
 
     if (_isFM)
         _anisotropyField = 0;
@@ -273,7 +278,7 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
 
 void Numerical_Methods_Class::SetInitialMagneticMomentsMultilayer(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
                                                                   int layer, double mxInit, double myInit, double mzInit) {
-    layer -= 1;
+
     // mxInitCond[0] = _mxInit; // Only perturb initial spin
 
     /*
@@ -284,7 +289,7 @@ void Numerical_Methods_Class::SetInitialMagneticMomentsMultilayer(std::vector<st
     }
     */
 
-    for (int i = 0; i < GV.GetNumSpins(); i++) {
+    for (int i = 0; i < _layerLengths[layer]; i++) {
         nestedNestedVector[layer].push_back({mxInit, myInit, mzInit});
     }
 
@@ -309,14 +314,14 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::initializ
     }
     return innerNestedVector;
 }
-std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::InitialiseNestedVectors(int& layer, double& mxInit, double& myInit, double& mzInit) {
+std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::InitialiseNestedVectors(int& totalLayer, double& mxInit, double& myInit, double& mzInit) {
 
     // Initialise mapping
     std::map<std::string, std::vector<std::vector<std::vector<double>>>> mTermsMapping;
 
     // This is likely a very slow way to initialise (push_back is slow), but this works for now. Fix if it is a bottleneck later
     std::vector<std::vector<std::vector<double>>> innerNestedVector;
-    for (int j = 0; j < layer; j++) {
+    for (int i = 0; i < totalLayer; i++) {
         std::vector<std::vector<double>> innerVector;
         std::vector<double> innermostVector = {0.0, 0.0, 0.0};
         innerVector.push_back(innermostVector);
@@ -329,7 +334,8 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::Initialis
     std::vector<std::vector<std::vector<double>>> mTermsNested = mTermsMapping["nestedVector"];
 
     // Invoke method to set initial magnetic moments. To call: mValsNest[layer][site][component]
-    SetInitialMagneticMomentsMultilayer(mTermsNested, layer, mxInit, myInit , mzInit);
+    for (int layer = 0; layer < totalLayer; layer++)
+        SetInitialMagneticMomentsMultilayer(mTermsNested, layer, mxInit, myInit , mzInit);
 
     return mTermsNested;
 }
@@ -951,8 +957,8 @@ void Numerical_Methods_Class::SolveRK2Test() {
 
     // Nested vectors are that allow for multiple layers to be used in the code. See documentation for more details.
     std::vector<std::vector<std::vector<double>>> m0Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, _mzInit);
-    std::vector<std::vector<std::vector<double>>> m1Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, _mxInit);
-    std::vector<std::vector<std::vector<double>>> m2Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, _mxInit);
+    std::vector<std::vector<std::vector<double>>> m1Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, _myInit);
+    std::vector<std::vector<std::vector<double>>> m2Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, _myInit);
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -964,90 +970,92 @@ void Numerical_Methods_Class::SolveRK2Test() {
 
         double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf;
 
-        // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
-        // RK2 Stage 1. Takes initial conditions as inputs.
+        for (int layer = 0; layer < _totalLayers; layer++) {
+            // RK2 Stage 1. Takes initial conditions as inputs.
 
-        for (int site = 1; site <= GV.GetNumSpins(); site++) {
+            for (int site = 1; site <= _layerLengths[layer]; site++) {
+                // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
 
-            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
-            int spinLHS = site - 1, spinRHS = site + 1;
+                // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+                int spinLHS = site - 1, spinRHS = site + 1;
 
-            double mxLHS = m0Nest[0][spinLHS][0], mxMID = m0Nest[0][site][0], mxRHS = m0Nest[0][spinRHS][0];
-            double myLHS = m0Nest[0][spinLHS][1], myMID = m0Nest[0][site][1], myRHS = m0Nest[0][spinRHS][1];
-            double mzLHS = m0Nest[0][spinLHS][2], mzMID = m0Nest[0][site][2], mzRHS = m0Nest[0][spinRHS][2];
+                double mxLHS = m0Nest[layer][spinLHS][0], mxMID = m0Nest[layer][site][0], mxRHS = m0Nest[layer][spinRHS][0];
+                double myLHS = m0Nest[layer][spinLHS][1], myMID = m0Nest[layer][site][1], myRHS = m0Nest[layer][spinRHS][1];
+                double mzLHS = m0Nest[layer][spinLHS][2], mzMID = m0Nest[layer][site][2], mzRHS = m0Nest[layer][spinRHS][2];
 
-            double dipoleX, dipoleY, dipoleZ;
-            if (_useDipolar) {
+                double dipoleX, dipoleY, dipoleZ;
+                if (_useDipolar) {
+                    std::vector<double> dipoleTerms = DipoleDipoleCoupling(m0Nest[layer], _numberNeighbours, site);
+                    dipoleX = dipoleTerms[0];
+                    dipoleY = dipoleTerms[1];
+                    dipoleZ = dipoleTerms[2];
+                } else {
+                    dipoleX = 0;
+                    dipoleY = 0;
+                    dipoleZ = 0;
+                }
 
-                std::vector<double> dipoleTerms = DipoleDipoleCoupling(m0Nest[0], _numberNeighbours, site);
-                dipoleX = dipoleTerms[0];
-                dipoleY = dipoleTerms[1];
-                dipoleZ = dipoleTerms[2];
-            } else {
-                dipoleX = 0;
-                dipoleY = 0;
-                dipoleZ = 0;
-            }
+                // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+                double hxK0 = EffectiveFieldX(site, mxLHS, mxMID, mxRHS, dipoleX, t0);
+                double hyK0 = EffectiveFieldY(site, myLHS, myMID, myRHS, dipoleY);
+                double hzK0 = EffectiveFieldZ(site, mzLHS, mzMID, mzRHS, dipoleZ);
 
-            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK0 = EffectiveFieldX(site, mxLHS, mxMID, mxRHS, dipoleX, t0);
-            double hyK0 = EffectiveFieldY(site, myLHS, myMID, myRHS, dipoleY);
-            double hzK0 = EffectiveFieldZ(site, mzLHS, mzMID, mzRHS, dipoleZ);
+                // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                double mxK1 = MagneticMomentX(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
+                double myK1 = MagneticMomentY(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
+                double mzK1 = MagneticMomentZ(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
 
-            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK1 = MagneticMomentX(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
-            double myK1 = MagneticMomentY(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
-            double mzK1 = MagneticMomentZ(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
-
-            // Find (m0 + k1/2) for each site, which is used in the next stage.
-            m1Nest[0][site][0] =  mxMID + _stepsizeHalf * mxK1;
-            m1Nest[0][site][1] =  myMID + _stepsizeHalf * myK1;
-            m1Nest[0][site][2] =  mzMID + _stepsizeHalf * mzK1;
-        }
-
-        // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
-        for (int site = 1; site <= GV.GetNumSpins(); site++) {
-
-            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
-            int spinLHS = site - 1, spinRHS = site + 1;
-
-            double mxLHS = m1Nest[0][spinLHS][0], mxMID = m1Nest[0][site][0], mxRHS = m1Nest[0][spinRHS][0];
-            double myLHS = m1Nest[0][spinLHS][1], myMID = m1Nest[0][site][1], myRHS = m1Nest[0][spinRHS][1];
-            double mzLHS = m1Nest[0][spinLHS][2], mzMID = m1Nest[0][site][2], mzRHS = m1Nest[0][spinRHS][2];
-
-            double dipoleX, dipoleY, dipoleZ;
-            if (_useDipolar) {
-
-                int numNeighbours = 3;
-                std::vector<double> dipoleTerms = DipoleDipoleCoupling(m1Nest[0], _numberNeighbours, site);
-
-                dipoleX = dipoleTerms[0];
-                dipoleY = dipoleTerms[1];
-                dipoleZ = dipoleTerms[2];
-            } else {
-                dipoleX = 0;
-                dipoleY = 0;
-                dipoleZ = 0;
-            }
-            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK1 = EffectiveFieldX(site, mxLHS, mxMID, mxRHS, dipoleX, t0);
-            double hyK1 = EffectiveFieldY(site, myLHS, myMID, myRHS, dipoleY);
-            double hzK1 = EffectiveFieldZ(site, mzLHS, mzMID, mzRHS, dipoleZ);
-
-            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK2 = MagneticMomentX(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
-            double myK2 = MagneticMomentY(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
-            double mzK2 = MagneticMomentZ(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
-
-            m2Nest[0][site][0] = m0Nest[0][site][0] + _stepsize * mxK2;
-            m2Nest[0][site][1] = m0Nest[0][site][1] + _stepsize * myK2;
-            m2Nest[0][site][2] = m0Nest[0][site][2] + _stepsize * mzK2;
-
-            if (_shouldTrackMValues) {
-                double mIterationNorm = sqrt(pow(m2Nest[0][site][0], 2) + pow(m2Nest[0][site][1], 2) + pow(m2Nest[0][site][2], 2));
-                if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+                // Find (m0 + k1/2) for each site, which is used in the next stage.
+                m1Nest[layer][site][0] = mxMID + _stepsizeHalf * mxK1;
+                m1Nest[layer][site][1] = myMID + _stepsizeHalf * myK1;
+                m1Nest[layer][site][2] = mzMID + _stepsizeHalf * mzK1;
             }
         }
+
+        for (int layer = 0; layer < _totalLayers; layer++) {
+            // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
+            for (int site = 1; site <= _layerLengths[layer]; site++) {
+
+                // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+                int spinLHS = site - 1, spinRHS = site + 1;
+
+                double mxLHS = m1Nest[layer][spinLHS][0], mxMID = m1Nest[layer][site][0], mxRHS = m1Nest[layer][spinRHS][0];
+                double myLHS = m1Nest[layer][spinLHS][1], myMID = m1Nest[layer][site][1], myRHS = m1Nest[layer][spinRHS][1];
+                double mzLHS = m1Nest[layer][spinLHS][2], mzMID = m1Nest[layer][site][2], mzRHS = m1Nest[layer][spinRHS][2];
+
+                double dipoleX, dipoleY, dipoleZ;
+                if (_useDipolar) {
+                    std::vector<double> dipoleTerms = DipoleDipoleCoupling(m1Nest[layer], _numberNeighbours, site);
+                    dipoleX = dipoleTerms[0];
+                    dipoleY = dipoleTerms[1];
+                    dipoleZ = dipoleTerms[2];
+                } else {
+                    dipoleX = 0;
+                    dipoleY = 0;
+                    dipoleZ = 0;
+                }
+                // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+                double hxK1 = EffectiveFieldX(site, mxLHS, mxMID, mxRHS, dipoleX, t0);
+                double hyK1 = EffectiveFieldY(site, myLHS, myMID, myRHS, dipoleY);
+                double hzK1 = EffectiveFieldZ(site, mzLHS, mzMID, mzRHS, dipoleZ);
+
+                // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                double mxK2 = MagneticMomentX(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
+                double myK2 = MagneticMomentY(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
+                double mzK2 = MagneticMomentZ(site, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
+
+                m2Nest[layer][site][0] = m0Nest[layer][site][0] + _stepsize * mxK2;
+                m2Nest[layer][site][1] = m0Nest[layer][site][1] + _stepsize * myK2;
+                m2Nest[layer][site][2] = m0Nest[layer][site][2] + _stepsize * mzK2;
+
+                if (_shouldTrackMValues) {
+                    double mIterationNorm = sqrt(
+                            pow(m2Nest[layer][site][0], 2) + pow(m2Nest[layer][site][1], 2) + pow(m2Nest[layer][site][2], 2));
+                    if ((_largestMNormMulti[layer]) > (1.0 - mIterationNorm)) { _largestMNormMulti[layer] = (1.0 - mIterationNorm); }
+                }
+            }
+        }
+
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
 
         /**
@@ -1055,7 +1063,7 @@ void Numerical_Methods_Class::SolveRK2Test() {
          * these between loop iterations sometimes led to incorrect values cropping up.
          */
 
-        SaveDataToFileMultilayer(mxRK2File, m2Nest[0], iteration);
+        SaveDataToFileMultilayer(mxRK2File, m2Nest[_layerOfInterest], iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         m0Nest = m2Nest;
@@ -1073,8 +1081,12 @@ void Numerical_Methods_Class::SolveRK2Test() {
         CreateMetadata(true);
     }
 
-    if (_shouldTrackMValues)
-        std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;
+    if (_shouldTrackMValues) {
+        std::cout << "\nMax norm. values of M are: ";
+        for (int i = 0; i < _largestMNormMulti.size(); i++) {
+            std::cout << "Layer " << i << ": " << _largestMNormMulti[i] << " | ";
+        }
+    }
 
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
