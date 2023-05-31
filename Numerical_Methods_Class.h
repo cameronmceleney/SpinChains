@@ -43,6 +43,8 @@ private:
     double              _largestMNorm = 1e-50;                     // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
     std::vector<double> _largestMNormMulti = {1e-50, 1e-50};       // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
     std::vector<int>    _layerLengths;
+    std::vector<int>    _layerNumspins;
+    std::vector<int>    _layerSpinpairs;
     int                 _layerOfInterest;
     double              _maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
@@ -74,6 +76,7 @@ private:
     int                 _totalLayers;
     // ######## Booleans including tests ########
     bool                _centralDrive;                             // Drive from the centre of the chain if (true)
+    bool                _driveAllLayers;
     bool                _dualDrive;                                // Drive from both sides of the system
     bool                _hasShockwave;                             // Simulation contains a single driving bias field if (false).
     bool                _hasStaticDrive;                           // Selects (if true) whether drive has sinusoidal term
@@ -98,6 +101,7 @@ private:
     // ######## Private Functions ########
     std::vector<double> _exchangeVec;                              // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};
+    std::vector<std::vector<double>> _gilbertVectorMulti{{0}, {0}};
 
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
     std::vector<double> _mx0{0};                                   // x-axis (x)
@@ -131,22 +135,25 @@ private:
     void                TestShockwaveConditions(double iteration);
 
     // Terms to work out stochastic component of LLG (WORK IN PROGRESS!!)
-    double generateGaussianNoise(const double &mean, const double &stddev);
-    std::vector<double> stochasticTerm(const int& site, const double &timeStep);
-    std::vector<double> computeStochasticTerm(const int& site, const double &timeStep);
+    double GenerateGaussianNoise(const double &mean, const double &stddev);
+    std::vector<double> StochasticTerm(const int& site, const double &timeStep);
+    std::vector<double> ComputeStochasticTerm(const int& site, const double &timeStep);
 
     // Terms for dipolar coupling
     std::vector<double> DipoleDipoleCouplingClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
                                              std::vector<double> mzTerms, std::vector<int> sitePositions);
-    std::vector<double> DipoleDipoleCoupling(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
+    std::vector<double> DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
                                               int& currentSite);
+    std::vector<double> DipolarInteractionInterlayer(std::vector<std::vector<double>>& mTermsChain1,
+                                                     std::vector<std::vector<double>>& mTermsChain2, int& numNeighbours,
+                                                     int& currentSite);
 
     // Terms to calculate the (total) effective field
-    double              EffectiveFieldX (const int& site, const double& mxLHS, const double& mxMID,
+    double              EffectiveFieldX (const int& site, const int& layer, const double& mxLHS, const double& mxMID,
                                          const double& mxRHS, const double& dipoleTerm, const double& current_time);
-    double              EffectiveFieldY (const int& site, const double& myLHS, const double& myMID, const double& myRHS,
+    double              EffectiveFieldY (const int& site, const int& layer, const double& myLHS, const double& myMID, const double& myRHS,
                                          const double& dipoleTerm);
-    double              EffectiveFieldZ (const int& site, const double& mzLHS, const double& mzMID, const double& mzRHS,
+    double              EffectiveFieldZ (const int& site, const int& layer, const double& mzLHS, const double& mzMID, const double& mzRHS,
                                          const double& dipoleTerm);
 
     // Terms to calculate the magnetic moments of the atoms (doesn't yet include sLLG
@@ -157,7 +164,20 @@ private:
     double              MagneticMomentZ (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
                                          const double& hxMID, const double& hyMID, const double& hzMID);
 
+    double              MagneticMomentX (const int& spin, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
+    double              MagneticMomentY (const int& spin, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
+    double              MagneticMomentZ (const int& spin, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
+    void SetDampingRegionMulti();
     std::vector<double> flattenNestedVector(const std::vector<std::vector<double>>& nestedVector);
+    std::vector<double> DipolarInteractionInterlayerTest(std::vector<std::vector<double>>& mTermsChain1,
+                                                     std::vector<std::vector<double>>& mTermsChain2, int& numNeighbours,
+                                                     int& currentSite);
+    void CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata, int layer);
+    void SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration, int layer);
+    void CreateColumnHeaders(std::ofstream &outputFileName, int& layer);
 
 public:
 //  Dtype               Member Name                                Variable docstring
