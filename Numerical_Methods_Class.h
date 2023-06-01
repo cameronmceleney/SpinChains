@@ -42,9 +42,9 @@ private:
     double              _iterEndShock;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the _maxSimTime.
     double              _largestMNorm = 1e-50;                     // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
     std::vector<double> _largestMNormMulti = {1e-50, 1e-50};       // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
-    std::vector<int>    _layerLengths;
-    std::vector<int>    _layerNumspins;
-    std::vector<int>    _layerSpinpairs;
+    std::vector<int>    _layerTotalSpins;
+    std::vector<int>    _layerSpinsInChain;
+    std::vector<int>    _layerSpinPairs;
     int                 _layerOfInterest;
     double              _maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
@@ -101,7 +101,7 @@ private:
     // ######## Private Functions ########
     std::vector<double> _exchangeVec;                              // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _gilbertVector{0};
-    std::vector<std::vector<double>> _gilbertVectorMulti{{0}, {0}};
+    std::vector<std::vector<double>> _gilbertVectorMulti{};
 
     // Vectors containing magnetic components (m), along each axis, at the initial conditions for all spins. Leave as zero!
     std::vector<double> _mx0{0};                                   // x-axis (x)
@@ -143,10 +143,10 @@ private:
     std::vector<double> DipoleDipoleCouplingClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
                                              std::vector<double> mzTerms, std::vector<int> sitePositions);
     std::vector<double> DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
-                                              int& currentSite);
+                                              int& currentSite, const int& layer = 0);
     std::vector<double> DipolarInteractionInterlayer(std::vector<std::vector<double>>& mTermsChain1,
                                                      std::vector<std::vector<double>>& mTermsChain2, int& numNeighbours,
-                                                     int& currentSite);
+                                                     int& currentSite, const int& layer = 0);
 
     // Terms to calculate the (total) effective field
     double              EffectiveFieldX (const int& site, const int& layer, const double& mxLHS, const double& mxMID,

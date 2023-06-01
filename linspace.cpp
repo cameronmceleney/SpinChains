@@ -16,6 +16,7 @@ void LinspaceClass::set_values(double intervalStart, double intervalEnd, int num
 
 // Getter function for linspace class
 std::vector<double> LinspaceClass::generate_array() {
+    _linspaceArray.clear(); // Required when using multi-layers as otherwise previous damping regions are retained
 
     if (_numberOfSamples == 0) {
         // If no range in inputted then empty vector is returned

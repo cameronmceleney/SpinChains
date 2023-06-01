@@ -23,7 +23,7 @@ int main() {
     GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2);
     GV.SetIsFerromagnetic(true);
-    std::string method = "RK2c";
+    std::string method = "RK2t";
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier for the file: ";
