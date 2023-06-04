@@ -80,7 +80,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     // Spin chain and multi-layer Parameters
     _drivingRegionWidth = 200;
     _numberNeighbours = -1;
-    _numSpinsDamped = 0;
+    _numSpinsDamped = 200;
     _totalLayers = 2;
 }
 void Numerical_Methods_Class::NumericalMethodsProcessing() {
@@ -451,10 +451,6 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
                                                                   int& currentSite, const int& layer) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
 
-    // Ensure currentSite is a valid index
-    if (currentSite < 0 || currentSite >= mTerms.size())
-        return totalDipoleTerms;
-
     double exchangeStiffness = 5.3e-17;
     double gConstant = _permFreeSpace / (4.0 * M_PI);
     double muMagnitude = 2.22; // Magnetic moment in µB for iron
@@ -466,7 +462,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
         // Guard clause to ensure that the number of neighbours is not zero
         return totalDipoleTerms;
     } else if (numNeighbours < 0) {
-        vecLength = _layerTotalSpins[layer] + 2;
+        vecLength = _layerSpinsInChain[layer] + 2;
         midPoint = currentSite;
     } else {
         vecLength = 2 * numNeighbours + 1;
@@ -476,10 +472,6 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
     if (vecLength < 0)
         std::cout << "Error: vecLength is less than zero" << std::endl;
 
-    // Guard clause to ensure that the current site is not greater than the number of sites; invalid calculation
-    if (currentSite >= mTerms.size())
-        return totalDipoleTerms;
-
     // Could combine these to be a single vector for memory improvements
     std::vector<double> mxTerms(vecLength, 0);
     std::vector<double> myTerms(vecLength, 0);
@@ -488,7 +480,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
 
     int iFV = 0; // index flat vector
     if (numNeighbours < 0) {
-        for (int i = 0; i < vecLength; i++) {
+        for (int i = _numSpinsDamped; i < vecLength + _numSpinsDamped; i++) {
             // Flatting the vectors
             mxTerms[iFV] = mTerms[i][0] * muMagnitude;
             myTerms[iFV] = mTerms[i][1] * muMagnitude;
@@ -498,7 +490,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
     }
     } else {
         for (int i = currentSite - numNeighbours; i <= currentSite + numNeighbours; i++) {
-            if (i < 0 or i >= mTerms.size()) {
+            if (i < _numSpinsDamped or i >= mTerms.size() - _numSpinsDamped) {
                 // Guard clause to skip trying assignment of any element when the index is negative
                 continue;
             }
@@ -516,57 +508,52 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
     // Start of the loop over the neighbours
     for (int i = 0; i < vecLength; i++) {
 
-            if (i == midPoint) {
-                // Guard clause to ensure that the origin site is not included in the calculation
-                continue;
-            }
-
-            // Moment at site i. Here to improve readability; could be removed to improve performance
-            std::vector<double> influencingSite = {mxTerms[i], myTerms[i], mzTerms[i]};
-
-            // Skip iteration if the magnetic moment at the influencing site is zero when computationally efficient to do so
-            if (numNeighbours > 5 && (influencingSite[0] == 0.0 && influencingSite[1] == 0.0 && influencingSite[2] == 0.0)) {
-                continue;
-            }
-
-            if (sitePositions[i] >= _exchangeVec.size() || _exchangeVec[sitePositions[i]] == 0) {
-                // Guard clause to ensure that the exchange vector is not zero
-                continue;
-            }
-
-            if (exchangeStiffness == 0.0 || _exchangeVec[sitePositions[i]] == 0.0) {
-                continue;
-            }
-
-            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[sitePositions[i]]);
-
-            if (std::isinf(latticeConstant)) {
-                // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
-                continue;
-            }
-
-            std::vector<double> positionVector = {(sitePositions[i] - sitePositions[midPoint]) * latticeConstant, 0, 0};
-
-            double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
-                    + std::pow(positionVector[2], 2));
-
-            double positionVector_cubed = std::pow(positionVector_norm, 3);
-            double positionVector_fifth = std::pow(positionVector_norm, 5);
-            if (positionVector_cubed == 0.0 || positionVector_fifth == 0.0) {
-                // Could use an epsilon value here to avoid division by zero andto make code more efficient
-                continue;
-            }
-
-            // Calculate the dot products
-            double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1] + originSite[2] * positionVector[2];
-            double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
-
-            for (int j = 0; j < 3; j++) {
-                // Calculate the dipole-dipole coupling term
-                double DipoleValue = gConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
-                totalDipoleTerms[j] += DipoleValue;
-            }
+        if (i == midPoint) {
+            // Guard clause to ensure that the origin site is not included in the calculation
+            continue;
         }
+
+        // Moment at site i. Here to improve readability; could be removed to improve performance
+        std::vector<double> influencingSite = {mxTerms[i], myTerms[i], mzTerms[i]};
+
+        if (numNeighbours > 5 && (influencingSite[0] == 0.0 && influencingSite[1] == 0.0 && influencingSite[2] == 0.0)) {
+            // If influencing site components are all zero, then they don't impact the calculation. So can be skipped
+            continue;
+        }
+
+        if (exchangeStiffness == 0.0 || _exchangeVec[sitePositions[i]] == 0.0) {
+            continue;
+        }
+
+        double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[sitePositions[i]]);
+
+        if (std::isinf(latticeConstant)) {
+            // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
+            continue;
+        }
+
+        std::vector<double> positionVector = {(sitePositions[i] - sitePositions[midPoint]) * latticeConstant, 0, 0};
+
+        double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
+                + std::pow(positionVector[2], 2));
+
+        double positionVector_cubed = std::pow(positionVector_norm, 3);
+        double positionVector_fifth = std::pow(positionVector_norm, 5);
+        if (positionVector_cubed == 0.0 || positionVector_fifth == 0.0) {
+            // Could use an epsilon value here to avoid division by zero andto make code more efficient
+            continue;
+        }
+
+        // Calculate the dot products
+        double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1] + originSite[2] * positionVector[2];
+        double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
+
+        for (int j = 0; j < 3; j++) {
+            // Calculate the dipole-dipole coupling term
+            double DipoleValue = gConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
+            totalDipoleTerms[j] += DipoleValue;
+        }
+    }
     return totalDipoleTerms;
 }
 std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayer(std::vector<std::vector<double>>& mTermsChain1,
@@ -582,7 +569,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayer(std::v
     muMagnitude *= bohrMagneton;  // Conversion to Am^2
 
 
-    if (currentSite < 0 || currentSite >= mTermsChain1.size()) {
+    if (currentSite < _numSpinsDamped or currentSite >= _layerSpinsInChain[layer] + _numSpinsDamped) {
         // Ensure currentSite is a valid index for mTermsChain1
         return std::vector<double>(3, 0.0);
     }
@@ -593,8 +580,9 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayer(std::v
     std::vector<double> totalDipoleTermsChain2 = {0.0, 0.0, 0.0};
 
     // Check if currentSite is a valid index for mTermsChain2 before calculations
-    if (currentSite >= 0 || currentSite < mTermsChain2.size()) {
-        totalDipoleTermsChain2 = DipolarInteractionIntralayer(mTermsChain2, numNeighbours, currentSite, layer);
+    if (currentSite >= _numSpinsDamped and currentSite < _layerSpinsInChain[layer] + _numSpinsDamped) {
+        // For now, we only calculate the dipolar coupling in chain 1 due to computational cost
+        // totalDipoleTermsChain2 = DipolarInteractionIntralayer(mTermsChain2, numNeighbours, currentSite, layer);
 
         // Now calculate the interaction between the corresponding sites in the two chains
         // Here we use the same calculations as in the original function but for two spins at the same site in different chains
