@@ -5,6 +5,7 @@
 #include "SpinChainEigenSolverClass.h"
 #include "CommonLibs.h"
 #include "progressbar.hpp"
+#include <cuda.h>
 #include <chrono>
 #include <iomanip>
 #include <iostream>

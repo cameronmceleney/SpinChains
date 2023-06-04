@@ -1159,6 +1159,177 @@ void Numerical_Methods_Class::SolveRK2() {
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
+
+// CUDA kernel for RK2 Stage 1
+__global__ void RK2Stage1(double* m0Nest, double* m1Nest, int totalLayers, int layerTotalSpinsMax, int dimension, double stepsizeHalf, bool useDipolar, int totalTime) {
+    int layer = blockIdx.x;
+    int site = threadIdx.x;
+
+    // Compute the index in the 1D array equivalent to [layer][site][dimension]
+    int spin = (layer * layerTotalSpinsMax + site) * dimension;
+
+    int spinLHS = spin - 1, spinRHS = spin + 1;
+
+    // Then you can access the relevant data as follows:
+    double mxLHS = m0Nest[spinLHS], myLHS = m0Nest[spinLHS + layerTotalSpinsMax], mzLHS = m0Nest[spinLHS + 2*layerTotalSpinsMax];
+    double mxMID = m0Nest[spin   ], myMID = m0Nest[spin    + layerTotalSpinsMax], mzMID = m0Nest[spin    + 2*layerTotalSpinsMax];
+    double mxRHS = m0Nest[spinRHS], myRHS = m0Nest[spinRHS + layerTotalSpinsMax], mzRHS = m0Nest[spinRHS + 2*layerTotalSpinsMax];
+
+    double dipoleX, dipoleY, dipoleZ;
+    if (useDipolar) {
+        // This needs rewritten as m0Nest is a 1D array
+        std::vector<double> dipoleTerms = DipolarInteractionIntralayer(m0Nest[0], _numberNeighbours, site);
+        dipoleX = dipoleTerms[0];
+        dipoleY = dipoleTerms[1];
+        dipoleZ = dipoleTerms[2];
+    } else {
+        dipoleX = 0;
+        dipoleY = 0;
+        dipoleZ = 0;
+    }
+
+    // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+    double hxK0 = EffectiveFieldX(site, 0, mxLHS, mxMID, mxRHS, dipoleX, totalTime);
+    double hyK0 = EffectiveFieldY(site, 0, myLHS, myMID, myRHS, dipoleY);
+    double hzK0 = EffectiveFieldZ(site, 0, mzLHS, mzMID, mzRHS, dipoleZ);
+
+    // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+    double mxK1 = MagneticMomentX(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
+    double myK1 = MagneticMomentY(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
+    double mzK1 = MagneticMomentZ(site, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
+
+    // Find (m0 + k1/2) for each site, which is used in the next stage.
+    m1Nest[spin                       ] =  mxMID + stepsizeHalf * mxK1;
+    m1Nest[spin +   layerTotalSpinsMax] =  myMID + stepsizeHalf * myK1;
+    m1Nest[spin + 2*layerTotalSpinsMax] =  mzMID + stepsizeHalf * mzK1;
+}
+
+// Same changes for the RK2Stage2 kernel
+
+void Numerical_Methods_Class::SolveRK2CUDA() {
+
+        // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
+
+    // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
+    std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+    std::ofstream mxRK2File1(GV.GetFilePath() + "rk2_mx1_" + GV.GetFileNameBase() + ".csv");
+
+    if (_isFM) {
+        InformUserOfCodeType("RK2 Midpoint (FM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)", false, 0);
+        CreateFileHeader(mxRK2File1, "RK2 Midpoint (FM)", false, 1);
+    } else if (!_isFM) {
+        InformUserOfCodeType("RK2 Midpoint (AFM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
+        CreateFileHeader(mxRK2File1, "RK2 Midpoint (AFM)");
+    }
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata();
+    }
+
+    progressbar bar(100);
+
+    // Nested vectors are that allow for multiple layers to be used in the code. See documentation for more details.
+    std::vector<std::vector<std::vector<double>>> m0Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, _mzInit);
+    std::vector<std::vector<std::vector<double>>> m1Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, _myInit);
+    std::vector<std::vector<std::vector<double>>> m2Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, _myInit);
+
+    for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
+
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
+            // Doesn't work on Windows due to different compiler. Doesn't work for fewer than 100 iterations
+            bar.update();
+
+        TestShockwaveConditions(iteration);
+
+        double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf;
+
+        for (int layer = 0; layer < _totalLayers; layer++) {
+
+            // Declare host variables for flat arrays
+            double m0NestHost[_layerTotalSpins[layer]];
+            double m1NestHost[_layerTotalSpins[layer]];
+            double m2NestHost[_layerTotalSpins[layer]];
+
+            // Flatten the nested vectors into flat arrays and assign to host variables
+            for (int j = 0; j < 3; j++) {
+                for (int i = 0; i < _layerTotalSpins[layer]; i++) {
+                    m0NestHost[i + 1] = m0Nest[layer][i][j];
+                    m1NestHost[i + 1] = m1Nest[layer][i][j];
+                    m2NestHost[i + 1] = m2Nest[layer][i][j];
+                }
+            }
+
+            // Prepare device variables
+            double *m0NestDevice = m0NestHost;
+            double *m1NestDevice = m1NestHost;
+            double *m2NestDevice = m2NestHost;
+
+            // Allocate memory on the device
+            cudaMalloc(&m0NestDevice, _totalLayers * _layerTotalSpins[layer] * 3 * sizeof(double));
+            cudaMalloc(&m1NestDevice, _totalLayers * _layerTotalSpins[layer] * 3 * sizeof(double));
+            cudaMalloc(&m2NestDevice, _totalLayers * _layerTotalSpins[layer] * 3 * sizeof(double));
+
+            // Copy data from host to device
+            // You will need to flatten your 4D vector to a 1D array before copying
+
+            // Run RK2 Stage 1
+            RK2Stage1<<<_totalLayers, _layerTotalSpins[layer]>>>(m0NestDevice, m1NestDevice, _totalLayers, _layerTotalSpins[layer], 3, _stepsizeHalf, _useDipolar, _totalTime);
+            cudaDeviceSynchronize();
+
+            // Run RK2 Stage 2
+            RK2Stage2<<<_totalLayers, _layerTotalSpins[layer]>>>(m0NestDevice, m1NestDevice, m2NestDevice, _totalLayers, _layerTotalSpins[layer], 3, _stepsize, _useDipolar);
+            cudaDeviceSynchronize();
+
+            // Copy data from device to host
+            // You will need to reshape your 1D array back to a 4D vector after copying
+
+            // Free memory on the device
+            cudaFree(m0NestDevice);
+            cudaFree(m1NestDevice);
+            cudaFree(m2NestDevice);
+        }
+
+
+        // Everything below here is part of the class method, but not the internal RK2 stage loops.
+
+        /**
+         * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
+         * these between loop iterations sometimes led to incorrect values cropping up.
+         */
+
+        SaveDataToFileMultilayer(mxRK2File, m2Nest[0], iteration, 0);
+        SaveDataToFileMultilayer(mxRK2File1, m2Nest[1], iteration, 1);
+
+        //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
+        m0Nest = m2Nest;
+
+        if (iteration == _forceStopAtIteration)
+            exit(0);
+
+        _totalTime += _stepsize;
+    }
+
+    // Ensures files are closed; sometimes are left open if the writing process above fails
+    mxRK2File.close();
+    mxRK2File1.close();
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata(true);
+    }
+
+    if (_shouldTrackMValues) {
+        std::cout << "\nMax norm. values of M are: ";
+        for (int i = 0; i < _largestMNormMulti.size(); i++) {
+            std::cout << "Layer " << i << ": " << _largestMNormMulti[i] << " | ";
+        }
+    }
+
+    // Filename can be copy/pasted from C++ console to Python function's console.
+    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+}
+
 void Numerical_Methods_Class::SolveRK2Test() {
     // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
 
