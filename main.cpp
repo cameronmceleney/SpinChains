@@ -4,7 +4,7 @@
 
 int main() {
 
-    // GitHub Token: ***REMOVED*** (works as of 14 Oct 22)
+    // GitHub Token: ***REMOVED*** (works as of 04 Jun 23)
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class NumericalMethods{};
 
