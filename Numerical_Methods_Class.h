@@ -97,6 +97,7 @@ private:
     bool                _useDipolar;
     bool                _useZeeman;
     bool                _useMultilayer;
+    bool                _debugFunc = false;
 
     // ######## Private Functions ########
     std::vector<double> _exchangeVec;                              // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
@@ -173,8 +174,8 @@ private:
     void SetDampingRegionMulti();
     std::vector<double> flattenNestedVector(const std::vector<std::vector<double>>& nestedVector);
     std::vector<double> DipolarInteractionInterlayerTest(std::vector<std::vector<double>>& mTermsChain1,
-                                                     std::vector<std::vector<double>>& mTermsChain2, int& numNeighbours,
-                                                     int& currentSite);
+                                                         std::vector<std::vector<double>>& mTermsChain2,
+                                                         int& numNeighbours, int& currentSite, const int& layer);
     void CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata, int layer);
     void SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration, int layer);
     void CreateColumnHeaders(std::ofstream &outputFileName, int& layer);
