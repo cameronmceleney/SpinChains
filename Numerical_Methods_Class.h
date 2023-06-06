@@ -20,6 +20,7 @@ private:
 
     double              _ambientTemperature;
     double              _anisotropyField;
+    double              _bohrMagneton = 9.274e-24;                  // Bohr magneton in Am^{2} (equiv. to J T^{-1})
     double              _boltzmannConstant = 1.380649e-23;         // Boltzmann Constant [m^{2} kg s^{-2} K^{-1}].
     double              _drivingAngFreq;                           // Angular frequency of oscillatory driving field [rad*s^{-1}].
     double              _drivingFreq;                              // Frequency of oscillatory driving field. [GHz] (f_d in literature) (e.g.  42.5 * 1e9)
@@ -30,6 +31,7 @@ private:
     double              _dynamicBiasField;                         // Driving field amplitude [T] (caution: papers often give in [mT]).
     std::list <int>     _fixed_output_sites;                       // Sites to be printed if _printFixedSites is TRUE.
     int                 _forceStopAtIteration;                     // Legacy breakpoint variable. Set as a -ve value to deactivate.
+    double              _gConstant;
     double              _gilbertConst;                             // Gilbert Damping Factor.
 
     double              _gilbertLower;                             // The lower boundary for the damped regions at either end of the spinchain.
@@ -53,6 +55,7 @@ private:
     double              _myInit = 0.0;                             // y-direction. (Default: 0.0)
     double              _mzInit = 1.0;                             // z-direction. (Default: _magSat = 1.0)
 
+    double              _muMagnitudeIron = 2.22;                   // Magnetic moment in µB for iron
     int                 _numberNeighbours;
     int                 _numberOfDataPoints;                       // Number of datapoints sent to output file. Higher number gives greater precision, but drastically increases filesize. Set equal to _stopIterVal to save all data, else 100.
     int                 _numberOfSpinPairs;                        // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
@@ -97,7 +100,7 @@ private:
     bool                _useDipolar;
     bool                _useZeeman;
     bool                _useMultilayer;
-    bool                _debugFunc = false;
+    bool                _debugFunc = true;
 
     // ######## Private Functions ########
     std::vector<double> _exchangeVec;                              // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
@@ -144,10 +147,14 @@ private:
     std::vector<double> DipoleDipoleCouplingClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
                                              std::vector<double> mzTerms, std::vector<int> sitePositions);
     std::vector<double> DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
-                                              int& currentSite, const int& layer = 0);
+                                              int& currentSite, const int& currentLayer = 0);
     std::vector<double> DipolarInteractionInterlayer(std::vector<std::vector<double>>& mTermsChain1,
                                                      std::vector<std::vector<double>>& mTermsChain2, int& numNeighbours,
-                                                     int& currentSite, const int& layer = 0);
+                                                     int& currentSite, const int& currentLayer = 0);
+    std::vector<double> DipolarInteractionInterlayerOther(std::vector<std::vector<double>>& mTermsLayer1,
+                                                          std::vector<std::vector<double>>& mTermsLayer2,
+                                                          int& numNeighbours, int& currentSite, const int& currentLayer,
+                                                          double& exchangeStiffness, double& interlayerExchange);
 
     // Terms to calculate the (total) effective field
     double              EffectiveFieldX (const int& site, const int& layer, const double& mxLHS, const double& mxMID,
@@ -173,9 +180,10 @@ private:
                                          const double& hxMID, const double& hyMID, const double& hzMID);
     void SetDampingRegionMulti();
     std::vector<double> flattenNestedVector(const std::vector<std::vector<double>>& nestedVector);
-    std::vector<double> DipolarInteractionInterlayerTest(std::vector<std::vector<double>>& mTermsChain1,
-                                                         std::vector<std::vector<double>>& mTermsChain2,
-                                                         int& numNeighbours, int& currentSite, const int& layer);
+    std::vector<double> DipolarInteractionInterlayerTest(std::vector<std::vector<double>>& mTermsLayer1,
+                                                         std::vector<std::vector<double>>& mTermsLayer2,
+                                                         int& numNeighbours, int& currentSite, const int& currentLayer);
+
     void CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata, int layer);
     void SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration, int layer);
     void CreateColumnHeaders(std::ofstream &outputFileName, int& layer);
