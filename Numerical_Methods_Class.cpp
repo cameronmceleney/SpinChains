@@ -42,8 +42,8 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _shouldDriveCease = false;
 
     // Output Flags
-    _printAllData = false;
-    _printFixedLines = true;
+    _printAllData = true;
+    _printFixedLines = false;
     _printFixedSites = false;
 }
 void Numerical_Methods_Class::NumericalMethodsParameters() {
@@ -54,9 +54,9 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.05e-9;
+    _maxSimTime = 1e-14;
     _satMag = 0.010032;
-    _stepsize = 1e-15;
+    _stepsize = 1e-16;
 
     // Shockwave Parameters
     _iterStartShock = 0.0;
@@ -68,7 +68,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Data Output Parameters
     _fixed_output_sites = {12158, 14529, 15320};
-    _numberOfDataPoints = 1000; //static_cast<int>(_maxSimTime / _recordingInterval);
+    _numberOfDataPoints = 100; //static_cast<int>(_maxSimTime / _recordingInterval);
     _recordingInterval = 0.7e-11;
     _layerOfInterest = 1;
 
@@ -78,9 +78,9 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _gilbertUpper = 1e0;
 
     // Spin chain and multi-layer Parameters
-    _drivingRegionWidth = 10;
+    _drivingRegionWidth = 50;
     _numberNeighbours = -1;
-    _numSpinsDamped = 0;
+    _numSpinsDamped = 200;
     _totalLayers = 2;
 }
 void Numerical_Methods_Class::NumericalMethodsProcessing() {
@@ -563,7 +563,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
         double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
 
         if (_debugFunc) { std::cout << "DB2.5.9 | "; }
-        for (int j = 0; j < 1; j++) {
+        for (int j = 0; j < 3; j++) {
             // Calculate the dipole-dipole coupling term
             double DipoleValue = _gConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
             totalDipoleTerms[j] += DipoleValue;
@@ -640,7 +640,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayer(std::v
     }
 
     // Finally add the three dipole terms to get the total dipole term for a site in chain 1
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 3; i++) {
         // Only contains x positions so can skip i > 1 (y & z)
         totalDipoleTerms[i] += totalDipoleTermsChain1[i];
     }
@@ -650,7 +650,8 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayer(std::v
 }
 std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerTest(std::vector<std::vector<double>>& mTermsLayer1,
                                                                           std::vector<std::vector<double>>& mTermsLayer2,
-                                                                          int& numNeighbours, int& currentSite, const int& currentLayer) {
+                                                                          int& numNeighbours, int& currentSite,
+                                                                          const int& currentLayer, const int& otherLayer) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
     
     double exchangeStiffness = 5.3e-17;
@@ -665,7 +666,8 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerTest(st
                                                                               currentSite, currentLayer);
 
     std::vector<double> totalDipoleTermsOtherChains = DipolarInteractionInterlayerOther(mTermsLayer1, mTermsLayer2,
-                                                                                        numNeighbours, currentSite, currentLayer,
+                                                                                        numNeighbours, currentSite,
+                                                                                        currentLayer, otherLayer,
                                                                                         exchangeStiffness, interlayerExchange);
 
     // Finally add the three dipole terms to get the total dipole term for a site in chain 1
@@ -677,13 +679,14 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerTest(st
 }
 std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerOther(std::vector<std::vector<double>>& mTermsLayer1,
                                                                           std::vector<std::vector<double>>& mTermsLayer2,
-                                                                          int& numNeighbours, int& currentSite, const int& currentLayer,
+                                                                          int& numNeighbours, int& currentSite,
+                                                                          const int& currentLayer, const int& otherLayer,
                                                                           double& exchangeStiffness, double& interlayerExchange) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
 
     // Stop-gap code to prevent memory-access violation error. Needs fixed in the future
     int chainTwoOffset;
-    if (!_driveAllLayers) {chainTwoOffset = _layerSpinsInChain[0] + _numSpinsDamped;}
+    if (!_driveAllLayers) {chainTwoOffset = _layerSpinsInChain[otherLayer] + _numSpinsDamped;}
     else {chainTwoOffset = _layerSpinsInChain[currentLayer] + _numSpinsDamped;}
 
     // Check if currentSite is a valid index for mTermsChain2 before calculations
@@ -1271,8 +1274,8 @@ void Numerical_Methods_Class::SolveRK2Test() {
                     else if (layer == 1) {layer1 = 1; layer2 = 0;}
 
                     if (_debugFunc) {std::cout << "\n\niteration: " << iteration << " | layer: " << layer << " | site: " << site << std::endl;}
-                    std::vector<double> dipoleTerms = DipolarInteractionInterlayer(m0Nest[layer1], m0Nest[layer2],
-                                                                                   _numberNeighbours, site, layer1);
+                    std::vector<double> dipoleTerms = DipolarInteractionInterlayerTest(m0Nest[layer1], m0Nest[layer2],
+                                                                                   _numberNeighbours, site, layer1, layer2);
 
                     dipoleX = dipoleTerms[0];
                     dipoleY = dipoleTerms[1];
@@ -1318,10 +1321,12 @@ void Numerical_Methods_Class::SolveRK2Test() {
                     if (layer == 0) {layer1 = 0; layer2 = 1;}
                     else if (layer == 1) {layer1 = 1; layer2 = 0;}
 
-                    _debugFunc = false;
-                    std::vector<double> dipoleTerms = DipolarInteractionInterlayer(m1Nest[layer1], m1Nest[layer2],
-                                                                                   _numberNeighbours, site, layer1);
-                    _debugFunc = true;
+                    int debugCounter = 0;  // To make sure debug outputs only occur during the first RK2 stage, not this second stage
+                    if (_debugFunc) { _debugFunc = false; debugCounter++; }
+                    std::vector<double> dipoleTerms = DipolarInteractionInterlayerTest(m1Nest[layer1], m1Nest[layer2],
+                                                                                   _numberNeighbours, site, layer1, layer2);
+                    if (debugCounter > 0) { _debugFunc = true; }
+
                     dipoleX = dipoleTerms[0];
                     dipoleY = dipoleTerms[1];
                     dipoleZ = dipoleTerms[2];

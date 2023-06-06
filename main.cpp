@@ -18,9 +18,9 @@ int main() {
     // Set global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(12);
-    GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetNumSpins(150);
+    GV.SetExchangeMinVal(1);
+    GV.SetExchangeMaxVal(1);
     GV.SetGyromagneticConstant(29.2);
     GV.SetIsFerromagnetic(true);
     std::string method = "RK2t";
