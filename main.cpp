@@ -18,9 +18,9 @@ int main() {
     // Set global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(150);
-    GV.SetExchangeMinVal(1);
-    GV.SetExchangeMaxVal(1);
+    GV.SetNumSpins(400);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2);
     GV.SetIsFerromagnetic(true);
     std::string method = "RK2t";
@@ -55,8 +55,8 @@ int main() {
             NumericalMethods.SolveRK2();
         else if (method == "RK2c")
             NumericalMethods.SolveRK2Classic();
-        else if (method == "RK2t")
-            NumericalMethods.SolveRK2Test();
+        // else if (method == "RK2t")
+        //     NumericalMethods.SolveRK2Test();
     }
     #pragma clang diagnostic pop
     return 0;
