@@ -20,10 +20,11 @@ int main() {
     GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(400);
     GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132.0);
+    GV.SetExchangeMaxVal(132);
     GV.SetGyromagneticConstant(29.2);
     GV.SetIsFerromagnetic(true);
-    std::string method = "RK2t";
+    std::string method = "RK2c";
+    
 
     std::string in_fileNameBase; //Better name might be fileID
     std::cout << "Enter the unique identifier for the file: ";
@@ -38,16 +39,16 @@ int main() {
         std::cout << "Non-Uniform Exchange\n";
     }
 
-    #pragma clang diagnostic push
-    #pragma ide diagnostic ignored "UnreachableCode"
+    //#pragma clang diagnostic push
+    //#pragma ide diagnostic ignored "UnreachableCode"
     if (findEigenvalues) {
         // std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
         SolverClass.CalculateEigenfrequencies(false);
     }
-    #pragma clang diagnostic pop
+    //#pragma clang diagnostic pop
 
-    #pragma clang diagnostic push
-    #pragma ide diagnostic ignored "UnreachableCode"
+    //#pragma clang diagnostic push
+    //#pragma ide diagnostic ignored "UnreachableCode"
     else if (!findEigenvalues) {
         NumericalMethods.NumericalMethodsMain();
 
@@ -58,6 +59,6 @@ int main() {
         // else if (method == "RK2t")
         //     NumericalMethods.SolveRK2Test();
     }
-    #pragma clang diagnostic pop
+    //#pragma clang diagnostic pop
     return 0;
 }

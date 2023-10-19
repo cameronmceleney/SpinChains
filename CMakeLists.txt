@@ -6,6 +6,8 @@ project(SpinChains)
 # Written using C23 and no real attempt has been made to ensure backwards compatibility
 set(CMAKE_CXX_STANDARD 23)
 
+# set(CMAKE_CXX_FLAGS "-O3")
+
 # Two IF statements test to find the user's Operating System, and then dictate the path to the Eigen folder. It was too much
 # work to have relative paths to a cloud storage location that would hold the Eigen folder (And thus have the same relative path
 # for both OS. This was the quick yet effective solution

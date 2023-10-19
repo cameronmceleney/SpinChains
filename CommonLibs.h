@@ -1,6 +1,7 @@
 #ifndef SPINCHAINS_COMMONLIBS_H
 #define SPINCHAINS_COMMONLIBS_H
 
+#define _USE_MATH_DEFINES
 #include <vector>
 #include <cmath>
 #include <iostream>

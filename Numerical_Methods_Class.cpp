@@ -26,12 +26,13 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Interaction Flags
     _hasShockwave = false;
-    _useDipolar = true;
+    _useDipolar = false;
     _useZeeman = true;
+    _useDemag = false;
 
     // Material Flags
     _isFM = GV.GetIsFerromagnetic();
-    _useMultilayer = true;
+    _useMultilayer = false;
 
     // Drive Flags
     _centralDrive = false;
@@ -54,7 +55,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.1e-9;
+    _maxSimTime = 0.7e-9;
     _satMag = 0.010032;
     _stepsize = 1e-15;
 
@@ -80,8 +81,8 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     // Spin chain and multi-layer Parameters
     _drivingRegionWidth = 200;
     _numberNeighbours = -1;
-    _numSpinsDamped = 300;
-    _totalLayers = 2;
+    _numSpinsDamped = 0;
+    _totalLayers = 1;
 }
 void Numerical_Methods_Class::NumericalMethodsProcessing() {
     // Computations based upon other inputs
@@ -115,6 +116,8 @@ void Numerical_Methods_Class::NumericalMethodsProcessing() {
 
     if (!_useZeeman)
         GV.SetStaticBiasField(0);
+
+
 }
 
 void Numerical_Methods_Class::FinalChecks() {
@@ -1008,7 +1011,8 @@ double Numerical_Methods_Class::MagneticMomentX(const int& site, const double& m
 
     if (_useLLG) {
         // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
-        mxK = _gyroMagConst * (- (_gilbertVector[site] * hyMID * mxMID * myMID) + hyMID * mzMID - hzMID * (myMID + _gilbertVector[site] * mxMID * mzMID) + _gilbertVector[site] * hxMID * (pow(myMID,2) + pow(mzMID,2)));
+        mxK = _gyroMagConst * (- (_gilbertVector[site] * hyMID * mxMID * myMID) + hyMID * mzMID - hzMID * (myMID
+                + _gilbertVector[site] * mxMID * mzMID) + _gilbertVector[site] * hxMID * (pow(myMID,2) + pow(mzMID,2)));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
         mxK = -1.0 * _gyroMagConst * (myMID * hzMID - mzMID * hyMID);

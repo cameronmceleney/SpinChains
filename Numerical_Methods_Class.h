@@ -111,6 +111,7 @@ private:
 
     bool                _useDipolar;
     bool                _useZeeman;
+    bool                _useDemag;
     bool                _useMultilayer;
     bool                _debugFunc = false;
 

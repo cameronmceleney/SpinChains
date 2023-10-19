@@ -2,6 +2,7 @@
 #define SPINCHAINS_GLOBALVARIABLES_H
 
 #include <Eigen/Eigenvalues> // header for Eigen
+#define _USE_MATH_DEFINES
 #include <iomanip>
 #include <string>
 #include <filesystem>

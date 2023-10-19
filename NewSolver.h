@@ -4,6 +4,7 @@
 
 #ifndef SPINCHAINS_NEWSOLVER_H
 #define SPINCHAINS_NEWSOLVER_H
+#define _USE_MATH_DEFINES
 
 
 class NewSolver {
