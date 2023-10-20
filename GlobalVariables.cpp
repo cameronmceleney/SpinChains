@@ -74,7 +74,7 @@ void GlobalVariablesClass::SetFilePath(const std::string& os_name, bool isEigenV
 
     if (os_name == "MacOS") {
         // Default Windows filepath for my laptop
-        _filePath = "/Users/cameronmceleney/CLionProjects/Data/" + FindDateToday() + "/Simulation_Data/";
+        _filePath = "/Users/cameronaidanmceleney/CLionProjects/Data/" + FindDateToday() + "/Simulation_Data/";
     } else if  (os_name == "Windows") {
         // Default Windows filepath for my desktop
         _filePath = "D:/Data/" + FindDateToday() + "/Simulation_Data/";

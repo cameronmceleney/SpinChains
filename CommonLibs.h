@@ -8,7 +8,7 @@
 #include <fstream>
 #include <string>
 
-#include <Eigen/Eigenvalues> // header for Eigen
+#include "Eigen/Eigenvalues" // header for Eigen
 #include "GlobalVariables.h"
 
 

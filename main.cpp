@@ -18,7 +18,7 @@ int main() {
     // Set global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(400);
+    GV.SetNumSpins(600);
     GV.SetExchangeMinVal(43.5);
     GV.SetExchangeMaxVal(132);
     GV.SetGyromagneticConstant(29.2);
@@ -30,7 +30,7 @@ int main() {
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> in_fileNameBase;
     GV.SetFileNameBase("T"+in_fileNameBase);
-    GV.SetFilePath("Windows", findEigenvalues);
+    GV.SetFilePath("MacOS", findEigenvalues);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetExchangeMinVal() == GV.GetExchangeMaxVal()) {

@@ -1,7 +1,5 @@
 #ifndef SPINCHAINS_GLOBALVARIABLES_H
 #define SPINCHAINS_GLOBALVARIABLES_H
-
-#include <Eigen/Eigenvalues> // header for Eigen
 #define _USE_MATH_DEFINES
 #include <iomanip>
 #include <string>
@@ -38,7 +36,15 @@ public:
     void                SetNumSpins(int numSpins);                      // Set the number of spins in chain. Must always be updated every time a new region is added.
 
     std::string         GetFilePath();                                  // Get file path to today's directory.
-    void                SetFilePath(const std::string& os_name, bool isEigenValues);        // Set file path to directory for writing data. Date is automatically found, but the remaining directory tree must be manually inserted.
+    /**
+     * Set file path to directory for writing data.
+     *
+     * Date is automatically found, but the remaining directory tree must be manually inserted.
+     *
+     * @param os_name String variable that should be either "MacOS" or "Windows".
+     * @param isEigenValues Boolean variable to indicate if the file path is for eigenvalues or numerical modelling.
+     */
+    void                SetFilePath(const std::string& os_name, bool isEigenValues);
 
     std::string         GetFileNameBase();                              // Get the custom suffix (base) name.
     void                SetFileNameBase(std::string fileNameBase);      // Set a custom suffix to all filenames for this simulation.
