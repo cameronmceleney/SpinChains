@@ -1324,6 +1324,10 @@ void Numerical_Methods_Class::SolveRK2() {
                     dipoleZ = 0;
                 }
 
+                if (_useDemag) {
+
+                }
+
                 // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
                 double hxK0 = EffectiveFieldX(site, layer, mxLHS, mxMID, mxRHS, dipoleX, t0);
                 double hyK0 = EffectiveFieldY(site, layer, myLHS, myMID, myRHS, dipoleY);
