@@ -11,7 +11,9 @@
 #include <list>
 #include <map>
 #include <random>
-#include <fftw3.h>
+extern "C" {
+    #include <fftw3.h>
+}
 
 
 class Numerical_Methods_Class {

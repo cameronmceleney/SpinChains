@@ -9,10 +9,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Manually specifying Eigen and FFTW directories
 if(WIN32 OR WIN64)
-    set(EIGEN_DIR "C:/Program Files/eigen-3.4.0")
+    set(EIGEN_DIR "C:/Program Files/Homebrew/eigen/3.4.0")
+    set(FFTW_DIR "C:/Program Files/Homebrew/fftw/3.3.5")
+    set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3-3.a")
 elseif(APPLE)
     set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
-    # set(FFTW_DIR "/usr/local/Cellar/fftw/3.3.10_1/include")
     set(FFTW_DIR "/usr/local/Cellar/fftw/3.3.10_1")
     set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3.a")
 endif()
@@ -20,8 +21,7 @@ endif()
 #include_directories(${EIGEN_DIR} ${FFTW_DIR})
 
 # Links all files to the project. There are numerous classes to encapsulate data so ensure that all .h files have a corresponding .cpp as needed
-add_executable(SpinChains
-        main.cpp
+add_executable(SpinChains main.cpp
         CommonLibs.h
         linspace.cpp linspace.h
         SpinChainEigenSolverClass.cpp SpinChainEigenSolverClass.h
@@ -31,7 +31,7 @@ add_executable(SpinChains
         NewSolver.cpp NewSolver.h)
 
 # Include directories for FFTW
-include_directories(${FFTW_DIR}/include)
+include_directories(${EIGEN_DIR} ${FFTW_DIR}/include)
 
 # Link FFTW to the executable
 target_link_libraries(SpinChains PRIVATE ${FFTW_LIB})

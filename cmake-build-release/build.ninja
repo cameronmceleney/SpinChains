@@ -39,7 +39,7 @@ include CMakeFiles/rules.ninja
 #############################################
 # Logical path to working directory; prefix for absolute paths.
 
-cmake_ninja_workdir = /Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release/
+cmake_ninja_workdir = C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/cmake-build-release/
 # =============================================================================
 # Object build statements for EXECUTABLE target SpinChains
 
@@ -49,47 +49,47 @@ cmake_ninja_workdir = /Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake
 
 build cmake_object_order_depends_target_SpinChains: phony || CMakeFiles/SpinChains.dir
 
-build CMakeFiles/SpinChains.dir/main.cpp.o: CXX_COMPILER__SpinChains_unscanned_Release /Users/cameronaidanmceleney/CLionProjects/SpinChains/main.cpp || cmake_object_order_depends_target_SpinChains
-  DEP_FILE = CMakeFiles/SpinChains.dir/main.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -std=gnu++2b -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -fcolor-diagnostics
-  INCLUDES = -I/usr/local/Cellar/fftw/3.3.10_1/include
-  OBJECT_DIR = CMakeFiles/SpinChains.dir
-  OBJECT_FILE_DIR = CMakeFiles/SpinChains.dir
+build CMakeFiles/SpinChains.dir/main.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/main.cpp || cmake_object_order_depends_target_SpinChains
+  DEP_FILE = CMakeFiles\SpinChains.dir\main.cpp.obj.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++23 -fdiagnostics-color=always
+  INCLUDES = -I"C:/Program Files/Homebrew/eigen/3.4.0" -I"C:/Program Files/Homebrew/fftw/3.3.5/include"
+  OBJECT_DIR = CMakeFiles\SpinChains.dir
+  OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
 
-build CMakeFiles/SpinChains.dir/linspace.cpp.o: CXX_COMPILER__SpinChains_unscanned_Release /Users/cameronaidanmceleney/CLionProjects/SpinChains/linspace.cpp || cmake_object_order_depends_target_SpinChains
-  DEP_FILE = CMakeFiles/SpinChains.dir/linspace.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -std=gnu++2b -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -fcolor-diagnostics
-  INCLUDES = -I/usr/local/Cellar/fftw/3.3.10_1/include
-  OBJECT_DIR = CMakeFiles/SpinChains.dir
-  OBJECT_FILE_DIR = CMakeFiles/SpinChains.dir
+build CMakeFiles/SpinChains.dir/linspace.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/linspace.cpp || cmake_object_order_depends_target_SpinChains
+  DEP_FILE = CMakeFiles\SpinChains.dir\linspace.cpp.obj.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++23 -fdiagnostics-color=always
+  INCLUDES = -I"C:/Program Files/Homebrew/eigen/3.4.0" -I"C:/Program Files/Homebrew/fftw/3.3.5/include"
+  OBJECT_DIR = CMakeFiles\SpinChains.dir
+  OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
 
-build CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.o: CXX_COMPILER__SpinChains_unscanned_Release /Users/cameronaidanmceleney/CLionProjects/SpinChains/SpinChainEigenSolverClass.cpp || cmake_object_order_depends_target_SpinChains
-  DEP_FILE = CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -std=gnu++2b -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -fcolor-diagnostics
-  INCLUDES = -I/usr/local/Cellar/fftw/3.3.10_1/include
-  OBJECT_DIR = CMakeFiles/SpinChains.dir
-  OBJECT_FILE_DIR = CMakeFiles/SpinChains.dir
+build CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/SpinChainEigenSolverClass.cpp || cmake_object_order_depends_target_SpinChains
+  DEP_FILE = CMakeFiles\SpinChains.dir\SpinChainEigenSolverClass.cpp.obj.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++23 -fdiagnostics-color=always
+  INCLUDES = -I"C:/Program Files/Homebrew/eigen/3.4.0" -I"C:/Program Files/Homebrew/fftw/3.3.5/include"
+  OBJECT_DIR = CMakeFiles\SpinChains.dir
+  OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
 
-build CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.o: CXX_COMPILER__SpinChains_unscanned_Release /Users/cameronaidanmceleney/CLionProjects/SpinChains/Numerical_Methods_Class.cpp || cmake_object_order_depends_target_SpinChains
-  DEP_FILE = CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -std=gnu++2b -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -fcolor-diagnostics
-  INCLUDES = -I/usr/local/Cellar/fftw/3.3.10_1/include
-  OBJECT_DIR = CMakeFiles/SpinChains.dir
-  OBJECT_FILE_DIR = CMakeFiles/SpinChains.dir
+build CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/Numerical_Methods_Class.cpp || cmake_object_order_depends_target_SpinChains
+  DEP_FILE = CMakeFiles\SpinChains.dir\Numerical_Methods_Class.cpp.obj.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++23 -fdiagnostics-color=always
+  INCLUDES = -I"C:/Program Files/Homebrew/eigen/3.4.0" -I"C:/Program Files/Homebrew/fftw/3.3.5/include"
+  OBJECT_DIR = CMakeFiles\SpinChains.dir
+  OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
 
-build CMakeFiles/SpinChains.dir/GlobalVariables.cpp.o: CXX_COMPILER__SpinChains_unscanned_Release /Users/cameronaidanmceleney/CLionProjects/SpinChains/GlobalVariables.cpp || cmake_object_order_depends_target_SpinChains
-  DEP_FILE = CMakeFiles/SpinChains.dir/GlobalVariables.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -std=gnu++2b -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -fcolor-diagnostics
-  INCLUDES = -I/usr/local/Cellar/fftw/3.3.10_1/include
-  OBJECT_DIR = CMakeFiles/SpinChains.dir
-  OBJECT_FILE_DIR = CMakeFiles/SpinChains.dir
+build CMakeFiles/SpinChains.dir/GlobalVariables.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/GlobalVariables.cpp || cmake_object_order_depends_target_SpinChains
+  DEP_FILE = CMakeFiles\SpinChains.dir\GlobalVariables.cpp.obj.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++23 -fdiagnostics-color=always
+  INCLUDES = -I"C:/Program Files/Homebrew/eigen/3.4.0" -I"C:/Program Files/Homebrew/fftw/3.3.5/include"
+  OBJECT_DIR = CMakeFiles\SpinChains.dir
+  OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
 
-build CMakeFiles/SpinChains.dir/NewSolver.cpp.o: CXX_COMPILER__SpinChains_unscanned_Release /Users/cameronaidanmceleney/CLionProjects/SpinChains/NewSolver.cpp || cmake_object_order_depends_target_SpinChains
-  DEP_FILE = CMakeFiles/SpinChains.dir/NewSolver.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -std=gnu++2b -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -fcolor-diagnostics
-  INCLUDES = -I/usr/local/Cellar/fftw/3.3.10_1/include
-  OBJECT_DIR = CMakeFiles/SpinChains.dir
-  OBJECT_FILE_DIR = CMakeFiles/SpinChains.dir
+build CMakeFiles/SpinChains.dir/NewSolver.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/NewSolver.cpp || cmake_object_order_depends_target_SpinChains
+  DEP_FILE = CMakeFiles\SpinChains.dir\NewSolver.cpp.obj.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++23 -fdiagnostics-color=always
+  INCLUDES = -I"C:/Program Files/Homebrew/eigen/3.4.0" -I"C:/Program Files/Homebrew/fftw/3.3.5/include"
+  OBJECT_DIR = CMakeFiles\SpinChains.dir
+  OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
 
 
 # =============================================================================
@@ -97,23 +97,24 @@ build CMakeFiles/SpinChains.dir/NewSolver.cpp.o: CXX_COMPILER__SpinChains_unscan
 
 
 #############################################
-# Link the executable SpinChains
+# Link the executable SpinChains.exe
 
-build SpinChains: CXX_EXECUTABLE_LINKER__SpinChains_Release CMakeFiles/SpinChains.dir/main.cpp.o CMakeFiles/SpinChains.dir/linspace.cpp.o CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.o CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.o CMakeFiles/SpinChains.dir/GlobalVariables.cpp.o CMakeFiles/SpinChains.dir/NewSolver.cpp.o | /usr/local/Cellar/fftw/3.3.10_1/lib/libfftw3.a
-  FLAGS = -O3 -DNDEBUG -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk
-  LINK_LIBRARIES = /usr/local/Cellar/fftw/3.3.10_1/lib/libfftw3.a
-  OBJECT_DIR = CMakeFiles/SpinChains.dir
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = SpinChains
-  TARGET_PDB = SpinChains.dbg
+build SpinChains.exe: CXX_EXECUTABLE_LINKER__SpinChains_Release CMakeFiles/SpinChains.dir/main.cpp.obj CMakeFiles/SpinChains.dir/linspace.cpp.obj CMakeFiles/SpinChains.dir/SpinChainEigenSolverClass.cpp.obj CMakeFiles/SpinChains.dir/Numerical_Methods_Class.cpp.obj CMakeFiles/SpinChains.dir/GlobalVariables.cpp.obj CMakeFiles/SpinChains.dir/NewSolver.cpp.obj | C$:/Program$ Files/Homebrew/fftw/3.3.5/lib/libfftw3-3.a
+  FLAGS = -O3 -DNDEBUG
+  LINK_LIBRARIES = "C:/Program Files/Homebrew/fftw/3.3.5/lib/libfftw3-3.a"  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = CMakeFiles\SpinChains.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = SpinChains.exe
+  TARGET_IMPLIB = libSpinChains.dll.a
+  TARGET_PDB = SpinChains.exe.dbg
 
 
 #############################################
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  COMMAND = cmd.exe /C "cd /D "C:\Users\Cameron McEleney\CLionProjects\SpinChains\cmake-build-release" && "C:\Program Files\JetBrains\CLion 2021.3\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -124,7 +125,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --regenerate-during-build -S/Users/cameronaidanmceleney/CLionProjects/SpinChains -B/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release
+  COMMAND = cmd.exe /C "cd /D "C:\Users\Cameron McEleney\CLionProjects\SpinChains\cmake-build-release" && "C:\Program Files\JetBrains\CLion 2021.3\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -S"C:\Users\Cameron McEleney\CLionProjects\SpinChains" -B"C:\Users\Cameron McEleney\CLionProjects\SpinChains\cmake-build-release""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -134,15 +135,17 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 # Target aliases.
 
+build SpinChains: phony SpinChains.exe
+
 # =============================================================================
 # Folder targets.
 
 # =============================================================================
 
 #############################################
-# Folder: /Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release
+# Folder: C:/Users/Cameron McEleney/CLionProjects/SpinChains/cmake-build-release
 
-build all: phony SpinChains
+build all: phony SpinChains.exe
 
 # =============================================================================
 # Built-in targets
@@ -151,14 +154,14 @@ build all: phony SpinChains
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeCInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeCXXInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeGenericSystem.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/Clang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/GNU.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-Clang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-Clang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-Clang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Darwin-Initialize.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Darwin.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/UnixPaths.cmake /Users/cameronaidanmceleney/CLionProjects/SpinChains/CMakeLists.txt CMakeCache.txt CMakeFiles/3.26.4/CMakeCCompiler.cmake CMakeFiles/3.26.4/CMakeCXXCompiler.cmake CMakeFiles/3.26.4/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeRCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Compiler/GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/WindowsPaths.cmake C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/CMakeLists.txt CMakeCache.txt CMakeFiles/3.26.4/CMakeCCompiler.cmake CMakeFiles/3.26.4/CMakeCXXCompiler.cmake CMakeFiles/3.26.4/CMakeRCCompiler.cmake CMakeFiles/3.26.4/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeCInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeCXXInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeGenericSystem.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/Clang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Compiler/GNU.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-AppleClang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-AppleClang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-Clang-C.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-Clang-CXX.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Apple-Clang.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Darwin-Initialize.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/Darwin.cmake /Applications/CLion.app/Contents/bin/cmake/mac/share/cmake-3.26/Modules/Platform/UnixPaths.cmake /Users/cameronaidanmceleney/CLionProjects/SpinChains/CMakeLists.txt CMakeCache.txt CMakeFiles/3.26.4/CMakeCCompiler.cmake CMakeFiles/3.26.4/CMakeCXXCompiler.cmake CMakeFiles/3.26.4/CMakeSystem.cmake: phony
+build C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeRCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Compiler/GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/Windows.cmake C$:/Program$ Files/JetBrains/CLion$ 2021.3/bin/cmake/win/x64/share/cmake-3.26/Modules/Platform/WindowsPaths.cmake C$:/Users/Cameron$ McEleney/CLionProjects/SpinChains/CMakeLists.txt CMakeCache.txt CMakeFiles/3.26.4/CMakeCCompiler.cmake CMakeFiles/3.26.4/CMakeCXXCompiler.cmake CMakeFiles/3.26.4/CMakeRCCompiler.cmake CMakeFiles/3.26.4/CMakeSystem.cmake: phony
 
 
 #############################################

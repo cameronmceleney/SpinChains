@@ -1,6 +1,7 @@
 #ifndef SPINCHAINS_GLOBALVARIABLES_H
 #define SPINCHAINS_GLOBALVARIABLES_H
 #define _USE_MATH_DEFINES
+#include <cmath>
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
