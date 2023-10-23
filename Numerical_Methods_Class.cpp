@@ -28,7 +28,8 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _hasShockwave = false;
     _useDipolar = false;
     _useZeeman = true;
-    _useDemag = true;
+    _useDemagIntense = false;
+    _useDemagFFT = true;
 
     // Material Flags
     _isFM = GV.GetIsFerromagnetic();
@@ -38,7 +39,7 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _centralDrive = false;
     _driveAllLayers = false;
     _dualDrive = false;
-    _lhsDrive = false;
+    _lhsDrive = true;
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
@@ -171,6 +172,17 @@ void Numerical_Methods_Class::FinalChecks() {
         std::cout << "Warning: You cannot use the multilayer solver with less than 2 layers.";
         exit(1);
     }
+
+    if (_useDemagIntense && _useDemagFFT) {
+        std::cout << "Warning: You cannot use both the intense and FFT demag solvers. Please choose one or the other.";
+        exit(1);
+    }
+
+    if ((_useDemagIntense && !GV.GetIsFerromagnetic()) || (_useDemagFFT && !GV.GetIsFerromagnetic())) {
+        std::cout << "Warning: You cannot use the demag solvers with non-ferromagnetic materials.";
+        exit(1);
+    }
+
 }
 void Numerical_Methods_Class::SetDampingRegion() {
     // Generate the damping regions that are appended to either end of the spin chain.
@@ -943,8 +955,8 @@ std::vector<double> Numerical_Methods_Class::ComputeStochasticTerm(const int& si
 }
 
 double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& layer, const double& mxLHS, const double& mxMID,
-                                                const double& mxRHS, const double& dipoleTerm,  const double& demagTerm,
-                                                const double& current_time) {
+                                                const double& mxRHS, const double& dipoleTerm,
+                                                const std::vector<double>& demagTerm, const double& current_time) {
     // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
     double hx;
 
@@ -952,16 +964,16 @@ double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& laye
         if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             if (_driveAllLayers || layer == 0)
-                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm[site]
                         + _dynamicBiasField * cos(_drivingAngFreq * current_time);
             else if  (_hasStaticDrive)
-                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm[site]
                         +_dynamicBiasField;
             else if  ((!_driveAllLayers && layer != 0))
-                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm[site];
         } else
             // All spins along x which are not within the driving region
-            hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
+            hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm[site];
     } else if (!_isFM) {
         if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
@@ -977,12 +989,12 @@ double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& laye
     return hx;
 }
 double Numerical_Methods_Class::EffectiveFieldY(const int& site, const int& layer, const double& myLHS, const double& myMID, const double& myRHS,
-                                                const double &dipoleTerm,  const double& demagTerm) {
+                                                const double &dipoleTerm,  const std::vector<double>& demagTerm) {
     // The effective field (H_eff) y-component acting upon a given magnetic moment (site), abbreviated to 'hy'
     double hy;
 
     if (_isFM) {
-        hy = _exchangeVec[site-1] * myLHS + _exchangeVec[site] * myRHS + dipoleTerm + demagTerm;
+        hy = _exchangeVec[site-1] * myLHS + _exchangeVec[site] * myRHS + dipoleTerm + demagTerm[site];
     } else if (!_isFM) {
         hy = -1.0 * (_exchangeVec[site-1] * myLHS + _exchangeVec[site] * myRHS);
     }
@@ -990,12 +1002,13 @@ double Numerical_Methods_Class::EffectiveFieldY(const int& site, const int& laye
     return hy;
 }
 double Numerical_Methods_Class::EffectiveFieldZ(const int& site, const int& layer, const double& mzLHS, const double& mzMID, const double& mzRHS,
-                                                const double& dipoleTerm, const double& demagTerm) {
+                                                const double& dipoleTerm, const std::vector<double>& demagTerm) {
     // The effective field (H_eff) z-component acting upon a given magnetic moment (site), abbreviated to 'hz'
     double hz;
 
     if (_isFM) {
-        hz = _exchangeVec[site-1] * mzLHS + _exchangeVec[site] * mzRHS + dipoleTerm + demagTerm + GV.GetStaticBiasField();
+        hz = _exchangeVec[site-1] * mzLHS + _exchangeVec[site] * mzRHS + dipoleTerm + demagTerm[site]
+                + GV.GetStaticBiasField();
     } else if (!_isFM) {
         if (mzMID > 0)
             hz = GV.GetStaticBiasField() + _anisotropyField - (_exchangeVec[site-1] * mzLHS + _exchangeVec[site] * mzRHS);
@@ -1006,13 +1019,13 @@ double Numerical_Methods_Class::EffectiveFieldZ(const int& site, const int& laye
     return hz;
 }
 
-double Numerical_Methods_Class::DemagnetisationField(double& H_dx, double& H_dy, double& H_dz,
-                                                     const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
-                                                     const std::vector<double>& mzTerms) {
-    // Assuming Nx, Ny, and Nz are constants
+void Numerical_Methods_Class::DemagnetisationFieldIntense(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
+                                                   const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
+                                                   const std::vector<double>& mzTerms) {
+    // Assuming demag terms (Nx, Ny, and Nz) are constants
     const double Nx = 0.0, Ny = 0.5, Nz = 0.5;
 
-    double totalHd_x = 0.0, totalHd_y = 0.0, totalHd_z = 0.0;
+    std::vector<double> totalHd_x(GV.GetNumSpins() + 2, 0), totalHd_y(GV.GetNumSpins() + 2, 0), totalHd_z(GV.GetNumSpins() + 2, 0);
 
     // Loop over all sites
     for(int currentSite = 1; currentSite <= GV.GetNumSpins(); currentSite++) {
@@ -1021,53 +1034,213 @@ double Numerical_Methods_Class::DemagnetisationField(double& H_dx, double& H_dy,
         double localHd_z = 0.0;
 
         // Convolution-like sum over all other sites
-        for(size_t otherSites = 1; otherSites <= GV.GetNumSpins(); otherSites++) {
+        for(int otherSites = 1; otherSites <= GV.GetNumSpins(); otherSites++) {
             if(currentSite != otherSites) { // Avoid self-interaction
-                localHd_x += Nx * (mxTerms[otherSites] - mxTerms[otherSites]);
-                localHd_y += Ny * (myTerms[otherSites] - myTerms[otherSites]);
-                localHd_z += Nz * (mzTerms[otherSites] - mzTerms[otherSites]);
+                localHd_x += Nx * (mxTerms[currentSite] - mxTerms[otherSites]);
+                localHd_y += Ny * (myTerms[currentSite] - myTerms[otherSites]);
+                localHd_z += Nz * (mzTerms[currentSite] - mzTerms[otherSites]);
             }
         }
 
-        totalHd_x += localHd_x;
-        totalHd_y += localHd_y;
-        totalHd_z += localHd_z;
+        totalHd_x[currentSite] += localHd_x;
+        totalHd_y[currentSite] += localHd_y;
+        totalHd_z[currentSite] += localHd_z;
     }
 
-    // Average out over the chain
-    totalHd_x /= static_cast<double>(GV.GetNumSpins());
-    totalHd_y /= static_cast<double>(GV.GetNumSpins());
-    totalHd_z /= static_cast<double>(GV.GetNumSpins());
+    /*
+     * Do not average over the number of spins! Here the H_d components for every site are stored as the total H_d
+     * experienced by each site. Averaging is therefore unnecessary unless only a single totalH_d is returned by the
+     * function and it is the sum of every demag component in the system (1/n SUM_i H_d_x_i).
+     */
 
-    // Keeping separate for now to aid debugging
+    // Keeping separate for now to aid debugging!
     H_dx = totalHd_x;
     H_dy = totalHd_y;
     H_dz = totalHd_z;
 }
-
 /*
-double Numerical_Methods_Class::DemagnetisationField(double& H_dx, double& H_dy,
-                                                     double& H_dz, const std::vector<double>&mxTerms,
-                                                     const std::vector<double>& myTerms, const std::vector<double>& mzTerms) {
-    // The demagnetisation field (H_d) acting upon a given magnetic moment (site), abbreviated to 'hd'
+void Numerical_Methods_Class::DemagnetisationFieldFFT(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
+                                                      const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
+                                                      const std::vector<double>& mzTerms) {
+    // Allocate FFTW complex pointer arrays
+    fftw_complex *mx = fftw_alloc_complex(GV.GetNumSpins());
+    if (!mx)
+        throw std::runtime_error("Failed to allocate memory for mx");
 
-    double magnetisationX, magnetisationY, magnetisationZ, totalMagnetisation;
-    double N_xx = 0, N_yy = 0.5, N_zz = 0.5;
-    std::vector<std::vector<double>> demagFactors = {{N_xx, 0, 0}, {0, N_yy,0}, {0, 0, N_zz}};
-
-    for (int site = 1; site <= GV.GetNumSpins(); site++) {
-        magnetisationX += mxTerms[site];
-        magnetisationY += myTerms[site];
-        magnetisationZ += mzTerms[site];
+    fftw_complex *my = fftw_alloc_complex(GV.GetNumSpins());
+    if (!my) {
+        fftw_free(mx);  // Free previously allocated memory
+        throw std::runtime_error("Failed to allocate memory for my");
     }
 
-    magnetisationX /= GV.GetNumSpins() - 2;
-    magnetisationY /= GV.GetNumSpins() - 2;
-    magnetisationZ /= GV.GetNumSpins() - 2;
+    fftw_complex *mz = fftw_alloc_complex(GV.GetNumSpins());
+    if (!mz) {
+        fftw_free(mx);  // Free previously allocated memory
+        fftw_free(my);  // Free previously allocated memory
+        throw std::runtime_error("Failed to allocate memory for mz");
+    }
 
-    totalMagnetisation = sqrt(pow(magnetisationX, 2) + pow(magnetisationY, 2) + pow(magnetisationZ, 2));
+    fftw_complex *mx = static_cast<fftw_complex*>(fftw_alloc_complex(gotNumSpins));
+    std::memset(mx, 0, sizeof(fftw_complex) * gotNumSpins);
+    fftw_complex *my = static_cast<fftw_complex*>(fftw_alloc_complex(gotNumSpins));
+    std::memset(my, 0, sizeof(fftw_complex) * gotNumSpins);
+    fftw_complex *mz = static_cast<fftw_complex*>(fftw_alloc_complex(gotNumSpins));
+    std::memset(mz, 0, sizeof(fftw_complex) * gotNumSpins);
+
+
+    std::vector<double> totalHd_x(GV.GetNumSpins() + 2, 0), totalHd_y(GV.GetNumSpins() + 2, 0), totalHd_z(GV.GetNumSpins() + 2, 0);
+
+    // Demagnetisation tensor. TODO These values are placeholders until full demag tensor is implemented.
+    double Nxx = 0.0;
+    double Nyy = 0.5;
+    double Nzz = 0.5;
+
+    for(int currentSite = 1; currentSite <= GV.GetNumSpins(); currentSite++) {
+        mx[currentSite][0] = mxTerms[currentSite]; mx[currentSite][1] = 0.0;
+        my[currentSite][0] = myTerms[currentSite]; my[currentSite][1] = 0.0;
+        mz[currentSite][0] = mzTerms[currentSite]; mz[currentSite][1] = 0.0;
+    }
+
+    // FFT plans using Discrete Fourier Transforms (DFT) of 1d arrays
+    fftw_plan p_mx = fftw_plan_dft_1d(GV.GetNumSpins(), mx, mx, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan p_my = fftw_plan_dft_1d(GV.GetNumSpins(), my, my, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan p_mz = fftw_plan_dft_1d(GV.GetNumSpins(), mz, mz, FFTW_FORWARD, FFTW_ESTIMATE);
+
+    // Execute FFT
+    fftw_execute(p_mx);
+    fftw_execute(p_my);
+    fftw_execute(p_mz);
+
+    // Multiply in Fourier space (H_d = -N * M). TODO extend to include all components of the demag tensor.
+    for(int currentSite = 1; currentSite <= GV.GetNumSpins(); currentSite++) {
+        mx[currentSite][0] *= Nxx; // mx[currentSite][0] = mx[currentSite][0] * Nxx + mx[currentSite][0] * Nxy etc;
+        my[currentSite][0] *= Nyy;
+        mz[currentSite][0] *= Nzz;
+    }
+
+    // Inverse FFT plans
+    fftw_plan p_inv_mx = fftw_plan_dft_1d(GV.GetNumSpins(), mx, mx, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan p_inv_my = fftw_plan_dft_1d(GV.GetNumSpins(), my, my, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan p_inv_mz = fftw_plan_dft_1d(GV.GetNumSpins(), mz, mz, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+    // Execute inverse FFT
+    fftw_execute(p_inv_mx);
+    fftw_execute(p_inv_my);
+    fftw_execute(p_inv_mz);
+
+    // Normalize after inverse FFT
+    double normalizationFactor = 1.0 / static_cast<double>(GV.GetNumSpins());
+
+    for (int site = 1; site <= GV.GetNumSpins(); site++) {
+        // Save Real parts of demag fields.
+        totalHd_x[site] = mx[site][0] * normalizationFactor;
+        totalHd_y[site] = my[site][0] * normalizationFactor;
+        totalHd_z[site] = mz[site][0] * normalizationFactor;
+    }
+
+    // Keep separate for now to aid debugging. Only works if exchange energy is uniform!
+    H_dx = totalHd_x;
+    H_dy = totalHd_y;
+    H_dz = totalHd_z;
+
+    // Clean-up
+    fftw_destroy_plan(p_mx);
+    fftw_destroy_plan(p_my);
+    fftw_destroy_plan(p_mz);
+    fftw_destroy_plan(p_inv_mx);
+    fftw_destroy_plan(p_inv_my);
+    fftw_destroy_plan(p_inv_mz);
+    fftw_free(mx);
+    fftw_free(my);
+    fftw_free(mz);
 }
 */
+void Numerical_Methods_Class::DemagnetisationFieldFFT(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
+                                                      const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
+                                                      const std::vector<double>& mzTerms) {
+
+    int gotNumSpins = GV.GetNumSpins();
+    const double Nxx = 0.0, Nyy = 0.5, Nzz = 0.5; // Assuming demag terms (Nx, Ny, and Nz) are constants
+    const double imagTerm = 0.0, normalizationFactor = 1.0 / static_cast<double>(gotNumSpins);
+
+    if ((Nxx + Nyy + Nzz) > 1.0) {
+        throw std::runtime_error("Demag tensor values are invalid. Sum of all components must be <= 1.0");
+    }
+
+    auto fftw_alloc_and_check = [](const char* var_name, const int& size) -> fftw_complex* {
+        auto *mTerm = static_cast<fftw_complex*>(fftw_alloc_complex(size));
+        if (!mTerm) {
+            throw std::runtime_error(std::string("Failed to allocate memory for ") + var_name);
+        } else {
+            std::memset(mTerm, 0, sizeof(fftw_complex) * size);
+            return mTerm;
+        }
+    };
+
+    auto *mx = fftw_alloc_and_check("mx", gotNumSpins);
+    auto *my = fftw_alloc_and_check("my", gotNumSpins);
+    auto *mz = fftw_alloc_and_check("mz", gotNumSpins);
+
+    std::vector<double> totalHd_x(gotNumSpins+2, 0), totalHd_y(gotNumSpins+2, 0), totalHd_z(gotNumSpins+2, 0);
+
+    for(int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
+        mx[currentSite][0] = mxTerms[currentSite+1]; mx[currentSite][1] = imagTerm;
+        my[currentSite][0] = myTerms[currentSite+1]; my[currentSite][1] = imagTerm;
+        mz[currentSite][0] = mzTerms[currentSite+1]; mz[currentSite][1] = imagTerm;
+    }
+
+    fftw_plan p_mx = fftw_plan_dft_1d(gotNumSpins, mx, mx, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan p_my = fftw_plan_dft_1d(gotNumSpins, my, my, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan p_mz = fftw_plan_dft_1d(gotNumSpins, mz, mz, FFTW_FORWARD, FFTW_ESTIMATE);
+
+    fftw_execute(p_mx);
+    fftw_execute(p_my);
+    fftw_execute(p_mz);
+
+    // Multiply in Fourier space (H_d = -N * M). TODO extend to include all components of the demag tensor.
+    for (int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
+        for (int part = 0; part < 2; part++) {
+            mx[currentSite][part] *= -1 * Nxx; // mx[currentSite][0] = mx[currentSite][0] * Nxx + mx[currentSite][0] * Nxy etc;
+            my[currentSite][part] *= -1 * Nyy;
+            mz[currentSite][part] *= -1 * Nzz;
+        }
+    }
+
+    fftw_plan p_inv_mx = fftw_plan_dft_1d(gotNumSpins, mx, mx, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan p_inv_my = fftw_plan_dft_1d(gotNumSpins, my, my, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan p_inv_mz = fftw_plan_dft_1d(gotNumSpins, mz, mz, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+    fftw_execute(p_inv_mx);
+    fftw_execute(p_inv_my);
+    fftw_execute(p_inv_mz);
+
+    const double tolerance = 1E-300;
+    for (int site = 0; site < gotNumSpins; site++) {
+        /*
+        totalHd_x[site+1] = (fabs(mxTerms[site+1]) > tolerance) ? mx[site][0] * normalizationFactor : 0.0;
+        totalHd_y[site+1] = (fabs(myTerms[site+1]) > tolerance) ? my[site][0] * normalizationFactor : 0.0;
+        totalHd_z[site+1] = (fabs(mzTerms[site+1]) > tolerance) ? mz[site][0] * normalizationFactor : 0.0;
+        */
+        totalHd_x[site+1] = mx[site][0] * normalizationFactor;
+        totalHd_y[site+1] = my[site][0] * normalizationFactor;
+        totalHd_z[site+1] = mz[site][0] * normalizationFactor;
+    }
+
+    H_dx = totalHd_x;
+    H_dy = totalHd_y;
+    H_dz = totalHd_z;
+
+    fftw_destroy_plan(p_mx);
+    fftw_destroy_plan(p_my);
+    fftw_destroy_plan(p_mz);
+    fftw_destroy_plan(p_inv_mx);
+    fftw_destroy_plan(p_inv_my);
+    fftw_destroy_plan(p_inv_mz);
+    fftw_free(mx);
+    fftw_free(my);
+    fftw_free(mz);
+}
+
 double Numerical_Methods_Class::MagneticMomentX(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
@@ -1184,8 +1357,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
         if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
-            // Doesn't work on Windows due to different compiler. Doesn't work for fewer than 100 iterations
-            bar.update();
+            bar.update(); // Doesn't work for fewer than 100 iterations
 
         TestShockwaveConditions(iteration);
 
@@ -1194,14 +1366,12 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
 
-        double demagXK1, demagYK1, demagZK1;
-        if (_useDemag) {
-                DemagnetisationField(demagXK1, demagYK1, demagZK1, _mx0, _my0, _mz0);
-        }
-        else {
-            demagXK1 = 0;
-            demagYK1 = 0;
-            demagZK1 = 0;
+        // TODO Change demag terms so that each component only has one variable which is reset each RK stage
+        std::vector<double> demagXK1(GV.GetNumSpins() + 2, 0), demagYK1(GV.GetNumSpins() + 2, 0), demagZK1(GV.GetNumSpins() + 2, 0);
+        if (_useDemagIntense) {
+                DemagnetisationFieldIntense(demagXK1, demagYK1, demagZK1, _mx0, _my0, _mz0);
+        } else if (_useDemagFFT) {
+                DemagnetisationFieldFFT(demagXK1, demagYK1, demagZK1, _mx0, _my0, _mz0);
         }
 
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
@@ -1212,7 +1382,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
 
-            double dipoleX, dipoleY, dipoleZ;
+            double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
             if (_useDipolar) {
                 std::vector<double> mxTermsForDipole = {_mx0[spinLHS], _mx0[site], _mx0[spinRHS]};
                 std::vector<double> myTermsForDipole = {_my0[spinLHS], _my0[site], _my0[spinRHS]};
@@ -1225,10 +1395,6 @@ void Numerical_Methods_Class::SolveRK2Classic() {
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];
                 dipoleZ = dipoleTerms[2];
-            } else {
-                dipoleX = 0;
-                dipoleY = 0;
-                dipoleZ = 0;
             }
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
@@ -1249,14 +1415,11 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         // The estimations of the m-components values for the next iteration.
         std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
 
-        double demagXK2, demagYK2, demagZK2;
-        if (_useDemag) {
-                DemagnetisationField(demagXK2, demagYK2, demagZK2, mx1, my1, mz1);
-        }
-        else {
-            demagXK2 = 0;
-            demagYK2 = 0;
-            demagZK2 = 0;
+        std::vector<double> demagXK2(GV.GetNumSpins() + 2, 0), demagYK2(GV.GetNumSpins() + 2, 0), demagZK2(GV.GetNumSpins() + 2, 0);
+        if (_useDemagIntense) {
+                DemagnetisationFieldIntense(demagXK2, demagYK2, demagZK2, mx1, my1, mz1);
+        } else if (_useDemagFFT) {
+                DemagnetisationFieldFFT(demagXK2, demagYK2, demagZK2, mx1, my1, mz1);
         }
 
         // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
@@ -1265,7 +1428,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
 
-            double dipoleX, dipoleY, dipoleZ;
+            double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
             if (_useDipolar) {
                 std::vector<double> mxTermsForDipole = {mx1[spinLHS], mx1[site], mx1[spinRHS]};
                 std::vector<double> myTermsForDipole = {my1[spinLHS], my1[site], my1[spinRHS]};
@@ -1278,10 +1441,6 @@ void Numerical_Methods_Class::SolveRK2Classic() {
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];
                 dipoleZ = dipoleTerms[2];
-            } else {
-                dipoleX = 0;
-                dipoleY = 0;
-                dipoleZ = 0;
             }
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
             double hxK1 = EffectiveFieldX(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX, demagXK2, t0);
@@ -1365,9 +1524,10 @@ void Numerical_Methods_Class::SolveRK2() {
     std::vector<std::vector<std::vector<double>>> m1Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, zeroValue);
     std::vector<std::vector<std::vector<double>>> m2Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, zeroValue);
 
-    double demagX=0.0, demagY=0.0, demagZ=0.0;
+    double nXTest = 0.0, nYTest = 0.5, nZTest = 0.5; // TODO Implement class-wide demag tensor
+    std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(GV.GetNumSpins() + 2, 0.0);
 
-    if (demagX < 0.1 or demagY < 0.1 or demagZ < 0.1) {
+    if (nXTest < 0 or nYTest < 0 or nZTest < 0) {
         std::cout << "Demag. field is too small. Please check the demag. field values." << std::endl;
         exit(0);
     }

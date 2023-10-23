@@ -6,7 +6,7 @@
 			[
 				{
 					"build" : ".",
-					"jsonFile" : "directory-.-Release-f5ebdc15457944623624.json",
+					"jsonFile" : "directory-.-RelWithDebInfo-f5ebdc15457944623624.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.21"
@@ -19,7 +19,7 @@
 					]
 				}
 			],
-			"name" : "Release",
+			"name" : "RelWithDebInfo",
 			"projects" : 
 			[
 				{
@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "SpinChains::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-SpinChains-Release-93d50d4c93182402f264.json",
+					"jsonFile" : "target-SpinChains-RelWithDebInfo-db4ed30d08113982db9f.json",
 					"name" : "SpinChains",
 					"projectIndex" : 0
 				}
@@ -49,7 +49,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release",
+		"build" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-relwithdebinfo",
 		"source" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains"
 	},
 	"version" : 

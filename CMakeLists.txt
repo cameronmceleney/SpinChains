@@ -5,24 +5,19 @@ project(SpinChains)
 
 # Written using C23 and no real attempt has been made to ensure backwards compatibility
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# set(CMAKE_CXX_FLAGS "-O3")
-
-# Two IF statements test to find the user's Operating System, and then dictate the path to the Eigen folder. It was too much
-# work to have relative paths to a cloud storage location that would hold the Eigen folder (And thus have the same relative path
-# for both OS. This was the quick yet effective solution
+# Manually specifying Eigen and FFTW directories
 if(WIN32 OR WIN64)
-    # This is the absolute path to my Eigen folder on Windows; change as required.
     set(EIGEN_DIR "C:/Program Files/eigen-3.4.0")
-endif()
-
-if(APPLE)
-    # This is the absolute path to my Eigen folder on Mac (used Homebrew to install_; change as required
+elseif(APPLE)
     set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
+    # set(FFTW_DIR "/usr/local/Cellar/fftw/3.3.10_1/include")
+    set(FFTW_DIR "/usr/local/Cellar/fftw/3.3.10_1")
+    set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3.a")
 endif()
 
-# Includes the Eigen library. This lib is full of header files, so they should be called as such (eg #include <Eigen/Core>)
-include_directories(${EIGEN_DIR})
+#include_directories(${EIGEN_DIR} ${FFTW_DIR})
 
 # Links all files to the project. There are numerous classes to encapsulate data so ensure that all .h files have a corresponding .cpp as needed
 add_executable(SpinChains
@@ -34,3 +29,12 @@ add_executable(SpinChains
         GlobalVariables.cpp GlobalVariables.h
         progressbar.hpp
         NewSolver.cpp NewSolver.h)
+
+# Include directories for FFTW
+include_directories(${FFTW_DIR}/include)
+
+# Link FFTW to the executable
+target_link_libraries(SpinChains PRIVATE ${FFTW_LIB})
+
+# Optional: Uncomment for -O3 optimization
+# target_compile_options(SpinChains PRIVATE -O3)

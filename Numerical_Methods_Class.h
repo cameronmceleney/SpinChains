@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <random>
+#include <fftw3.h>
 
 
 class Numerical_Methods_Class {
@@ -111,7 +112,8 @@ private:
 
     bool                _useDipolar;
     bool                _useZeeman;
-    bool                _useDemag;
+    bool                _useDemagIntense;
+    bool                _useDemagFFT;
     bool                _useMultilayer;
     bool                _debugFunc = false;
 
@@ -280,23 +282,28 @@ private:
      */
 
     // Description missing
-    double              EffectiveFieldX (const int& site, const int& layer,
-                                         const double& mxLHS, const double& mxMID, const double& mxRHS,
-                                         const double& dipoleTerm, const double& demagTerm, const double& current_time);
+    double              EffectiveFieldX (const int& site, const int& layer, const double& mxLHS, const double& mxMID,
+                                         const double& mxRHS, const double& dipoleTerm,
+                                         const std::vector<double>& demagTerm, const double& current_time);
 
     // Description missing
-    double              EffectiveFieldY (const int& site, const int& layer,
-                                         const double& myLHS, const double& myMID, const double& myRHS,
-                                         const double& dipoleTerm, const double& demagTerm);
+    double              EffectiveFieldY (const int& site, const int& layer, const double& myLHS, const double& myMID,
+                                         const double& myRHS, const double& dipoleTerm,
+                                         const std::vector<double>& demagTerm);
 
     // Description missing
-    double              EffectiveFieldZ (const int& site, const int& layer,
-                                         const double& mzLHS, const double& mzMID, const double& mzRHS,
-                                         const double& dipoleTerm, const double& demagTerm);
+    double              EffectiveFieldZ (const int& site, const int& layer, const double& mzLHS, const double& mzMID,
+                                         const double& mzRHS, const double& dipoleTerm,
+                                         const std::vector<double>& demagTerm);
 
-    double              DemagnetisationField(double& H_dx, double& H_dy,
-                                             double& H_dz, const std::vector<double>&mxTerms,
-                                             const std::vector<double>& myTerms, const std::vector<double>& mzTerms);
+    // Description missing
+    void                DemagnetisationFieldIntense (std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
+                                              const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
+                                              const std::vector<double>& mzTerms);
+
+    void                DemagnetisationFieldFFT (std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
+                                                 const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
+                                                 const std::vector<double>& mzTerms);
 
     /*
      * ################################################################################################################

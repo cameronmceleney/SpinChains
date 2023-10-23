@@ -43,7 +43,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "RelWithDebInfo"
+			"value" : "Release"
 		},
 		{
 			"name" : "CMAKE_CACHEFILE_DIR",
@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-relwithdebinfo"
+			"value" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -479,7 +479,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-relwithdebinfo/CMakeFiles/pkgRedirects"
+			"value" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -1102,6 +1102,74 @@
 			"value" : "FALSE"
 		},
 		{
+			"name" : "Eigen3_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for Eigen3."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/usr/local/share/eigen3/cmake"
+		},
+		{
+			"name" : "FFTW3_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for FFTW3."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/usr/local/lib/cmake/fftw3"
+		},
+		{
+			"name" : "FFTW_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for FFTW."
+				}
+			],
+			"type" : "PATH",
+			"value" : "FFTW_DIR-NOTFOUND"
+		},
+		{
+			"name" : "PKG_CONFIG_ARGN",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Arguments to supply to pkg-config"
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "PKG_CONFIG_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "pkg-config executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "PKG_CONFIG_EXECUTABLE-NOTFOUND"
+		},
+		{
 			"name" : "SpinChains_BINARY_DIR",
 			"properties" : 
 			[
@@ -1111,7 +1179,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-relwithdebinfo"
+			"value" : "/Users/cameronaidanmceleney/CLionProjects/SpinChains/cmake-build-release"
 		},
 		{
 			"name" : "SpinChains_IS_TOP_LEVEL",
