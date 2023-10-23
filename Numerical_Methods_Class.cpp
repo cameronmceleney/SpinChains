@@ -44,8 +44,8 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _shouldDriveCease = false;
 
     // Output Flags
-    _printAllData = false;
-    _printFixedLines = true;
+    _printAllData = true;
+    _printFixedLines = false;
     _printFixedSites = false;
 }
 void Numerical_Methods_Class::NumericalMethodsParameters() {
@@ -54,7 +54,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _ambientTemperature = 273; // Kelvin
     _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
-    _forceStopAtIteration = -1;
+    _forceStopAtIteration = 100;
     _gyroMagConst = GV.GetGyromagneticConstant();
     _maxSimTime = 0.7e-9;
     _satMag = 0.010032;
@@ -956,7 +956,7 @@ std::vector<double> Numerical_Methods_Class::ComputeStochasticTerm(const int& si
 
 double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& layer, const double& mxLHS, const double& mxMID,
                                                 const double& mxRHS, const double& dipoleTerm,
-                                                const std::vector<double>& demagTerm, const double& current_time) {
+                                                const double& demagTerm, const double& current_time) {
     // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
     double hx;
 
@@ -964,16 +964,16 @@ double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& laye
         if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             if (_driveAllLayers || layer == 0)
-                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm[site]
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
                         + _dynamicBiasField * cos(_drivingAngFreq * current_time);
             else if  (_hasStaticDrive)
-                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm[site]
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
                         +_dynamicBiasField;
             else if  ((!_driveAllLayers && layer != 0))
-                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm[site];
+                hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
         } else
             // All spins along x which are not within the driving region
-            hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm[site];
+            hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
     } else if (!_isFM) {
         if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
@@ -989,12 +989,12 @@ double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& laye
     return hx;
 }
 double Numerical_Methods_Class::EffectiveFieldY(const int& site, const int& layer, const double& myLHS, const double& myMID, const double& myRHS,
-                                                const double &dipoleTerm,  const std::vector<double>& demagTerm) {
+                                                const double &dipoleTerm,  const double& demagTerm) {
     // The effective field (H_eff) y-component acting upon a given magnetic moment (site), abbreviated to 'hy'
     double hy;
 
     if (_isFM) {
-        hy = _exchangeVec[site-1] * myLHS + _exchangeVec[site] * myRHS + dipoleTerm + demagTerm[site];
+        hy = _exchangeVec[site-1] * myLHS + _exchangeVec[site] * myRHS + dipoleTerm + demagTerm;
     } else if (!_isFM) {
         hy = -1.0 * (_exchangeVec[site-1] * myLHS + _exchangeVec[site] * myRHS);
     }
@@ -1002,12 +1002,12 @@ double Numerical_Methods_Class::EffectiveFieldY(const int& site, const int& laye
     return hy;
 }
 double Numerical_Methods_Class::EffectiveFieldZ(const int& site, const int& layer, const double& mzLHS, const double& mzMID, const double& mzRHS,
-                                                const double& dipoleTerm, const std::vector<double>& demagTerm) {
+                                                const double& dipoleTerm, const double& demagTerm) {
     // The effective field (H_eff) z-component acting upon a given magnetic moment (site), abbreviated to 'hz'
     double hz;
 
     if (_isFM) {
-        hz = _exchangeVec[site-1] * mzLHS + _exchangeVec[site] * mzRHS + dipoleTerm + demagTerm[site]
+        hz = _exchangeVec[site-1] * mzLHS + _exchangeVec[site] * mzRHS + dipoleTerm + demagTerm
                 + GV.GetStaticBiasField();
     } else if (!_isFM) {
         if (mzMID > 0)
@@ -1160,6 +1160,7 @@ void Numerical_Methods_Class::DemagnetisationFieldFFT(std::vector<double>& H_dx,
                                                       const std::vector<double>& mzTerms) {
 
     int gotNumSpins = GV.GetNumSpins();
+    int trueNumSpins = GV.GetNumSpins() + 2;
     const double Nxx = 0.0, Nyy = 0.5, Nzz = 0.5; // Assuming demag terms (Nx, Ny, and Nz) are constants
     const double imagTerm = 0.0, normalizationFactor = 1.0 / static_cast<double>(gotNumSpins);
 
@@ -1181,12 +1182,11 @@ void Numerical_Methods_Class::DemagnetisationFieldFFT(std::vector<double>& H_dx,
     auto *my = fftw_alloc_and_check("my", gotNumSpins);
     auto *mz = fftw_alloc_and_check("mz", gotNumSpins);
 
-    std::vector<double> totalHd_x(gotNumSpins+2, 0), totalHd_y(gotNumSpins+2, 0), totalHd_z(gotNumSpins+2, 0);
-
     for(int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
-        mx[currentSite][0] = mxTerms[currentSite+1]; mx[currentSite][1] = imagTerm;
-        my[currentSite][0] = myTerms[currentSite+1]; my[currentSite][1] = imagTerm;
-        mz[currentSite][0] = mzTerms[currentSite+1]; mz[currentSite][1] = imagTerm;
+        int scaled_len = currentSite + 1;  // mx.size() is 4000 whereas mxTerms.size() is  4002
+        mx[currentSite][0] = mxTerms[scaled_len]; mx[currentSite][1] = imagTerm;
+        my[currentSite][0] = myTerms[scaled_len]; my[currentSite][1] = imagTerm;
+        mz[currentSite][0] = mzTerms[scaled_len]; mz[currentSite][1] = imagTerm;
     }
 
     fftw_plan p_mx = fftw_plan_dft_1d(gotNumSpins, mx, mx, FFTW_FORWARD, FFTW_ESTIMATE);
@@ -1214,22 +1214,49 @@ void Numerical_Methods_Class::DemagnetisationFieldFFT(std::vector<double>& H_dx,
     fftw_execute(p_inv_my);
     fftw_execute(p_inv_mz);
 
-    const double tolerance = 1E-300;
-    for (int site = 0; site < gotNumSpins; site++) {
-        /*
-        totalHd_x[site+1] = (fabs(mxTerms[site+1]) > tolerance) ? mx[site][0] * normalizationFactor : 0.0;
-        totalHd_y[site+1] = (fabs(myTerms[site+1]) > tolerance) ? my[site][0] * normalizationFactor : 0.0;
-        totalHd_z[site+1] = (fabs(mzTerms[site+1]) > tolerance) ? mz[site][0] * normalizationFactor : 0.0;
-        */
-        totalHd_x[site+1] = mx[site][0] * normalizationFactor;
-        totalHd_y[site+1] = my[site][0] * normalizationFactor;
-        totalHd_z[site+1] = mz[site][0] * normalizationFactor;
+    double rmse_mx = 0, rmse_my = 0, rmse_mz = 0;
+
+    for (int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
+        int scaled_len = currentSite + 1;  // mx.size() is 4000 whereas mxTerms.size() is  4002
+        rmse_mx += pow(mxTerms[scaled_len] - mx[currentSite][0] * normalizationFactor, 2);
+        rmse_my += pow(myTerms[scaled_len] - my[currentSite][0] * normalizationFactor, 2);
+        rmse_mz += pow(mzTerms[scaled_len] - mz[currentSite][0] * normalizationFactor, 2);
     }
 
+    rmse_mx = sqrt(rmse_mx / gotNumSpins);
+    rmse_my = sqrt(rmse_my / gotNumSpins);
+    rmse_mz = sqrt(rmse_mz / gotNumSpins);
+
+    /*
+    // FFT error estimation based on machine epsilon and FFTW's scale factor
+    const double machineEpsilon = std::numeric_limits<double>::epsilon();
+    const double fftError = machineEpsilon * gotNumSpins * sqrt(gotNumSpins);
+    */
+
+    for (int trueSite = 0; trueSite < gotNumSpins + 2; trueSite++) {
+        if (trueSite == 0 || trueSite == (trueNumSpins - 1) ) {
+            // Boundary conditions must always be zero
+            H_dx[trueSite] = 0.0;
+            H_dy[trueSite] = 0.0;
+            H_dz[trueSite] = 0.0;
+            continue;
+        }
+        int scale_site = trueSite - 1; // H_dx/H_dy/H_dz are 4002 in length while mx/my/mz are 4000 in length
+        H_dx[trueSite] = (fabs(mxTerms[scale_site]) > rmse_mx) ? mx[scale_site][0] * normalizationFactor : 0.0;
+        H_dy[trueSite] = (fabs(myTerms[scale_site]) > rmse_my) ? my[scale_site][0] * normalizationFactor : 0.0;
+        H_dz[trueSite] = (fabs(mzTerms[scale_site]) > rmse_mz) ? mz[scale_site][0] * normalizationFactor : 0.0;
+        /*
+        H_dx[trueSite] = mx[scale_site][0] * normalizationFactor;
+        H_dy[trueSite] = my[scale_site][0] * normalizationFactor;
+        H_dz[trueSite] = mz[scale_site][0] * normalizationFactor;
+        */
+    }
+    std::cout << "RMSE. mx: " << rmse_mx << " | my: " << rmse_my << " | mz:  " << rmse_mz << std::endl;
+    /*
     H_dx = totalHd_x;
     H_dy = totalHd_y;
     H_dz = totalHd_z;
-
+    */
     fftw_destroy_plan(p_mx);
     fftw_destroy_plan(p_my);
     fftw_destroy_plan(p_mz);
@@ -1354,6 +1381,9 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
     progressbar bar(100);
 
+    std::vector<double> demagX(GV.GetNumSpins() + 2, 0), demagY(GV.GetNumSpins() + 2, 0), demagZ(GV.GetNumSpins() + 2, 0);
+
+
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
         if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
@@ -1367,11 +1397,10 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
 
         // TODO Change demag terms so that each component only has one variable which is reset each RK stage
-        std::vector<double> demagXK1(GV.GetNumSpins() + 2, 0), demagYK1(GV.GetNumSpins() + 2, 0), demagZK1(GV.GetNumSpins() + 2, 0);
         if (_useDemagIntense) {
-                DemagnetisationFieldIntense(demagXK1, demagYK1, demagZK1, _mx0, _my0, _mz0);
+                DemagnetisationFieldIntense(demagX, demagY, demagZ, _mx0, _my0, _mz0);
         } else if (_useDemagFFT) {
-                DemagnetisationFieldFFT(demagXK1, demagYK1, demagZK1, _mx0, _my0, _mz0);
+                DemagnetisationFieldFFT(demagX, demagY, demagZ, _mx0, _my0, _mz0);
         }
 
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
@@ -1398,9 +1427,9 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             }
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK0 = EffectiveFieldX(site, 0, _mx0[spinLHS], _mx0[site], _mx0[spinRHS], dipoleX, demagXK1, t0);
-            double hyK0 = EffectiveFieldY(site, 0, _my0[spinLHS], _my0[site], _my0[spinRHS], dipoleY, demagYK1);
-            double hzK0 = EffectiveFieldZ(site, 0, _mz0[spinLHS], _mz0[site], _mz0[spinRHS], dipoleZ, demagZK1);
+            double hxK0 = EffectiveFieldX(site, 0, _mx0[spinLHS], _mx0[site], _mx0[spinRHS], dipoleX, demagX[site], t0);
+            double hyK0 = EffectiveFieldY(site, 0, _my0[spinLHS], _my0[site], _my0[spinRHS], dipoleY, demagY[site]);
+            double hzK0 = EffectiveFieldZ(site, 0, _mz0[spinLHS], _mz0[site], _mz0[spinRHS], dipoleZ, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mxK1 = MagneticMomentX(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
@@ -1415,11 +1444,10 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         // The estimations of the m-components values for the next iteration.
         std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
 
-        std::vector<double> demagXK2(GV.GetNumSpins() + 2, 0), demagYK2(GV.GetNumSpins() + 2, 0), demagZK2(GV.GetNumSpins() + 2, 0);
         if (_useDemagIntense) {
-                DemagnetisationFieldIntense(demagXK2, demagYK2, demagZK2, mx1, my1, mz1);
+                DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
         } else if (_useDemagFFT) {
-                DemagnetisationFieldFFT(demagXK2, demagYK2, demagZK2, mx1, my1, mz1);
+                DemagnetisationFieldFFT(demagX, demagY, demagZ, mx1, my1, mz1);
         }
 
         // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
@@ -1443,9 +1471,9 @@ void Numerical_Methods_Class::SolveRK2Classic() {
                 dipoleZ = dipoleTerms[2];
             }
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK1 = EffectiveFieldX(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX, demagXK2, t0);
-            double hyK1 = EffectiveFieldY(site, 0, my1[spinLHS], my1[site], my1[spinRHS], dipoleY, demagYK2);
-            double hzK1 = EffectiveFieldZ(site, 0, mz1[spinLHS], mz1[site], mz1[spinRHS], dipoleZ, demagZK2);
+            double hxK1 = EffectiveFieldX(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX, demagX[site], t0);
+            double hyK1 = EffectiveFieldY(site, 0, my1[spinLHS], my1[site], my1[spinRHS], dipoleY, demagY[site]);
+            double hzK1 = EffectiveFieldZ(site, 0, mz1[spinLHS], mz1[site], mz1[spinRHS], dipoleZ, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mxK2 = MagneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
@@ -1576,9 +1604,9 @@ void Numerical_Methods_Class::SolveRK2() {
                 }
 
                 // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-                double hxK0 = EffectiveFieldX(site, layer, mxLHS, mxMID, mxRHS, dipoleX, demagX, t0);
-                double hyK0 = EffectiveFieldY(site, layer, myLHS, myMID, myRHS, dipoleY, demagY);
-                double hzK0 = EffectiveFieldZ(site, layer, mzLHS, mzMID, mzRHS, dipoleZ, demagZ);
+                double hxK0 = EffectiveFieldX(site, layer, mxLHS, mxMID, mxRHS, dipoleX, demagX[site], t0);
+                double hyK0 = EffectiveFieldY(site, layer, myLHS, myMID, myRHS, dipoleY, demagY[site]);
+                double hzK0 = EffectiveFieldZ(site, layer, mzLHS, mzMID, mzRHS, dipoleZ, demagZ[site]);
 
                 // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
                 double mxK1 = MagneticMomentX(site, layer, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
@@ -1625,9 +1653,9 @@ void Numerical_Methods_Class::SolveRK2() {
                     dipoleZ = 0;
                 }
                 // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-                double hxK1 = EffectiveFieldX(site, layer, mxLHS, mxMID, mxRHS, dipoleX, demagX, t0);
-                double hyK1 = EffectiveFieldY(site, layer, myLHS, myMID, myRHS, dipoleY, demagY);
-                double hzK1 = EffectiveFieldZ(site, layer, mzLHS, mzMID, mzRHS, dipoleZ, demagZ);
+                double hxK1 = EffectiveFieldX(site, layer, mxLHS, mxMID, mxRHS, dipoleX, demagX[site], t0);
+                double hyK1 = EffectiveFieldY(site, layer, myLHS, myMID, myRHS, dipoleY, demagY[site]);
+                double hzK1 = EffectiveFieldZ(site, layer, mzLHS, mzMID, mzRHS, dipoleZ, demagZ[site]);
 
                 // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
                 double mxK2 = MagneticMomentX(site, layer, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);

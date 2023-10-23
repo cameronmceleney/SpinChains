@@ -284,17 +284,17 @@ private:
     // Description missing
     double              EffectiveFieldX (const int& site, const int& layer, const double& mxLHS, const double& mxMID,
                                          const double& mxRHS, const double& dipoleTerm,
-                                         const std::vector<double>& demagTerm, const double& current_time);
+                                         const double& demagTerm, const double& current_time);
 
     // Description missing
     double              EffectiveFieldY (const int& site, const int& layer, const double& myLHS, const double& myMID,
                                          const double& myRHS, const double& dipoleTerm,
-                                         const std::vector<double>& demagTerm);
+                                         const double& demagTerm);
 
     // Description missing
     double              EffectiveFieldZ (const int& site, const int& layer, const double& mzLHS, const double& mzMID,
                                          const double& mzRHS, const double& dipoleTerm,
-                                         const std::vector<double>& demagTerm);
+                                         const double& demagTerm);
 
     // Description missing
     void                DemagnetisationFieldIntense (std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
