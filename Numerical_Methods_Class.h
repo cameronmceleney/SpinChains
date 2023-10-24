@@ -6,6 +6,7 @@
 #include "CommonLibs.h"
 #include "progressbar.hpp"
 #include <chrono>
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <list>
@@ -306,6 +307,14 @@ private:
     void                DemagnetisationFieldFFT (std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
                                                  const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
                                                  const std::vector<double>& mzTerms);
+
+void                    DemagField1DComplex(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
+                                     std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
+                                     int iteration, std::string rkStage);
+
+void                    DemagField1DReal(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
+                                     std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
+                                     int iteration, std::string rkStage);
 
     /*
      * ################################################################################################################

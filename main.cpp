@@ -31,7 +31,7 @@ int main() {
     std::cin >> outputFileID;
     GV.SetFileNameBase("T"+outputFileID);
 
-    GV.SetFilePath("MacOS");
+    GV.SetFilePath("windows");
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetIsExchangeUniform())

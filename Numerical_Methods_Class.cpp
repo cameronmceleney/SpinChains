@@ -44,8 +44,8 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _shouldDriveCease = false;
 
     // Output Flags
-    _printAllData = true;
-    _printFixedLines = false;
+    _printAllData = false;
+    _printFixedLines = true;
     _printFixedSites = false;
 }
 void Numerical_Methods_Class::NumericalMethodsParameters() {
@@ -54,7 +54,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _ambientTemperature = 273; // Kelvin
     _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
-    _forceStopAtIteration = 100;
+    _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
     _maxSimTime = 0.7e-9;
     _satMag = 0.010032;
@@ -1058,117 +1058,30 @@ void Numerical_Methods_Class::DemagnetisationFieldIntense(std::vector<double>& H
     H_dy = totalHd_y;
     H_dz = totalHd_z;
 }
-/*
-void Numerical_Methods_Class::DemagnetisationFieldFFT(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
-                                                      const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
-                                                      const std::vector<double>& mzTerms) {
-    // Allocate FFTW complex pointer arrays
-    fftw_complex *mx = fftw_alloc_complex(GV.GetNumSpins());
-    if (!mx)
-        throw std::runtime_error("Failed to allocate memory for mx");
 
-    fftw_complex *my = fftw_alloc_complex(GV.GetNumSpins());
-    if (!my) {
-        fftw_free(mx);  // Free previously allocated memory
-        throw std::runtime_error("Failed to allocate memory for my");
-    }
+void Numerical_Methods_Class::DemagField1DComplex(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
+                                           std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
+                                           int iteration, std::string rkStageName) {
 
-    fftw_complex *mz = fftw_alloc_complex(GV.GetNumSpins());
-    if (!mz) {
-        fftw_free(mx);  // Free previously allocated memory
-        fftw_free(my);  // Free previously allocated memory
-        throw std::runtime_error("Failed to allocate memory for mz");
-    }
-
-    fftw_complex *mx = static_cast<fftw_complex*>(fftw_alloc_complex(gotNumSpins));
-    std::memset(mx, 0, sizeof(fftw_complex) * gotNumSpins);
-    fftw_complex *my = static_cast<fftw_complex*>(fftw_alloc_complex(gotNumSpins));
-    std::memset(my, 0, sizeof(fftw_complex) * gotNumSpins);
-    fftw_complex *mz = static_cast<fftw_complex*>(fftw_alloc_complex(gotNumSpins));
-    std::memset(mz, 0, sizeof(fftw_complex) * gotNumSpins);
-
-
-    std::vector<double> totalHd_x(GV.GetNumSpins() + 2, 0), totalHd_y(GV.GetNumSpins() + 2, 0), totalHd_z(GV.GetNumSpins() + 2, 0);
-
-    // Demagnetisation tensor. TODO These values are placeholders until full demag tensor is implemented.
-    double Nxx = 0.0;
-    double Nyy = 0.5;
-    double Nzz = 0.5;
-
-    for(int currentSite = 1; currentSite <= GV.GetNumSpins(); currentSite++) {
-        mx[currentSite][0] = mxTerms[currentSite]; mx[currentSite][1] = 0.0;
-        my[currentSite][0] = myTerms[currentSite]; my[currentSite][1] = 0.0;
-        mz[currentSite][0] = mzTerms[currentSite]; mz[currentSite][1] = 0.0;
-    }
-
-    // FFT plans using Discrete Fourier Transforms (DFT) of 1d arrays
-    fftw_plan p_mx = fftw_plan_dft_1d(GV.GetNumSpins(), mx, mx, FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_plan p_my = fftw_plan_dft_1d(GV.GetNumSpins(), my, my, FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_plan p_mz = fftw_plan_dft_1d(GV.GetNumSpins(), mz, mz, FFTW_FORWARD, FFTW_ESTIMATE);
-
-    // Execute FFT
-    fftw_execute(p_mx);
-    fftw_execute(p_my);
-    fftw_execute(p_mz);
-
-    // Multiply in Fourier space (H_d = -N * M). TODO extend to include all components of the demag tensor.
-    for(int currentSite = 1; currentSite <= GV.GetNumSpins(); currentSite++) {
-        mx[currentSite][0] *= Nxx; // mx[currentSite][0] = mx[currentSite][0] * Nxx + mx[currentSite][0] * Nxy etc;
-        my[currentSite][0] *= Nyy;
-        mz[currentSite][0] *= Nzz;
-    }
-
-    // Inverse FFT plans
-    fftw_plan p_inv_mx = fftw_plan_dft_1d(GV.GetNumSpins(), mx, mx, FFTW_BACKWARD, FFTW_ESTIMATE);
-    fftw_plan p_inv_my = fftw_plan_dft_1d(GV.GetNumSpins(), my, my, FFTW_BACKWARD, FFTW_ESTIMATE);
-    fftw_plan p_inv_mz = fftw_plan_dft_1d(GV.GetNumSpins(), mz, mz, FFTW_BACKWARD, FFTW_ESTIMATE);
-
-    // Execute inverse FFT
-    fftw_execute(p_inv_mx);
-    fftw_execute(p_inv_my);
-    fftw_execute(p_inv_mz);
-
-    // Normalize after inverse FFT
-    double normalizationFactor = 1.0 / static_cast<double>(GV.GetNumSpins());
-
-    for (int site = 1; site <= GV.GetNumSpins(); site++) {
-        // Save Real parts of demag fields.
-        totalHd_x[site] = mx[site][0] * normalizationFactor;
-        totalHd_y[site] = my[site][0] * normalizationFactor;
-        totalHd_z[site] = mz[site][0] * normalizationFactor;
-    }
-
-    // Keep separate for now to aid debugging. Only works if exchange energy is uniform!
-    H_dx = totalHd_x;
-    H_dy = totalHd_y;
-    H_dz = totalHd_z;
-
-    // Clean-up
-    fftw_destroy_plan(p_mx);
-    fftw_destroy_plan(p_my);
-    fftw_destroy_plan(p_mz);
-    fftw_destroy_plan(p_inv_mx);
-    fftw_destroy_plan(p_inv_my);
-    fftw_destroy_plan(p_inv_mz);
-    fftw_free(mx);
-    fftw_free(my);
-    fftw_free(mz);
-}
-*/
-void Numerical_Methods_Class::DemagnetisationFieldFFT(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
-                                                      const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
-                                                      const std::vector<double>& mzTerms) {
-
-    int gotNumSpins = GV.GetNumSpins();
-    int trueNumSpins = GV.GetNumSpins() + 2;
-    const double Nxx = 0.0, Nyy = 0.5, Nzz = 0.5; // Assuming demag terms (Nx, Ny, and Nz) are constants
+    int gotNumSpins = GV.GetNumSpins();  // Vectors and arrays defined in function don't include pinned end terms; 4000 sites in length
+    int trueNumSpins = GV.GetNumSpins() + 2;  // Vectors and arrays defined out with function include pinned end terms; 4002 sites in length
+    const double Nxx = 0.0, Nyy = 0.5, Nzz = 0.5; // Diagonalised demag constants; suitable for system.
     const double imagTerm = 0.0, normalizationFactor = 1.0 / static_cast<double>(gotNumSpins);
 
+    // Guard clauses. Keep within `DemagField1D` until debugging complete
     if ((Nxx + Nyy + Nzz) > 1.0) {
         throw std::runtime_error("Demag tensor values are invalid. Sum of all components must be <= 1.0");
     }
+    if ((Nxx < 0.0) || (Nyy < 0.0) || (Nzz < 0.0)) {
+        throw std::runtime_error("Demag tensor values are invalid. All components must be >= 0.0");
+    }
 
     auto fftw_alloc_and_check = [](const char* var_name, const int& size) -> fftw_complex* {
+        /*
+         * Temporary lambda function for debugging. Keep within `DemagField1D` until debugging complete.
+         * Allocates memory for FFTW-suitable arrays.Currently being cautious, so throw exception if allocation fails,
+         * and else set memory to zero to ensure data integrity.
+         */
         auto *mTerm = static_cast<fftw_complex*>(fftw_alloc_complex(size));
         if (!mTerm) {
             throw std::runtime_error(std::string("Failed to allocate memory for ") + var_name);
@@ -1178,95 +1091,424 @@ void Numerical_Methods_Class::DemagnetisationFieldFFT(std::vector<double>& H_dx,
         }
     };
 
-    auto *mx = fftw_alloc_and_check("mx", gotNumSpins);
-    auto *my = fftw_alloc_and_check("my", gotNumSpins);
-    auto *mz = fftw_alloc_and_check("mz", gotNumSpins);
+    auto PrintFFTWVector = [](int numSpins, fftw_complex* vecToPrint, const char* vecName, double testValReal, double testValImag) {
+        /*
+         * Temporary lambda function for debugging. Keep within `DemagField1D` until debugging complete.
+         * Prints the contents of an FFTW-suitable array. Helps find abnormal and unexpected values (compared to my
+         * analytical solutions.
+         */
+        for (int i = 0; i < numSpins; i++) {
+            if (vecToPrint[i][0] != testValReal)
+                std::cout << vecName << "[" << i << "][0] = " << vecToPrint[i][0] << std::endl;
+            else if (vecToPrint[i][1] != testValImag)
+                std::cout << vecName << "[" << i << "][1] = " << vecToPrint[i][1] << std::endl;
+        }
 
+    };
+
+    // Assign memory for FFTW-suitable arrays for magnetic moments; used during computation and for RMSE calculation
+    auto *mX = fftw_alloc_and_check("mx", gotNumSpins);
+    auto *mY = fftw_alloc_and_check("my", gotNumSpins);
+    auto *mZ = fftw_alloc_and_check("mz", gotNumSpins);
+
+    // Additional memory for demagnetisation field components; used for output; initialise at zero (empty)
+    auto *hdX = fftw_alloc_and_check("hdX", gotNumSpins);
+    auto *hdY = fftw_alloc_and_check("hdY", gotNumSpins);
+    auto *hdZ = fftw_alloc_and_check("hdZ", gotNumSpins);
+
+    // Population of memory for FFTW-suitable arrays
     for(int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
-        int scaled_len = currentSite + 1;  // mx.size() is 4000 whereas mxTerms.size() is  4002
-        mx[currentSite][0] = mxTerms[scaled_len]; mx[currentSite][1] = imagTerm;
-        my[currentSite][0] = myTerms[scaled_len]; my[currentSite][1] = imagTerm;
-        mz[currentSite][0] = mzTerms[scaled_len]; mz[currentSite][1] = imagTerm;
+        int scaled_len = currentSite + 1;  // mX (etc) is 4000 sites whereas inMxTerms (etc) is 4002 sites
+        mX[currentSite][0] = inMxTerms[scaled_len]; mX[currentSite][1] = imagTerm; // CHECKED: all mX elements are [0, 0] as expected
+        mY[currentSite][0] = inMyTerms[scaled_len]; mY[currentSite][1] = imagTerm; // CHECKED: all mY elements are [0, 0] as expected
+        mZ[currentSite][0] = inMzTerms[scaled_len]; mZ[currentSite][1] = imagTerm; // CHECKED: all mZ elements are [1, 0] as expected
+        // hdX (etc) should already be zeroes. Keeping this for debugging purposes to ensure data integrity; will remove when working
+        // hdX[currentSite][0] = imagTerm; hdX[currentSite][1] = imagTerm; // CHECKED: all hdX elements are [0, 0] as expected
+        // hdY[currentSite][0] = imagTerm; hdY[currentSite][1] = imagTerm; // CHECKED: all hdY elements are [0, 0] as expected
+        // hdZ[currentSite][0] = imagTerm; hdZ[currentSite][1] = imagTerm; // CHECKED: all hdZ elements are [0, 0] as expected
     }
+    // Have debugging mX (etc) and hdX (etc) and found that they are all being populated correctly
 
-    fftw_plan p_mx = fftw_plan_dft_1d(gotNumSpins, mx, mx, FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_plan p_my = fftw_plan_dft_1d(gotNumSpins, my, my, FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_plan p_mz = fftw_plan_dft_1d(gotNumSpins, mz, mz, FFTW_FORWARD, FFTW_ESTIMATE);
 
-    fftw_execute(p_mx);
-    fftw_execute(p_my);
-    fftw_execute(p_mz);
+    // Create FFTW plans **after** population of memory
+    fftw_plan planDFTForwardMx = fftw_plan_dft_1d(gotNumSpins, mX, mX, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardMy = fftw_plan_dft_1d(gotNumSpins, mY, mY, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardMz = fftw_plan_dft_1d(gotNumSpins, mZ, mZ, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardHdX = fftw_plan_dft_1d(gotNumSpins, hdX, hdX, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardHdY = fftw_plan_dft_1d(gotNumSpins, hdY, hdY, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardHdZ = fftw_plan_dft_1d(gotNumSpins, hdZ, hdZ, FFTW_FORWARD, FFTW_ESTIMATE);
 
-    // Multiply in Fourier space (H_d = -N * M). TODO extend to include all components of the demag tensor.
+    // Execute the plans **after** their definitions
+    fftw_execute(planDFTForwardMx);
+    fftw_execute(planDFTForwardMy);
+    fftw_execute(planDFTForwardMz);
+    fftw_execute(planDFTForwardHdX);
+    fftw_execute(planDFTForwardHdY);
+    fftw_execute(planDFTForwardHdZ);
+
+    // Population in Fourier space (H_d = -N * M). Keep mX/mY/mZ un-mutated for RMSE calculation later
     for (int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
         for (int part = 0; part < 2; part++) {
-            mx[currentSite][part] *= -1 * Nxx; // mx[currentSite][0] = mx[currentSite][0] * Nxx + mx[currentSite][0] * Nxy etc;
-            my[currentSite][part] *= -1 * Nyy;
-            mz[currentSite][part] *= -1 * Nzz;
+            hdX[currentSite][part] = mX[currentSite][part] * -1 * Nxx;  // CHECKED: all hdX elements are [0, 0] as expected
+            hdY[currentSite][part] = mY[currentSite][part] * -1 * Nyy;  // CHECKED: all hdY elements are [0, 0] as expected
+            hdZ[currentSite][part] = mZ[currentSite][part] * -1 * Nzz;  // CHECKED: all hdZ elements are [0, 0] TODO apart from hdZ[0][0] = [-2000, 0]. Why?!
         }
     }
 
-    fftw_plan p_inv_mx = fftw_plan_dft_1d(gotNumSpins, mx, mx, FFTW_BACKWARD, FFTW_ESTIMATE);
-    fftw_plan p_inv_my = fftw_plan_dft_1d(gotNumSpins, my, my, FFTW_BACKWARD, FFTW_ESTIMATE);
-    fftw_plan p_inv_mz = fftw_plan_dft_1d(gotNumSpins, mz, mz, FFTW_BACKWARD, FFTW_ESTIMATE);
+    // Create inverse FFTW plans **after** population of memory
+    fftw_plan planDFTBackMx = fftw_plan_dft_1d(gotNumSpins, mX, mX, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTBackMy = fftw_plan_dft_1d(gotNumSpins, mY, mY, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTBackMz = fftw_plan_dft_1d(gotNumSpins, mZ, mZ, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHdX = fftw_plan_dft_1d(gotNumSpins, hdX, hdX, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHdY = fftw_plan_dft_1d(gotNumSpins, hdY, hdY, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHdZ = fftw_plan_dft_1d(gotNumSpins, hdZ, hdZ, FFTW_BACKWARD, FFTW_ESTIMATE);
 
-    fftw_execute(p_inv_mx);
-    fftw_execute(p_inv_my);
-    fftw_execute(p_inv_mz);
+    // Execute the plans **after** their definitions
+    fftw_execute(planDFTBackMx);
+    fftw_execute(planDFTBackMy);
+    fftw_execute(planDFTBackMz);
+    fftw_execute(planDFTBackHdX);
+    fftw_execute(planDFTBackHdY);
+    fftw_execute(planDFTBackHdZ);
 
+    // Normalise, after FFT, all arrays that were taken into Fourier space
+    for (int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
+        for (int part = 0; part < 1; part++) {
+            mX[currentSite][part] *= normalizationFactor;  // CHECKED: all mX elements are [0, 0] as expected
+            mY[currentSite][part] *= normalizationFactor; // CHECKED: all mY elements are [0, 0] as expected
+            mZ[currentSite][part] *= normalizationFactor; // CHECKED: all mZ elements are [1, 0] as expected
+            hdX[currentSite][part] *= normalizationFactor; // CHECKED: all hdX elements are [0, 0] as expected
+            hdY[currentSite][part] *= normalizationFactor; // CHECKED: all hdY elements are [0, 0] as expected
+            hdZ[currentSite][part] *= normalizationFactor; // CHECKED: all hdZ elements are [-0.5, 0] as expected
+        }
+    }
+
+    // Compute Root Mean Square Error (RMSE) for each component of the magnetic moment
     double rmse_mx = 0, rmse_my = 0, rmse_mz = 0;
-
     for (int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
         int scaled_len = currentSite + 1;  // mx.size() is 4000 whereas mxTerms.size() is  4002
-        rmse_mx += pow(mxTerms[scaled_len] - mx[currentSite][0] * normalizationFactor, 2);
-        rmse_my += pow(myTerms[scaled_len] - my[currentSite][0] * normalizationFactor, 2);
-        rmse_mz += pow(mzTerms[scaled_len] - mz[currentSite][0] * normalizationFactor, 2);
+        // Finding SUM_{i=1}^{N}(data_in[i] - data_reconstructed[i])**2
+        rmse_mx += pow(inMxTerms[scaled_len] - mX[currentSite][0], 2);  // CHECKED: rmse_mx is equal to zero
+        rmse_my += pow(inMyTerms[scaled_len] - mY[currentSite][0], 2);  // CHECKED: rmse_my is equal to zero
+        rmse_mz += pow(inMzTerms[scaled_len] - mZ[currentSite][0], 2);  // CHECKED: rmse_mz is equal to zero
     }
 
-    rmse_mx = sqrt(rmse_mx / gotNumSpins);
-    rmse_my = sqrt(rmse_my / gotNumSpins);
-    rmse_mz = sqrt(rmse_mz / gotNumSpins);
+    // Finishing RMSE calculation: RMSE = Sqrt(SUM_{i=1}^{N} * 1/N)
+    rmse_mx = sqrt(rmse_mx / gotNumSpins);  // CHECKED: rmse_mx is equal to zero
+    rmse_my = sqrt(rmse_my / gotNumSpins);  // CHECKED: rmse_my is equal to zero
+    rmse_mz = sqrt(rmse_mz / gotNumSpins);  // CHECKED: rmse_mz is equal to zero
 
-    /*
+
     // FFT error estimation based on machine epsilon and FFTW's scale factor
     const double machineEpsilon = std::numeric_limits<double>::epsilon();
-    const double fftError = machineEpsilon * gotNumSpins * sqrt(gotNumSpins);
-    */
+    // const double fftError = machineEpsilon * gotNumSpins * sqrt(gotNumSpins);
+    // std::cout << fftError << std::endl;std::exit(0);
+
+    bool mxRMSETest = false, myRMSETest = false, mzRMSETest = false;
+    if (fabs(rmse_mx) < machineEpsilon)
+        mxRMSETest = true;
+    if (fabs(rmse_my) < machineEpsilon)
+        myRMSETest = true;
+    if (fabs(rmse_mz) < machineEpsilon)
+        mzRMSETest = true;
 
     for (int trueSite = 0; trueSite < gotNumSpins + 2; trueSite++) {
+        int scale_site = trueSite - 1;
         if (trueSite == 0 || trueSite == (trueNumSpins - 1) ) {
-            // Boundary conditions must always be zero
-            H_dx[trueSite] = 0.0;
-            H_dy[trueSite] = 0.0;
-            H_dz[trueSite] = 0.0;
+            // Boundary conditions of output arrays must always be zero; do this to ensure data integrity
+            outDemagX[trueSite] = 0.0;
+            outDemagY[trueSite] = 0.0;
+            outDemagZ[trueSite] = 0.0;
             continue;
         }
-        int scale_site = trueSite - 1; // H_dx/H_dy/H_dz are 4002 in length while mx/my/mz are 4000 in length
-        H_dx[trueSite] = (fabs(mxTerms[scale_site]) > rmse_mx) ? mx[scale_site][0] * normalizationFactor : 0.0;
-        H_dy[trueSite] = (fabs(myTerms[scale_site]) > rmse_my) ? my[scale_site][0] * normalizationFactor : 0.0;
-        H_dz[trueSite] = (fabs(mzTerms[scale_site]) > rmse_mz) ? mz[scale_site][0] * normalizationFactor : 0.0;
         /*
-        H_dx[trueSite] = mx[scale_site][0] * normalizationFactor;
-        H_dy[trueSite] = my[scale_site][0] * normalizationFactor;
-        H_dz[trueSite] = mz[scale_site][0] * normalizationFactor;
-        */
+         * outDemagX/outDemagY/outDemagZ are 4002 in length while mX/mY/mZ are 4000 in length. mX (etc) are unmutated throughout
+         * the FFT, which inMxTerms (etc) are the original values. If the absolute difference between inMxTerms and mX (etc)
+         * is greater than their rmse_mx (etc), then the overwriting of outDemagX (etc) by hdX (etc) should be stopped. This
+         * is because the values are likely to just be noise. This is a very crude way of doing this, but it works for now.
+         *
+         * Caution! outDemagX (etc) are references so overwriting their elements changes what the main program sees.
+         */
+        outDemagX[trueSite] = mxRMSETest ? hdX[scale_site][0] : 0.0; // hdX[scale_site][0]; //(fabs((inMxTerms[trueSite] - mX[scale_site][0])) > fabs(rmse_mx)) ? hdX[scale_site][0] : 0.0;  // HELP HERE
+        outDemagY[trueSite] = myRMSETest ? hdY[scale_site][0] : 0.0;// hdY[scale_site][0]; //(fabs((inMyTerms[trueSite] - mY[scale_site][0])) > fabs(rmse_my)) ? hdY[scale_site][0] : 0.0;  // HELP HERE
+        outDemagZ[trueSite] = mzRMSETest ? hdZ[scale_site][0] : 0.0;// hdZ[scale_site][0]; //(fabs((inMzTerms[trueSite] - mZ[scale_site][0])) > fabs(rmse_mz)) ? hdZ[scale_site][0] : 0.0;  // HELP HERE
     }
-    std::cout << "RMSE. mx: " << rmse_mx << " | my: " << rmse_my << " | mz:  " << rmse_mz << std::endl;
+    bool testOutRMS = false;
+    if (testOutRMS) {
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 1000) == 0) {
+            if (mxRMSETest || myRMSETest || mzRMSETest) {
+                std::cout << "Iter. #" << iteration << " | RK" << rkStageName << " ";
+                if (mxRMSETest)
+                    std::cout << "| RMSE. mx: " << rmse_mx << " ";
+                if (myRMSETest)
+                    std::cout << "| RMSE. my: " << rmse_my << " ";
+                if (mzRMSETest)
+                    std::cout << "| RMSE. mz: " << rmse_mz << " ";
+                std::cout << std::endl;
+            }
+            //std::cout << "Iteration #" << iteration <<" | RMSE. mx: " << rmse_mx << " | my: " << rmse_my << " | mz:  " << rmse_mz << std::endl;  // Keep for debugging
+        }
+    }
     /*
-    H_dx = totalHd_x;
-    H_dy = totalHd_y;
-    H_dz = totalHd_z;
-    */
-    fftw_destroy_plan(p_mx);
-    fftw_destroy_plan(p_my);
-    fftw_destroy_plan(p_mz);
-    fftw_destroy_plan(p_inv_mx);
-    fftw_destroy_plan(p_inv_my);
-    fftw_destroy_plan(p_inv_mz);
-    fftw_free(mx);
-    fftw_free(my);
-    fftw_free(mz);
+    std::cout << "HERE IN DEMAGFIELD1D: X" << std::endl;
+    PrintVector(outDemagX, false);
+
+    std::cout << "HERE IN DEMAGFIELD1D: Y" << std::endl;
+    PrintVector(outDemagY, false);
+
+    std::cout << "HERE IN DEMAGFIELD1D: Z" << std::endl;
+    PrintVector(outDemagZ, false);
+     */
+
+    // EASY FIND
+    // Clean-up. Probably could free memory for planDFTForwardMx (etc) earlier in function, but it's safer to be here
+    fftw_destroy_plan(planDFTForwardMx);
+    fftw_destroy_plan(planDFTForwardMy);
+    fftw_destroy_plan(planDFTForwardMz);
+    fftw_destroy_plan(planDFTForwardHdX);
+    fftw_destroy_plan(planDFTForwardHdY);
+    fftw_destroy_plan(planDFTForwardHdZ);
+    fftw_destroy_plan(planDFTBackMx);
+    fftw_destroy_plan(planDFTBackMy);
+    fftw_destroy_plan(planDFTBackMz);
+    fftw_destroy_plan(planDFTBackHdX);
+    fftw_destroy_plan(planDFTBackHdY);
+    fftw_destroy_plan(planDFTBackHdZ);
+    fftw_free(mX);
+    fftw_free(mY);
+    fftw_free(mZ);
+    fftw_free(hdX);
+    fftw_free(hdY);
+    fftw_free(hdZ);
 }
+
+void Numerical_Methods_Class::DemagField1DReal(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
+                                           std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
+                                           int iteration, std::string rkStageName) {
+
+    int gotNumSpins = GV.GetNumSpins();  // Vectors and arrays defined in function don't include pinned end terms; 4000 sites in length
+    int trueNumSpins = GV.GetNumSpins() + 2;  // Vectors and arrays defined out with function include pinned end terms; 4002 sites in length
+    const double Nxx = 0.0, Nyy = 0.5, Nzz = 0.5; // Diagonalised demag constants; suitable for system.
+    const double imagTerm = 0.0, normalizationFactor = 1.0 / static_cast<double>(gotNumSpins);
+
+    // Guard clauses. Keep within `DemagField1D` until debugging complete
+    if ((Nxx + Nyy + Nzz) > 1.0) {
+        throw std::runtime_error("Demag tensor values are invalid. Sum of all components must be <= 1.0");
+    }
+    if ((Nxx < 0.0) || (Nyy < 0.0) || (Nzz < 0.0)) {
+        throw std::runtime_error("Demag tensor values are invalid. All components must be >= 0.0");
+    }
+
+    auto fftw_alloc_and_check = [](const char* var_name, const int& size) -> double* {
+        /*
+         * Temporary lambda function for debugging. Keep within `DemagField1D` until debugging complete.
+         * Allocates memory for FFTW-suitable arrays.Currently being cautious, so throw exception if allocation fails,
+         * and else set memory to zero to ensure data integrity.
+         */
+        auto *mTerm = static_cast<double*>(fftw_alloc_real(size));
+        if (!mTerm) {
+            throw std::runtime_error(std::string("Failed to allocate memory for ") + var_name);
+        } else {
+            std::memset(mTerm, 0, sizeof(double) * size);
+            return mTerm;
+        }
+    };
+
+    auto PrintFFTWVector = [](int numSpins, fftw_complex* vecToPrint, const char* vecName, double testValReal, double testValImag) {
+        /*
+         * Temporary lambda function for debugging. Keep within `DemagField1D` until debugging complete.
+         * Prints the contents of an FFTW-suitable array. Helps find abnormal and unexpected values (compared to my
+         * analytical solutions.
+         */
+        for (int i = 0; i < numSpins; i++) {
+            if (vecToPrint[i][0] != testValReal)
+                std::cout << vecName << "[" << i << "][0] = " << vecToPrint[i][0] << std::endl;
+            else if (vecToPrint[i][1] != testValImag)
+                std::cout << vecName << "[" << i << "][1] = " << vecToPrint[i][1] << std::endl;
+        }
+
+    };
+
+    // Assign memory for FFTW-suitable arrays for magnetic moments; used during computation and for RMSE calculation
+    auto *mX = fftw_alloc_and_check("mx", gotNumSpins);
+    auto *mY = fftw_alloc_and_check("my", gotNumSpins);
+    auto *mZ = fftw_alloc_and_check("mz", gotNumSpins);
+
+    // Additional memory for demagnetisation field components; used for output; initialise at zero (empty)
+    auto *hdX = fftw_alloc_and_check("hdX", gotNumSpins);
+    auto *hdY = fftw_alloc_and_check("hdY", gotNumSpins);
+    auto *hdZ = fftw_alloc_and_check("hdZ", gotNumSpins);
+
+    // Population of memory for FFTW-suitable arrays
+    for(int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
+        int scaled_len = currentSite + 1;  // mX (etc) is 4000 sites whereas inMxTerms (etc) is 4002 sites
+        mX[currentSite] = inMxTerms[scaled_len]; // CHECKED: all mX elements are [0, 0] as expected
+        mY[currentSite] = inMyTerms[scaled_len]; // CHECKED: all mY elements are [0, 0] as expected
+        mZ[currentSite] = inMzTerms[scaled_len]; // CHECKED: all mZ elements are [1, 0] as expected
+        // hdX (etc) should already be zeroes. Kee; to ensure data integrity; will remove when working
+        // hdX[currentSite][0] = imagTerm; hdX[currentSite][1] = imagTerm; // CHECKED: all hdX elements are [0, 0] as expected
+        // hdY[currentSite][0] = imagTerm; hdY[currentSite][1] = imagTerm; // CHECKED: all hdY elements are [0, 0] as expected
+        // hdZ[currentSite][0] = imagTerm; hdZ[currentSite][1] = imagTerm; // CHECKED: all hdZ elements are [0, 0] as expected
+    }
+    // Have debugging mX (etc) and hdX (etc) and found that they are all being populated correctly
+
+
+    // Create FFTW plans **after** population of memory
+    fftw_plan planDFTForwardMx = fftw_plan_r2r_1d(gotNumSpins, mX, mX, FFTW_R2HC, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardMy = fftw_plan_r2r_1d(gotNumSpins, mY, mY, FFTW_R2HC, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardMz = fftw_plan_r2r_1d(gotNumSpins, mZ, mZ, FFTW_R2HC, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardHdX = fftw_plan_r2r_1d(gotNumSpins, hdX, hdX, FFTW_R2HC, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardHdY = fftw_plan_r2r_1d(gotNumSpins, hdY, hdY, FFTW_R2HC, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardHdZ = fftw_plan_r2r_1d(gotNumSpins, hdZ, hdZ, FFTW_R2HC, FFTW_ESTIMATE);
+
+    // Execute the plans **after** their definitions
+    fftw_execute(planDFTForwardMx);
+    fftw_execute(planDFTForwardMy);
+    fftw_execute(planDFTForwardMz);
+    fftw_execute(planDFTForwardHdX);
+    fftw_execute(planDFTForwardHdY);
+    fftw_execute(planDFTForwardHdZ);
+
+    // Population in Fourier space (H_d = -N * M). Keep mX/mY/mZ un-mutated for RMSE calculation later
+    for (int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
+        hdX[currentSite] = mX[currentSite] * -1 * Nxx;  // CHECKED: all hdX elements are [0, 0] as expected
+        hdY[currentSite] = mY[currentSite] * -1 * Nyy;  // CHECKED: all hdY elements are [0, 0] as expected
+        hdZ[currentSite] = mZ[currentSite] * -1 * Nzz;  // CHECKED: all hdZ elements are [0, 0] TODO apart from hdZ[0][0] = [-2000, 0]. Why?!
+
+    }
+
+    // Create inverse FFTW plans **after** population of memory
+    fftw_plan planDFTBackMx = fftw_plan_r2r_1d(gotNumSpins, mX, mX, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackMy = fftw_plan_r2r_1d(gotNumSpins, mY, mY, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackMz = fftw_plan_r2r_1d(gotNumSpins, mZ, mZ, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHdX = fftw_plan_r2r_1d(gotNumSpins, hdX, hdX, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHdY = fftw_plan_r2r_1d(gotNumSpins, hdY, hdY, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHdZ = fftw_plan_r2r_1d(gotNumSpins, hdZ, hdZ, FFTW_HC2R, FFTW_ESTIMATE);
+
+    // Execute the plans **after** their definitions
+    fftw_execute(planDFTBackMx);
+    fftw_execute(planDFTBackMy);
+    fftw_execute(planDFTBackMz);
+    fftw_execute(planDFTBackHdX);
+    fftw_execute(planDFTBackHdY);
+    fftw_execute(planDFTBackHdZ);
+
+    // Normalise, after FFT, all arrays that were taken into Fourier space
+    for (int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
+        mX[currentSite] *= normalizationFactor;  // CHECKED: all mX elements are [0, 0] as expected
+        mY[currentSite] *= normalizationFactor; // CHECKED: all mY elements are [0, 0] as expected
+        mZ[currentSite] *= normalizationFactor; // CHECKED: all mZ elements are [1, 0] as expected
+        hdX[currentSite] *= normalizationFactor; // CHECKED: all hdX elements are [0, 0] as expected
+        hdY[currentSite] *= normalizationFactor; // CHECKED: all hdY elements are [0, 0] as expected
+        hdZ[currentSite] *= normalizationFactor; // CHECKED: all hdZ elements are [-0.5, 0] as expected
+    }
+
+    // Compute Root Mean Square Error (RMSE) for each component of the magnetic moment
+    double rmse_mx = 0, rmse_my = 0, rmse_mz = 0;
+    for (int currentSite = 0; currentSite < gotNumSpins; currentSite++) {
+        int scaled_len = currentSite + 1;  // mx.size() is 4000 whereas mxTerms.size() is  4002
+        // Finding SUM_{i=1}^{N}(data_in[i] - data_reconstructed[i])**2
+        rmse_mx += pow(inMxTerms[scaled_len] - mX[currentSite], 2);  // CHECKED: rmse_mx is equal to zero
+        rmse_my += pow(inMyTerms[scaled_len] - mY[currentSite], 2);  // CHECKED: rmse_my is equal to zero
+        rmse_mz += pow(inMzTerms[scaled_len] - mZ[currentSite], 2);  // CHECKED: rmse_mz is equal to zero
+    }
+
+    // Finishing RMSE calculation: RMSE = Sqrt(SUM_{i=1}^{N} * 1/N)
+    rmse_mx = sqrt(rmse_mx / gotNumSpins);  // CHECKED: rmse_mx is equal to zero
+    rmse_my = sqrt(rmse_my / gotNumSpins);  // CHECKED: rmse_my is equal to zero
+    rmse_mz = sqrt(rmse_mz / gotNumSpins);  // CHECKED: rmse_mz is equal to zero
+
+
+    // FFT error estimation based on machine epsilon and FFTW's scale factor
+    const double machineEpsilon = std::numeric_limits<double>::epsilon();
+    // const double fftError = machineEpsilon * gotNumSpins * sqrt(gotNumSpins);
+    // std::cout << fftError << std::endl;std::exit(0);
+
+    bool mxRMSETest, myRMSETest, mzRMSETest;
+    if (fabs(rmse_mx) < machineEpsilon) { mxRMSETest = true; }
+    else {mxRMSETest = false;}
+    if (fabs(rmse_my) < machineEpsilon) { myRMSETest = true; }
+    else { myRMSETest = false; }
+    if (fabs(rmse_mz) < machineEpsilon) { mzRMSETest = true; }
+    else { mzRMSETest = false; }
+
+    double combinedRMSE = sqrt((pow(rmse_mx, 2) + pow(rmse_my, 2) + pow(rmse_mz, 2)) / 3.0 );
+    bool applyDemag;
+    if (combinedRMSE < machineEpsilon) {applyDemag = true;}
+    else {applyDemag = false;}
+    // if (mxRMSETest || myRMSETest || mzRMSETest) {applyDemag = true;}
+    // else {applyDemag = false;}
+
+    for (int trueSite = 0; trueSite < gotNumSpins + 2; trueSite++) {
+        int scale_site = trueSite - 1;
+        if (trueSite == 0 || trueSite == (trueNumSpins - 1) ) {
+            // Boundary conditions of output arrays must always be zero; do this to ensure data integrity
+            outDemagX[trueSite] = 0.0;
+            outDemagY[trueSite] = 0.0;
+            outDemagZ[trueSite] = 0.0;
+            continue;
+        }
+        /*
+         * outDemagX/outDemagY/outDemagZ are 4002 in length while mX/mY/mZ are 4000 in length. mX (etc) are unmutated throughout
+         * the FFT, which inMxTerms (etc) are the original values. If the absolute difference between inMxTerms and mX (etc)
+         * is greater than their rmse_mx (etc), then the overwriting of outDemagX (etc) by hdX (etc) should be stopped. This
+         * is because the values are likely to just be noise. This is a very crude way of doing this, but it works for now.
+         *
+         * Caution! outDemagX (etc) are references so overwriting their elements changes what the main program sees.
+         */
+        outDemagX[trueSite] = applyDemag ? hdX[scale_site] : 0.0; // hdX[scale_site][0]; //(fabs((inMxTerms[trueSite] - mX[scale_site][0])) > fabs(rmse_mx)) ? hdX[scale_site][0] : 0.0;  // HELP HERE
+        outDemagY[trueSite] = applyDemag ? hdY[scale_site] : 0.0;// hdY[scale_site][0]; //(fabs((inMyTerms[trueSite] - mY[scale_site][0])) > fabs(rmse_my)) ? hdY[scale_site][0] : 0.0;  // HELP HERE
+        outDemagZ[trueSite] = applyDemag ? hdZ[scale_site] : 0.0;// hdZ[scale_site][0]; //(fabs((inMzTerms[trueSite] - mZ[scale_site][0])) > fabs(rmse_mz)) ? hdZ[scale_site][0] : 0.0;  // HELP HERE
+    }
+    bool testOutRMS = false;
+    if (testOutRMS) {
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 1000) == 0) {
+            if (mxRMSETest || myRMSETest || mzRMSETest) {
+                std::cout << "Iter. #" << iteration << " | RK" << rkStageName << " ";
+                if (mxRMSETest)
+                    std::cout << "| RMSE. mx: " << rmse_mx << " ";
+                if (myRMSETest)
+                    std::cout << "| RMSE. my: " << rmse_my << " ";
+                if (mzRMSETest)
+                    std::cout << "| RMSE. mz: " << rmse_mz << " ";
+                std::cout << std::endl;
+            }
+            //std::cout << "Iteration #" << iteration <<" | RMSE. mx: " << rmse_mx << " | my: " << rmse_my << " | mz:  " << rmse_mz << std::endl;  // Keep for debugging
+        }
+    }
+    /*
+    std::cout << "HERE IN DEMAGFIELD1D: X" << std::endl;
+    PrintVector(outDemagX, false);
+
+    std::cout << "HERE IN DEMAGFIELD1D: Y" << std::endl;
+    PrintVector(outDemagY, false);
+
+    std::cout << "HERE IN DEMAGFIELD1D: Z" << std::endl;
+    PrintVector(outDemagZ, false);
+     */
+
+    // EASY FIND
+    // Clean-up. Probably could free memory for planDFTForwardMx (etc) earlier in function, but it's safer to be here
+    fftw_destroy_plan(planDFTForwardMx);
+    fftw_destroy_plan(planDFTForwardMy);
+    fftw_destroy_plan(planDFTForwardMz);
+    fftw_destroy_plan(planDFTForwardHdX);
+    fftw_destroy_plan(planDFTForwardHdY);
+    fftw_destroy_plan(planDFTForwardHdZ);
+    fftw_destroy_plan(planDFTBackMx);
+    fftw_destroy_plan(planDFTBackMy);
+    fftw_destroy_plan(planDFTBackMz);
+    fftw_destroy_plan(planDFTBackHdX);
+    fftw_destroy_plan(planDFTBackHdY);
+    fftw_destroy_plan(planDFTBackHdZ);
+    fftw_free(mX);
+    fftw_free(mY);
+    fftw_free(mZ);
+    fftw_free(hdX);
+    fftw_free(hdY);
+    fftw_free(hdZ);
+}
+
 
 double Numerical_Methods_Class::MagneticMomentX(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
@@ -1366,10 +1608,16 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+    // std::ofstream myRK2File(GV.GetFilePath() + "rk2_my_" + GV.GetFileNameBase() + ".csv");
+    // std::ofstream mzRK2File(GV.GetFilePath() + "rk2_mz_" + GV.GetFileNameBase() + ".csv");
+
 
     if (_isFM) {
         InformUserOfCodeType("RK2 Midpoint (FM)");
         CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
+        // CreateFileHeader(myRK2File, "RK2 Midpoint (FM)");
+        // CreateFileHeader(mzRK2File, "RK2 Midpoint (FM)");
+
     } else if (!_isFM) {
         InformUserOfCodeType("RK2 Midpoint (AFM)");
         CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
@@ -1381,13 +1629,12 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
     progressbar bar(100);
 
-    std::vector<double> demagX(GV.GetNumSpins() + 2, 0), demagY(GV.GetNumSpins() + 2, 0), demagZ(GV.GetNumSpins() + 2, 0);
-
+    std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(GV.GetNumSpins() + 2, 0.0);
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
-        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
-            bar.update(); // Doesn't work for fewer than 100 iterations
+        // if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
+        //     bar.update(); // Doesn't work for fewer than 100 iterations
 
         TestShockwaveConditions(iteration);
 
@@ -1395,12 +1642,54 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
-
-        // TODO Change demag terms so that each component only has one variable which is reset each RK stage
+        // EASY FIND
         if (_useDemagIntense) {
-                DemagnetisationFieldIntense(demagX, demagY, demagZ, _mx0, _my0, _mz0);
+            DemagnetisationFieldIntense(demagX, demagY, demagZ, _mx0, _my0, _mz0);
         } else if (_useDemagFFT) {
-                DemagnetisationFieldFFT(demagX, demagY, demagZ, _mx0, _my0, _mz0);
+            std::string rkStageName = "2-1";
+            DemagField1DReal(demagX, demagY, demagZ, _mx0, _my0, _mz0, iteration, rkStageName);
+
+                //std::cout << "Iteration #" << iteration <<" | RMSE. mx: " << rmse_mx << " | my: " << rmse_my << " | mz:  " << rmse_mz << std::endl;  // Keep for debugging
+
+
+            //if (iteration > 0) {std::cout << "Stage 1" << std::endl; PrintVector(demagZ, false);}
+            /*
+            std::cout << "HERE IN FUNCTION: X" << std::endl;
+            PrintVector(demagX, false);
+            std::cout << "HERE IN FUNCTION: Y" << std::endl;
+            PrintVector(demagY, false);
+            std::cout << "HERE IN FUNCTION: Z" << std::endl;
+            PrintVector(demagZ, false);
+
+            if (demagX == demagX2)
+                std::cout << "HERE IN demagX are the same" << std::endl;
+            else {
+                std::cout << "HERE IN demagX are NOT the same" << std::endl;
+                for (int i = 0; i < demagX.size(); i++) {
+                    if (demagX[i] != demagX2[i])
+                        std::cout << i << " | demagX (real)" << demagX[i] << " demagX2 (copy) " << demagX2[i] << std::endl;
+                }
+            }
+            if (demagY == demagY2)
+                std::cout << "HERE IN demagY are the same" << std::endl;
+            else {
+                std::cout << "HERE IN demagY are NOT the same" << std::endl;
+                for (int i = 0; i < demagY.size(); i++) {
+                    if (demagY[i] != demagY2[i])
+                        std::cout << i << " | demagY (real)" << demagY[i] << " demagY2 (copy) " << demagY2[i] << std::endl;
+                }
+            }
+            if (demagZ == demagZ2)
+                std::cout << "HERE IN demagZ are the same" << std::endl;
+            else {
+                std::cout << "HERE IN demagZ are NOT the same" << std::endl;
+                for (int i = 0; i < demagZ.size(); i++) {
+                    if (demagZ[i] != demagZ2[i])
+                        std::cout << i << " | demagZ (real)" << demagZ[i] << " demagZ2 (copy) " << demagZ2[i] << std::endl;
+                }
+            }
+            std::exit(0);
+             */
         }
 
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
@@ -1410,7 +1699,20 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
-
+            /*
+            if ((_iterationEnd >= 100 && iteration % (_iterationEnd / 1000) == 0) && site == 500) {
+                std::cout << "Iter. #" << iteration << " ";
+                std::cout << "| mx: " << _mx0[200] << " - H_dx: " << demagX[200] << " ";
+                std::cout << "| my: " << _my0[200] << " - H_dy: " << demagY[200] << " ";
+                std::cout << "| mz: " << _mz0[200] << " - H_dz: " << demagZ[200] << " ";
+                std::cout << "| mTot: " << sqrt(pow(_mx0[site], 2) + pow(_my0[site], 2) + pow(_mz0[site], 2)) << " ";
+                std::cout << std::endl;
+                //std::cout << "| mz: " << _mz0[200] << " ";
+                //std::cout << "| H_dz: " << demagZ[200] << " ";
+                //std::cout << "| mTot: " << sqrt(pow(_mx0[site], 2) + pow(_my0[site], 2) + pow(_mz0[site], 2)) << " ";
+                //std::cout << std::endl;
+            }
+            */
             double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
             if (_useDipolar) {
                 std::vector<double> mxTermsForDipole = {_mx0[spinLHS], _mx0[site], _mx0[spinRHS]};
@@ -1442,12 +1744,15 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             mz1[site] = _mz0[site] + _stepsizeHalf * mzK1;
         }
         // The estimations of the m-components values for the next iteration.
+        // EASY FIND
         std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
-
+        std::fill(demagX.begin(), demagX.end(), 0.0); std::fill(demagY.begin(), demagY.end(), 0.0); std::fill(demagZ.begin(), demagZ.end(), 0.0);
         if (_useDemagIntense) {
-                DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
+            DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
         } else if (_useDemagFFT) {
-                DemagnetisationFieldFFT(demagX, demagY, demagZ, mx1, my1, mz1);
+            std::string rkStageName = "2-2";
+            DemagField1DReal(demagX, demagY, demagZ, mx1, my1, mz1, iteration, rkStageName);
+            // if (iteration > 0) {std::cout << "Stage 2" << std::endl; PrintVector(demagZ, false);}
         }
 
         // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
@@ -1487,6 +1792,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             if (_shouldTrackMValues) {
                 double mIterationNorm = sqrt(pow(mx2[site], 2) + pow(my2[site], 2) + pow(mz2[site], 2));
                 if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+                if (mIterationNorm > 1.00005) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
             }
         }
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
@@ -1499,6 +1805,8 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         mx1.clear(); my1.clear(); mz1.clear();
 
         SaveDataToFile(mxRK2File, mx2, iteration);
+        // SaveDataToFile(myRK2File, my2, iteration);
+        // SaveDataToFile(mzRK2File, mz2, iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         _mx0 = mx2; _my0 = my2; _mz0 = mz2;
@@ -1511,6 +1819,8 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
+    // myRK2File.close();
+    // mzRK2File.close();
 
     if (GV.GetEmailWhenCompleted()) {
         CreateMetadata(true);
@@ -1552,13 +1862,7 @@ void Numerical_Methods_Class::SolveRK2() {
     std::vector<std::vector<std::vector<double>>> m1Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, zeroValue);
     std::vector<std::vector<std::vector<double>>> m2Nest = InitialiseNestedVectors(_totalLayers, _mxInit, _myInit, zeroValue);
 
-    double nXTest = 0.0, nYTest = 0.5, nZTest = 0.5; // TODO Implement class-wide demag tensor
     std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(GV.GetNumSpins() + 2, 0.0);
-
-    if (nXTest < 0 or nYTest < 0 or nZTest < 0) {
-        std::cout << "Demag. field is too small. Please check the demag. field values." << std::endl;
-        exit(0);
-    }
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -1832,10 +2136,11 @@ void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint, bo
     int count = 0;
     for (double i: vectorToPrint) {
         if (++count % 10 == 0)
-            std::cout << std::setw(12) << i << std::endl;
+            std::cout << std::setw(8) << i << std::endl;
         else
-            std::cout << std::setw(12) << i << ", ";
+            std::cout << std::setw(8) << i << ", ";
     }
+    std::cout << "\n\n";
 
     if (shouldExitAfterPrint)
         exit(0);
