@@ -26,10 +26,10 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Interaction Flags
     _hasShockwave = false;
-    _useDipolar = false;
+    _useDipolar = true;
     _useZeeman = true;
     _useDemagIntense = false;
-    _useDemagFFT = true;
+    _useDemagFFT = false;
 
     // Material Flags
     _isFM = GV.GetIsFerromagnetic();
@@ -56,7 +56,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.7e-9;
+    _maxSimTime = 4e-11 + 1e-15;
     _satMag = 0.010032;
     _stepsize = 1e-15;
 
@@ -70,7 +70,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Data Output Parameters
     _fixed_output_sites = {12158, 14529, 15320};
-    _numberOfDataPoints = 100; //static_cast<int>(_maxSimTime / _recordingInterval);
+    _numberOfDataPoints = 1000; //static_cast<int>(_maxSimTime / _recordingInterval);
     _recordingInterval = 0.7e-11;
     _layerOfInterest = 1;
 
@@ -271,7 +271,7 @@ void Numerical_Methods_Class::SetInitialMagneticMoments() {
 
     /*
     for (int i = 0; i < GV.GetNumSpins(); i++) {
-        mxInitCond[i] = 0.003162277;
+        InitCond[i] = 0.003162277;
         // myInitCond[i] = 0.0;
         mzInitCond[i] = 0.999994999;
     }
@@ -404,7 +404,9 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::Initialis
 
 std::vector<double> Numerical_Methods_Class::DipolarInteractionClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                                   std::vector<double> mzTerms, std::vector<int> sitePositions) {
-    std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
+
+    std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};  // Returns Dipole terms for a single site
+    // sitePositions contains 3 elements: {site to the left, current site, site to the right}
 
     for (int i = 0; i < mxTerms.size(); i++) {
         mxTerms[i] *= _muMagnitudeIron;
@@ -1508,7 +1510,53 @@ void Numerical_Methods_Class::DemagField1DReal(std::vector<double>& outDemagX, s
     fftw_free(hdY);
     fftw_free(hdZ);
 }
+/*
+void Numerical_Methods_Class::DemagFieldsUsingDipoles(std::vector<double> mxTerms, std::vector<double> myTerms,
+                                                  std::vector<double> mzTerms, std::vector<int> sitePositions,
+                                                  std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ) {
+        // Initialization
+    std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
+    std::vector<double> totalDemagTerms = {0.0, 0.0, 0.0};
 
+    // Copy over common variables and constants
+    double exchangeStiffness = 5.3e-17;
+    double dipoleValue;
+
+    for (int i = 0; i < mxTerms.size(); i++) {
+        // Current site's magnetic moment
+        std::vector<double> originSite = {mxTerms[i], myTerms[i], mzTerms[i]};
+
+        for (int j = 0; j < mxTerms.size(); j++) {
+            if (i == j) continue; // Skip self-interactions
+
+            // Displacement vector between sites i and j
+            std::vector<double> positionVector = {(sitePositions[j][0] - sitePositions[i][0]),
+                                                  (sitePositions[j][1] - sitePositions[i][1]),
+                                                  (sitePositions[j][2] - sitePositions[i][2])};
+
+            double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2) + std::pow(positionVector[2], 2));
+            double positionVector_cubed = std::pow(positionVector_norm, 3);
+
+            // Magnetic moment of site j
+            std::vector<double> influencingSite = {mxTerms[j], myTerms[j], mzTerms[j]};
+
+            // Compute scalar product between originSite and influencingSite
+            double dotProduct = originSite[0]*influencingSite[0] + originSite[1]*influencingSite[1] + originSite[2]*influencingSite[2];
+
+            // Compute interaction between originSite and influencingSite
+            for (int p = 0; p < 3; p++) {
+                dipoleValue = 3 * positionVector[p] * dotProduct / positionVector_cubed - influencingSite[p] / positionVector_cubed;
+                totalDipoleTerms[p] += dipoleValue;
+            }
+        }
+
+        // The demag field for each magnetic moment will be the negative of its dipolar field.
+        for (int p = 0; p < 3; p++) {
+            totalDemagTerms[p] = -totalDipoleTerms[p];
+        }
+    }
+}
+*/
 
 double Numerical_Methods_Class::MagneticMomentX(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
@@ -1633,8 +1681,8 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
-        // if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
-        //     bar.update(); // Doesn't work for fewer than 100 iterations
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
+            bar.update(); // Doesn't work for fewer than 100 iterations
 
         TestShockwaveConditions(iteration);
 

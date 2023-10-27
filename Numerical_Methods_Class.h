@@ -315,6 +315,9 @@ void                    DemagField1DComplex(std::vector<double>& outDemagX, std:
 void                    DemagField1DReal(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
                                      std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
                                      int iteration, std::string rkStage);
+void                    DemagFieldsUsingDipoles(std::vector<double> mxTerms, std::vector<double> myTerms,
+                                                  std::vector<double> mzTerms, std::vector<int> sitePositions,
+                                                  std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ);
 
     /*
      * ################################################################################################################
