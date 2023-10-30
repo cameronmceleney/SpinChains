@@ -253,10 +253,9 @@ private:
      */
 
     // Description missing
-    double dipolarKernel(const int& originSite, const int& influencingSite);
-    void DipolarInteractionClassicFFT(const int& inSite, std::vector<double> inMxTerms, std::vector<double> inMyTerms,
-                                      std::vector<double> inMzTerms, std::vector<double>& outDipoleX,
-                                      std::vector<double>& outDipoleY, std::vector<double>& outDipoleZ, int numNeighbours = 0);
+    double dipolarKernel1D(const int& originSite, const int& influencingSite, const std::string& component);
+    double dipolarKernel3D(const int& originSite, const int& influencingSite, const double& A, const double& alpha);
+    void DipolarInteraction1D(std::vector<double> inMxTerms, std::vector<double>& outDipoleX);
 
     std::vector<double> DipolarInteractionClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                      std::vector<double> mzTerms, std::vector<int> sitePositions);
