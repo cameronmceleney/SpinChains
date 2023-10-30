@@ -26,20 +26,20 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Interaction Flags
     _hasShockwave = false;
-    _useDipolar = true;
+    _useDipolar = false;
     _useZeeman = true;
-    _useDemagIntense = false;
-    _useDemagFFT = false;
+    _useDemagIntense = false;  // doesn't work
+    _useDemagFFT = false;  // doesn't work
 
     // Material Flags
     _isFM = GV.GetIsFerromagnetic();
     _useMultilayer = false;
 
     // Drive Flags
-    _centralDrive = false;
+    _centralDrive = true;
     _driveAllLayers = false;
     _dualDrive = false;
-    _lhsDrive = true;
+    _lhsDrive = false; // Need to create a RHSDrive flag, as this is becoming too confusing!
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
@@ -52,11 +52,11 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Main Parameters
     _ambientTemperature = 273; // Kelvin
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 374 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 4e-11 + 1e-15;
+    _maxSimTime = 0.7e-9;
     _satMag = 0.010032;
     _stepsize = 1e-15;
 
@@ -71,7 +71,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     // Data Output Parameters
     _fixed_output_sites = {12158, 14529, 15320};
     _numberOfDataPoints = 1000; //static_cast<int>(_maxSimTime / _recordingInterval);
-    _recordingInterval = 0.7e-11;
+    _recordingInterval = 1e-15;
     _layerOfInterest = 1;
 
     // Damping Factors
@@ -400,6 +400,223 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::Initialis
         SetInitialMagneticMomentsMultilayer(mTermsNested, layer, mxInit, myInit , mzInit);
 
     return mTermsNested;
+}
+
+double Numerical_Methods_Class::dipolarKernel(const int& originSite, const int& influencingSite) {
+    // This function is used to calculate the dipolar interaction between two sites. The kernel is defined as:
+    // K = 1 / (4 * pi * r^3) * (3 * cos(theta)^2 - 1)
+    // where r is the distance between the two sites, and theta is the angle between the two sites.
+
+    // ################################ Declare initial Values ################################
+    double dipoleKernelDirect = 0.0, distanceBetweenSites = 0.0, theta = 0.0, cosTheta = 0.0, sinTheta = 0.0;
+    double x1 = 0.0, y1 = 0.0, z1 = 0.0, x2 = 0.0, y2 = 0.0, z2 = 0.0;
+
+    // ################################ Calculate distance between sites ################################
+    // Calculate the distance between the two sites
+    distanceBetweenSites = std::abs(originSite - influencingSite);
+    /*
+    // ################################ Calculate theta ################################
+    // Calculate the angle between the two sites
+    x1 = originSite; y1 = 0.0; z1 = 0.0;
+    x2 = influencingSite; y2 = 0.0; z2 = 0.0;
+
+    theta = acos((x1 * x2 + y1 * y2 + z1 * z2) / (sqrt(x1 * x1 + y1 * y1 + z1 * z1) * sqrt(x2 * x2 + y2 * y2 + z2 * z2)));
+
+    // ################################ Calculate cos(theta) ################################
+    // Calculate the cosine of the angle between the two sites
+    cosTheta = cos(theta);
+
+    // ################################ Calculate sin(theta) ################################
+    // Calculate the sine of the angle between the two sites
+    sinTheta = sin(theta);
+    */
+    // ################################ Calculate dipole kernel ################################
+    // Calculate the dipole kernel
+    dipoleKernelDirect = 1.0 / (4.0 * M_PI * pow(distanceBetweenSites, 3.0));// * (3.0 * pow(cosTheta, 2.0) - 1.0);
+    //double dipoleKernelIndirect = A * std::exp(-alpha * distanceBetweenSites);
+    //double dipoleKernel = dipoleKernelDirect + dipoleKernelIndirect;
+    return dipoleKernelDirect;
+}
+void Numerical_Methods_Class::DipolarInteractionClassicFFT(const int& inSite, std::vector<double> inMxTerms, std::vector<double> inMyTerms,
+                                                           std::vector<double> inMzTerms, std::vector<double>& outDipoleX,
+                                                           std::vector<double>& outDipoleY, std::vector<double>& outDipoleZ, int numNeighbours) {
+
+    // ################################ Declare initial Values ################################
+    int gotNumSpins = GV.GetNumSpins();
+    int trueNumSpins = GV.GetNumSpins() + 2;  // Vectors and arrays defined out with function include pinned end terms; 4002 sites in length instead of 4000
+    const double imagTerm = 0.0, normalizationFactor = 1.0 / static_cast<double>(gotNumSpins);
+
+    for (int i = 0; i < inMxTerms.size(); i++) {
+        inMxTerms[i] *= _muMagnitudeIron;
+        inMyTerms[i] *= _muMagnitudeIron;
+        inMzTerms[i] *= _muMagnitudeIron;
+    }
+
+    double exchangeStiffness = 5.3e-17;
+    double exchangeValue;
+
+    // ################################ Lambda Functions ################################
+    auto fftw_alloc_and_check = [](const char* var_name, const int& size) -> fftw_complex* {
+        /*
+         * Temporary lambda function for debugging. Keep within `DemagField1D` until debugging complete.
+         * Allocates memory for FFTW-suitable arrays.Currently being cautious, so throw exception if allocation fails,
+         * and else set memory to zero to ensure data integrity.
+         */
+        auto *mTerm = static_cast<fftw_complex*>(fftw_alloc_complex(size));
+        if (!mTerm) {
+            throw std::runtime_error(std::string("Failed to allocate memory for ") + var_name);
+        } else {
+            std::memset(mTerm, 0, sizeof(fftw_complex) * size);
+            return mTerm;
+        }
+    };
+
+    // ################################ Begin FFT ################################
+    // Assign memory for FFTW-suitable arrays for magnetic moments; used during computation and for RMSE calculation
+    auto *mX = fftw_alloc_and_check("mx", trueNumSpins);
+    auto *mXTransformed = fftw_alloc_and_check("mXTransformed", trueNumSpins);
+
+    // Additional memory for demagnetisation field components; used for output; initialise at zero (empty)
+    auto *kernelTransformed = fftw_alloc_and_check("kernelTransformed", trueNumSpins);
+    auto *HDipoleX = fftw_alloc_and_check("HDipoleX", trueNumSpins);
+
+    // Population of memory for FFTW-suitable arrays
+    for (int currentSite = 0; currentSite < trueNumSpins; currentSite++) {
+        if (currentSite == 0 || currentSite == (trueNumSpins - 1) ) {
+            // Boundary conditions of output arrays must always be zero; do this to ensure data integrity
+            mX[currentSite][0] = 0.0;
+            kernelTransformed[currentSite] = 0.0;
+            continue;
+        }
+        mX[currentSite] = inMxTerms[currentSite];
+
+        kernelTransformed[currentSite] = dipolarKernel(currentSite, currentSite);
+    }
+
+    // ################################ Fourier-Space Transformation ################################
+    // Create FFTW plans **after** population of memory
+    fftw_plan planDFTForwardMx = fftw_plan_dft_1d(trueNumSpins, mX, mXTransformed, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan planDFTForwardHDipoleX = fftw_plan_dft_1d(trueNumSpins, kernelTransformed, HDipoleX, FFTW_FORWARD, FFTW_ESTIMATE);
+
+    // Execute the plans **after** their definitions
+    fftw_execute(planDFTForwardMx);
+    fftw_execute(planDFTForwardHDipoleX);
+
+    // ################################ Calculation in Fourier Space ################################
+    /*for (int currentSite = 1; currentSite <= gotNumSpins; currentSite++) {
+        // Intentionally avoid first and last elements of arrays mX (etc), as these are boundary conditions
+        std::vector<double> originSite = {mX[currentSite], mY[currentSite], mZ[currentSite]}; // Reference moments for current iteration
+
+        for (int otherSite = 1; otherSite <= gotNumSpins; otherSite++) {
+            if (currentSite == otherSite) {
+            // Guard clause to ensure that the origin site is not included in the calculation
+            continue;
+            }
+
+            if (_exchangeVec[otherSite] == 0) {
+                // Guard clause to ensure that the exchange vector is not zero
+                continue;
+            }
+
+            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[otherSite]);
+            if (std::isinf(latticeConstant)) {
+            // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
+            continue;
+            }
+
+            // Will only be operating on 1D spin chains for now. Written in this way for scalability of code
+            std::vector<double> positionVector = {(otherSite - currentSite) * latticeConstant, 0, 0};
+            double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2));
+
+            double positionVector_cubed = std::pow(positionVector_norm, 3);
+            double positionVector_fifth = std::pow(positionVector_norm, 5);
+
+            // Moment at otherSite
+            std::vector<double> influencingSite = {mX[otherSite], mY[otherSite], mZ[otherSite]};
+
+            // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0] + originSite[1] * influencingSite[1] + originSite[2] * influencingSite[2];
+            double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1] + originSite[2] * positionVector[2];
+            double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
+
+            // Sum the dipole components. Note sure that this is correctly implemented in FFT-space
+            HDipoleX[currentSite] += _dipoleConstant * ((3.0 * positionVector[0] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[0] / positionVector_cubed);
+            HDipoleY[currentSite] += _dipoleConstant * ((3.0 * positionVector[1] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[1] / positionVector_cubed);
+            HDipoleZ[currentSite] += _dipoleConstant * ((3.0 * positionVector[2] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[2] / positionVector_cubed);
+        }
+    }*/
+    for (int i = 0; i < N; ++i) {
+        double temp_real = mXTransformed[i][0] * HDipoleX[i][0] - mXTransformed[i][1] * HDipoleX[i][1];
+        double temp_imag = mXTransformed[i][0] * HDipoleX[i][1] + mXTransformed[i][1] * HDipoleX[i][0];
+
+        spin_transformed[i][0] = temp_real;
+        spin_transformed[i][1] = temp_imag;
+    }
+    // ################################ Inverse Fourier-Space Transformation ################################
+    // Create inverse FFTW plans **after** population of memory
+    fftw_plan planDFTBackMx = fftw_plan_r2r_1d(trueNumSpins, mX, mX, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackMy = fftw_plan_r2r_1d(trueNumSpins, mY, mY, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackMz = fftw_plan_r2r_1d(trueNumSpins, mZ, mZ, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHDipoleX = fftw_plan_r2r_1d(trueNumSpins, HDipoleX, HDipoleX, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHDipoleY = fftw_plan_r2r_1d(trueNumSpins, HDipoleY, HDipoleY, FFTW_HC2R, FFTW_ESTIMATE);
+    fftw_plan planDFTBackHDipoleZ = fftw_plan_r2r_1d(trueNumSpins, HDipoleZ, HDipoleZ, FFTW_HC2R, FFTW_ESTIMATE);
+
+    // Execute the plans **after** their definitions
+    fftw_execute(planDFTBackMx);
+    fftw_execute(planDFTBackMy);
+    fftw_execute(planDFTBackMz);
+    fftw_execute(planDFTBackHDipoleX);
+    fftw_execute(planDFTBackHDipoleY);
+    fftw_execute(planDFTBackHDipoleZ);
+
+    // Normalise, after FFT, all arrays that were taken into Fourier space
+    for (int i = 0; i < trueNumSpins; i++) {
+        mX[i] *= normalizationFactor;
+        mY[i] *= normalizationFactor;
+        mZ[i] *= normalizationFactor;
+        HDipoleX[i] *= normalizationFactor;
+        HDipoleY[i] *= normalizationFactor;
+        HDipoleZ[i] *= normalizationFactor;
+    }
+
+    for (int currentSite = 0; currentSite < trueNumSpins; currentSite++) {
+        if (currentSite == 0 || currentSite == (trueNumSpins - 1) ) {
+            // Boundary conditions of output arrays must always be zero; do this to ensure data integrity
+            outDipoleX[currentSite] = 0.0;
+            outDipoleX[currentSite] = 0.0;
+            outDipoleX[currentSite] = 0.0;
+            continue;
+        }
+        /*
+         * outDipoleX/outDipoleY/outDipoleZ/mX/mY/mZ/HDipoleX/HDipoleY/HDipoleZ are 4002 in length. mX (etc) are
+         * unmutated throughout the FFT, while inMxTerms (etc) are the original values.
+         *
+         * HDipoleX (etc) should be mutated within the FFT, and then copied to outDipoleX (etc) only at the end of the
+         * function.
+         */
+        outDipoleX[currentSite] = HDipoleX[currentSite];
+        outDipoleY[currentSite] = HDipoleY[currentSite];
+        outDipoleZ[currentSite] = HDipoleZ[currentSite];
+    }
+
+    // Clean-up. Probably could free memory for planDFTForwardMx (etc) earlier in function, but it's safer to be here
+    fftw_destroy_plan(planDFTForwardMx);
+    fftw_destroy_plan(planDFTForwardMy);
+    fftw_destroy_plan(planDFTForwardMz);
+    fftw_destroy_plan(planDFTForwardHDipoleX);
+    fftw_destroy_plan(planDFTForwardHDipoleY);
+    fftw_destroy_plan(planDFTForwardHDipoleZ);
+    fftw_destroy_plan(planDFTBackMx);
+    fftw_destroy_plan(planDFTBackMy);
+    fftw_destroy_plan(planDFTBackMz);
+    fftw_destroy_plan(planDFTBackHDipoleX);
+    fftw_destroy_plan(planDFTBackHDipoleY);
+    fftw_destroy_plan(planDFTBackHDipoleZ);
+    fftw_free(mX);
+    fftw_free(mY);
+    fftw_free(mZ);
+    fftw_free(HDipoleX);
+    fftw_free(HDipoleY);
+    fftw_free(HDipoleZ);
 }
 
 std::vector<double> Numerical_Methods_Class::DipolarInteractionClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
@@ -1656,15 +1873,15 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
-    // std::ofstream myRK2File(GV.GetFilePath() + "rk2_my_" + GV.GetFileNameBase() + ".csv");
-    // std::ofstream mzRK2File(GV.GetFilePath() + "rk2_mz_" + GV.GetFileNameBase() + ".csv");
+    std::ofstream myRK2File(GV.GetFilePath() + "rk2_my_" + GV.GetFileNameBase() + ".csv");
+    std::ofstream mzRK2File(GV.GetFilePath() + "rk2_mz_" + GV.GetFileNameBase() + ".csv");
 
 
     if (_isFM) {
         InformUserOfCodeType("RK2 Midpoint (FM)");
         CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
-        // CreateFileHeader(myRK2File, "RK2 Midpoint (FM)");
-        // CreateFileHeader(mzRK2File, "RK2 Midpoint (FM)");
+        CreateFileHeader(myRK2File, "RK2 Midpoint (FM)");
+        CreateFileHeader(mzRK2File, "RK2 Midpoint (FM)");
 
     } else if (!_isFM) {
         InformUserOfCodeType("RK2 Midpoint (AFM)");
@@ -1853,8 +2070,8 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         mx1.clear(); my1.clear(); mz1.clear();
 
         SaveDataToFile(mxRK2File, mx2, iteration);
-        // SaveDataToFile(myRK2File, my2, iteration);
-        // SaveDataToFile(mzRK2File, mz2, iteration);
+        SaveDataToFile(myRK2File, my2, iteration);
+        SaveDataToFile(mzRK2File, mz2, iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         _mx0 = mx2; _my0 = my2; _mz0 = mz2;
@@ -1867,8 +2084,8 @@ void Numerical_Methods_Class::SolveRK2Classic() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
-    // myRK2File.close();
-    // mzRK2File.close();
+    myRK2File.close();
+    mzRK2File.close();
 
     if (GV.GetEmailWhenCompleted()) {
         CreateMetadata(true);
