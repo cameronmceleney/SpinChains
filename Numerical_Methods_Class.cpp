@@ -52,13 +52,13 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Main Parameters
     _ambientTemperature = 273; // Kelvin
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 15 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.35e-9;
+    _maxSimTime = 0.25e-9;
     _satMag = 0.010032;
-    _stepsize = 1e-15;
+    _stepsize = 2.5e-15;
 
     // Shockwave Parameters
     _iterStartShock = 0.0;
@@ -70,7 +70,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Data Output Parameters
     _fixed_output_sites = {12158, 14529, 15320};
-    _numberOfDataPoints = 100; //static_cast<int>(_maxSimTime / _recordingInterval);
+    _numberOfDataPoints = 1000; //static_cast<int>(_maxSimTime / _recordingInterval);
     _recordingInterval = 1e-15;
     _layerOfInterest = 1;
 

@@ -16,9 +16,9 @@ int main() {
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(1000);
-    GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132);
-    GV.SetGyromagneticConstant(29.2);
+    GV.SetExchangeMinVal(132.5);
+    GV.SetExchangeMaxVal(132.5);
+    GV.SetGyromagneticConstant(28.8);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
