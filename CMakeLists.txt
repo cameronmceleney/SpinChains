@@ -25,10 +25,20 @@ add_executable(SpinChains main.cpp
         CommonLibs.h
         linspace.cpp linspace.h
         SpinChainEigenSolverClass.cpp SpinChainEigenSolverClass.h
-        Numerical_Methods_Class.cpp Numerical_Methods_Class.h
+        NMSuperClass.cpp NMSuperClass.h
         GlobalVariables.cpp GlobalVariables.h
         progressbar.hpp
-        NewSolver.cpp NewSolver.h)
+        NewSolver.cpp NewSolver.h
+        NMSubClasses/NMInitialisation.cpp NMSubClasses/NMInitialisation.h
+        NMSuperClassTest.cpp NMSuperClassTest.h
+        NMSubClasses/NMConfiguration.cpp NMSubClasses/NMConfiguration.h
+        NMSubClasses/DipolarField.cpp NMSubClasses/DipolarField.h
+        NMSubClasses/EffectiveField.cpp NMSubClasses/EffectiveField.h
+        NMSubClasses/DemagField.cpp NMSubClasses/DemagField.h
+        NMSubClasses/LLG.cpp NMSubClasses/LLG.h
+        NMSubClasses/NMDataHandling.cpp NMSubClasses/NMDataHandling.h
+        NMSubClasses/NMMethods.cpp NMSubClasses/NMMethods.h
+        NMSubClasses/DebuggingTools.cpp NMSubClasses/DebuggingTools.h)
 
 # Include directories for FFTW
 include_directories(${EIGEN_DIR} ${FFTW_DIR}/include)

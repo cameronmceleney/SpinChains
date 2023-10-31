@@ -1,6 +1,6 @@
-#include "Numerical_Methods_Class.h"
+#include "NMSuperClass.h"
 
-void Numerical_Methods_Class::NumericalMethodsMain() {
+void NMSuperClass::NumericalMethodsMain() {
 
     NumericalMethodsFlags();
     NumericalMethodsParameters();
@@ -15,7 +15,7 @@ void Numerical_Methods_Class::NumericalMethodsMain() {
     SetExchangeVector();
     if (!_useMultilayer) {SetInitialMagneticMoments();}
 }
-void Numerical_Methods_Class::NumericalMethodsFlags() {
+void NMSuperClass::NumericalMethodsFlags() {
 
     // Debugging Flags
     _shouldTrackMValues = true;
@@ -48,7 +48,7 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _printFixedLines = true;
     _printFixedSites = false;
 }
-void Numerical_Methods_Class::NumericalMethodsParameters() {
+void NMSuperClass::NumericalMethodsParameters() {
 
     // Main Parameters
     _ambientTemperature = 273; // Kelvin
@@ -64,13 +64,13 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _iterStartShock = 0.0;
     _iterEndShock = 0.0001;
     _shockwaveGradientTime = 1;
-    _shockwaveInitialStrength = 0;  // Set equal to _dynamicBiasField if NOT starting at time=0
+    _shockwaveInitialStrength = 0;  // Set equal to dynamicBiasField if NOT starting at time=0
     _shockwaveMax = 3e-3;
     _shockwaveScaling = 1;
 
     // Data Output Parameters
     _fixed_output_sites = {12158, 14529, 15320};
-    _numberOfDataPoints = 1000; //static_cast<int>(_maxSimTime / _recordingInterval);
+    _numberOfDataPoints = 1000; //static_cast<int>(maxSimTime / recordingInterval);
     _recordingInterval = 1e-15;
     _layerOfInterest = 1;
 
@@ -85,7 +85,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _numSpinsDamped = 0;
     _totalLayers = 1;
 }
-void Numerical_Methods_Class::NumericalMethodsProcessing() {
+void NMSuperClass::NumericalMethodsProcessing() {
     // Computations based upon other inputs
     _drivingAngFreq = 2 * M_PI * _drivingFreq;
     _muMagnitudeIron *= _bohrMagneton;  // Conversion to Am^2
@@ -121,24 +121,24 @@ void Numerical_Methods_Class::NumericalMethodsProcessing() {
 
 }
 
-void Numerical_Methods_Class::FinalChecks() {
+void NMSuperClass::FinalChecks() {
 
     if (_shouldDriveCease and _iterEndShock <= 0) {
-        std::cout << "Warning: [_shouldDriveCease: True] however [_iterEndShock: " << _iterEndShock << " ! > 0.0]"
+        std::cout << "Warning: [shouldDriveCease: True] however [iterEndShock: " << _iterEndShock << " ! > 0.0]"
                   << std::endl;
         exit(1);
     }
 
     if (_hasShockwave and _iterStartShock < 0) {
-        std::cout << "Warning: [_hasShockwave: True] however [_iterStartShock: " << _iterStartShock << " ! > 0.0]"
+        std::cout << "Warning: [hasShockwave: True] however [iterStartShock: " << _iterStartShock << " ! > 0.0]"
                   << std::endl;
         exit(1);
     }
 
     if ((_printFixedSites and _printFixedLines) or (_printFixedSites and _printAllData) or
         (_printFixedLines and _printAllData)) {
-        std::cout << "Warning: Multiple output flags detected. [_printFixedSites: " << _printFixedSites
-                  << "] | [_printFixedLines: " << _printFixedLines << "] | [_printAllData: " << _printAllData << "]"
+        std::cout << "Warning: Multiple output flags detected. [printFixedSites: " << _printFixedSites
+                  << "] | [printFixedLines: " << _printFixedLines << "] | [printAllData: " << _printAllData << "]"
                   << std::endl;
         exit(1);
     }
@@ -151,7 +151,7 @@ void Numerical_Methods_Class::FinalChecks() {
     }
 
     if (_printFixedSites and _fixed_output_sites.empty()) {
-        std::cout << "Warning: Request to print fixed sites, but no sites were given [_fixed_output_sites: (";
+        std::cout << "Warning: Request to print fixed sites, but no sites were given [fixedOutputSites: (";
         for (int & fixed_out_val : _fixed_output_sites)
                 std::cout << fixed_out_val << ", ";
         std::cout << ")].";
@@ -159,7 +159,7 @@ void Numerical_Methods_Class::FinalChecks() {
     }
 
     if (_numberOfDataPoints > _iterationEnd) {
-        std::cout << "Warning: You tried to print more data than was generated [_numberOfDataPoints > _iterationEnd]";
+        std::cout << "Warning: You tried to print more data than was generated [numberOfDataPoints > iterationEnd]";
         exit(1);
     }
 
@@ -184,7 +184,7 @@ void Numerical_Methods_Class::FinalChecks() {
     }
 
 }
-void Numerical_Methods_Class::SetDampingRegion() {
+void NMSuperClass::SetDampingRegion() {
     // Generate the damping regions that are appended to either end of the spin chain.
 
     LinspaceClass DampingRegionLeft;
@@ -209,7 +209,7 @@ void Numerical_Methods_Class::SetDampingRegion() {
     _gilbertVector.insert(_gilbertVector.end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
     _gilbertVector.push_back(0);
 }
-void Numerical_Methods_Class::SetDrivingRegion() {
+void NMSuperClass::SetDrivingRegion() {
     /**
      * Set up driving regions for the system. The LHS option is solely for drives from the left of the system. The RHS options contains the
      * drive from the right, as well as an option to drive from the centre.
@@ -240,7 +240,7 @@ void Numerical_Methods_Class::SetDrivingRegion() {
     }
 
 }
-void Numerical_Methods_Class::SetExchangeVector() {
+void NMSuperClass::SetExchangeVector() {
     /*
      * Create the arrays which house the exchange integral values. There are options to have a non-uniform exchange coded in, as well as the option to
      * induce a 'kick' into the system by initialising certain spins to have differing parameters to their neighbours.
@@ -258,16 +258,16 @@ void Numerical_Methods_Class::SetExchangeVector() {
         _exchangeVec.insert(_exchangeVec.begin(), dampingRegionLeftExchange.begin(), dampingRegionLeftExchange.end());
         _exchangeVec.insert(_exchangeVec.end(), dampingRegionRightExchange.begin(), dampingRegionRightExchange.end());
     } else {
-        // The linearly spaced vector is saved as the class member '_exchangeVec' simply to increase code readability
+        // The linearly spaced vector is saved as the class member 'exchangeVec' simply to increase code readability
         SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, true);
         _exchangeVec = SpinChainExchange.generate_array();
     }
 }
-void Numerical_Methods_Class::SetInitialMagneticMoments() {
+void NMSuperClass::SetInitialMagneticMoments() {
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
     std::vector<double> mxInitCond(GV.GetNumSpins(), _mxInit), myInitCond(GV.GetNumSpins(), _myInit), mzInitCond(GV.GetNumSpins(), _mzInit);
-    // mxInitCond[0] = _mxInit; // Only perturb initial spin
+    // mxInitCond[0] = mxInit; // Only perturb initial spin
 
     /*
     for (int i = 0; i < GV.GetNumSpins(); i++) {
@@ -294,7 +294,7 @@ void Numerical_Methods_Class::SetInitialMagneticMoments() {
     _my0.push_back(0);
     _mz0.push_back(0);
 }
-void Numerical_Methods_Class::SetShockwaveConditions() {
+void NMSuperClass::SetShockwaveConditions() {
 
     if (_hasShockwave) {
         _shockwaveStepsize = (_shockwaveMax - _shockwaveInitialStrength) / _shockwaveGradientTime;
@@ -309,7 +309,7 @@ void Numerical_Methods_Class::SetShockwaveConditions() {
     }
 }
 
-void Numerical_Methods_Class::SetDampingRegionMulti() {
+void NMSuperClass::SetDampingRegionMulti() {
     // Generate the damping regions that are appended to either end of the spin chain.
 
     LinspaceClass DampingRegionLeft;
@@ -335,13 +335,13 @@ void Numerical_Methods_Class::SetDampingRegionMulti() {
         _gilbertVectorMulti[i].insert(_gilbertVectorMulti[i].end(), tempGilbertRHS.begin(), tempGilbertRHS.end());
         _gilbertVectorMulti[i].push_back(0);
 
-        //PrintVector(_gilbertVectorMulti[i], false);
+        //PrintVector(gilbertVectorMulti[i], false);
     }
 }
-void Numerical_Methods_Class::SetInitialMagneticMomentsMultilayer(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
+void NMSuperClass::SetInitialMagneticMomentsMultilayer(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
                                                                   int layer, double mxInit, double myInit, double mzInit) {
 
-    // mxInitCond[0] = _mxInit; // Only perturb initial spin
+    // mxInitCond[0] = mxInit; // Only perturb initial spin
 
     /*
     for (int i = 0; i < GV.GetNumSpins(); i++) {
@@ -359,13 +359,13 @@ void Numerical_Methods_Class::SetInitialMagneticMomentsMultilayer(std::vector<st
     nestedNestedVector[layer].push_back({0.0, 0.0, 0.0});
 
 }
-std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::initializeNestedNestedVector(int numLayers, bool includeEnd) {
+std::vector<std::vector<std::vector<double>>> NMSuperClass::initializeNestedNestedVector(int numLayers, bool includeEnd) {
     /* Legacy code, not used in current implementation. Example implementation is below
 
     std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;
     mValsNested3["nestedNestedVector3"] = initializeNestedNestedVector(1, true);
     std::vector<std::vector<std::vector<double>>> m2Nest = mValsNested3["nestedNestedVector3"];
-    SetInitialMagneticMomentsMultilayer(m2Nest, 1, 0, 0 , 0);
+    _setupInitMultilayerMagneticMoments(m2Nest, 1, 0, 0 , 0);
     */
     std::vector<std::vector<std::vector<double>>> innerNestedVector;
     for (int j = 0; j < numLayers; j++) {
@@ -376,7 +376,7 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::initializ
     }
     return innerNestedVector;
 }
-std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::InitialiseNestedVectors(int& totalLayer, double& mxInit, double& myInit, double& mzInit) {
+std::vector<std::vector<std::vector<double>>> NMSuperClass::InitialiseNestedVectors(int& totalLayer, double& mxInit, double& myInit, double& mzInit) {
 
     // Initialise mapping
     std::map<std::string, std::vector<std::vector<std::vector<double>>>> mTermsMapping;
@@ -402,7 +402,7 @@ std::vector<std::vector<std::vector<double>>> Numerical_Methods_Class::Initialis
     return mTermsNested;
 }
 
-double Numerical_Methods_Class::dipolarKernel3D(const int& originSite, const int& influencingSite, const double& A, const double& alpha) {
+double NMSuperClass::dipolarKernel3D(const int& originSite, const int& influencingSite, const double& A, const double& alpha) {
     // This function is used to calculate the dipolar interaction between two sites. The kernel is defined as:
     // K = 1 / (4 * pi * r^3) * (3 * cos(theta)^2 - 1)
     // where r is the distance between the two sites, and theta is the angle between the two sites.
@@ -437,7 +437,7 @@ double Numerical_Methods_Class::dipolarKernel3D(const int& originSite, const int
     double dipoleKernel = dipoleKernelDirect + dipoleKernelIndirect;
     return dipoleKernelDirect;
 }
-double Numerical_Methods_Class::dipolarKernel1D(const int& originSite, const int& influencingSite, const std::string& component) {
+double NMSuperClass::dipolarKernel1D(const int& originSite, const int& influencingSite, const std::string& component) {
     // ################################ Declare initial Values ################################
     double exchangeStiffness = 5.3e-17;
 
@@ -460,7 +460,7 @@ double Numerical_Methods_Class::dipolarKernel1D(const int& originSite, const int
     if (component == "X") {return _permFreeSpace / (2 * M_PI * pow(positionVector, 3.0));}
     else {throw std::runtime_error(std::string("Invalid component passed to dipolarKernel1D"));}
 }
-void Numerical_Methods_Class::DipolarInteraction1D(std::vector<double> inMxTerms, std::vector<double>& outDipoleX) {
+void NMSuperClass::DipolarInteraction1D(std::vector<double> inMxTerms, std::vector<double>& outDipoleX) {
     // Modelling a one-dimensional chain of spins and calculating the dipolar interaction among them.
     // ################################ Declare initial Values ################################
     int trueNumSpins = GV.GetNumSpins() + 2;  // Vectors and arrays defined out with function include pinned end terms; 4002 sites in length instead of 4000
@@ -568,7 +568,7 @@ void Numerical_Methods_Class::DipolarInteraction1D(std::vector<double> inMxTerms
     fftw_free(HDipoleX);
 }
 
-std::vector<double> Numerical_Methods_Class::DipolarInteractionClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
+std::vector<double> NMSuperClass::DipolarInteractionClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                                   std::vector<double> mzTerms, std::vector<int> sitePositions) {
 
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};  // Returns Dipole terms for a single site
@@ -626,7 +626,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionClassic(std::vect
     }
     return totalDipoleTerms;
 }
-std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms,
+std::vector<double> NMSuperClass::DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms,
                                                                           int& currentSite, const int& currentLayer,
                                                                           const double& exchangeStiffness) {
     /* This function calculates the dipolar interaction between the current site and its neighbours within a single layer.
@@ -703,7 +703,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
         }
 
         if (exchangeStiffness == 0.0 || _exchangeVec[sitePositions[i]-1] == 0.0) {
-            // _exchangeVec[sitePositions[i]-1] refers to exchange vector to the LHS of the current site; [i] is RHS
+            // exchangeVec[sitePositions[i]-1] refers to exchange vector to the LHS of the current site; [i] is RHS
             continue;
         }
 
@@ -740,7 +740,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::v
 
     return totalDipoleTerms;
 }
-std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayer(std::vector<std::vector<double>>& mTermsLayer1,
+std::vector<double> NMSuperClass::DipolarInteractionInterlayer(std::vector<std::vector<double>>& mTermsLayer1,
                                                                           std::vector<std::vector<double>>& mTermsLayer2,
                                                                           int& currentSite, const int& currentLayer,
                                                                           const int& otherLayer) {
@@ -774,7 +774,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayer(std::v
 
     return totalDipoleTerms;
 }
-std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerAll(std::vector<std::vector<double>>& mTermsLayer1,
+std::vector<double> NMSuperClass::DipolarInteractionInterlayerAll(std::vector<std::vector<double>>& mTermsLayer1,
                                                                              std::vector<std::vector<double>>& mTermsLayer2,
                                                                              int& currentSite, const int& currentLayer,
                                                                              const int& otherLayer, double& exchangeStiffness,
@@ -835,7 +835,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerAll(std
 
     return totalDipolarInteractionInterlayer;
 }
-std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerAdjacent(std::vector<std::vector<double>>& mTermsChain1,
+std::vector<double> NMSuperClass::DipolarInteractionInterlayerAdjacent(std::vector<std::vector<double>>& mTermsChain1,
                                                                           std::vector<std::vector<double>>& mTermsChain2,
                                                                           int& numNeighbours, int& currentSite, const int& currentLayer,
                                                                           double& exchangeStiffness, double& interlayerExchange) {
@@ -890,7 +890,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerAdjacen
     return totalDipolarInteractionInterlayer;
 }
 
-std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayerDebug(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
+std::vector<double> NMSuperClass::DipolarInteractionIntralayerDebug(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
                                                                   int& currentSite, const int& currentLayer) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
 
@@ -1020,7 +1020,7 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayerDebug(s
     return totalDipoleTerms;
 }
 
-std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerDebug(std::vector<std::vector<double>>& mTermsChain1,
+std::vector<double> NMSuperClass::DipolarInteractionInterlayerDebug(std::vector<std::vector<double>>& mTermsChain1,
                                                                           std::vector<std::vector<double>>& mTermsChain2,
                                                                           int& numNeighbours, int& currentSite, const int& currentLayer) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
@@ -1096,13 +1096,13 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionInterlayerDebug(s
     return totalDipoleTerms;
 }
 
-double Numerical_Methods_Class::GenerateGaussianNoise(const double &mean, const double &stddev) {
+double NMSuperClass::GenerateGaussianNoise(const double &mean, const double &stddev) {
     // Function to generate random numbers from a Gaussian distribution
     static std::mt19937 generator(std::random_device{}());
     std::normal_distribution<double> distribution(mean, stddev);
     return distribution(generator);
 }
-std::vector<double> Numerical_Methods_Class::StochasticTerm(const int& site, const double &timeStep) {
+std::vector<double> NMSuperClass::StochasticTerm(const int& site, const double &timeStep) {
     // Function to compute the stochastic term
 
     // Compute the standard deviation for the Gaussian noise
@@ -1115,14 +1115,14 @@ std::vector<double> Numerical_Methods_Class::StochasticTerm(const int& site, con
 
     return {xi_x, xi_y, xi_z};
 }
-std::vector<double> Numerical_Methods_Class::ComputeStochasticTerm(const int& site, const double &timeStep) {
+std::vector<double> NMSuperClass::ComputeStochasticTerm(const int& site, const double &timeStep) {
     // Function to compute the stochastic term
     std::vector<double> noise = StochasticTerm(site, timeStep);
     std::vector<double> stochasticField = {noise[0], noise[1], noise[2]};
     return stochasticField;
 }
 
-double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& layer, const double& mxLHS, const double& mxMID,
+double NMSuperClass::EffectiveFieldX(const int& site, const int& layer, const double& mxLHS, const double& mxMID,
                                                 const double& mxRHS, const double& dipoleTerm,
                                                 const double& demagTerm, const double& current_time) {
     // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
@@ -1156,7 +1156,7 @@ double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& laye
 
     return hx;
 }
-double Numerical_Methods_Class::EffectiveFieldY(const int& site, const int& layer, const double& myLHS, const double& myMID, const double& myRHS,
+double NMSuperClass::EffectiveFieldY(const int& site, const int& layer, const double& myLHS, const double& myMID, const double& myRHS,
                                                 const double &dipoleTerm,  const double& demagTerm) {
     // The effective field (H_eff) y-component acting upon a given magnetic moment (site), abbreviated to 'hy'
     double hy;
@@ -1169,7 +1169,7 @@ double Numerical_Methods_Class::EffectiveFieldY(const int& site, const int& laye
 
     return hy;
 }
-double Numerical_Methods_Class::EffectiveFieldZ(const int& site, const int& layer, const double& mzLHS, const double& mzMID, const double& mzRHS,
+double NMSuperClass::EffectiveFieldZ(const int& site, const int& layer, const double& mzLHS, const double& mzMID, const double& mzRHS,
                                                 const double& dipoleTerm, const double& demagTerm) {
     // The effective field (H_eff) z-component acting upon a given magnetic moment (site), abbreviated to 'hz'
     double hz;
@@ -1187,7 +1187,7 @@ double Numerical_Methods_Class::EffectiveFieldZ(const int& site, const int& laye
     return hz;
 }
 
-void Numerical_Methods_Class::DemagnetisationFieldIntense(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
+void NMSuperClass::DemagnetisationFieldIntense(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
                                                    const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
                                                    const std::vector<double>& mzTerms) {
     // Assuming demag terms (Nx, Ny, and Nz) are constants
@@ -1227,7 +1227,7 @@ void Numerical_Methods_Class::DemagnetisationFieldIntense(std::vector<double>& H
     H_dz = totalHd_z;
 }
 
-void Numerical_Methods_Class::DemagField1DComplex(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
+void NMSuperClass::DemagField1DComplex(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
                                            std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
                                            int iteration, std::string rkStageName) {
 
@@ -1450,7 +1450,7 @@ void Numerical_Methods_Class::DemagField1DComplex(std::vector<double>& outDemagX
     fftw_free(hdZ);
 }
 
-void Numerical_Methods_Class::DemagField1DReal(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
+void NMSuperClass::DemagField1DReal(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
                                            std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
                                            int iteration, std::string rkStageName) {
 
@@ -1677,7 +1677,7 @@ void Numerical_Methods_Class::DemagField1DReal(std::vector<double>& outDemagX, s
     fftw_free(hdZ);
 }
 /*
-void Numerical_Methods_Class::DemagFieldsUsingDipoles(std::vector<double> mxTerms, std::vector<double> myTerms,
+void NMSuperClass::DemagFieldsUsingDipoles(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                   std::vector<double> mzTerms, std::vector<int> sitePositions,
                                                   std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ) {
         // Initialization
@@ -1724,7 +1724,7 @@ void Numerical_Methods_Class::DemagFieldsUsingDipoles(std::vector<double> mxTerm
 }
 */
 
-double Numerical_Methods_Class::MagneticMomentX(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
+double NMSuperClass::MagneticMomentX(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
     double mxK;
@@ -1740,7 +1740,7 @@ double Numerical_Methods_Class::MagneticMomentX(const int& site, const double& m
 
     return mxK;
 }
-double Numerical_Methods_Class::MagneticMomentY(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
+double NMSuperClass::MagneticMomentY(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
     double myK;
@@ -1755,7 +1755,7 @@ double Numerical_Methods_Class::MagneticMomentY(const int& site, const double& m
 
     return myK;
 }
-double Numerical_Methods_Class::MagneticMomentZ(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
+double NMSuperClass::MagneticMomentZ(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
     double mzK;
@@ -1771,7 +1771,7 @@ double Numerical_Methods_Class::MagneticMomentZ(const int& site, const double& m
     return mzK;
 }
 
-double Numerical_Methods_Class::MagneticMomentX(const int& site, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
+double NMSuperClass::MagneticMomentX(const int& site, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
     double mxK;
@@ -1786,7 +1786,7 @@ double Numerical_Methods_Class::MagneticMomentX(const int& site, const int& laye
 
     return mxK;
 }
-double Numerical_Methods_Class::MagneticMomentY(const int& site, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
+double NMSuperClass::MagneticMomentY(const int& site, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
     double myK;
@@ -1801,7 +1801,7 @@ double Numerical_Methods_Class::MagneticMomentY(const int& site, const int& laye
 
     return myK;
 }
-double Numerical_Methods_Class::MagneticMomentZ(const int& site, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
+double NMSuperClass::MagneticMomentZ(const int& site, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
     double mzK;
@@ -1817,7 +1817,7 @@ double Numerical_Methods_Class::MagneticMomentZ(const int& site, const int& laye
     return mzK;
 }
 
-void Numerical_Methods_Class::SolveRK2Classic() {
+void NMSuperClass::SolveRK2Classic() {
     // Only uses a single spin chain to solve the RK2 midpoint method.
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
@@ -1917,24 +1917,24 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
             /*
-            if ((_iterationEnd >= 100 && iteration % (_iterationEnd / 1000) == 0) && site == 500) {
+            if ((iterationEnd >= 100 && iteration % (iterationEnd / 1000) == 0) && site == 500) {
                 std::cout << "Iter. #" << iteration << " ";
-                std::cout << "| mx: " << _mx0[200] << " - H_dx: " << demagX[200] << " ";
-                std::cout << "| my: " << _my0[200] << " - H_dy: " << demagY[200] << " ";
-                std::cout << "| mz: " << _mz0[200] << " - H_dz: " << demagZ[200] << " ";
-                std::cout << "| mTot: " << sqrt(pow(_mx0[site], 2) + pow(_my0[site], 2) + pow(_mz0[site], 2)) << " ";
+                std::cout << "| mx: " << mx0[200] << " - H_dx: " << demagX[200] << " ";
+                std::cout << "| my: " << my0[200] << " - H_dy: " << demagY[200] << " ";
+                std::cout << "| mz: " << mz0[200] << " - H_dz: " << demagZ[200] << " ";
+                std::cout << "| mTot: " << sqrt(pow(mx0[site], 2) + pow(my0[site], 2) + pow(mz0[site], 2)) << " ";
                 std::cout << std::endl;
-                //std::cout << "| mz: " << _mz0[200] << " ";
+                //std::cout << "| mz: " << mz0[200] << " ";
                 //std::cout << "| H_dz: " << demagZ[200] << " ";
-                //std::cout << "| mTot: " << sqrt(pow(_mx0[site], 2) + pow(_my0[site], 2) + pow(_mz0[site], 2)) << " ";
+                //std::cout << "| mTot: " << sqrt(pow(mx0[site], 2) + pow(my0[site], 2) + pow(mz0[site], 2)) << " ";
                 //std::cout << std::endl;
             }
             */
             /*double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
-            if (_useDipolar) {
-                std::vector<double> mxTermsForDipole = {_mx0[spinLHS], _mx0[site], _mx0[spinRHS]};
-                std::vector<double> myTermsForDipole = {_my0[spinLHS], _my0[site], _my0[spinRHS]};
-                std::vector<double> mzTermsForDipole = {_mz0[spinLHS], _mz0[site], _mz0[spinRHS]};
+            if (useDipolar) {
+                std::vector<double> mxTermsForDipole = {mx0[spinLHS], mx0[site], mx0[spinRHS]};
+                std::vector<double> myTermsForDipole = {my0[spinLHS], my0[site], my0[spinRHS]};
+                std::vector<double> mzTermsForDipole = {mz0[spinLHS], mz0[site], mz0[spinRHS]};
                 std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
 
                 std::vector<double> dipoleTerms = DipolarInteractionClassic(mxTermsForDipole, myTermsForDipole,
@@ -1983,7 +1983,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             int spinLHS = site - 1, spinRHS = site + 1;
 
             /*double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
-            if (_useDipolar) {
+            if (useDipolar) {
                 std::vector<double> mxTermsForDipole = {mx1[spinLHS], mx1[site], mx1[spinRHS]};
                 std::vector<double> myTermsForDipole = {my1[spinLHS], my1[site], my1[spinRHS]};
                 std::vector<double> mzTermsForDipole = {mz1[spinLHS], mz1[site], mz1[spinRHS]};
@@ -2054,7 +2054,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
-void Numerical_Methods_Class::SolveRK2() {
+void NMSuperClass::SolveRK2() {
     // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
@@ -2237,7 +2237,7 @@ void Numerical_Methods_Class::SolveRK2() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
+void NMSuperClass::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
     /**
      * Write all non-data information to the output file.
      */
@@ -2308,7 +2308,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, st
 
     std::cout << "\n";
 }
-void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName) {
+void NMSuperClass::CreateColumnHeaders(std::ofstream &outputFileName) {
     /**
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
@@ -2336,7 +2336,7 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName)
 
     }
 }
-void Numerical_Methods_Class::InformUserOfCodeType(const std::string& nameNumericalMethod) {
+void NMSuperClass::InformUserOfCodeType(const std::string& nameNumericalMethod) {
     /**
      * Informs the user of the code type they are running, including: solver type; special modules.
      */
@@ -2351,7 +2351,7 @@ void Numerical_Methods_Class::InformUserOfCodeType(const std::string& nameNumeri
         std::cout << ".\n";
 
 }
-void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint, bool shouldExitAfterPrint) {
+void NMSuperClass::PrintVector(std::vector<double> &vectorToPrint, bool shouldExitAfterPrint) {
 
     std::cout << "\n\n";
 
@@ -2367,7 +2367,7 @@ void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint, bo
     if (shouldExitAfterPrint)
         exit(0);
 }
-void Numerical_Methods_Class::PrintNestedNestedVector(std::vector<std::vector<std::vector<double>>> nestedNestedVector){
+void NMSuperClass::PrintNestedNestedVector(std::vector<std::vector<std::vector<double>>> nestedNestedVector){
         // Print the contents of nestedNestedVector1
     std::cout << "{";
     for (size_t i = 0; i < nestedNestedVector.size(); ++i) {
@@ -2393,7 +2393,7 @@ void Numerical_Methods_Class::PrintNestedNestedVector(std::vector<std::vector<st
     }
     std::cout << "}" << std::endl;
 }
-void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
+void NMSuperClass::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
     std::cout.precision(6);
     std::cout << std::scientific;
 
@@ -2418,7 +2418,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
 
             return;
         } else if (_printFixedSites) {
-            /*outputFileName << (iteration * _stepsize) << ","
+            /*outputFileName << (iteration * stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
                << arrayToWrite[18000] << ","
@@ -2449,15 +2449,15 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
     }
 
     /*
-    if (_printFixedLines) {
-        // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
-        if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
-            //if (iteration == _iterationEnd) {
+    if (printFixedLines) {
+        // iteration >= static_cast<int>(iterationEnd / 2.0) &&
+        if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
+            //if (iteration == iterationEnd) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * _stepsize) << ",";
+                    outputFileName << (iteration * stepsize) << ",";
 
                 else if (i == GV.GetNumSpins())
                     // Ensures that the final line doesn't contain a comma.
@@ -2471,11 +2471,11 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
             outputFileName << std::endl;
         }
     } else {
-        if (_printAllData) {
+        if (printAllData) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
-                    outputFileName << (iteration * _stepsize) << ","; // Print current time
+                    outputFileName << (iteration * stepsize) << ","; // Print current time
                 else if (i == GV.GetNumSpins())
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
@@ -2483,29 +2483,29 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
             }
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
-            if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
-                if (_printFixedSites) {
+            if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
+                if (printFixedSites) {
 
-                    outputFileName << (iteration * _stepsize) << ","
-                                   << arrayToWrite[_drivingRegionLHS] << ","
-                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[_drivingRegionRHS] << ","
+                    outputFileName << (iteration * stepsize) << ","
+                                   << arrayToWrite[drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
                                    << arrayToWrite[GV.GetNumSpins()] << std::endl;
 
-                    outputFileName << (iteration * _stepsize) << ","
+                    outputFileName << (iteration * stepsize) << ","
                                    << arrayToWrite[400] << ","
                                    << arrayToWrite[1500] << ","
                                    << arrayToWrite[3000] << ","
                                    << arrayToWrite[4500] << ","
                                    << arrayToWrite[5600] << std::endl;
                 } else {
-                    outputFileName << (iteration * _stepsize) << ","
-                                   << arrayToWrite[_drivingRegionLHS] << ","
-                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[_drivingRegionRHS] << ","
+                    outputFileName << (iteration * stepsize) << ","
+                                   << arrayToWrite[drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
                                    << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 2.0)] << ","
                                    << arrayToWrite[3 * static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
@@ -2515,7 +2515,7 @@ void Numerical_Methods_Class::SaveDataToFile(std::ofstream &outputFileName, std:
         }
     } */
 }
-void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration) {
+void NMSuperClass::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration) {
     std::cout.precision(6);
     std::cout << std::scientific;
 
@@ -2548,7 +2548,7 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
 
             return;
         } else if (_printFixedSites) {
-            /*outputFileName << (iteration * _stepsize) << ","
+            /*outputFileName << (iteration * stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
                << arrayToWrite[18000] << ","
@@ -2579,15 +2579,15 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
     }
 
     /*
-    if (_printFixedLines) {
-        // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
-        if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
-            //if (iteration == _iterationEnd) {
+    if (printFixedLines) {
+        // iteration >= static_cast<int>(iterationEnd / 2.0) &&
+        if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
+            //if (iteration == iterationEnd) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * _stepsize) << ",";
+                    outputFileName << (iteration * stepsize) << ",";
 
                 else if (i == GV.GetNumSpins())
                     // Ensures that the final line doesn't contain a comma.
@@ -2601,11 +2601,11 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
             outputFileName << std::endl;
         }
     } else {
-        if (_printAllData) {
+        if (printAllData) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
-                    outputFileName << (iteration * _stepsize) << ","; // Print current time
+                    outputFileName << (iteration * stepsize) << ","; // Print current time
                 else if (i == GV.GetNumSpins())
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
@@ -2613,29 +2613,29 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
             }
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
-            if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
-                if (_printFixedSites) {
+            if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
+                if (printFixedSites) {
 
-                    outputFileName << (iteration * _stepsize) << ","
-                                   << arrayToWrite[_drivingRegionLHS] << ","
-                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[_drivingRegionRHS] << ","
+                    outputFileName << (iteration * stepsize) << ","
+                                   << arrayToWrite[drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
                                    << arrayToWrite[GV.GetNumSpins()] << std::endl;
 
-                    outputFileName << (iteration * _stepsize) << ","
+                    outputFileName << (iteration * stepsize) << ","
                                    << arrayToWrite[400] << ","
                                    << arrayToWrite[1500] << ","
                                    << arrayToWrite[3000] << ","
                                    << arrayToWrite[4500] << ","
                                    << arrayToWrite[5600] << std::endl;
                 } else {
-                    outputFileName << (iteration * _stepsize) << ","
-                                   << arrayToWrite[_drivingRegionLHS] << ","
-                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[_drivingRegionRHS] << ","
+                    outputFileName << (iteration * stepsize) << ","
+                                   << arrayToWrite[drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
                                    << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 2.0)] << ","
                                    << arrayToWrite[3 * static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
@@ -2645,10 +2645,10 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
         }
     } */
 }
-void Numerical_Methods_Class::TestShockwaveConditions(double iteration) {
+void NMSuperClass::TestShockwaveConditions(double iteration) {
 
     if (_shouldDriveCease) {
-        // and (_isShockwaveOn and _isShockwaveAtMax)) {
+        // and (isShockwaveOn and isShockwaveAtMax)) {
         if (_isShockwaveOn and not _isShockwaveAtMax) {
             std::cout << "Shock not at maximum when cut-off" << std::endl;
         }
@@ -2664,7 +2664,7 @@ void Numerical_Methods_Class::TestShockwaveConditions(double iteration) {
 
     }
 
-    // If method is triggered, then the applied biasFieldDriving is increased by the scale factor _shockwaveScaling
+    // If method is triggered, then the applied biasFieldDriving is increased by the scale factor shockwaveScaling
     if (_hasShockwave and not _isShockwaveOn)
     {
         if (iteration >= _iterationEnd * _iterStartShock)
@@ -2692,7 +2692,7 @@ void Numerical_Methods_Class::TestShockwaveConditions(double iteration) {
     }
 
 }
-void Numerical_Methods_Class::CreateMetadata(bool print_end_time) {
+void NMSuperClass::CreateMetadata(bool print_end_time) {
 
     std::string file_name = "simulation_metadata.txt";
 
@@ -2712,7 +2712,7 @@ void Numerical_Methods_Class::CreateMetadata(bool print_end_time) {
     }
 }
 
-void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata, int layer) {
+void NMSuperClass::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata, int layer) {
     /**
      * Write all non-data information to the output file.
      */
@@ -2783,7 +2783,7 @@ void Numerical_Methods_Class::CreateFileHeader(std::ofstream &outputFileName, st
 
     std::cout << "\n";
 }
-void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName, int& layer) {
+void NMSuperClass::CreateColumnHeaders(std::ofstream &outputFileName, int& layer) {
     /**
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
@@ -2811,7 +2811,7 @@ void Numerical_Methods_Class::CreateColumnHeaders(std::ofstream &outputFileName,
 
     }
 }
-std::vector<double> Numerical_Methods_Class::flattenNestedVector(const std::vector<std::vector<double>>& nestedVector) {
+std::vector<double> NMSuperClass::flattenNestedVector(const std::vector<std::vector<double>>& nestedVector) {
     std::vector<double> flattenedVector;
 
     for (const auto& innerVector : nestedVector) {
@@ -2820,7 +2820,7 @@ std::vector<double> Numerical_Methods_Class::flattenNestedVector(const std::vect
 
     return flattenedVector;
 }
-void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration, int layer) {
+void NMSuperClass::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration, int layer) {
     std::cout.precision(6);
     std::cout << std::scientific;
 
@@ -2853,7 +2853,7 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
 
             return;
         } else if (_printFixedSites) {
-            /*outputFileName << (iteration * _stepsize) << ","
+            /*outputFileName << (iteration * stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
                << arrayToWrite[18000] << ","
@@ -2884,15 +2884,15 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
     }
 
     /*
-    if (_printFixedLines) {
-        // iteration >= static_cast<int>(_iterationEnd / 2.0) &&
-        if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
-            //if (iteration == _iterationEnd) {
+    if (printFixedLines) {
+        // iteration >= static_cast<int>(iterationEnd / 2.0) &&
+        if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
+            //if (iteration == iterationEnd) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * _stepsize) << ",";
+                    outputFileName << (iteration * stepsize) << ",";
 
                 else if (i == GV.GetNumSpins())
                     // Ensures that the final line doesn't contain a comma.
@@ -2906,11 +2906,11 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
             outputFileName << std::endl;
         }
     } else {
-        if (_printAllData) {
+        if (printAllData) {
             for (int i = 0; i <= GV.GetNumSpins(); i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
-                    outputFileName << (iteration * _stepsize) << ","; // Print current time
+                    outputFileName << (iteration * stepsize) << ","; // Print current time
                 else if (i == GV.GetNumSpins())
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
@@ -2918,29 +2918,29 @@ void Numerical_Methods_Class::SaveDataToFileMultilayer(std::ofstream &outputFile
             }
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
-            if (iteration % (_iterationEnd / _numberOfDataPoints) == 0) {
-                if (_printFixedSites) {
+            if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
+                if (printFixedSites) {
 
-                    outputFileName << (iteration * _stepsize) << ","
-                                   << arrayToWrite[_drivingRegionLHS] << ","
-                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[_drivingRegionRHS] << ","
+                    outputFileName << (iteration * stepsize) << ","
+                                   << arrayToWrite[drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
                                    << arrayToWrite[GV.GetNumSpins()] << std::endl;
 
-                    outputFileName << (iteration * _stepsize) << ","
+                    outputFileName << (iteration * stepsize) << ","
                                    << arrayToWrite[400] << ","
                                    << arrayToWrite[1500] << ","
                                    << arrayToWrite[3000] << ","
                                    << arrayToWrite[4500] << ","
                                    << arrayToWrite[5600] << std::endl;
                 } else {
-                    outputFileName << (iteration * _stepsize) << ","
-                                   << arrayToWrite[_drivingRegionLHS] << ","
-                                   << arrayToWrite[static_cast<int>(_drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[_drivingRegionRHS] << ","
+                    outputFileName << (iteration * stepsize) << ","
+                                   << arrayToWrite[drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 4.0)] << ","
                                    << arrayToWrite[static_cast<int>(GV.GetNumSpins() / 2.0)] << ","
                                    << arrayToWrite[3 * static_cast<int>(GV.GetNumSpins() / 4.0)] << ","

@@ -1,5 +1,5 @@
-#ifndef SPINCHAINS_NUMERICAL_METHODS_CLASS_H
-#define SPINCHAINS_NUMERICAL_METHODS_CLASS_H
+#ifndef SPINCHAINS_NMSUPERCLASS_H
+#define SPINCHAINS_NMSUPERCLASS_H
 
 #include "linspace.h"
 #include "SpinChainEigenSolverClass.h"
@@ -17,7 +17,7 @@ extern "C" {
 }
 
 
-class Numerical_Methods_Class {
+class NMSuperClass {
 
 private:
     /*
@@ -50,14 +50,14 @@ private:
 
     int                 _iterationEnd;                             // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
     int                 _iterationStart = 0;                       // The iteration step that the program will begin at. (Default: 0.0)
-    double              _iterStartShock;                           // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the _maxSimTime.
+    double              _iterStartShock;                           // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the maxSimTime.
 
-    double              _iterEndShock;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the _maxSimTime.
-    double              _largestMNorm = 1e-50;                     // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
+    double              _iterEndShock;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the maxSimTime.
+    double              _largestMNorm = 1e-50;                     // Computes sqrt(mxInit**2 + myInit**2 + mzInit**2). Initialised to be arbitrarily small.
     int                 _layerOfInterest;
     double              _maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
-    // The initial values of the squares of the magnetic moments (m) along each axis. [_mxInit + _myInit + _mzInit]  CANNOT sum to greater than 1.0
+    // The initial values of the squares of the magnetic moments (m) along each axis. [mxInit + myInit + mzInit]  CANNOT sum to greater than 1.0
     double              _mxInit = 0.0;                             // x-direction. (Default: 0.0)
     double              _myInit = 0.0;                             // y-direction. (Default: 0.0)
     double              _mzInit = 1.0;                             // z-direction. (Default: _magSat = 1.0)
@@ -74,14 +74,14 @@ private:
     double              _satMag;                                   // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
 
     double              _shockwaveGradientTime;                    // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[ps] when stepsize=1e-15.
-    double              _shockwaveInitialStrength;                 // Initial strength of the shockwave before _shockwaveScaling occurs. (Default: = _dynamicBiasField)
+    double              _shockwaveInitialStrength;                 // Initial strength of the shockwave before shockwaveScaling occurs. (Default: = _dynamicBiasField)
     double              _shockwaveMax;                             // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
     double              _shockwaveScaling;                         // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
 
     double              _shockwaveStepsize;                        // Size of incremental increase in shockwave amplitude.
     double              _stepsize;                                 // Stepsize between values
     double              _stepsizeHalf;                             // Separately defined to avoid repeated unnecessary calculations inside loops
-    std::string         _stepsizeString;                           // Object to string conversation for _stepsize
+    std::string         _stepsizeString;                           // Object to string conversation for stepsize
 
     std::string         _stopIterString;                           // Object to string conversion for _stopIterVal
     double              _totalTime = 0;                            // Analogous to a stopwatch in a physical experiment. This tracks the 'real time' of the simulation
@@ -105,8 +105,8 @@ private:
 
     bool                _lhsDrive;                                 // Drive from the RHS if (false)
     bool                _printAllData;                             // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
-    bool                _printFixedLines;                          // Saves m-component(s) of every spin at regular intervals. Total save points are set by _numberOfDataPoints.
-    bool                _printFixedSites;                          // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.
+    bool                _printFixedLines;                          // Saves m-component(s) of every spin at regular intervals. Total save points are set by numberOfDataPoints.
+    bool                _printFixedSites;                          // Saves a discrete set of m-component(s) at regular intervals governed by numberOfDataPoints.
 
     bool                _shouldDriveCease;                         // Internal flag to indicate if the driving field should cut off at a given time.
     bool                _shouldTrackMValues;                       // Monitor the norm of all the m-values; if approx. 1.0 then the error is likely to be massive; discard that dataset.
@@ -129,7 +129,7 @@ private:
     // Holds a linearly spaced array of values which describe all exchange interactions between neighbouring spins
     std::vector<double> _exchangeVec;
 
-    // Sites to be printed if _printFixedSites is TRUE.
+    // Sites to be printed if printFixedSites is TRUE.
     std::list <int>     _fixed_output_sites;
 
     // Description missing
@@ -138,7 +138,7 @@ private:
     // Description missing
     std::vector<std::vector<double>> _gilbertVectorMulti{};
 
-    // Computes sqrt(_mxInit**2 + _myInit**2 + _mzInit**2). Initialised to be arbitrarily small.
+    // Computes sqrt(mxInit**2 + myInit**2 + mzInit**2). Initialised to be arbitrarily small.
     std::vector<double> _largestMNormMulti = {1e-50, 1e-50};
 
     // Description missing
@@ -452,4 +452,4 @@ public:
 
 };
 
-#endif //SPINCHAINS_NUMERICAL_METHODS_CLASS_H
+#endif //SPINCHAINS_NMSUPERCLASS_H
