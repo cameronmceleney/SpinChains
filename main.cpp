@@ -43,7 +43,9 @@ int main() {
         std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
         SolverClass.CalculateEigenfrequencies(false);
     } else {
-        NumericalMethods.execute();
+            std::shared_ptr<SharedVariableHolder> sharedVariables = std::make_shared<SharedVariableHolder>();
+            NMSuperClassTest baseObj(sharedVariables);
+            baseObj.executeDerivedMethod(); // Outputs: "Child method called!"
     }
     return 0;
 }

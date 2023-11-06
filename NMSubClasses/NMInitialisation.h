@@ -13,40 +13,23 @@ private:
 
     double              _recordingInterval;
     int                 _layerOfInterest;
-    const double        _BOHR_MAGNETON = 9.274e-24;                               // Bohr magneton in Am^{2} (equiv. to J T^{-1})
-
-
+    const double        _BOHR_MAGNETON = 9.274e-24;
 
 
     // ####################################            Define Private Functions            ###################################
 
-    // Description missing
     void                _setSimulationFlags();
-
-    // Description missing
     void                _setSimulationParameters();
-
-    // Description missing
     void                _generateRemainingParameters();
-
-    // Description missing
     void                _setMaterialParameters();
-
-    // Description missing
     void                _guardClauses();
 
 protected:
-    // ####################################            Define Protected Variables            ###################################
-
-    // ####################################            Define Protected Functions            ###################################
-
+    //
 
 public:
-    // ####################################            Define Public Variables            ###################################
-
-    // ####################################            Define Public Functions            ###################################
-
-    // Initialisation constructor
+    NMInitialisation(std::shared_ptr<SharedVariableHolder> data);
+    void callInitialise() override;
     void                Initialise();
 };
 
