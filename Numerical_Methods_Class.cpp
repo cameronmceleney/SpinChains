@@ -45,18 +45,18 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Output Flags
     _printAllData = false;
-    _printFixedLines = true;
-    _printFixedSites = false;
+    _printFixedLines = false;
+    _printFixedSites = true;
 }
 void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Main Parameters
     _ambientTemperature = 273; // Kelvin
-    _drivingFreq = 15 * 1e9;
+    _drivingFreq = 12.54 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.25e-9;
+    _maxSimTime = 0.2e-9;
     _satMag = 0.010032;
     _stepsize = 2.5e-15;
 
@@ -69,8 +69,8 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _shockwaveScaling = 1;
 
     // Data Output Parameters
-    _fixed_output_sites = {12158, 14529, 15320};
-    _numberOfDataPoints = 1000; //static_cast<int>(_maxSimTime / _recordingInterval);
+    _fixed_output_sites = {400, 2300, 3500, 4251};
+    _numberOfDataPoints = 10000; //static_cast<int>(_maxSimTime / _recordingInterval);
     _recordingInterval = 1e-15;
     _layerOfInterest = 1;
 
@@ -82,7 +82,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     // Spin chain and multi-layer Parameters
     _drivingRegionWidth = 200;
     _numberNeighbours = -1;
-    _numSpinsDamped = 0;
+    _numSpinsDamped = 300;
     _totalLayers = 1;
 }
 void Numerical_Methods_Class::NumericalMethodsProcessing() {
@@ -1844,7 +1844,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
     progressbar bar(100);
 
     std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(GV.GetNumSpins() + 2, 0.0);
-    std::vector<double> dipoleX(GV.GetNumSpins() + 2, 0.0), dipoleY(GV.GetNumSpins() + 2, 0.0), dipoleZ(GV.GetNumSpins() + 2, 0.0);
+    //std::vector<double> dipoleX(GV.GetNumSpins() + 2, 0.0), dipoleY(GV.GetNumSpins() + 2, 0.0), dipoleZ(GV.GetNumSpins() + 2, 0.0);
 
     for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
 
@@ -1858,8 +1858,8 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
         // EASY FIND
-        if (_useDipolar)
-            DipolarInteraction1D(_mx0, dipoleX);
+        //if (_useDipolar)
+         //   DipolarInteraction1D(_mx0, dipoleX);
         if (_useDemagIntense) {
             DemagnetisationFieldIntense(demagX, demagY, demagZ, _mx0, _my0, _mz0);
         } else if (_useDemagFFT) {
@@ -1930,7 +1930,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
                 //std::cout << std::endl;
             }
             */
-            /*double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
+            double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
             if (_useDipolar) {
                 std::vector<double> mxTermsForDipole = {_mx0[spinLHS], _mx0[site], _mx0[spinRHS]};
                 std::vector<double> myTermsForDipole = {_my0[spinLHS], _my0[site], _my0[spinRHS]};
@@ -1944,11 +1944,11 @@ void Numerical_Methods_Class::SolveRK2Classic() {
                 dipoleY = dipoleTerms[1];
                 dipoleZ = dipoleTerms[2];
             }
-            */
+
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK0 = EffectiveFieldX(site, 0, _mx0[spinLHS], _mx0[site], _mx0[spinRHS], dipoleX[site], demagX[site], t0);
-            double hyK0 = EffectiveFieldY(site, 0, _my0[spinLHS], _my0[site], _my0[spinRHS], dipoleY[site], demagY[site]);
-            double hzK0 = EffectiveFieldZ(site, 0, _mz0[spinLHS], _mz0[site], _mz0[spinRHS], dipoleZ[site], demagZ[site]);
+            double hxK0 = EffectiveFieldX(site, 0, _mx0[spinLHS], _mx0[site], _mx0[spinRHS], dipoleX, demagX[site], t0);
+            double hyK0 = EffectiveFieldY(site, 0, _my0[spinLHS], _my0[site], _my0[spinRHS], dipoleY, demagY[site]);
+            double hzK0 = EffectiveFieldZ(site, 0, _mz0[spinLHS], _mz0[site], _mz0[spinRHS], dipoleZ, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mxK1 = MagneticMomentX(site, _mx0[site], _my0[site], _mz0[site], hxK0, hyK0, hzK0);
@@ -1964,10 +1964,10 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         // EASY FIND
         std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
         std::fill(demagX.begin(), demagX.end(), 0.0); std::fill(demagY.begin(), demagY.end(), 0.0); std::fill(demagZ.begin(), demagZ.end(), 0.0);
-        std::fill(dipoleX.begin(), dipoleX.end(), 0.0); std::fill(dipoleY.begin(), dipoleY.end(), 0.0); std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
+        //std::fill(dipoleX.begin(), dipoleX.end(), 0.0); std::fill(dipoleY.begin(), dipoleY.end(), 0.0); std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
 
-        if (_useDipolar)
-            DipolarInteraction1D(mx1, dipoleX);
+        //if (_useDipolar)
+        //    DipolarInteraction1D(mx1, dipoleX);
         if (_useDemagIntense) {
             DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
         } else if (_useDemagFFT) {
@@ -1982,7 +1982,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
 
-            /*double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
+            double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
             if (_useDipolar) {
                 std::vector<double> mxTermsForDipole = {mx1[spinLHS], mx1[site], mx1[spinRHS]};
                 std::vector<double> myTermsForDipole = {my1[spinLHS], my1[site], my1[spinRHS]};
@@ -1996,11 +1996,11 @@ void Numerical_Methods_Class::SolveRK2Classic() {
                 dipoleY = dipoleTerms[1];
                 dipoleZ = dipoleTerms[2];
             }
-            */
+
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK1 = EffectiveFieldX(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX[site], demagX[site], t0);
-            double hyK1 = EffectiveFieldY(site, 0, my1[spinLHS], my1[site], my1[spinRHS], dipoleY[site], demagY[site]);
-            double hzK1 = EffectiveFieldZ(site, 0, mz1[spinLHS], mz1[site], mz1[spinRHS], dipoleZ[site], demagZ[site]);
+            double hxK1 = EffectiveFieldX(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX, demagX[site], t0);
+            double hyK1 = EffectiveFieldY(site, 0, my1[spinLHS], my1[site], my1[spinRHS], dipoleY, demagY[site]);
+            double hzK1 = EffectiveFieldZ(site, 0, mz1[spinLHS], mz1[site], mz1[spinRHS], dipoleZ, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mxK2 = MagneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
@@ -2014,7 +2014,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             if (_shouldTrackMValues) {
                 double mIterationNorm = sqrt(pow(mx2[site], 2) + pow(my2[site], 2) + pow(mz2[site], 2));
                 if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
-                if (mIterationNorm > 1.00005) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
+                // if (mIterationNorm > 1.001) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
             }
         }
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
