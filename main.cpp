@@ -15,10 +15,10 @@ int main() {
     // Global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(1000);
-    GV.SetExchangeMinVal(132.5);
-    GV.SetExchangeMaxVal(132.5);
-    GV.SetGyromagneticConstant(28.8);
+    GV.SetNumSpins(4000);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(132.0);
+    GV.SetGyromagneticConstant(29.2);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -31,7 +31,7 @@ int main() {
     std::cin >> outputFileID;
     GV.SetFileNameBase("T"+outputFileID);
 
-    GV.SetFilePath("windows");
+    GV.SetFilePath("macos", true);
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetIsExchangeUniform())

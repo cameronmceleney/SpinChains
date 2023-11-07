@@ -79,7 +79,7 @@ void GlobalVariablesClass::SetFileNameBase(std::string fileNameBase) {
 std::string GlobalVariablesClass::GetFilePath() {
     return _filePath;
 }
-void GlobalVariablesClass::SetFilePath(std::string osName) {
+void GlobalVariablesClass::SetFilePath(std::string osName, bool isStudent) {
 
     for (size_t i = 0; i < osName.size(); ++i) {
         osName[i] = toupper(static_cast<unsigned char>(osName[i]));
@@ -101,7 +101,10 @@ void GlobalVariablesClass::SetFilePath(std::string osName) {
     } else {
         if (osName == "MACOS") {
             // Default Windows filepath for my laptop
-            _filePath = "/Users/cameronaidanmceleney/CLionProjects/Data/";// + FindDateToday() + "/Simulation_Data/";
+            if (isStudent)
+                _filePath = "/Users/jhw/CLionProjects/Data/";// + FindDateToday() + "/Simulation_Data/";
+            else
+                _filePath = "/Users/cameronaidanmceleney/CLionProjects/Data/";// + FindDateToday() + "/Simulation_Data/";
         } else if (osName == "WINDOWS") {
             // Default Windows filepath for my desktop
             _filePath = "D:/Data/";// + FindDateToday() + "/Simulation_Data/";

@@ -8,6 +8,8 @@ project(SpinChains)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(isStudent TRUE)
+
 # Manually specifying Eigen and FFTW directories. May be different on your system
 if(WIN32 OR WIN64)
     # Windows requires manual install or use of Unix-based Homebrew
@@ -15,10 +17,17 @@ if(WIN32 OR WIN64)
     set(FFTW_DIR "C:/Program Files/Homebrew/fftw/3.3.5")
     set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3-3.a")
 elseif(APPLE)
-    # Default Homebrew install locations on MacOS
-    set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
-    set(FFTW_DIR "/usr/local/Cellar/fftw/3.3.10_1")
-    set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3.a")
+    if(isStudent)
+        # Default Homebrew install locations on MacOS. Jiahui Wang
+        set(EIGEN_DIR "/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3")
+        set(FFTW_DIR "/opt/homebrew/Cellar/fftw/3.3.10_1")
+        set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3.a")
+    else()
+        # Default Homebrew install locations on MacOS. Cameron McEleney
+        set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
+        set(FFTW_DIR "/usr/local/Cellar/fftw/3.3.10_1")
+        set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3.a")
+    endif()
 endif()
 
 # Create lists of all sources

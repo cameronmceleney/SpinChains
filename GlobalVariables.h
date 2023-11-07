@@ -49,7 +49,7 @@ public:
      * @param os_name String variable that should be either "MacOS" or "Windows".
      * @param isEigenValues Boolean variable to indicate if the file path is for eigenvalues or numerical modelling.
      */
-    void                SetFilePath(std::string osName);
+    void                SetFilePath(std::string osName, bool isStudent);
 
     std::string         GetFileNameBase();                              // Get the custom suffix (base) name.
     void                SetFileNameBase(std::string fileNameBase);      // Set a custom suffix to all filenames for this simulation.
