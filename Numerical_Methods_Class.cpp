@@ -39,8 +39,8 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _centralDrive = false;
     _driveAllLayers = false;
     _dualDrive = false;
-    _lhsDrive = true;
-    _rhsDrive = false;
+    _lhsDrive = false;
+    _rhsDrive = true;
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
