@@ -1,12 +1,14 @@
 #include "SpinChainEigenSolverClass.h"
 #include "Numerical_Methods_Class.h"
 #include "CommonLibs.h"
+#include "test_class.h"
 
 int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 04 Jun 23)
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class NumericalMethods{};
+    test_class testClass{};
 
     // Global file-related parameters
     GV.SetCurrentTime();
@@ -15,16 +17,16 @@ int main() {
     // Global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(4000);
-    GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132.0);
-    GV.SetGyromagneticConstant(29.2);
+    GV.SetNumSpins(3952);
+    GV.SetExchangeMinVal(132.5);
+    GV.SetExchangeMaxVal(132.5);
+    GV.SetGyromagneticConstant(28.8);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
     GV.SetShouldFindEigenvalues(false);
     GV.SetIsExchangeUniform();
-    std::string method = "RK2c";
+    std::string method = "test";
 
     std::string outputFileID;
     std::cout << "Enter the unique identifier for the file: ";

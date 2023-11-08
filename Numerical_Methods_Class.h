@@ -103,7 +103,8 @@ private:
     bool                _isShockwaveOn = false;                    // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
     bool                _isShockwaveAtMax = false;                 // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
 
-    bool                _lhsDrive;                                 // Drive from the RHS if (false)
+    bool                _lhsDrive;                                 // Drive from the LHS if (true)
+    bool                _rhsDrive;                                  // Drive from the RHS if (true)
     bool                _printAllData;                             // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
     bool                _printFixedLines;                          // Saves m-component(s) of every spin at regular intervals. Total save points are set by _numberOfDataPoints.
     bool                _printFixedSites;                          // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.

@@ -39,7 +39,8 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _centralDrive = false;
     _driveAllLayers = false;
     _dualDrive = false;
-    _lhsDrive = true; // Need to create a RHSDrive flag, as this is becoming too confusing!
+    _lhsDrive = true;
+    _rhsDrive = false;
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
@@ -143,9 +144,9 @@ void Numerical_Methods_Class::FinalChecks() {
         exit(1);
     }
 
-    if ((_lhsDrive && _centralDrive) || (_lhsDrive && _dualDrive) || (_centralDrive && _dualDrive)) {
+    if ((_lhsDrive && _centralDrive) || (_lhsDrive && _dualDrive) || (_centralDrive && _dualDrive) || (_lhsDrive && _rhsDrive) || (_rhsDrive && _centralDrive)) {
         std::cout << "Warning: two (or more) conflicting driving region booleans were TRUE"
-                  << "\n_lhsDrive: " << _lhsDrive << "\n_centralDrive: " << _centralDrive << "\n_dualDrive: " << _dualDrive
+                  << "\n_lhsDrive: " << _lhsDrive << "\n_centralDrive: " << _centralDrive << "\n_dualDrive: " << _dualDrive << "\n_rhsDrive: " << _rhsDrive
                   << "\n\nExiting...";
         exit(1);
     }
@@ -232,7 +233,7 @@ void Numerical_Methods_Class::SetDrivingRegion() {
         return;
     }
 
-    if (!_lhsDrive) {
+    if (_rhsDrive) {
         // The +1 is to correct the offset of adding a zeroth spin
         _drivingRegionRHS = GV.GetNumSpins() - _numSpinsDamped - 1;
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth + 1;
