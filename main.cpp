@@ -1,14 +1,12 @@
 #include "SpinChainEigenSolverClass.h"
 #include "Numerical_Methods_Class.h"
 #include "CommonLibs.h"
-#include "test_class.h"
 
 int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 04 Jun 23)
     SpinChainEigenSolverClass SolverClass{};
     Numerical_Methods_Class NumericalMethods{};
-    test_class testClass{};
 
     // Global file-related parameters
     GV.SetCurrentTime();
