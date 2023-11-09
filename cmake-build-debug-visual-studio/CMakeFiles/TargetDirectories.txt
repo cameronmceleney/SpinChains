@@ -1,3 +1,0 @@
-C:/Users/Cameron McEleney/CLionProjects/SpinChains/cmake-build-debug-visual-studio/CMakeFiles/SpinChains.dir
-C:/Users/Cameron McEleney/CLionProjects/SpinChains/cmake-build-debug-visual-studio/CMakeFiles/edit_cache.dir
-C:/Users/Cameron McEleney/CLionProjects/SpinChains/cmake-build-debug-visual-studio/CMakeFiles/rebuild_cache.dir

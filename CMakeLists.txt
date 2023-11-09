@@ -14,7 +14,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #    set(USE_RELMINGW OFF)
 #endif()
 
-
+# Flags for optimisation and to make static executables
+#,set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -static-libstdc++ -static-libgcc")
 
 # Manually specifying Eigen and FFTW directories. May be different on your system. Numbers in PATHS are version numbers
 if(WIN32 OR WIN64)
@@ -24,13 +25,9 @@ if(WIN32 OR WIN64)
     set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3-3.a")
 
     # Set the path to the TBB library (replace with the actual path where TBB is installed)
-    set(TBB_DIR "C:/msys64/mingw64")
-    # Find the TBB package
-    find_package(TBB REQUIRED PATHS ${TBB_DIR} NO_DEFAULT_PATH)
-    if(NOT TBB_FOUND)
-        set(TBB_LIBRARIES "${TBB_DIR}/lib/libtbb.dll.a" "${TBB_DIR}/lib/libtbbmalloc.dll.a")
-        include_directories("${TBB_DIR}/include")
-    endif()
+    set(TBB_BASE "C:/msys64/mingw64")
+    set(TBB_DIR "${TBB_BASE}/include/oneapi")
+    set(TBB_LIBRARIES "${TBB_BASE}/lib/libtbb12.dll.a" "${TBB_BASE}/lib/libtbbmalloc.dll.a")
 elseif(APPLE)
     # Default Homebrew install locations on MacOS
     set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
@@ -74,13 +71,9 @@ add_executable(${PROJECT_NAME} main.cpp
 # Include directories for 3rd party libraries
 
 # FFTW requires linking to a static library
-if(TBB_FOUND)
-    include_directories(${EIGEN_DIR} ${FFTW_DIR}/include)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${FFTW_LIB} TBB::tbb)
-else()
-    include_directories(${EIGEN_DIR} ${FFTW_DIR}/include "${TBB_DIR}/include")
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${FFTW_LIB} ${TBB_LIBRARIES})
-endif()
+
+include_directories(${EIGEN_DIR} ${FFTW_DIR}/include ${TBB_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${FFTW_LIB} ${TBB_LIBRARIES})
 
 # Optional: Uncomment for -O3 optimization
 # target_compile_options(SpinChains PRIVATE -O3)

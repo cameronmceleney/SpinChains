@@ -26,7 +26,7 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Interaction Flags
     _hasShockwave = false;
-    _useDipolar = false;
+    _useDipolar = true;
     _useZeeman = true;
     _useDemagIntense = false;  // doesn't work
     _useDemagFFT = false;  // doesn't work
@@ -56,7 +56,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.7e-9;
+    _maxSimTime = 0.7e-11;
     _satMag = 0.010032;
     _stepsize = 1e-15;
 
@@ -70,7 +70,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Data Output Parameters
     _fixed_output_sites = {400, 2300, 3500, 4251};
-    _numberOfDataPoints = 100; //static_cast<int>(_maxSimTime / _recordingInterval);
+    _numberOfDataPoints = 1000; //static_cast<int>(_maxSimTime / _recordingInterval);
     _recordingInterval = 1e-15;
     _layerOfInterest = 1;
 
@@ -626,9 +626,11 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionClassic(std::vect
     }
     return totalDipoleTerms;
 }
+
 void Numerical_Methods_Class::DipolarInteractionClassicThreaded(const std::vector<double>& mxTerms, const std::vector<double>& myTerms,
                                                                 const std::vector<double>& mzTerms, std::vector <double>& dipoleXOut,
                                                                 std::vector <double>& dipoleYOut, std::vector <double>& dipoleZOut) {
+    double exchangeStiffness = 5.3e-17;
 
     tbb::parallel_for( tbb::blocked_range<int>(1, GV.GetNumSpins()),
                        [&](tbb::blocked_range<int> r) {
@@ -638,45 +640,35 @@ void Numerical_Methods_Class::DipolarInteractionClassicThreaded(const std::vecto
                 dipoleXOut[currentSite] = 0.0; dipoleYOut[currentSite] = 0.0; dipoleZOut[currentSite] = 0.0;
                 continue;
             }
-
-            double exchangeStiffness = 5.3e-17;
-            double exchangeValue;
-
             // Reference moments
             std::vector<double> originSite = {mxTerms[currentSite], myTerms[currentSite], mzTerms[currentSite]};
-
             double totalDipoleX = 0.0;
             for (int inflSite = 1; inflSite <= mxTerms.size(); inflSite++) {
                 if (inflSite < _numSpinsDamped or inflSite >= (mxTerms.size() + _numSpinsDamped)) {
                     // Guard clause to ensure that the origin site is not included in the calculation
                     continue;
                 }
-
                 if (inflSite == currentSite) {
                     // Guard clause to ensure that the origin site is not included in the calculation
                     continue;
                 }
-
                 if (_exchangeVec[inflSite] == 0) {
                     // Guard clause to ensure that the exchange vector is not zero
                     continue;
                 }
-
                 double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[inflSite]);
 
                 if (std::isinf(latticeConstant)) {
                     // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
-                    throw std::runtime_error(std::string("Lattice constant is infinite!"));
+                    throw std::runtime_error(std::string("Lattice constant is infinite in DipolarInteractionClassicThreaded at site: ") + std::to_string(currentSite) + std::string(""));
                 }
 
                 std::vector<double> positionVector = {(currentSite - inflSite) * latticeConstant, 0, 0};
 
                 double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2));
-
                 double positionVector_cubed = std::pow(positionVector_norm, 3);
                 double positionVector_fifth = std::pow(positionVector_norm, 5);
 
-                // Moment at site i
                 std::vector<double> influencingSite = {mxTerms[inflSite], myTerms[inflSite], mzTerms[inflSite]};
 
                 // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0] + originSite[1] * influencingSite[1] + originSite[2] * influencingSite[2];
@@ -687,12 +679,66 @@ void Numerical_Methods_Class::DipolarInteractionClassicThreaded(const std::vecto
                                 ((3.0 * positionVector[0] * influencingSiteDotPosition) / positionVector_fifth -
                                  influencingSite[0] / positionVector_cubed);
             }
-            dipoleXOut[currentSite] = totalDipoleX;
-            dipoleYOut[currentSite] = 0.0;
-            dipoleZOut[currentSite] = 0.0;
+            dipoleXOut[currentSite] = totalDipoleX; dipoleYOut[currentSite] = 0.0; dipoleZOut[currentSite] = 0.0;
         }
     });
 }
+
+void Numerical_Methods_Class::DipolarInteractionClassicThreaded2(const int& currentSite, const std::vector<double>& mxTerms, const std::vector<double>& myTerms,
+                                                                 const std::vector<double>& mzTerms, double& dipoleXOut,
+                                                                 double& dipoleYOut, double& dipoleZOut) {
+    if (currentSite < _numSpinsDamped or currentSite >= (GV.GetNumSpins() + _numSpinsDamped)) {
+        // Guard clause to ensure that the origin site is not included in the calculation
+        dipoleXOut = 0.0; dipoleYOut = 0.0; dipoleZOut = 0.0;
+        return;
+    }
+    double exchangeStiffness = 5.3e-17;
+    double totalDipoleX = 0.0;
+
+    // Reference moment
+    std::vector<double> originSite = {mxTerms[currentSite], myTerms[currentSite], mzTerms[currentSite]};
+
+    tbb::parallel_for( tbb::blocked_range<int>(1, GV.GetNumSpins()), [&](const tbb::blocked_range<int> r) {
+        for (int inflSite = r.begin(); inflSite <= r.end(); inflSite++) {
+            if (inflSite < _numSpinsDamped or inflSite >= (mxTerms.size() + _numSpinsDamped)) {
+                // Guard clause to ensure that the origin site is not included in the calculation
+                continue;
+            }
+            if (inflSite == currentSite) {
+                // Guard clause to ensure that the origin site is not included in the calculation
+                continue;
+            }
+            if (_exchangeVec[inflSite] == 0) {
+                // Guard clause to ensure that the exchange vector is not zero
+                continue;
+            }
+            double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[inflSite]);
+
+            if (std::isinf(latticeConstant)) {
+                // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
+                throw std::runtime_error(std::string("Lattice constant is infinite in DipolarInteractionClassicThreaded at site: ") + std::to_string(currentSite) + std::string(""));
+            }
+
+            std::vector<double> positionVector = {(currentSite - inflSite) * latticeConstant, 0, 0};
+
+            double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2));
+            double positionVector_cubed = std::pow(positionVector_norm, 3);
+            double positionVector_fifth = std::pow(positionVector_norm, 5);
+
+            std::vector<double> influencingSite = {mxTerms[inflSite], myTerms[inflSite], mzTerms[inflSite]};
+
+            // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0] + originSite[1] * influencingSite[1] + originSite[2] * influencingSite[2];
+            double originSiteDotPosition = originSite[0] * positionVector[0];
+            double influencingSiteDotPosition = influencingSite[0] * positionVector[0];
+
+            totalDipoleX += _dipoleConstant *
+                            ((3.0 * positionVector[0] * influencingSiteDotPosition) / positionVector_fifth -
+                             influencingSite[0] / positionVector_cubed);
+        }
+            dipoleXOut = totalDipoleX; dipoleYOut = 0.0; dipoleZOut = 0.0;
+    });
+}
+
 std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms,
                                                                           int& currentSite, const int& currentLayer,
                                                                           const double& exchangeStiffness) {
@@ -2127,43 +2173,64 @@ void Numerical_Methods_Class::RK2Threaded(const std::vector<double>& mxIn, const
                                           std::vector<double>& dipoleX, std::vector<double>& dipoleY, std::vector<double>& dipoleZ,
                                           double& currentTime, double& stepSize, int& currentIteration, std::string rkStage) {
     if (_useDemagIntense)
-            DemagnetisationFieldIntense(demagX, demagY, demagZ, _mx0, _my0, _mz0);
-    else if (_useDemagFFT) {
-        std::string rkStageName = "2-1";
-        DemagField1DReal(demagX, demagY, demagZ, _mx0, _my0, _mz0, currentIteration, rkStage);
-    }
+        DemagnetisationFieldIntense(demagX, demagY, demagZ, mxIn, myIn, mzIn);
 
+    std::vector<double> mxInMu, myInMu, mzInMu;
     if (_useDipolar) {
-        std::vector<double> mxInMu = mxIn, myInMu = myIn, mzInMu = mzIn;
+        mxInMu = mxIn, myInMu = myIn, mzInMu = mzIn;
         for (int i = 1; i <= mxIn.size(); i++) {
             mxInMu[i] *= _muMagnitudeIron;
             myInMu[i] *= _muMagnitudeIron;
             mzInMu[i] *= _muMagnitudeIron;
         }
-
-        DipolarInteractionClassicThreaded(mxInMu, mzInMu, mzIn, dipoleX, dipoleY, dipoleZ);
     }
-    tbb::parallel_for( tbb::blocked_range<int>(1,GV.GetNumSpins()),
-                       [&, this](tbb::blocked_range<int> r) {
+
+    // tbb::global_control c(tbb::global_control::max_allowed_parallelism, 1);
+
+    tbb::parallel_for( tbb::blocked_range<int>(1, GV.GetNumSpins()),
+                       [&](const tbb::blocked_range<int> r) {
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
         for (int site = r.begin(); site <= r.end(); site++) {
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
 
+            double hxKLocal, hyKLocal, hzKLocal;
+            double mxKLocal, myKLocal, mzKLocal;
+            double dipoleXLocal, dipoleYLocal, dipoleZLocal;
+
+            if (_useDipolar)
+                DipolarInteractionClassicThreaded2(site, mxInMu, myInMu, mzInMu, dipoleXLocal, dipoleYLocal, dipoleZLocal);
+
+            /*
+            tbb::parallel_invoke(
+                // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+                [&] { hxKLocal = EffectiveFieldX(site, 0, mxIn[spinLHS], mxIn[site], mxIn[spinRHS], dipoleX[site], demagX[site], currentTime); },
+                [&] { hyKLocal = EffectiveFieldY(site, 0, myIn[spinLHS], myIn[site], myIn[spinRHS], dipoleY[site], demagY[site]); },
+                [&] { hzKLocal = EffectiveFieldZ(site, 0, mzIn[spinLHS], mzIn[site], mzIn[spinRHS], dipoleZ[site], demagZ[site]); }
+            );
+
+            tbb::parallel_invoke(
+                // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target sit
+                [&] { mxKLocal = MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal); },
+                [&] { myKLocal = MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal); },
+                [&] { mzKLocal = MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal); }
+            );
+             */
+
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK = EffectiveFieldX(site, 0, mxIn[spinLHS], mxIn[site], mxIn[spinRHS], dipoleX[site], demagX[site], currentTime);
-            double hyK = EffectiveFieldY(site, 0, myIn[spinLHS], myIn[site], myIn[spinRHS], dipoleY[site], demagY[site]);
-            double hzK = EffectiveFieldZ(site, 0, mzIn[spinLHS], mzIn[site], mzIn[spinRHS], dipoleZ[site], demagZ[site]);
+            hxKLocal = EffectiveFieldX(site, 0, mxIn[spinLHS], mxIn[site], mxIn[spinRHS], dipoleXLocal, demagX[site], currentTime);
+            hyKLocal = EffectiveFieldY(site, 0, myIn[spinLHS], myIn[site], myIn[spinRHS], dipoleYLocal, demagY[site]);
+            hzKLocal = EffectiveFieldZ(site, 0, mzIn[spinLHS], mzIn[site], mzIn[spinRHS], dipoleZLocal, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK = MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hxK, hyK, hzK);
-            double myK = MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hxK, hyK, hzK);
-            double mzK = MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hxK, hyK, hzK);
+            mxKLocal = MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
+            myKLocal = MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
+            mzKLocal = MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
 
             // Find (m0 + k1/2) for each site, which is used in the next stage.
-            mxOut[site] = mxIn[site] + _stepsizeHalf * mxK;
-            myOut[site] = myIn[site] + _stepsizeHalf * myK;
-            mzOut[site] = mzIn[site] + _stepsizeHalf * mzK;
+            mxOut[site] = _mx0[site] + stepSize * mxKLocal;
+            myOut[site] = _my0[site] + stepSize * myKLocal;
+            mzOut[site] = _mz0[site] + stepSize * mzKLocal;
 
             if (std::isinf(mxOut[site]) or std::isnan(mxOut[site]))
                 throw std::runtime_error("mxOut is inf or nan at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
@@ -2173,19 +2240,23 @@ void Numerical_Methods_Class::RK2Threaded(const std::vector<double>& mxIn, const
 
             if (std::isinf(mzOut[site]) or std::isnan(mzOut[site]))
                 throw std::runtime_error("mzOut is inf or nan at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
-
-            if (_shouldTrackMValues and rkStage == "2") {
-                double mIterationNorm = sqrt(pow(mxOut[site], 2) + pow(myOut[site], 2) + pow(mzOut[site], 2));
-                if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
-                        // if (mIterationNorm > 1.001) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
-            }
         }
     }, tbb::auto_partitioner());
 
+    if (_shouldTrackMValues and rkStage == "2") {
+        for (int site = 1; site <= GV.GetNumSpins(); site++) {
+            double mIterationNorm = sqrt(pow(mxOut[site], 2) + pow(myOut[site], 2) + pow(mzOut[site], 2));
+            if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+        }
+    }
+
+    // if (mIterationNorm > 1.001) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
+            // }
+
     if (_useDemagFFT)
         std::fill(demagX.begin(), demagX.end(), 0.0); std::fill(demagY.begin(), demagY.end(), 0.0); std::fill(demagZ.begin(), demagZ.end(), 0.0);
-    if (_useDipolar)
-        std::fill(dipoleX.begin(), dipoleX.end(), 0.0); std::fill(dipoleY.begin(), dipoleY.end(), 0.0); std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
+    // if (_useDipolar)
+    //     std::fill(dipoleX.begin(), dipoleX.end(), 0.0); std::fill(dipoleY.begin(), dipoleY.end(), 0.0); std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
 }
 void Numerical_Methods_Class::SolveRK2ClassicThreaded() {
     // Only uses a single spin chain to solve the RK2 midpoint method.

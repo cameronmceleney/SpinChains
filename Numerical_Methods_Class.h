@@ -14,7 +14,8 @@
 #include <random>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
-
+#include <tbb/global_control.h>
+#include <tbb/parallel_invoke.h>
 extern "C" {
     #include <fftw3.h>
 }
@@ -266,6 +267,9 @@ private:
     void DipolarInteractionClassicThreaded(const std::vector<double>& mxTermsIn, const std::vector<double>& myTermsIn,
                                            const std::vector<double>& mzTermsIn,std::vector <double>& dipoleXOut,
                                            std::vector <double>& dipoleYOut, std::vector <double>& dipoleZOut);
+    void DipolarInteractionClassicThreaded2(const int& currentSite, const std::vector<double>& mxTermsIn, const std::vector<double>& myTermsIn,
+                                            const std::vector<double>& mzTermsIn, double& dipoleXOut,
+                                            double& dipoleYOut, double& dipoleZOut);
 
     // Description missing
     std::vector<double> DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms,
@@ -296,17 +300,17 @@ private:
      */
 
     // Description missing
-    double              EffectiveFieldX (const int& site, const int& layer, const double& mxLHS, const double& mxMID,
+    inline double              EffectiveFieldX (const int& site, const int& layer, const double& mxLHS, const double& mxMID,
                                          const double& mxRHS, const double& dipoleTerm,
                                          const double& demagTerm, const double& current_time);
 
     // Description missing
-    double              EffectiveFieldY (const int& site, const int& layer, const double& myLHS, const double& myMID,
+    inline double              EffectiveFieldY (const int& site, const int& layer, const double& myLHS, const double& myMID,
                                          const double& myRHS, const double& dipoleTerm,
                                          const double& demagTerm);
 
     // Description missing
-    double              EffectiveFieldZ (const int& site, const int& layer, const double& mzLHS, const double& mzMID,
+    inline double              EffectiveFieldZ (const int& site, const int& layer, const double& mzLHS, const double& mzMID,
                                          const double& mzRHS, const double& dipoleTerm,
                                          const double& demagTerm);
 
@@ -337,15 +341,15 @@ void                    DemagFieldsUsingDipoles(std::vector<double> mxTerms, std
      */
 
     // Simple version of magnetic moment x-component for single-layered systems
-    double              MagneticMomentX (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
+    inline double              MagneticMomentX (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
                                          const double& hxMID, const double& hyMID, const double& hzMID);
 
     // Simple version of magnetic moment y-component for single-layered systems
-    double              MagneticMomentY (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
+    inline double              MagneticMomentY (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
                                          const double& hxMID, const double& hyMID, const double& hzMID);
 
     // Simple version of magnetic moment z-component for single-layered systems
-    double              MagneticMomentZ (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
+    inline double              MagneticMomentZ (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
                                          const double& hxMID, const double& hyMID, const double& hzMID);
 
     // Full version of magnetic moment x-component function for multi-layered systems
