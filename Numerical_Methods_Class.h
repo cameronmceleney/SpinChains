@@ -12,6 +12,9 @@
 #include <list>
 #include <map>
 #include <random>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
 extern "C" {
     #include <fftw3.h>
 }
@@ -260,6 +263,10 @@ private:
     std::vector<double> DipolarInteractionClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                      std::vector<double> mzTerms, std::vector<int> sitePositions);
 
+    void DipolarInteractionClassicThreaded(const std::vector<double>& mxTermsIn, const std::vector<double>& myTermsIn,
+                                           const std::vector<double>& mzTermsIn,std::vector <double>& dipoleXOut,
+                                           std::vector <double>& dipoleYOut, std::vector <double>& dipoleZOut);
+
     // Description missing
     std::vector<double> DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms,
                                                      int& currentSite, const int& currentLayer=0,
@@ -442,6 +449,12 @@ public:
 
     // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
     void                SolveRK2Classic();
+    void                RK2Threaded(const std::vector<double>& mxIn, const std::vector<double>& myIn, const std::vector<double>& mzIn,
+                                    std::vector<double>& mxOut, std::vector<double>& myOut, std::vector<double>& mzOut,
+                                    std::vector<double>& demagX, std::vector<double>& demagY, std::vector<double>& demagZ,
+                                    std::vector<double>& dipoleX, std::vector<double>& dipoleY, std::vector<double>& dipoleZ,
+                                    double& currentTime, double& stepSize, int& currentIteration, std::string rkStage);
+    void                SolveRK2ClassicThreaded();
 
     // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
     void                SolveRK2();

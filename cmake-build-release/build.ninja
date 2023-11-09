@@ -51,7 +51,7 @@ build cmake_object_order_depends_target_SpinChains: phony || CMakeFiles\SpinChai
 
 build CMakeFiles\SpinChains.dir\main.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\main.cpp || cmake_object_order_depends_target_SpinChains
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD
-  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include"
+  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include" -external:IC:\msys64\mingw64\include -external:W0
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
   TARGET_COMPILE_PDB = CMakeFiles\SpinChains.dir\
@@ -59,7 +59,7 @@ build CMakeFiles\SpinChains.dir\main.cpp.obj: CXX_COMPILER__SpinChains_unscanned
 
 build CMakeFiles\SpinChains.dir\GlobalVariables.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\GlobalVariables.cpp || cmake_object_order_depends_target_SpinChains
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD
-  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include"
+  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include" -external:IC:\msys64\mingw64\include -external:W0
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
   TARGET_COMPILE_PDB = CMakeFiles\SpinChains.dir\
@@ -67,7 +67,7 @@ build CMakeFiles\SpinChains.dir\GlobalVariables.cpp.obj: CXX_COMPILER__SpinChain
 
 build CMakeFiles\SpinChains.dir\linspace.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\linspace.cpp || cmake_object_order_depends_target_SpinChains
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD
-  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include"
+  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include" -external:IC:\msys64\mingw64\include -external:W0
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
   TARGET_COMPILE_PDB = CMakeFiles\SpinChains.dir\
@@ -75,7 +75,7 @@ build CMakeFiles\SpinChains.dir\linspace.cpp.obj: CXX_COMPILER__SpinChains_unsca
 
 build CMakeFiles\SpinChains.dir\NewSolver.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\NewSolver.cpp || cmake_object_order_depends_target_SpinChains
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD
-  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include"
+  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include" -external:IC:\msys64\mingw64\include -external:W0
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
   TARGET_COMPILE_PDB = CMakeFiles\SpinChains.dir\
@@ -83,7 +83,7 @@ build CMakeFiles\SpinChains.dir\NewSolver.cpp.obj: CXX_COMPILER__SpinChains_unsc
 
 build CMakeFiles\SpinChains.dir\Numerical_Methods_Class.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\Numerical_Methods_Class.cpp || cmake_object_order_depends_target_SpinChains
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD
-  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include"
+  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include" -external:IC:\msys64\mingw64\include -external:W0
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
   TARGET_COMPILE_PDB = CMakeFiles\SpinChains.dir\
@@ -91,7 +91,7 @@ build CMakeFiles\SpinChains.dir\Numerical_Methods_Class.cpp.obj: CXX_COMPILER__S
 
 build CMakeFiles\SpinChains.dir\SpinChainEigenSolverClass.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\SpinChainEigenSolverClass.cpp || cmake_object_order_depends_target_SpinChains
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD
-  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include"
+  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include" -external:IC:\msys64\mingw64\include -external:W0
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
   TARGET_COMPILE_PDB = CMakeFiles\SpinChains.dir\
@@ -99,7 +99,7 @@ build CMakeFiles\SpinChains.dir\SpinChainEigenSolverClass.cpp.obj: CXX_COMPILER_
 
 build CMakeFiles\SpinChains.dir\TestClass.cpp.obj: CXX_COMPILER__SpinChains_unscanned_Release C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\TestClass.cpp || cmake_object_order_depends_target_SpinChains
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD
-  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include"
+  INCLUDES = -I"C:\Program Files\Homebrew\eigen\3.4.0" -I"C:\Program Files\Homebrew\fftw\3.3.5\include" -external:IC:\msys64\mingw64\include -external:W0
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   OBJECT_FILE_DIR = CMakeFiles\SpinChains.dir
   TARGET_COMPILE_PDB = CMakeFiles\SpinChains.dir\
@@ -113,10 +113,10 @@ build CMakeFiles\SpinChains.dir\TestClass.cpp.obj: CXX_COMPILER__SpinChains_unsc
 #############################################
 # Link the executable SpinChains.exe
 
-build SpinChains.exe: CXX_EXECUTABLE_LINKER__SpinChains_Release CMakeFiles\SpinChains.dir\main.cpp.obj CMakeFiles\SpinChains.dir\GlobalVariables.cpp.obj CMakeFiles\SpinChains.dir\linspace.cpp.obj CMakeFiles\SpinChains.dir\NewSolver.cpp.obj CMakeFiles\SpinChains.dir\Numerical_Methods_Class.cpp.obj CMakeFiles\SpinChains.dir\SpinChainEigenSolverClass.cpp.obj CMakeFiles\SpinChains.dir\TestClass.cpp.obj | C$:\Program$ Files\Homebrew\fftw\3.3.5\lib\libfftw3-3.a
+build SpinChains.exe: CXX_EXECUTABLE_LINKER__SpinChains_Release CMakeFiles\SpinChains.dir\main.cpp.obj CMakeFiles\SpinChains.dir\GlobalVariables.cpp.obj CMakeFiles\SpinChains.dir\linspace.cpp.obj CMakeFiles\SpinChains.dir\NewSolver.cpp.obj CMakeFiles\SpinChains.dir\Numerical_Methods_Class.cpp.obj CMakeFiles\SpinChains.dir\SpinChainEigenSolverClass.cpp.obj CMakeFiles\SpinChains.dir\TestClass.cpp.obj | C$:\Program$ Files\Homebrew\fftw\3.3.5\lib\libfftw3-3.a C$:\msys64\mingw64\lib\libtbb12.dll.a
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD
   LINK_FLAGS = /machine:x64 /INCREMENTAL:NO /subsystem:console
-  LINK_LIBRARIES = "C:\Program Files\Homebrew\fftw\3.3.5\lib\libfftw3-3.a"  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
+  LINK_LIBRARIES = "C:\Program Files\Homebrew\fftw\3.3.5\lib\libfftw3-3.a"  C:\msys64\mingw64\lib\libtbb12.dll.a  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
   OBJECT_DIR = CMakeFiles\SpinChains.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -170,14 +170,14 @@ build all: phony SpinChains.exe
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeRCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\WindowsPaths.cmake C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\CMakeLists.txt CMakeCache.txt CMakeFiles\3.26.4\CMakeCCompiler.cmake CMakeFiles\3.26.4\CMakeCXXCompiler.cmake CMakeFiles\3.26.4\CMakeRCCompiler.cmake CMakeFiles\3.26.4\CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeRCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\WindowsPaths.cmake C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\CMakeLists.txt C$:\msys64\mingw64\lib\cmake\TBB\TBBConfig.cmake C$:\msys64\mingw64\lib\cmake\TBB\TBBConfigVersion.cmake C$:\msys64\mingw64\lib\cmake\TBB\TBBTargets-release.cmake C$:\msys64\mingw64\lib\cmake\TBB\TBBTargets.cmake CMakeCache.txt CMakeFiles\3.26.4\CMakeCCompiler.cmake CMakeFiles\3.26.4\CMakeCXXCompiler.cmake CMakeFiles\3.26.4\CMakeRCCompiler.cmake CMakeFiles\3.26.4\CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeRCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\WindowsPaths.cmake C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\CMakeLists.txt CMakeCache.txt CMakeFiles\3.26.4\CMakeCCompiler.cmake CMakeFiles\3.26.4\CMakeCXXCompiler.cmake CMakeFiles\3.26.4\CMakeRCCompiler.cmake CMakeFiles\3.26.4\CMakeSystem.cmake: phony
+build C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeRCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Compiler\MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\Windows.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.3\bin\cmake\win\x64\share\cmake-3.26\Modules\Platform\WindowsPaths.cmake C$:\Users\Cameron$ McEleney\CLionProjects\SpinChains\CMakeLists.txt C$:\msys64\mingw64\lib\cmake\TBB\TBBConfig.cmake C$:\msys64\mingw64\lib\cmake\TBB\TBBConfigVersion.cmake C$:\msys64\mingw64\lib\cmake\TBB\TBBTargets-release.cmake C$:\msys64\mingw64\lib\cmake\TBB\TBBTargets.cmake CMakeCache.txt CMakeFiles\3.26.4\CMakeCCompiler.cmake CMakeFiles\3.26.4\CMakeCXXCompiler.cmake CMakeFiles\3.26.4\CMakeRCCompiler.cmake CMakeFiles\3.26.4\CMakeSystem.cmake: phony
 
 
 #############################################

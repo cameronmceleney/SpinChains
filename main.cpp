@@ -17,16 +17,16 @@ int main() {
     // Global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(3952);
-    GV.SetExchangeMinVal(132.5);
-    GV.SetExchangeMaxVal(132.5);
+    GV.SetNumSpins(4000);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(28.8);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
     GV.SetShouldFindEigenvalues(false);
     GV.SetIsExchangeUniform();
-    std::string method = "test";
+    std::string method = "RK2ct";
 
     std::string outputFileID;
     std::cout << "Enter the unique identifier for the file: ";
@@ -51,6 +51,8 @@ int main() {
             NumericalMethods.SolveRK2();
         else if (method == "RK2c")
             NumericalMethods.SolveRK2Classic();
+        else if (method == "RK2ct")
+            NumericalMethods.SolveRK2ClassicThreaded();
         else if (method == "test")
             TestClass.testFunction();
     }

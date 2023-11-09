@@ -26,7 +26,7 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Interaction Flags
     _hasShockwave = false;
-    _useDipolar = true;
+    _useDipolar = false;
     _useZeeman = true;
     _useDemagIntense = false;  // doesn't work
     _useDemagFFT = false;  // doesn't work
@@ -45,20 +45,20 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Output Flags
     _printAllData = false;
-    _printFixedLines = false;
-    _printFixedSites = true;
+    _printFixedLines = true;
+    _printFixedSites = false;
 }
 void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Main Parameters
     _ambientTemperature = 273; // Kelvin
-    _drivingFreq = 12.54 * 1e9;
+    _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.2e-9;
+    _maxSimTime = 0.7e-9;
     _satMag = 0.010032;
-    _stepsize = 2.5e-15;
+    _stepsize = 1e-15;
 
     // Shockwave Parameters
     _iterStartShock = 0.0;
@@ -70,7 +70,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Data Output Parameters
     _fixed_output_sites = {400, 2300, 3500, 4251};
-    _numberOfDataPoints = 10000; //static_cast<int>(_maxSimTime / _recordingInterval);
+    _numberOfDataPoints = 100; //static_cast<int>(_maxSimTime / _recordingInterval);
     _recordingInterval = 1e-15;
     _layerOfInterest = 1;
 
@@ -82,7 +82,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     // Spin chain and multi-layer Parameters
     _drivingRegionWidth = 200;
     _numberNeighbours = -1;
-    _numSpinsDamped = 300;
+    _numSpinsDamped = 0;
     _totalLayers = 1;
 }
 void Numerical_Methods_Class::NumericalMethodsProcessing() {
@@ -625,6 +625,73 @@ std::vector<double> Numerical_Methods_Class::DipolarInteractionClassic(std::vect
         }
     }
     return totalDipoleTerms;
+}
+void Numerical_Methods_Class::DipolarInteractionClassicThreaded(const std::vector<double>& mxTerms, const std::vector<double>& myTerms,
+                                                                const std::vector<double>& mzTerms, std::vector <double>& dipoleXOut,
+                                                                std::vector <double>& dipoleYOut, std::vector <double>& dipoleZOut) {
+
+    tbb::parallel_for( tbb::blocked_range<int>(1, GV.GetNumSpins()),
+                       [&](tbb::blocked_range<int> r) {
+        for (int currentSite = r.begin(); currentSite <= r.end(); currentSite++) {
+            if (currentSite < _numSpinsDamped or currentSite >= (GV.GetNumSpins() + _numSpinsDamped)) {
+                // Guard clause to ensure that the origin site is not included in the calculation
+                dipoleXOut[currentSite] = 0.0; dipoleYOut[currentSite] = 0.0; dipoleZOut[currentSite] = 0.0;
+                continue;
+            }
+
+            double exchangeStiffness = 5.3e-17;
+            double exchangeValue;
+
+            // Reference moments
+            std::vector<double> originSite = {mxTerms[currentSite], myTerms[currentSite], mzTerms[currentSite]};
+
+            double totalDipoleX = 0.0;
+            for (int inflSite = 1; inflSite <= mxTerms.size(); inflSite++) {
+                if (inflSite < _numSpinsDamped or inflSite >= (mxTerms.size() + _numSpinsDamped)) {
+                    // Guard clause to ensure that the origin site is not included in the calculation
+                    continue;
+                }
+
+                if (inflSite == currentSite) {
+                    // Guard clause to ensure that the origin site is not included in the calculation
+                    continue;
+                }
+
+                if (_exchangeVec[inflSite] == 0) {
+                    // Guard clause to ensure that the exchange vector is not zero
+                    continue;
+                }
+
+                double latticeConstant = std::sqrt(exchangeStiffness / _exchangeVec[inflSite]);
+
+                if (std::isinf(latticeConstant)) {
+                    // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
+                    throw std::runtime_error(std::string("Lattice constant is infinite!"));
+                }
+
+                std::vector<double> positionVector = {(currentSite - inflSite) * latticeConstant, 0, 0};
+
+                double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2));
+
+                double positionVector_cubed = std::pow(positionVector_norm, 3);
+                double positionVector_fifth = std::pow(positionVector_norm, 5);
+
+                // Moment at site i
+                std::vector<double> influencingSite = {mxTerms[inflSite], myTerms[inflSite], mzTerms[inflSite]};
+
+                // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0] + originSite[1] * influencingSite[1] + originSite[2] * influencingSite[2];
+                double originSiteDotPosition = originSite[0] * positionVector[0];
+                double influencingSiteDotPosition = influencingSite[0] * positionVector[0];
+
+                totalDipoleX += _dipoleConstant *
+                                ((3.0 * positionVector[0] * influencingSiteDotPosition) / positionVector_fifth -
+                                 influencingSite[0] / positionVector_cubed);
+            }
+            dipoleXOut[currentSite] = totalDipoleX;
+            dipoleYOut[currentSite] = 0.0;
+            dipoleZOut[currentSite] = 0.0;
+        }
+    });
 }
 std::vector<double> Numerical_Methods_Class::DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms,
                                                                           int& currentSite, const int& currentLayer,
@@ -2043,6 +2110,145 @@ void Numerical_Methods_Class::SolveRK2Classic() {
     mxRK2File.close();
     //myRK2File.close();
     //mzRK2File.close();
+
+    if (GV.GetEmailWhenCompleted()) {
+        CreateMetadata(true);
+    }
+
+    if (_shouldTrackMValues)
+        std::cout << "\nMax norm. value of M is: " << _largestMNorm << std::endl;
+
+    // Filename can be copy/pasted from C++ console to Python function's console.
+    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+}
+void Numerical_Methods_Class::RK2Threaded(const std::vector<double>& mxIn, const std::vector<double>& myIn, const std::vector<double>& mzIn,
+                                          std::vector<double>& mxOut, std::vector<double>& myOut, std::vector<double>& mzOut,
+                                          std::vector<double>& demagX, std::vector<double>& demagY, std::vector<double>& demagZ,
+                                          std::vector<double>& dipoleX, std::vector<double>& dipoleY, std::vector<double>& dipoleZ,
+                                          double& currentTime, double& stepSize, int& currentIteration, std::string rkStage) {
+    if (_useDemagIntense)
+            DemagnetisationFieldIntense(demagX, demagY, demagZ, _mx0, _my0, _mz0);
+    else if (_useDemagFFT) {
+        std::string rkStageName = "2-1";
+        DemagField1DReal(demagX, demagY, demagZ, _mx0, _my0, _mz0, currentIteration, rkStage);
+    }
+
+    if (_useDipolar) {
+        std::vector<double> mxInMu = mxIn, myInMu = myIn, mzInMu = mzIn;
+        for (int i = 1; i <= mxIn.size(); i++) {
+            mxInMu[i] *= _muMagnitudeIron;
+            myInMu[i] *= _muMagnitudeIron;
+            mzInMu[i] *= _muMagnitudeIron;
+        }
+
+        DipolarInteractionClassicThreaded(mxInMu, mzInMu, mzIn, dipoleX, dipoleY, dipoleZ);
+    }
+    tbb::parallel_for( tbb::blocked_range<int>(1,GV.GetNumSpins()),
+                       [&, this](tbb::blocked_range<int> r) {
+        // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
+        for (int site = r.begin(); site <= r.end(); site++) {
+            // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
+            int spinLHS = site - 1, spinRHS = site + 1;
+
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            double hxK = EffectiveFieldX(site, 0, mxIn[spinLHS], mxIn[site], mxIn[spinRHS], dipoleX[site], demagX[site], currentTime);
+            double hyK = EffectiveFieldY(site, 0, myIn[spinLHS], myIn[site], myIn[spinRHS], dipoleY[site], demagY[site]);
+            double hzK = EffectiveFieldZ(site, 0, mzIn[spinLHS], mzIn[site], mzIn[spinRHS], dipoleZ[site], demagZ[site]);
+
+            // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mxK = MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hxK, hyK, hzK);
+            double myK = MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hxK, hyK, hzK);
+            double mzK = MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hxK, hyK, hzK);
+
+            // Find (m0 + k1/2) for each site, which is used in the next stage.
+            mxOut[site] = mxIn[site] + _stepsizeHalf * mxK;
+            myOut[site] = myIn[site] + _stepsizeHalf * myK;
+            mzOut[site] = mzIn[site] + _stepsizeHalf * mzK;
+
+            if (std::isinf(mxOut[site]) or std::isnan(mxOut[site]))
+                throw std::runtime_error("mxOut is inf or nan at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+
+            if (std::isinf(myOut[site]) or std::isnan(myOut[site]))
+                throw std::runtime_error("myOut is inf or nan at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+
+            if (std::isinf(mzOut[site]) or std::isnan(mzOut[site]))
+                throw std::runtime_error("mzOut is inf or nan at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+
+            if (_shouldTrackMValues and rkStage == "2") {
+                double mIterationNorm = sqrt(pow(mxOut[site], 2) + pow(myOut[site], 2) + pow(mzOut[site], 2));
+                if ((_largestMNorm) > (1.0 - mIterationNorm)) { _largestMNorm = (1.0 - mIterationNorm); }
+                        // if (mIterationNorm > 1.001) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
+            }
+        }
+    }, tbb::auto_partitioner());
+
+    if (_useDemagFFT)
+        std::fill(demagX.begin(), demagX.end(), 0.0); std::fill(demagY.begin(), demagY.end(), 0.0); std::fill(demagZ.begin(), demagZ.end(), 0.0);
+    if (_useDipolar)
+        std::fill(dipoleX.begin(), dipoleX.end(), 0.0); std::fill(dipoleY.begin(), dipoleY.end(), 0.0); std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
+}
+void Numerical_Methods_Class::SolveRK2ClassicThreaded() {
+    // Only uses a single spin chain to solve the RK2 midpoint method.
+
+    // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
+    std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+
+    if (_isFM) {
+        InformUserOfCodeType("RK2 Midpoint (FM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)");
+    } else if (!_isFM) {
+        InformUserOfCodeType("RK2 Midpoint (AFM)");
+        CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
+    }
+
+    if (GV.GetEmailWhenCompleted())
+        CreateMetadata();
+
+    progressbar bar(100);
+
+    // Faster to declare memory and then read/write repeatedly
+    std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(GV.GetNumSpins() + 2, 0.0);
+    std::vector<double> dipoleX(GV.GetNumSpins() + 2, 0.0), dipoleY(GV.GetNumSpins() + 2, 0.0), dipoleZ(GV.GetNumSpins() + 2, 0.0);
+
+    for (int iteration = _iterationStart; iteration <= _iterationEnd; iteration++) {
+
+        if (_iterationEnd >= 100 && iteration % (_iterationEnd / 100) == 0)
+            bar.update(); // Doesn't work for fewer than 100 iterations
+
+        TestShockwaveConditions(iteration);
+
+        double t0 = _totalTime, t0HalfStep = _totalTime + _stepsizeHalf;
+
+        // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = mx0 + (h * k1 / 2) etc
+        std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
+        RK2Threaded(_mx0, _my0, _mz0, mx1, my1, mz1, demagX, demagY, demagZ, dipoleX, dipoleY, dipoleZ, t0, _stepsizeHalf, iteration, "1");
+
+        // RK2 Stage 2. Takes (m0 + k1/2) as inputs. The estimations of the m-components values for the next iteration.
+        std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
+        RK2Threaded(mx1, my1, mz1, mx2, my2, mz2, demagX, demagY, demagZ, dipoleX, dipoleY, dipoleZ, t0, _stepsize, iteration, "2");
+
+        // Everything below here is part of the class method, but not the internal RK2 stage loops.
+
+        /**
+         * Removes (possibly) large arrays as they can lead to memory overloads later in main.cpp. Failing to clear
+         * these between loop iterations sometimes led to incorrect values cropping up.
+         */
+        _mx0.clear(); _my0.clear(); _mz0.clear();
+        mx1.clear(); my1.clear(); mz1.clear();
+
+        SaveDataToFile(mxRK2File, mx2, iteration);
+
+        //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
+        _mx0 = mx2; _my0 = my2; _mz0 = mz2;
+
+        if (iteration == _forceStopAtIteration)
+            exit(0);
+
+        _totalTime += _stepsize;
+    }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
+
+    // Ensures files are closed; sometimes are left open if the writing process above fails
+    mxRK2File.close();
 
     if (GV.GetEmailWhenCompleted()) {
         CreateMetadata(true);
