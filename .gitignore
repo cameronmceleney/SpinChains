@@ -1,2 +1,4 @@
 /.idea/
-/cmake-build-debug/
+/cmake-build-debug-mingw64/
+/cmake-build-release-mingw64/
+/BaseVEnv/

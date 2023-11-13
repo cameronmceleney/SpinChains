@@ -101,6 +101,7 @@ private:
     bool                _driveAllLayers;
     bool                _dualDrive;                                // Drive from both sides of the system
     bool                _hasShockwave;                             // Simulation contains a single driving bias field if (false).
+    bool                _driveDiscreteSites;
 
     bool                _hasStaticDrive;                           // Selects (if true) whether drive has sinusoidal term
     bool                _isFM;
@@ -164,6 +165,9 @@ private:
 
     // Magnetic moment along z-axis (m_z)
     std::vector<double> _mz0{0};
+
+    // Only drive these sites
+    std::vector<int> _discreteDrivenSites;
 
     /*
      * ################################################################################################################
@@ -249,6 +253,9 @@ private:
 
     // Description missing
     std::vector<double> ComputeStochasticTerm(const int& site, const double &timeStep);
+
+    //
+    bool isSiteDriven(const int& site);
 
     /*
      * ################################################################################################################

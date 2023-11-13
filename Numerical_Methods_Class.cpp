@@ -26,7 +26,7 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 
     // Interaction Flags
     _hasShockwave = false;
-    _useDipolar = true;
+    _useDipolar = false;
     _useZeeman = true;
     _useDemagIntense = false;  // doesn't work
     _useDemagFFT = false;  // doesn't work
@@ -36,10 +36,11 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _useMultilayer = false;
 
     // Drive Flags
+    _driveDiscreteSites = true;
     _centralDrive = false;
     _driveAllLayers = false;
     _dualDrive = false;
-    _lhsDrive = true; // Need to create a RHSDrive flag, as this is becoming too confusing!
+    _lhsDrive = false; // Need to create a RHSDrive flag, as this is becoming too confusing!
     _hasStaticDrive = false;
     _shouldDriveCease = false;
 
@@ -52,11 +53,11 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Main Parameters
     _ambientTemperature = 273; // Kelvin
-    _drivingFreq = 42.5 * 1e9;
+    _drivingFreq = 12.54 * 1e12;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.7e-11;
+    _maxSimTime = 0.1e-9;
     _satMag = 0.010032;
     _stepsize = 1e-15;
 
@@ -69,9 +70,9 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _shockwaveScaling = 1;
 
     // Data Output Parameters
-    _fixed_output_sites = {400, 2300, 3500, 4251};
-    _numberOfDataPoints = 1000; //static_cast<int>(_maxSimTime / _recordingInterval);
-    _recordingInterval = 1e-15;
+    _fixed_output_sites = {301,600, 1288};
+    _numberOfDataPoints = 100; //static_cast<int>(_maxSimTime / _recordingInterval);
+    _recordingInterval = 2.5e-15;
     _layerOfInterest = 1;
 
     // Damping Factors
@@ -80,9 +81,10 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _gilbertUpper = 1e0;
 
     // Spin chain and multi-layer Parameters
+    _discreteDrivenSites = {5000};
     _drivingRegionWidth = 200;
     _numberNeighbours = -1;
-    _numSpinsDamped = 0;
+    _numSpinsDamped = 300;
     _totalLayers = 1;
 }
 void Numerical_Methods_Class::NumericalMethodsProcessing() {
@@ -183,6 +185,10 @@ void Numerical_Methods_Class::FinalChecks() {
         exit(1);
     }
 
+    if (_driveDiscreteSites && _discreteDrivenSites.empty()) {
+        std::cout << "Warning: Request to drive discrete sites, but no sites were given [_discreteDrivenSites].";
+        exit(1);
+    }
 }
 void Numerical_Methods_Class::SetDampingRegion() {
     // Generate the damping regions that are appended to either end of the spin chain.
@@ -214,6 +220,16 @@ void Numerical_Methods_Class::SetDrivingRegion() {
      * Set up driving regions for the system. The LHS option is solely for drives from the left of the system. The RHS options contains the
      * drive from the right, as well as an option to drive from the centre.
      */
+
+    if (_driveDiscreteSites) {
+        for (int& drivenSite: _discreteDrivenSites)
+            drivenSite += _numSpinsDamped;
+
+        _drivingRegionWidth = 0;
+        _drivingRegionLHS = 0;
+        _drivingRegionRHS = 0;
+        return;
+    }
 
     if (_centralDrive) {
         _drivingRegionLHS = (_numSpinsInChain/2) +_numSpinsDamped - (_drivingRegionWidth / 2);
@@ -1235,6 +1251,25 @@ std::vector<double> Numerical_Methods_Class::ComputeStochasticTerm(const int& si
     return stochasticField;
 }
 
+bool Numerical_Methods_Class::isSiteDriven(const int& site) {
+    if (_driveDiscreteSites) {
+        // Check if site is in the _driveDiscreteSites
+        for (const int &discreteSite: _discreteDrivenSites) {
+            if (site == discreteSite) {
+                return true;
+            }
+        }
+    } else {
+        // Check if site is within the driving region boundaries
+        if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
+            return true;
+    }
+    }
+
+    // If site is not in the driving region and not in the discrete sites
+    return false;
+}
+
 double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& layer, const double& mxLHS, const double& mxMID,
                                                 const double& mxRHS, const double& dipoleTerm,
                                                 const double& demagTerm, const double& current_time) {
@@ -1242,7 +1277,7 @@ double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& laye
     double hx;
 
     if (_isFM) {
-        if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
+        if (isSiteDriven(site)) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             if (_driveAllLayers || layer == 0)
                 hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
@@ -1256,7 +1291,7 @@ double Numerical_Methods_Class::EffectiveFieldX(const int& site, const int& laye
             // All spins along x which are not within the driving region
             hx = _exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
     } else if (!_isFM) {
-        if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
+        if (isSiteDriven(site)) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             if (_hasStaticDrive)
                 hx = -1.0 * (_exchangeVec[site - 1] * mxLHS + _exchangeVec[site] * mxRHS + _dynamicBiasField);
