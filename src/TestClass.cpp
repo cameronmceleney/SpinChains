@@ -2,7 +2,7 @@
 // Created by Cameron McEleney on 08/11/2023.
 //
 
-#include "TestClass.h"
+#include "../include/TestClass.h"
 
 double TestClass::_parallelSineSum(const std::vector<double>& data) {
     return tbb::parallel_reduce(

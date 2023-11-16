@@ -1,4 +1,4 @@
-#include "GlobalVariables.h"
+#include "../include/GlobalVariables.h"
 
 double GlobalVariablesClass::GetAnisotropyField() {
     return _anisotropyField;

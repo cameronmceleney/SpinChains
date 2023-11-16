@@ -1,4 +1,4 @@
-#include "Numerical_Methods_Class.h"
+#include "../include/Numerical_Methods_Class.h"
 
 void Numerical_Methods_Class::NumericalMethodsMain() {
 
@@ -41,8 +41,10 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
     _driveAllLayers = false;
     _dualDrive = false;
     _lhsDrive = false; // Need to create a RHSDrive flag, as this is becoming too confusing!
+    _rhsDrive = false;
     _hasStaticDrive = false;
     _shouldDriveCease = false;
+    _customDrivePosition = false;
 
     // Output Flags
     _printAllData = false;
@@ -52,12 +54,12 @@ void Numerical_Methods_Class::NumericalMethodsFlags() {
 void Numerical_Methods_Class::NumericalMethodsParameters() {
 
     // Main Parameters
-    _ambientTemperature = 273; // Kelvin
-    _drivingFreq = 12.54 * 1e12;
+    _ambientTemperature = 273;
+    _drivingFreq = 42.5 * 1e9;
     _dynamicBiasField = 3e-3;
     _forceStopAtIteration = -1;
     _gyroMagConst = GV.GetGyromagneticConstant();
-    _maxSimTime = 0.1e-9;
+    _maxSimTime = 0.7e-9;
     _satMag = 0.010032;
     _stepsize = 1e-15;
 
@@ -81,7 +83,7 @@ void Numerical_Methods_Class::NumericalMethodsParameters() {
     _gilbertUpper = 1e0;
 
     // Spin chain and multi-layer Parameters
-    _discreteDrivenSites = {5000};
+    _discreteDrivenSites = {300, 500};
     _drivingRegionWidth = 200;
     _numberNeighbours = -1;
     _numSpinsDamped = 300;
@@ -110,6 +112,7 @@ void Numerical_Methods_Class::NumericalMethodsProcessing() {
 
     _numSpinsInChain = GV.GetNumSpins();
     _numberOfSpinPairs = _numSpinsInChain - 1;
+
     GV.SetNumSpins(_numSpinsInChain + 2 * _numSpinsDamped);
 
     if (_isFM)
@@ -199,7 +202,7 @@ void Numerical_Methods_Class::SetDampingRegion() {
     if (_numSpinsDamped < 0) {
         // Guard clause.
         std::cout << "numGilbert is less than zero!";
-        exit(0);
+        exit(1);
     }
 
     std::vector<double> gilbertChain(_numSpinsInChain, _gilbertConst);
@@ -223,7 +226,7 @@ void Numerical_Methods_Class::SetDrivingRegion() {
 
     if (_driveDiscreteSites) {
         for (int& drivenSite: _discreteDrivenSites)
-            drivenSite += _numSpinsDamped;
+            drivenSite -= 1;
 
         _drivingRegionWidth = 0;
         _drivingRegionLHS = 0;
@@ -248,10 +251,17 @@ void Numerical_Methods_Class::SetDrivingRegion() {
         return;
     }
 
-    if (!_lhsDrive) {
+    if (_rhsDrive) {
         // The +1 is to correct the offset of adding a zeroth spin
         _drivingRegionRHS = GV.GetNumSpins() - _numSpinsDamped - 1;
         _drivingRegionLHS = _drivingRegionRHS - _drivingRegionWidth + 1;
+        return;
+    }
+
+    if (_customDrivePosition) {
+        // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
+        _drivingRegionLHS = 0 + 1;
+        _drivingRegionRHS = _drivingRegionLHS + _drivingRegionWidth - 1;
         return;
     }
 
@@ -262,17 +272,50 @@ void Numerical_Methods_Class::SetExchangeVector() {
      * induce a 'kick' into the system by initialising certain spins to have differing parameters to their neighbours.
      */
     LinspaceClass SpinChainExchange;
+    LinspaceClass SpinChainExchangeLHS;
+    LinspaceClass SpinChainExchangeRHS;
 
     if (_numSpinsDamped > 0) {
-        SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, false);
-        _exchangeVec = SpinChainExchange.generate_array();
+        if (_numSpinsDamped == 300) {
+            _numberOfSpinPairs += (2 * _numSpinsDamped);
+            SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, true);
+            _exchangeVec = SpinChainExchange.generate_array();
 
-        std::vector<double> dampingRegionLeftExchange(_numSpinsDamped, GV.GetExchangeMinVal()), dampingRegionRightExchange(_numSpinsDamped, GV.GetExchangeMaxVal());
-        dampingRegionLeftExchange.insert(dampingRegionLeftExchange.begin(), 0);
-        dampingRegionRightExchange.push_back(0);
+        } else {
+            _exchangeVec.push_back(0.0);
 
-        _exchangeVec.insert(_exchangeVec.begin(), dampingRegionLeftExchange.begin(), dampingRegionLeftExchange.end());
+            SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true,
+                                         false);
+            std::vector<double> exchangeChain = SpinChainExchange.generate_array();
+
+            SpinChainExchangeLHS.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMinVal(), _numSpinsDamped, true,
+                                            false);
+            std::vector<double> tempExchangeLHS = SpinChainExchangeLHS.generate_array();
+
+            SpinChainExchangeRHS.set_values(GV.GetExchangeMaxVal(), GV.GetExchangeMaxVal(), _numSpinsDamped, true,
+                                            false);
+            std::vector<double> tempExchangeRHS = SpinChainExchangeRHS.generate_array();
+
+            _exchangeVec.insert(_exchangeVec.end(), tempExchangeLHS.begin(), tempExchangeLHS.end());
+            _exchangeVec.insert(_exchangeVec.end(), exchangeChain.begin(), exchangeChain.end());
+            _exchangeVec.insert(_exchangeVec.end(), tempExchangeRHS.begin(), tempExchangeRHS.end());
+            _exchangeVec.push_back(0);
+        }
+
+        /*
+        // build_spinchain_explicit
+        std::vector<double> dampingRegionLeftExchange(numDampedSpinPairs, GV.GetExchangeMinVal());
+        std::vector<double> dampingRegionRightExchange(numDampedSpinPairs, GV.GetExchangeMaxVal());
+        // dampingRegionLeftExchange.insert(dampingRegionLeftExchange.begin(), 0);
+        // dampingRegionRightExchange.push_back(0);
+
+        // _exchangeVec.insert(_exchangeVec.begin(), dampingRegionLeftExchange.begin(), dampingRegionLeftExchange.end());
+        // _exchangeVec.insert(_exchangeVec.end(), dampingRegionRightExchange.begin(), dampingRegionRightExchange.end());
+        _exchangeVec.insert(_exchangeVec.end(), dampingRegionLeftExchange.begin(), dampingRegionLeftExchange.end());
+        _exchangeVec.insert(_exchangeVec.end(), tempMainChain.begin(), tempMainChain.end());
         _exchangeVec.insert(_exchangeVec.end(), dampingRegionRightExchange.begin(), dampingRegionRightExchange.end());
+        _exchangeVec.push_back(0);
+         */
     } else {
         // The linearly spaced vector is saved as the class member '_exchangeVec' simply to increase code readability
         SpinChainExchange.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), _numberOfSpinPairs, true, true);
@@ -651,7 +694,7 @@ void Numerical_Methods_Class::DipolarInteractionClassicThreaded(const std::vecto
     tbb::parallel_for( tbb::blocked_range<int>(1, GV.GetNumSpins()),
                        [&](tbb::blocked_range<int> r) {
         for (int currentSite = r.begin(); currentSite <= r.end(); currentSite++) {
-            if (currentSite < _numSpinsDamped or currentSite >= (GV.GetNumSpins() + _numSpinsDamped)) {
+            if (currentSite <= _numSpinsDamped or currentSite > (GV.GetNumSpins() + _numSpinsDamped)) {
                 // Guard clause to ensure that the origin site is not included in the calculation
                 dipoleXOut[currentSite] = 0.0; dipoleYOut[currentSite] = 0.0; dipoleZOut[currentSite] = 0.0;
                 continue;
@@ -703,7 +746,7 @@ void Numerical_Methods_Class::DipolarInteractionClassicThreaded(const std::vecto
 void Numerical_Methods_Class::DipolarInteractionClassicThreaded2(const int& currentSite, const std::vector<double>& mxTerms, const std::vector<double>& myTerms,
                                                                  const std::vector<double>& mzTerms, double& dipoleXOut,
                                                                  double& dipoleYOut, double& dipoleZOut) {
-    if (currentSite < _numSpinsDamped or currentSite >= (GV.GetNumSpins() + _numSpinsDamped)) {
+    if (currentSite <= _numSpinsDamped or currentSite > (GV.GetNumSpins() + _numSpinsDamped)) {
         // Guard clause to ensure that the origin site is not included in the calculation
         dipoleXOut = 0.0; dipoleYOut = 0.0; dipoleZOut = 0.0;
         return;
@@ -716,7 +759,7 @@ void Numerical_Methods_Class::DipolarInteractionClassicThreaded2(const int& curr
 
     tbb::parallel_for( tbb::blocked_range<int>(1, GV.GetNumSpins()), [&](const tbb::blocked_range<int> r) {
         for (int inflSite = r.begin(); inflSite <= r.end(); inflSite++) {
-            if (inflSite < _numSpinsDamped or inflSite >= (mxTerms.size() + _numSpinsDamped)) {
+            if (inflSite <= _numSpinsDamped or inflSite > (mxTerms.size() + _numSpinsDamped)) {
                 // Guard clause to ensure that the origin site is not included in the calculation
                 continue;
             }
@@ -1254,16 +1297,13 @@ std::vector<double> Numerical_Methods_Class::ComputeStochasticTerm(const int& si
 bool Numerical_Methods_Class::isSiteDriven(const int& site) {
     if (_driveDiscreteSites) {
         // Check if site is in the _driveDiscreteSites
-        for (const int &discreteSite: _discreteDrivenSites) {
-            if (site == discreteSite) {
-                return true;
-            }
-        }
-    } else {
-        // Check if site is within the driving region boundaries
-        if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
-            return true;
+        for (const int &discreteSite: _discreteDrivenSites)
+            if (site == discreteSite) { return true; }
     }
+
+    if (site >= _drivingRegionLHS && site <= _drivingRegionRHS) {
+        // Check if site is within the driving region boundaries
+        return true;
     }
 
     // If site is not in the driving region and not in the discrete sites
@@ -1922,7 +1962,7 @@ double Numerical_Methods_Class::MagneticMomentZ(const int& site, const double& m
 double Numerical_Methods_Class::MagneticMomentX(const int& site, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
-    double mxK;
+    double mxK = 0.0;
 
     if (_useLLG) {
         // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
@@ -1952,7 +1992,7 @@ double Numerical_Methods_Class::MagneticMomentY(const int& site, const int& laye
 double Numerical_Methods_Class::MagneticMomentZ(const int& site, const int& layer, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 
-    double mzK;
+    double mzK = 0.0;
 
     if (_useLLG) {
         // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
@@ -2078,7 +2118,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
                 //std::cout << std::endl;
             }
             */
-            double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
+            double dipoleX = 0.0, dipoleY = 0.0, dipoleZ = 0.0;
             if (_useDipolar) {
                 std::vector<double> mxTermsForDipole = {_mx0[spinLHS], _mx0[site], _mx0[spinRHS]};
                 std::vector<double> myTermsForDipole = {_my0[spinLHS], _my0[site], _my0[spinRHS]};
@@ -2130,7 +2170,7 @@ void Numerical_Methods_Class::SolveRK2Classic() {
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
 
-            double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
+            double dipoleX = 0.0, dipoleY = 0.0, dipoleZ = 0.0;
             if (_useDipolar) {
                 std::vector<double> mxTermsForDipole = {mx1[spinLHS], mx1[site], mx1[spinRHS]};
                 std::vector<double> myTermsForDipole = {my1[spinLHS], my1[site], my1[spinRHS]};
@@ -2181,8 +2221,10 @@ void Numerical_Methods_Class::SolveRK2Classic() {
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         _mx0 = mx2; _my0 = my2; _mz0 = mz2;
 
-        if (iteration == _forceStopAtIteration)
+        if (iteration == _forceStopAtIteration) {
+            std::cout << "Force stop at iteration #" << iteration << std::endl;
             exit(0);
+        }
 
         _totalTime += _stepsize;
     }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
@@ -2221,18 +2263,15 @@ void Numerical_Methods_Class::RK2Threaded(const std::vector<double>& mxIn, const
     }
 
     // tbb::global_control c(tbb::global_control::max_allowed_parallelism, 1);
-
     tbb::parallel_for( tbb::blocked_range<int>(1, GV.GetNumSpins()),
                        [&](const tbb::blocked_range<int> r) {
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
         for (int site = r.begin(); site <= r.end(); site++) {
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
-            int spinLHS = site - 1, spinRHS = site + 1;
+            int spinLHSLocal = site - 1, spinRHSLocal = site + 1;
 
-            double hxKLocal, hyKLocal, hzKLocal;
-            double mxKLocal, myKLocal, mzKLocal;
-            double dipoleXLocal, dipoleYLocal, dipoleZLocal;
-
+            double dipoleXLocal = 0.0, dipoleYLocal = 0.0, dipoleZLocal = 0.0;
+            double demagXLocal = 0.0, demagYLocal = 0.0, demagZLocal = 0.0;
             if (_useDipolar)
                 DipolarInteractionClassicThreaded2(site, mxInMu, myInMu, mzInMu, dipoleXLocal, dipoleYLocal, dipoleZLocal);
 
@@ -2253,28 +2292,34 @@ void Numerical_Methods_Class::RK2Threaded(const std::vector<double>& mxIn, const
              */
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            hxKLocal = EffectiveFieldX(site, 0, mxIn[spinLHS], mxIn[site], mxIn[spinRHS], dipoleXLocal, demagX[site], currentTime);
-            hyKLocal = EffectiveFieldY(site, 0, myIn[spinLHS], myIn[site], myIn[spinRHS], dipoleYLocal, demagY[site]);
-            hzKLocal = EffectiveFieldZ(site, 0, mzIn[spinLHS], mzIn[site], mzIn[spinRHS], dipoleZLocal, demagZ[site]);
+            double hxKLocal = EffectiveFieldX(site, 0, mxIn[spinLHSLocal], mxIn[site], mxIn[spinRHSLocal], dipoleXLocal, demagXLocal, currentTime);
+            double hyKLocal = EffectiveFieldY(site, 0, myIn[spinLHSLocal], myIn[site], myIn[spinRHSLocal], dipoleYLocal, demagYLocal);
+            double hzKLocal = EffectiveFieldZ(site, 0, mzIn[spinLHSLocal], mzIn[site], mzIn[spinRHSLocal], dipoleZLocal, demagZLocal);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            mxKLocal = MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
-            myKLocal = MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
-            mzKLocal = MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
+            double mxKLocal = MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
+            double myKLocal = MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
+            double mzKLocal = MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal, hzKLocal);
 
             // Find (m0 + k1/2) for each site, which is used in the next stage.
             mxOut[site] = _mx0[site] + stepSize * mxKLocal;
             myOut[site] = _my0[site] + stepSize * myKLocal;
             mzOut[site] = _mz0[site] + stepSize * mzKLocal;
 
-            if (std::isinf(mxOut[site]) or std::isnan(mxOut[site]))
-                throw std::runtime_error("mxOut is inf or nan at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+            if (std::isinf(mxOut[site]))
+                throw std::runtime_error("mxOut is inf at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+            if (std::isnan(mxOut[site]))
+                throw std::runtime_error("mxOut is NaN at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
 
-            if (std::isinf(myOut[site]) or std::isnan(myOut[site]))
-                throw std::runtime_error("myOut is inf or nan at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+            if (std::isinf(myOut[site]))
+                throw std::runtime_error("myOut is inf at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+            if (std::isnan(myOut[site]))
+                throw std::runtime_error("myOut is NaN at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
 
-            if (std::isinf(mzOut[site]) or std::isnan(mzOut[site]))
-                throw std::runtime_error("mzOut is inf or nan at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+            if (std::isinf(mzOut[site]))
+                throw std::runtime_error("mzOut is inf at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
+            if (std::isnan(mzOut[site]))
+                throw std::runtime_error("mzOut is NaN at site " + std::to_string(site) + " at iteration " + std::to_string(currentIteration) + " in RK2 stage " + rkStage);
         }
     }, tbb::auto_partitioner());
 
@@ -2346,9 +2391,12 @@ void Numerical_Methods_Class::SolveRK2ClassicThreaded() {
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         _mx0 = mx2; _my0 = my2; _mz0 = mz2;
+        mx2.clear(); my2.clear(); mz2.clear();
 
-        if (iteration == _forceStopAtIteration)
+        if (iteration == _forceStopAtIteration) {
+            std::cout << "Force stop at iteration #" << iteration << std::endl;
             exit(0);
+        }
 
         _totalTime += _stepsize;
     }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
@@ -2525,8 +2573,10 @@ void Numerical_Methods_Class::SolveRK2() {
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         m0Nest = m2Nest;
 
-        if (iteration == _forceStopAtIteration)
+        if (iteration == _forceStopAtIteration) {
+            std::cout << "Force stop at iteration #" << iteration << std::endl;
             exit(0);
+        }
 
         _totalTime += _stepsize;
     }// Final line of RK2 solver for all iterations. Everything below here occurs after RK2 method is complete
@@ -2676,8 +2726,10 @@ void Numerical_Methods_Class::PrintVector(std::vector<double> &vectorToPrint, bo
     }
     std::cout << "\n\n";
 
-    if (shouldExitAfterPrint)
+    if (shouldExitAfterPrint) {
+        std::cout << "Exiting program after printing vector." << std::endl;
         exit(0);
+    }
 }
 void Numerical_Methods_Class::PrintNestedNestedVector(std::vector<std::vector<std::vector<double>>> nestedNestedVector){
         // Print the contents of nestedNestedVector1

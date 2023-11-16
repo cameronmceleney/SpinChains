@@ -1,4 +1,4 @@
-#include "linspace.h"
+#include "../include/linspace.h"
 
 // Setter function for linspace class
 void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool shouldBuildSpinChain){
@@ -35,6 +35,9 @@ std::vector<double> LinspaceClass::generate_array() {
             _linspaceArray.push_back(_intervalStart);
             _linspaceArray.push_back(0);
         }
+        else {
+            _linspaceArray.push_back(_intervalStart);
+        }
         return _linspaceArray;
     }
 
@@ -62,15 +65,30 @@ std::vector<double> LinspaceClass::generate_array() {
  * linspace class. This function appends zeros to start&end of array to represent spins at the end of the chain */
 void LinspaceClass::build_spinchain() {
 
+
     // Initialised with a zero to account for the (P-1)th spin
-    _spinchainArray.push_back(0);
+    std::vector<double> spinchainArray{0};
 
     // Insert is faster for large values of numbers compared to push_back()
-    _spinchainArray.insert(_spinchainArray.end(), _linspaceArray.begin(), _linspaceArray.end());
+    spinchainArray.insert(spinchainArray.end(), _linspaceArray.begin(), _linspaceArray.end());
+
+    // Appends a zero to the end to account for the exchange from the (N+1)th RHS spin
+    spinchainArray.push_back(0);
+
+    _linspaceArray.clear();
+    _linspaceArray = spinchainArray;
+}
+
+std::vector<double> LinspaceClass::build_spinchain_explicit(std::vector<double> linspaceArrayIn) {
+
+    // Initialised with a zero to account for the (P-1)th spin
+    std::vector<double> spinchainArray{0};
+
+    // Insert is faster for large values of numbers compared to push_back()
+    spinchainArray.insert(spinchainArray.end(), linspaceArrayIn.begin(), linspaceArrayIn.end());
 
     // Appends a zero to the end to account for the exchange from the (N+1)th RHS spin
     _spinchainArray.push_back(0);
 
-    _linspaceArray.clear();
-    _linspaceArray = _spinchainArray;
+    return _spinchainArray;
 }

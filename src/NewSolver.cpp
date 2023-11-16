@@ -2,7 +2,7 @@
 // Created by Cameron Aidan McEleney on 08/05/2023.
 //
 
-#include "NewSolver.h"
+#include "../include/NewSolver.h"
 
 #include <iostream>
 #include <vector>

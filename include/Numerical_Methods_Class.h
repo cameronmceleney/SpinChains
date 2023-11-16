@@ -3,7 +3,7 @@
 
 #include "linspace.h"
 #include "SpinChainEigenSolverClass.h"
-#include "CommonLibs.h"
+#include "../src/CommonLibs.h"
 #include "progressbar.hpp"
 #include <chrono>
 #include <algorithm>
@@ -102,6 +102,7 @@ private:
     bool                _dualDrive;                                // Drive from both sides of the system
     bool                _hasShockwave;                             // Simulation contains a single driving bias field if (false).
     bool                _driveDiscreteSites;
+    bool                _customDrivePosition;
 
     bool                _hasStaticDrive;                           // Selects (if true) whether drive has sinusoidal term
     bool                _isFM;
@@ -109,6 +110,7 @@ private:
     bool                _isShockwaveAtMax = false;                 // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
 
     bool                _lhsDrive;                                 // Drive from the RHS if (false)
+    bool                _rhsDrive;
     bool                _printAllData;                             // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
     bool                _printFixedLines;                          // Saves m-component(s) of every spin at regular intervals. Total save points are set by _numberOfDataPoints.
     bool                _printFixedSites;                          // Saves a discrete set of m-component(s) at regular intervals governed by _numberOfDataPoints.

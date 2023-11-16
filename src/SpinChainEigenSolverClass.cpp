@@ -1,4 +1,4 @@
-#include "SpinChainEigenSolverClass.h"
+#include "../include/SpinChainEigenSolverClass.h"
 
 void SpinChainEigenSolverClass::CalculateEigenfrequencies(bool hasAngularFrequency=false) {
     CreateTextFile();
