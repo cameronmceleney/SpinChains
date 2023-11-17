@@ -6,7 +6,7 @@
 #define SPINCHAINS_NMDATAHANDLING_H
 
 // C++ User Libraries (Parent Class)
-#include "../NMSuperClassTest.h"
+#include "../include/NMSuperClassTest.h"
 #include "NMMethods.h"
 
 class NMDataHandling:  public NMSuperClassTest {

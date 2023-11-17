@@ -1,2 +1,5 @@
 /.idea/
-/cmake-build-debug/
+/cmake-build-debug-mingw64/
+/cmake-build-release-mingw64/
+/cmake-build-debug-mac/
+/cmake-build-release-mac/

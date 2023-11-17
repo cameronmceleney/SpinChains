@@ -21,16 +21,16 @@ endif()
 #include_directories(${EIGEN_DIR} ${FFTW_DIR})
 
 # Links all files to the project. There are numerous classes to encapsulate data so ensure that all .h files have a corresponding .cpp as needed
-add_executable(SpinChains main.cpp
-        CommonLibs.h
-        linspace.cpp linspace.h
-        SpinChainEigenSolverClass.cpp SpinChainEigenSolverClass.h
+add_executable(SpinChains src/main.cpp
+        src/CommonLibs.h
+        src/linspace.cpp include/linspace.h
+        src/SpinChainEigenSolverClass.cpp include/SpinChainEigenSolverClass.h
         #NMSuperClass.cpp NMSuperClass.h
-        GlobalVariables.cpp GlobalVariables.h
-        progressbar.hpp
-        NewSolver.cpp NewSolver.h
+        src/GlobalVariables.cpp include/GlobalVariables.h
+        include/progressbar.hpp
+        src/NewSolver.cpp include/NewSolver.h
         NMSubClasses/NMInitialisation.cpp NMSubClasses/NMInitialisation.h
-        NMSuperClassTest.cpp NMSuperClassTest.h
+        src/NMSuperClassTest.cpp include/NMSuperClassTest.h
         #NMSubClasses/NMConfiguration.cpp NMSubClasses/NMConfiguration.h
         #NMSubClasses/DipolarField.cpp NMSubClasses/DipolarField.h
         #NMSubClasses/EffectiveField.cpp NMSubClasses/EffectiveField.h

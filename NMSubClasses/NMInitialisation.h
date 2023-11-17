@@ -5,7 +5,7 @@
 #ifndef SPINCHAINS_NMINITIALISATION_H
 #define SPINCHAINS_NMINITIALISATION_H
 
-#include "../NMSuperClassTest.h"
+#include "../include/NMSuperClassTest.h"
 
 class NMInitialisation: public NMSuperClassTest {
 private:

@@ -5,7 +5,7 @@
 #ifndef SPINCHAINS_NMCONFIGURATION_H
 #define SPINCHAINS_NMCONFIGURATION_H
 
-#include "../NMSuperClassTest.h"
+#include "../include/NMSuperClassTest.h"
 
 class NMConfiguration:  public NMSuperClassTest {
 private:
