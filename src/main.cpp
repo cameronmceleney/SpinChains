@@ -6,7 +6,6 @@ int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 04 Jun 23)
     SpinChainEigenSolverClass SolverClass{};
-    NMSuperClassTest NumericalMethods{};
 
     // Global file-related parameters
     GV.SetCurrentTime();
@@ -43,9 +42,18 @@ int main() {
         std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
         SolverClass.CalculateEigenfrequencies(false);
     } else {
-            std::shared_ptr<SharedVariableHolder> sharedVariables = std::make_shared<SharedVariableHolder>();
+        /*
+            std::shared_ptr<SystemDataContainer> sharedVariables = std::make_shared<SystemDataContainer>();
             NMSuperClassTest baseObj(sharedVariables);
             baseObj.executeDerivedMethod(); // Outputs: "Child method called!"
+            */
+        auto startSimulation = NMSuperClassTest::createSimulationInstance();
+        startSimulation->initialiseSimulation();
+
+        // Test modifying a double in the parent class
+        //auto [before, after] = NMSuperClassTest::testInstance();
+        //std::cout << "Value of ambientTemperature before: " << before << ", after: " << after << std::endl;
+
     }
     return 0;
 }

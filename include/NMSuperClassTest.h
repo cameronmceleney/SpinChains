@@ -26,7 +26,7 @@ extern "C" {
 #include "../src/CommonLibs.h"
 #include "progressbar.hpp"
 
-class SharedVariableHolder {
+class SystemDataContainer {
     // todo separate this out into several compositions (flags, data structures, etc)
 public:
     double              ambientTemperature;
@@ -149,20 +149,24 @@ public:
 
 class NMSuperClassTest{
 private:
-    SharedVariableHolder sharedVariables;
+    //SystemDataContainer sharedVariables;#
 
 protected:
     // Getter for child classes to access sharedVariables
-    std::shared_ptr<SharedVariableHolder> sharedData;
+    std::shared_ptr<SystemDataContainer> systemData;
+
 
 public:
-    NMSuperClassTest(std::shared_ptr<SharedVariableHolder> sharedData);
-
-    NMSuperClassTest();
+    //NMSuperClassTest(std::shared_ptr<SystemDataContainer> systemData);
+    NMSuperClassTest() { systemData = std::make_shared<SystemDataContainer>(); }
     ~NMSuperClassTest(); // Destructor (though not strictly necessary with smart pointers)
 
-    virtual void callInitialise();
-    void executeDerivedMethod();
+public:
+    std::shared_ptr<SystemDataContainer> getSystemData();
+    virtual void initialiseSimulation() = 0;
+    static std::shared_ptr<NMSuperClassTest> createSimulationInstance();
+
+    static std::pair<double, double> testInstance();
 };
 
 

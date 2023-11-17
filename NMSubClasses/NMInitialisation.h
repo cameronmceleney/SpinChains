@@ -28,8 +28,9 @@ protected:
     //
 
 public:
-    NMInitialisation(std::shared_ptr<SharedVariableHolder> data);
-    void callInitialise() override;
+    //NMInitialisation(std::shared_ptr<SystemDataContainer> data);
+    void                initialiseSimulation() override;
+    void                testModifyingDouble(double  newValue);
     void                Initialise();
 };
 

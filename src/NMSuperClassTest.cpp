@@ -2,34 +2,40 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-// C++ User Libraries (Parent)
 #include <utility>
 
+// C++ User Libraries (Parent)
 #include "../include/NMSuperClassTest.h"
 
 // C++ User Libraries (Children)
 #include "../NMSubClasses/NMInitialisation.h"
 
-NMSuperClassTest::NMSuperClassTest(std::shared_ptr<SharedVariableHolder> data) : sharedData(data) {}
-
-NMSuperClassTest::NMSuperClassTest() {
-    //
-}
 
 NMSuperClassTest::~NMSuperClassTest() {
     // Memory automatically deallocated by unique_ptr
 }
 
-void NMSuperClassTest::callInitialise() {
-    // Default implementation or no implementation
+std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createSimulationInstance() {
+    // Return instance of the child
+    return std::make_shared<NMInitialisation>();
 }
 
-void NMSuperClassTest::executeDerivedMethod() {
-    std::cout << sharedVariables.ambientTemperature << std::endl;
-    sharedVariables.ambientTemperature = 90;
-    std::cout << sharedVariables.ambientTemperature << std::endl;
+std::shared_ptr<SystemDataContainer> NMSuperClassTest::getSystemData() {
+    // Lazy initialisation. Left more as a reminder of how to do it than anything else
+    if (!systemData)
+        systemData = std::make_shared<SystemDataContainer>();
 
-    std::shared_ptr<NMInitialisation> derivedPtr = std::make_shared<NMInitialisation>(sharedData);
-    derivedPtr -> callInitialise();
-    std::cout << sharedVariables.ambientTemperature << std::endl;
+    return systemData;
+}
+
+std::pair<double, double> NMSuperClassTest::testInstance() {
+    auto instance = std::dynamic_pointer_cast<NMInitialisation>(createSimulationInstance());
+    double before = instance->getSystemData()->ambientTemperature; // Get value of var1 before modification
+
+    instance->testModifyingDouble(100); // Modify var1 using ChildClass method
+
+    std::cout << "This works because systemData is protected, and the parent can still access it:" << instance->systemData->iterEndShock << std::endl;
+
+    double after = instance->getSystemData()->ambientTemperature; // Get value of var1 after modification
+    return {before, after};
 }

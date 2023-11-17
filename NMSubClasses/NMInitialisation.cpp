@@ -4,11 +4,16 @@
 
 #include "NMInitialisation.h"
 
-NMInitialisation::NMInitialisation(std::shared_ptr<SharedVariableHolder> data) : NMSuperClassTest(data) {}
-
-void NMInitialisation::callInitialise() {
-    // Virtual function access
+void NMInitialisation::initialiseSimulation() {
+    // Virtual function access to abstract NMInitialisation
     Initialise();
+}
+
+void NMInitialisation::testModifyingDouble(double newValue) {
+    // Test modifying a double in the parent class from the child
+    systemData->ambientTemperature = newValue;
+    systemData->iterEndShock = 0.12345;
+    std::cout << "I changed another value: " << systemData->iterEndShock << std::endl;
 }
 
 void NMInitialisation::Initialise() {
@@ -22,177 +27,177 @@ void NMInitialisation::Initialise() {
 void NMInitialisation::_setSimulationFlags() {
 
     // Debugging Flags
-    sharedData -> shouldTrackMValues = true;
+    systemData->shouldTrackMValues = true;
 
     // Model Type
-    sharedData -> useLLG = true;
-    sharedData -> useSLLG = false;
+    systemData->useLLG = true;
+    systemData->useSLLG = false;
 
     // Interaction Flags
-    sharedData -> hasShockwave = false;
-    sharedData -> useDipolar = false;
-    sharedData -> useZeeman = true;
-    sharedData -> useDemagIntense = false;
-    sharedData -> useDemagFft = false;
+    systemData->hasShockwave = false;
+    systemData->useDipolar = false;
+    systemData->useZeeman = true;
+    systemData->useDemagIntense = false;
+    systemData->useDemagFft = false;
 
     // Material Flags
-    sharedData -> useMultilayer = false;
+    systemData->useMultilayer = false;
 
     // Drive Flags
-    sharedData -> centralDrive = false;
-    sharedData -> driveAllLayers = false;
-    sharedData -> dualDrive = false;
-    sharedData -> lhsDrive = true;
-    sharedData -> rhsDrive = false;
-    sharedData -> hasStaticDrive = false;
-    sharedData -> shouldDriveCease = false;
+    systemData->centralDrive = false;
+    systemData->driveAllLayers = false;
+    systemData->dualDrive = false;
+    systemData->lhsDrive = true;
+    systemData->rhsDrive = false;
+    systemData->hasStaticDrive = false;
+    systemData->shouldDriveCease = false;
 
     // Output Flags
-    sharedData -> printAllData = false;
-    sharedData -> printFixedLines = true;
-    sharedData -> printFixedSites = false;
+    systemData->printAllData = false;
+    systemData->printFixedLines = true;
+    systemData->printFixedSites = false;
 }
 
 void NMInitialisation::_setSimulationParameters() {
 
     // Main Parameters
-    sharedData -> ambientTemperature = 273; // Kelvin
-    std::cout << sharedData -> ambientTemperature << std::endl;
+    systemData->ambientTemperature = 273; // Kelvin
+    std::cout << systemData->ambientTemperature << std::endl;
 
-    sharedData -> drivingFreq = 43.5 * 1e9;
-    sharedData -> dynamicBiasField = 3e-3;
-    sharedData -> forceStopAtIteration = -1;
-    sharedData -> gyroMagConst = GV.GetGyromagneticConstant();
-    sharedData -> maxSimTime = 0.7e-9;
-    sharedData -> satMag = 0.010032;
-    sharedData -> stepsize = 1e-15;
+    systemData->drivingFreq = 43.5 * 1e9;
+    systemData->dynamicBiasField = 3e-3;
+    systemData->forceStopAtIteration = -1;
+    systemData->gyroMagConst = GV.GetGyromagneticConstant();
+    systemData->maxSimTime = 0.7e-9;
+    systemData->satMag = 0.010032;
+    systemData->stepsize = 1e-15;
 
     // Shockwave Parameters
-    sharedData -> iterStartShock = 0.0;
-    sharedData -> iterEndShock = 0.0001;
-    sharedData -> shockwaveGradientTime = 1;
-    sharedData -> shockwaveInitialStrength = 0;  // Set equal to dynamicBiasField if NOT starting at time=0
-    sharedData -> shockwaveMax = 3e-3;
-    sharedData -> shockwaveScaling = 1;
+    systemData->iterStartShock = 0.0;
+    systemData->iterEndShock = 0.0001;
+    systemData->shockwaveGradientTime = 1;
+    systemData->shockwaveInitialStrength = 0;  // Set equal to dynamicBiasField if NOT starting at time=0
+    systemData->shockwaveMax = 3e-3;
+    systemData->shockwaveScaling = 1;
 
     // Data Output Parameters
-    sharedData -> fixedOutputSites = {12158, 14529, 15320};
+    systemData->fixedOutputSites = {12158, 14529, 15320};
     // _recordingInterval = 1e-15;
-    sharedData -> numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
+    systemData->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
     _layerOfInterest = 1;
 
     // Damping Factors
-    sharedData -> gilbertABCInner = 1e-4;
-    sharedData -> gilbertABCOuter = 1e0;
+    systemData->gilbertABCInner = 1e-4;
+    systemData->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
-    sharedData -> drivingRegionWidth = 200;
-    sharedData -> numberNeighbours = -1;
-    sharedData -> numSpinsDamped = 0;
-    sharedData -> totalLayers = 1;
+    systemData->drivingRegionWidth = 200;
+    systemData->numberNeighbours = -1;
+    systemData->numSpinsDamped = 0;
+    systemData->totalLayers = 1;
 }
 
 void NMInitialisation::_generateRemainingParameters() {
     // Computations based upon other inputs
-    sharedData -> drivingAngFreq = 2 * M_PI * sharedData -> drivingFreq;
-    sharedData -> PERMITTIVITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
-    sharedData -> dipoleConstant = SharedVariableHolder::PERM_FREESPACE / (4.0 * M_PI);
+    systemData->drivingAngFreq = 2 * M_PI * systemData->drivingFreq;
+    systemData->PERMITTIVITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
+    systemData->dipoleConstant = SystemDataContainer::PERM_FREESPACE / (4.0 * M_PI);
 
-    sharedData -> iterationEnd = static_cast<int>(sharedData -> maxSimTime / sharedData -> stepsize);
-    sharedData -> stepsizeHalf = sharedData -> stepsize / 2.0;
+    systemData->iterationEnd = static_cast<int>(systemData->maxSimTime / systemData->stepsize);
+    systemData->stepsizeHalf = systemData->stepsize / 2.0;
 
-    sharedData -> numSpinsInChain = GV.GetNumSpins();
-    sharedData -> numberOfSpinPairs = sharedData -> numSpinsInChain - 1;
-    sharedData -> layerSpinsInChain = {sharedData -> drivingRegionWidth, sharedData -> numSpinsInChain};
-    GV.SetNumSpins(sharedData -> numSpinsInChain + 2 * sharedData -> numSpinsDamped);
-    sharedData -> systemTotalSpins = GV.GetNumSpins();
+    systemData->numSpinsInChain = GV.GetNumSpins();
+    systemData->numberOfSpinPairs = systemData->numSpinsInChain - 1;
+    systemData->layerSpinsInChain = {systemData->drivingRegionWidth, systemData->numSpinsInChain};
+    GV.SetNumSpins(systemData->numSpinsInChain + 2 * systemData->numSpinsDamped);
+    systemData->systemTotalSpins = GV.GetNumSpins();
 
-    sharedData -> layerSpinPairs.clear();
-    sharedData -> layerTotalSpins.clear();
-    for (int& spinsInChain: sharedData -> layerSpinsInChain) {
-        sharedData -> layerSpinPairs.push_back(spinsInChain - 1);
-        sharedData -> layerTotalSpins.push_back(spinsInChain + 2 * sharedData -> numSpinsDamped);
+    systemData->layerSpinPairs.clear();
+    systemData->layerTotalSpins.clear();
+    for (int& spinsInChain: systemData->layerSpinsInChain) {
+        systemData->layerSpinPairs.push_back(spinsInChain - 1);
+        systemData->layerTotalSpins.push_back(spinsInChain + 2 * systemData->numSpinsDamped);
     }
-    sharedData -> gilbertVectorMulti.resize(sharedData -> totalLayers, {0});
+    systemData->gilbertVectorMulti.resize(systemData->totalLayers, {0});
 
     _layerOfInterest -= 1;  // To correct for 0-indexing
 }
 
 void NMInitialisation::_setMaterialParameters() {
 
-    if (sharedData -> isFm)
-        sharedData -> anisotropyField = 0;
-    else if (!sharedData -> isFm)
-        sharedData -> anisotropyField = GV.GetAnisotropyField();
+    if (systemData->isFm)
+        systemData->anisotropyField = 0;
+    else if (!systemData->isFm)
+        systemData->anisotropyField = GV.GetAnisotropyField();
 
-    if (!sharedData -> useZeeman)
+    if (!systemData->useZeeman)
         GV.SetStaticBiasField(0);
 }
 
 void NMInitialisation::_guardClauses() {
 
-    if (sharedData -> shouldDriveCease and sharedData -> iterEndShock <= 0) {
-        std::cout << "Warning: [shouldDriveCease: True] however [iterEndShock: " << sharedData -> iterEndShock << " ! > 0.0]"
+    if (systemData->shouldDriveCease and systemData->iterEndShock <= 0) {
+        std::cout << "Warning: [shouldDriveCease: True] however [iterEndShock: " << systemData->iterEndShock << " ! > 0.0]"
                   << std::endl;
         exit(1);
     }
 
-    if (sharedData -> lhsDrive and sharedData -> rhsDrive) {
+    if (systemData->lhsDrive and systemData->rhsDrive) {
         std::cout << "Warning: [lhsDrive: True] and [rhsDrive: True] are both TRUE. Please choose one or the other."
                   << std::endl;
         exit(1);
     }
 
-    if (sharedData -> hasShockwave and sharedData -> iterStartShock < 0) {
-        std::cout << "Warning: [hasShockwave: True] however [iterStartShock: " << sharedData -> iterStartShock << " ! > 0.0]"
+    if (systemData->hasShockwave and systemData->iterStartShock < 0) {
+        std::cout << "Warning: [hasShockwave: True] however [iterStartShock: " << systemData->iterStartShock << " ! > 0.0]"
                   << std::endl;
         exit(1);
     }
 
-    if ((sharedData -> printFixedSites and sharedData -> printFixedLines) or (sharedData -> printFixedSites and sharedData -> printAllData) or
-        (sharedData -> printFixedLines and sharedData -> printAllData)) {
-        std::cout << "Warning: Multiple output flags detected. [printFixedSites: " << sharedData -> printFixedSites
-                  << "] | [printFixedLines: " << sharedData -> printFixedLines << "] | [printAllData: " << sharedData -> printAllData << "]"
+    if ((systemData->printFixedSites and systemData->printFixedLines) or (systemData->printFixedSites and systemData->printAllData) or
+        (systemData->printFixedLines and systemData->printAllData)) {
+        std::cout << "Warning: Multiple output flags detected. [printFixedSites: " << systemData->printFixedSites
+                  << "] | [printFixedLines: " << systemData->printFixedLines << "] | [printAllData: " << systemData->printAllData << "]"
                   << std::endl;
         exit(1);
     }
 
-    if ((sharedData -> lhsDrive && sharedData -> centralDrive) || (sharedData -> lhsDrive && sharedData -> dualDrive) || (sharedData -> centralDrive && sharedData -> dualDrive)) {
+    if ((systemData->lhsDrive && systemData->centralDrive) || (systemData->lhsDrive && systemData->dualDrive) || (systemData->centralDrive && systemData->dualDrive)) {
         std::cout << "Warning: two (or more) conflicting driving region booleans were TRUE"
-                  << "\n_lhsDrive: " << sharedData -> lhsDrive << "\n_centralDrive: " << sharedData -> centralDrive << "\n_dualDrive: " << sharedData -> dualDrive
+                  << "\n_lhsDrive: " << systemData->lhsDrive << "\n_centralDrive: " << systemData->centralDrive << "\n_dualDrive: " << systemData->dualDrive
                   << "\n\nExiting...";
         exit(1);
     }
 
-    if (sharedData -> printFixedSites and sharedData -> fixedOutputSites.empty()) {
+    if (systemData->printFixedSites and systemData->fixedOutputSites.empty()) {
         std::cout << "Warning: Request to print fixed sites, but no sites were given [fixedOutputSites: (";
-        for (int & fixed_out_val : sharedData -> fixedOutputSites)
+        for (int & fixed_out_val : systemData->fixedOutputSites)
                 std::cout << fixed_out_val << ", ";
         std::cout << ")].";
         exit(1);
     }
 
-    if (sharedData -> numberOfDataPoints > sharedData -> iterationEnd) {
+    if (systemData->numberOfDataPoints > systemData->iterationEnd) {
         std::cout << "Warning: You tried to print more data than was generated [numberOfDataPoints > iterationEnd]";
         exit(1);
     }
 
-    if (sharedData -> useLLG and sharedData -> useSLLG) {
+    if (systemData->useLLG and systemData->useSLLG) {
         std::cout << "Warning: You cannot use both the LLG and sLLG equations. Please choose one or the other.";
         exit(1);
     }
 
-    if (sharedData -> useMultilayer and sharedData -> totalLayers < 2) {
+    if (systemData->useMultilayer and systemData->totalLayers < 2) {
         std::cout << "Warning: You cannot use the multilayer solver with less than 2 layers.";
         exit(1);
     }
 
-    if (sharedData -> useDemagIntense && sharedData -> useDemagFft) {
+    if (systemData->useDemagIntense && systemData->useDemagFft) {
         std::cout << "Warning: You cannot use both the intense and FFT demag solvers. Please choose one or the other.";
         exit(1);
     }
 
-    if ((sharedData -> useDemagIntense && !GV.GetIsFerromagnetic()) || (sharedData -> useDemagFft && !GV.GetIsFerromagnetic())) {
+    if ((systemData->useDemagIntense && !GV.GetIsFerromagnetic()) || (systemData->useDemagFft && !GV.GetIsFerromagnetic())) {
         std::cout << "Warning: You cannot use the demag solvers with non-ferromagnetic materials.";
         exit(1);
     }
