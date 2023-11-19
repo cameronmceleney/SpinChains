@@ -4,18 +4,6 @@
 
 #include "NMInitialisation.h"
 
-void NMInitialisation::initialiseSimulation() {
-    // Virtual function access to abstract NMInitialisation
-    Initialise();
-}
-
-void NMInitialisation::testModifyingDouble(double newValue) {
-    // Test modifying a double in the parent class from the child
-    systemData->ambientTemperature = newValue;
-    systemData->iterEndShock = 0.12345;
-    std::cout << "I changed another value: " << systemData->iterEndShock << std::endl;
-}
-
 void NMInitialisation::Initialise() {
     // Constructor implementation
     _setSimulationFlags();
@@ -23,6 +11,9 @@ void NMInitialisation::Initialise() {
     _generateRemainingParameters();
     _setMaterialParameters();
     _guardClauses();
+
+    std::cout << "ambientTemp in init: " << systemData->ambientTemperature << std::endl;
+    std::cout<<"Completed initialisation of init vals" << std::endl;
 }
 void NMInitialisation::_setSimulationFlags() {
 
@@ -62,7 +53,6 @@ void NMInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     systemData->ambientTemperature = 273; // Kelvin
-    std::cout << systemData->ambientTemperature << std::endl;
 
     systemData->drivingFreq = 43.5 * 1e9;
     systemData->dynamicBiasField = 3e-3;
@@ -202,4 +192,11 @@ void NMInitialisation::_guardClauses() {
         exit(1);
     }
 
+}
+
+void NMInitialisation::testModifyingDouble(double newValue) {
+    // Test modifying a double in the parent class from the child
+    systemData->ambientTemperature = newValue;
+    systemData->iterEndShock = 0.12345;
+    std::cout << "I changed another value: " << systemData->iterEndShock << std::endl;
 }

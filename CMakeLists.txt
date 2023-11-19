@@ -31,14 +31,14 @@ add_executable(SpinChains src/main.cpp
         src/NewSolver.cpp include/NewSolver.h
         NMSubClasses/NMInitialisation.cpp NMSubClasses/NMInitialisation.h
         src/NMSuperClassTest.cpp include/NMSuperClassTest.h
-        #NMSubClasses/NMConfiguration.cpp NMSubClasses/NMConfiguration.h
-        #NMSubClasses/DipolarField.cpp NMSubClasses/DipolarField.h
-        #NMSubClasses/EffectiveField.cpp NMSubClasses/EffectiveField.h
-        #NMSubClasses/DemagField.cpp NMSubClasses/DemagField.h
-        #NMSubClasses/LLG.cpp NMSubClasses/LLG.h
-        #NMSubClasses/NMDataHandling.cpp NMSubClasses/NMDataHandling.h
-        #NMSubClasses/NMMethods.cpp NMSubClasses/NMMethods.h
-        #NMSubClasses/DebuggingTools.cpp NMSubClasses/DebuggingTools.h
+        NMSubClasses/NMConfiguration.cpp NMSubClasses/NMConfiguration.h
+        NMSubClasses/DipolarField.cpp NMSubClasses/DipolarField.h
+        NMSubClasses/EffectiveField.cpp NMSubClasses/EffectiveField.h
+        NMSubClasses/DemagField.cpp NMSubClasses/DemagField.h
+        NMSubClasses/LLG.cpp NMSubClasses/LLG.h
+        NMSubClasses/NMDataHandling.cpp NMSubClasses/NMDataHandling.h
+        NMSubClasses/NMMethods.cpp NMSubClasses/NMMethods.h
+        NMSubClasses/DebuggingTools.cpp NMSubClasses/DebuggingTools.h
 )
 
 # Include directories for FFTW

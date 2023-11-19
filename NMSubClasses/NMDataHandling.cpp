@@ -13,22 +13,22 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using LLG: [" << useLLG << "]\t\t\t\tUsing Shockwave: [" << hasShockwave << "]\t\tDrive from LHS: [" << lhsDrive <<
-                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << hasStaticDrive << "]\n";
+        outputFileName << "Using LLG: [" << systemData->useLLG << "]\t\t\t\tUsing Shockwave: [" << systemData->hasShockwave << "]\t\tDrive from LHS: [" << systemData->lhsDrive <<
+                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << systemData->hasStaticDrive << "]\n";
 
         outputFileName << "\n";
 
-        outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t" << "Dynamic Bias Field (H_D1): " << dynamicBiasField << " T\n" <<
-                          "Dynamic Bias Field Scale Factor: " << shockwaveInitialStrength << "\t\t" << "Second Dynamic Bias Field (H_D2): " << shockwaveMax << " T\n" <<
-                          "Driving Frequency (f): " << drivingFreq << "Hz\t\t""Driving Region Start Site: " << drivingRegionLhs - numSpinsDamped << "\n" <<
-                          "Driving Region End Site: " << drivingRegionRhs - numSpinsDamped << " \t\t\t" << "Driving Region Width: " << drivingRegionWidth << " \n" <<
-                          "Max. Sim. Time: " << maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): " << exchangeEnergyMin  << " T\n" <<
-                          "Max. Exchange Val (J): " << exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: " << iterationEnd << "\n" <<
-                          "No. DataPoints: " << numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: " << numSpinsInChain << "\n" <<
-                          "No. Damped Spins: " << numSpinsDamped << "per side\t\t\t" << "No. Total Spins: " << systemTotalSpins << " \n" <<
-                          "Stepsize (h): " << stepsize << "\t\t\t\t" << "Gilbert Damping Factor: " << gilbertDamping << "\n" <<
-                          "Gyromagnetic Ratio (2Pi*Y): " << gyroMagConst << "\t\t""Shockwave Gradient Time: " << iterStartShock << "s\n" <<
-                          "Shockwave Application Time: " << shockwaveGradientTime * stepsize << "s\n" <<
+        outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t" << "Dynamic Bias Field (H_D1): " << systemData->dynamicBiasField << " T\n" <<
+                          "Dynamic Bias Field Scale Factor: " << systemData->shockwaveInitialStrength << "\t\t" << "Second Dynamic Bias Field (H_D2): " << systemData->shockwaveMax << " T\n" <<
+                          "Driving Frequency (f): " << systemData->drivingFreq << "Hz\t\t""Driving Region Start Site: " << systemData->drivingRegionLhs - systemData->numSpinsDamped << "\n" <<
+                          "Driving Region End Site: " << systemData->drivingRegionRhs - systemData->numSpinsDamped << " \t\t\t" << "Driving Region Width: " << systemData->drivingRegionWidth << " \n" <<
+                          "Max. Sim. Time: " << systemData->maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): " << systemData->exchangeEnergyMin  << " T\n" <<
+                          "Max. Exchange Val (J): " << systemData->exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: " << systemData->iterationEnd << "\n" <<
+                          "No. DataPoints: " << systemData->numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: " << systemData->numSpinsInChain << "\n" <<
+                          "No. Damped Spins: " << systemData->numSpinsDamped << "per side\t\t\t" << "No. Total Spins: " << systemData->systemTotalSpins << " \n" <<
+                          "systemData->stepsize (h): " << systemData->stepsize << "\t\t\t\t" << "Gilbert Damping Factor: " << systemData->gilbertDamping << "\n" <<
+                          "Gyromagnetic Ratio (2Pi*Y): " << systemData->gyroMagConst << "\t\t""Shockwave Gradient Time: " << systemData->iterStartShock << "s\n" <<
+                          "Shockwave Application Time: " << systemData->shockwaveGradientTime * systemData->stepsize << "s\n" <<
                           std::endl;
 
         return;
@@ -39,23 +39,23 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using LLG," << useLLG << ",Using Shockwave," << hasShockwave << ",Drive from LHS," << lhsDrive <<
-                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << hasStaticDrive << "\n";
+        outputFileName << "Using LLG," << systemData->useLLG << ",Using Shockwave," << systemData->hasShockwave << ",Drive from LHS," << systemData->lhsDrive <<
+                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << systemData->hasStaticDrive << "\n";
 
         outputFileName << "\n";
 
         outputFileName << "Static Bias Field (H0) [T],Dynamic Bias Field (H_D1) [T],Dynamic Bias Field Scale Factor,Second Dynamic Bias Field (H_D2)[T],"
                           "Driving Frequency (f) [Hz],Driving Region Start Site,Driving Region End Site, Driving Region Width,"
                           "Max. Sim. Time [s],Min. Exchange Val (J)[T],Max. Exchange Val (J)[T],Max. Iterations,No. DataPoints,"
-                          "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, Stepsize (h),Gilbert Damping Factor, Gyromagnetic Ratio (2Pi*Y),"
+                          "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, systemData->stepsize (h),Gilbert Damping Factor, Gyromagnetic Ratio (2Pi*Y),"
                           "Shockwave Gradient Time [s], Shockwave Application Time [s]"
                           "\n";
 
-        outputFileName << GV.GetStaticBiasField() << ", " << dynamicBiasField << ", " << shockwaveInitialStrength << ", " << shockwaveMax << ", "
-                       << drivingFreq << ", " << drivingRegionLhs - numSpinsDamped << ", " << drivingRegionRhs - numSpinsDamped << ", " << drivingRegionWidth << ", "
-                       << maxSimTime << ", " << exchangeEnergyMin << ", " << exchangeEnergyMax << ", " << iterationEnd << ", " << numberOfDataPoints << ", "
-                       << numSpinsInChain << ", " << numSpinsDamped << ", " << systemTotalSpins << ", " << stepsize << ", " << gilbertDamping << ", " << gyroMagConst << ", "
-                       << iterStartShock << ", " << shockwaveGradientTime * stepsize
+        outputFileName << GV.GetStaticBiasField() << ", " << systemData->dynamicBiasField << ", " << systemData->shockwaveInitialStrength << ", " << systemData->shockwaveMax << ", "
+                       << systemData->drivingFreq << ", " << systemData->drivingRegionLhs - systemData->numSpinsDamped << ", " << systemData->drivingRegionRhs - systemData->numSpinsDamped << ", " << systemData->drivingRegionWidth << ", "
+                       << systemData->maxSimTime << ", " << systemData->exchangeEnergyMin << ", " << systemData->exchangeEnergyMax << ", " << systemData->iterationEnd << ", " << systemData->numberOfDataPoints << ", "
+                       << systemData->numSpinsInChain << ", " << systemData->numSpinsDamped << ", " << systemData->systemTotalSpins << ", " << systemData->stepsize << ", " << systemData->gilbertDamping << ", " << systemData->gyroMagConst << ", "
+                       << systemData->iterStartShock << ", " << systemData->shockwaveGradientTime * systemData->stepsize
                        << "\n";
 
         outputFileName << "\n";
@@ -80,18 +80,18 @@ void NMDataHandling::CreateColumnHeaders(std::ofstream &outputFileName) {
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
      */
-    if (printAllData or printFixedLines) {
+    if (systemData->printAllData or systemData->printFixedLines) {
         // Print column heading for every spin simulated.
         outputFileName << "Time [s], ";
-        for (int i = 1; i <= systemTotalSpins; i++) {
+        for (int i = 1; i <= systemData->systemTotalSpins; i++) {
             outputFileName << i << ", ";
         }
         outputFileName << std::endl;
 
-    } else if (printFixedSites) {
+    } else if (systemData->printFixedSites) {
 
         outputFileName << "Time";
-        for (int & fixed_out_val : fixedOutputSites)
+        for (int & fixed_out_val : systemData->fixedOutputSites)
             outputFileName << "," << fixed_out_val;
         outputFileName << std::endl;
 
@@ -107,12 +107,12 @@ void NMDataHandling::InformUserOfCodeType(const std::string& nameNumericalMethod
     /**
      * Informs the user of the code type they are running, including: solver type; special modules.
      */
-    if (useLLG)
+    if (systemData->useLLG)
         std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (LLG) code";
     else
         std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (Torque) code";
 
-    if (hasShockwave)
+    if (systemData->hasShockwave)
         std::cout << " with shockwave module.\n";
     else
         std::cout << ".\n";
@@ -164,13 +164,13 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
     std::cout.precision(6);
     std::cout << std::scientific;
 
-    if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-        if (printFixedLines) {
-            for (int i = 0; i <= systemTotalSpins; i++) {
+    if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+        if (systemData->printFixedLines) {
+            for (int i = 0; i <= systemData->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * stepsize) << ",";
+                    outputFileName << (iteration * systemData->stepsize) << ",";
 
                 else if (i == GV.GetNumSpins())
                     // Ensures that the final line doesn't contain a comma.
@@ -184,15 +184,15 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
             outputFileName << std::endl;
 
             return;
-        } else if (printFixedSites) {
-            /*outputFileName << (iteration * stepsize) << ","
+        } else if (systemData->printFixedSites) {
+            /*outputFileName << (iteration * systemData->stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
                << arrayToWrite[18000] << ","
                << arrayToWrite[20000] << std::endl;
                */
-            outputFileName << (iteration * stepsize);
-            for (int & fixed_out_val : fixedOutputSites)
+            outputFileName << (iteration * systemData->stepsize);
+            for (int & fixed_out_val : systemData->fixedOutputSites)
                 outputFileName << "," << arrayToWrite[fixed_out_val];
             outputFileName << std::endl;
 
@@ -200,11 +200,11 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
         }
     }
 
-    if (printAllData) {
-        for (int i = 0; i <= systemTotalSpins; i++) {
+    if (systemData->printAllData) {
+        for (int i = 0; i <= systemData->systemTotalSpins; i++) {
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if (i == 0)
-                outputFileName << (iteration * stepsize) << ","; // Print current time
+                outputFileName << (iteration * systemData->stepsize) << ","; // Print current time
             else if (i == GV.GetNumSpins())
                 outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
             else
@@ -216,15 +216,15 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
     }
 
     /*
-    if (printFixedLines) {
-        // iteration >= static_cast<int>(iterationEnd / 2.0) &&
-        if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-            //if (iteration == iterationEnd) {
-            for (int i = 0; i <= systemTotalSpins; i++) {
+    if (systemData->printFixedLines) {
+        // iteration >= static_cast<int>(systemData->iterationEnd / 2.0) &&
+        if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+            //if (iteration == systemData->iterationEnd) {
+            for (int i = 0; i <= systemData->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * stepsize) << ",";
+                    outputFileName << (iteration * systemData->stepsize) << ",";
 
                 else if (i == GV.GetNumSpins())
                     // Ensures that the final line doesn't contain a comma.
@@ -238,11 +238,11 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
             outputFileName << std::endl;
         }
     } else {
-        if (printAllData) {
-            for (int i = 0; i <= systemTotalSpins; i++) {
+        if (systemData->printAllData) {
+            for (int i = 0; i <= systemData->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
-                    outputFileName << (iteration * stepsize) << ","; // Print current time
+                    outputFileName << (iteration * systemData->stepsize) << ","; // Print current time
                 else if (i == GV.GetNumSpins())
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
@@ -250,33 +250,33 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
             }
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
-            if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-                if (printFixedSites) {
+            if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+                if (systemData->printFixedSites) {
 
-                    outputFileName << (iteration * stepsize) << ","
-                                   << arrayToWrite[drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[drivingRegionRhs] << ","
+                    outputFileName << (iteration * systemData->stepsize) << ","
+                                   << arrayToWrite[systemData->drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[systemData->drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
-                                   << arrayToWrite[systemTotalSpins] << std::endl;
+                                   << arrayToWrite[systemData->systemTotalSpins] << std::endl;
 
-                    outputFileName << (iteration * stepsize) << ","
+                    outputFileName << (iteration * systemData->stepsize) << ","
                                    << arrayToWrite[400] << ","
                                    << arrayToWrite[1500] << ","
                                    << arrayToWrite[3000] << ","
                                    << arrayToWrite[4500] << ","
                                    << arrayToWrite[5600] << std::endl;
                 } else {
-                    outputFileName << (iteration * stepsize) << ","
-                                   << arrayToWrite[drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[drivingRegionRhs] << ","
-                                   << arrayToWrite[static_cast<int>(systemTotalSpins / 4.0)] << ","
-                                   << arrayToWrite[static_cast<int>(systemTotalSpins / 2.0)] << ","
-                                   << arrayToWrite[3 * static_cast<int>(systemTotalSpins / 4.0)] << ","
-                                   << arrayToWrite[systemTotalSpins] << std::endl;
+                    outputFileName << (iteration * systemData->stepsize) << ","
+                                   << arrayToWrite[systemData->drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[systemData->drivingRegionRhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->systemTotalSpins / 4.0)] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->systemTotalSpins / 2.0)] << ","
+                                   << arrayToWrite[3 * static_cast<int>(systemData->systemTotalSpins / 4.0)] << ","
+                                   << arrayToWrite[systemData->systemTotalSpins] << std::endl;
                 }
             }
         }
@@ -294,13 +294,13 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
         }
     }
 
-    if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-        if (printFixedLines) {
-            for (int i = 0; i <= systemTotalSpins; i++) {
+    if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+        if (systemData->printFixedLines) {
+            for (int i = 0; i <= systemData->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * stepsize) << ",";
+                    outputFileName << (iteration * systemData->stepsize) << ",";
 
                 else if (i == GV.GetNumSpins())
                     // Ensures that the final line doesn't contain a comma.
@@ -314,15 +314,15 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl;
 
             return;
-        } else if (printFixedSites) {
-            /*outputFileName << (iteration * stepsize) << ","
+        } else if (systemData->printFixedSites) {
+            /*outputFileName << (iteration * systemData->stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
                << arrayToWrite[18000] << ","
                << arrayToWrite[20000] << std::endl;
                */
-            outputFileName << (iteration * stepsize);
-            for (int & fixed_out_val : fixedOutputSites)
+            outputFileName << (iteration * systemData->stepsize);
+            for (int & fixed_out_val : systemData->fixedOutputSites)
                 outputFileName << "," << arrayToWrite[fixed_out_val];
             outputFileName << std::endl;
 
@@ -330,11 +330,11 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
         }
     }
 
-    if (printAllData) {
-        for (int i = 0; i <= systemTotalSpins; i++) {
+    if (systemData->printAllData) {
+        for (int i = 0; i <= systemData->systemTotalSpins; i++) {
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if (i == 0)
-                outputFileName << (iteration * stepsize) << ","; // Print current time
+                outputFileName << (iteration * systemData->stepsize) << ","; // Print current time
             else if (i == GV.GetNumSpins())
                 outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
             else
@@ -346,15 +346,15 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
     }
 
     /*
-    if (printFixedLines) {
-        // iteration >= static_cast<int>(iterationEnd / 2.0) &&
-        if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-            //if (iteration == iterationEnd) {
-            for (int i = 0; i <= systemTotalSpins; i++) {
+    if (systemData->printFixedLines) {
+        // iteration >= static_cast<int>(systemData->iterationEnd / 2.0) &&
+        if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+            //if (iteration == systemData->iterationEnd) {
+            for (int i = 0; i <= systemData->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * stepsize) << ",";
+                    outputFileName << (iteration * systemData->stepsize) << ",";
 
                 else if (i == GV.GetNumSpins())
                     // Ensures that the final line doesn't contain a comma.
@@ -368,11 +368,11 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl;
         }
     } else {
-        if (printAllData) {
-            for (int i = 0; i <= systemTotalSpins; i++) {
+        if (systemData->printAllData) {
+            for (int i = 0; i <= systemData->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
-                    outputFileName << (iteration * stepsize) << ","; // Print current time
+                    outputFileName << (iteration * systemData->stepsize) << ","; // Print current time
                 else if (i == GV.GetNumSpins())
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
@@ -380,33 +380,33 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             }
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
-            if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-                if (printFixedSites) {
+            if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+                if (systemData->printFixedSites) {
 
-                    outputFileName << (iteration * stepsize) << ","
-                                   << arrayToWrite[drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[drivingRegionRhs] << ","
+                    outputFileName << (iteration * systemData->stepsize) << ","
+                                   << arrayToWrite[systemData->drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[systemData->drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
-                                   << arrayToWrite[systemTotalSpins] << std::endl;
+                                   << arrayToWrite[systemData->systemTotalSpins] << std::endl;
 
-                    outputFileName << (iteration * stepsize) << ","
+                    outputFileName << (iteration * systemData->stepsize) << ","
                                    << arrayToWrite[400] << ","
                                    << arrayToWrite[1500] << ","
                                    << arrayToWrite[3000] << ","
                                    << arrayToWrite[4500] << ","
                                    << arrayToWrite[5600] << std::endl;
                 } else {
-                    outputFileName << (iteration * stepsize) << ","
-                                   << arrayToWrite[drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[drivingRegionRhs] << ","
-                                   << arrayToWrite[static_cast<int>(systemTotalSpins / 4.0)] << ","
-                                   << arrayToWrite[static_cast<int>(systemTotalSpins / 2.0)] << ","
-                                   << arrayToWrite[3 * static_cast<int>(systemTotalSpins / 4.0)] << ","
-                                   << arrayToWrite[systemTotalSpins] << std::endl;
+                    outputFileName << (iteration * systemData->stepsize) << ","
+                                   << arrayToWrite[systemData->drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[systemData->drivingRegionRhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->systemTotalSpins / 4.0)] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->systemTotalSpins / 2.0)] << ","
+                                   << arrayToWrite[3 * static_cast<int>(systemData->systemTotalSpins / 4.0)] << ","
+                                   << arrayToWrite[systemData->systemTotalSpins] << std::endl;
                 }
             }
         }
@@ -442,22 +442,22 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using LLG: [" << useLLG << "]\t\t\t\tUsing Shockwave: [" << hasShockwave << "]\t\tDrive from LHS: [" << lhsDrive <<
-                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << hasStaticDrive << "]\n";
+        outputFileName << "Using LLG: [" << systemData->useLLG << "]\t\t\t\tUsing Shockwave: [" << systemData->hasShockwave << "]\t\tDrive from LHS: [" << systemData->lhsDrive <<
+                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << systemData->hasStaticDrive << "]\n";
 
         outputFileName << "\n";
 
-        outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t" << "Dynamic Bias Field (H_D1): " << dynamicBiasField << " T\n" <<
-                          "Dynamic Bias Field Scale Factor: " << shockwaveInitialStrength << "\t\t" << "Second Dynamic Bias Field (H_D2): " << shockwaveMax << " T\n" <<
-                          "Driving Frequency (f): " << drivingFreq << "Hz\t\t""Driving Region Start Site: " << drivingRegionLhs - numSpinsDamped << "\n" <<
-                          "Driving Region End Site: " << drivingRegionRhs - numSpinsDamped << " \t\t\t" << "Driving Region Width: " << drivingRegionWidth << " \n" <<
-                          "Max. Sim. Time: " << maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): " << exchangeEnergyMin  << " T\n" <<
-                          "Max. Exchange Val (J): " << exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: " << iterationEnd << "\n" <<
-                          "No. DataPoints: " << numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: " << layerSpinsInChain[layer] << "\n" <<
-                          "No. Damped Spins: " << numSpinsDamped << "per side\t\t\t" << "No. Total Spins: " << layerTotalSpins[layer] << " \n" <<
-                          "Stepsize (h): " << stepsize << "\t\t\t\t" << "Gilbert Damping Factor: " << gilbertDamping << "\n" <<
-                          "Gyromagnetic Ratio (2Pi*Y): " << gyroMagConst << "\t\t""Shockwave Gradient Time: " << iterStartShock << "s\n" <<
-                          "Shockwave Application Time: " << shockwaveGradientTime * stepsize << "s\n" <<
+        outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t" << "Dynamic Bias Field (H_D1): " << systemData->dynamicBiasField << " T\n" <<
+                          "Dynamic Bias Field Scale Factor: " << systemData->shockwaveInitialStrength << "\t\t" << "Second Dynamic Bias Field (H_D2): " << systemData->shockwaveMax << " T\n" <<
+                          "Driving Frequency (f): " << systemData->drivingFreq << "Hz\t\t""Driving Region Start Site: " << systemData->drivingRegionLhs - systemData->numSpinsDamped << "\n" <<
+                          "Driving Region End Site: " << systemData->drivingRegionRhs - systemData->numSpinsDamped << " \t\t\t" << "Driving Region Width: " << systemData->drivingRegionWidth << " \n" <<
+                          "Max. Sim. Time: " << systemData->maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): " << systemData->exchangeEnergyMin  << " T\n" <<
+                          "Max. Exchange Val (J): " << systemData->exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: " << systemData->iterationEnd << "\n" <<
+                          "No. DataPoints: " << systemData->numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: " << systemData->layerSpinsInChain[layer] << "\n" <<
+                          "No. Damped Spins: " << systemData->numSpinsDamped << "per side\t\t\t" << "No. Total Spins: " << systemData->layerTotalSpins[layer] << " \n" <<
+                          "systemData->stepsize (h): " << systemData->stepsize << "\t\t\t\t" << "Gilbert Damping Factor: " << systemData->gilbertDamping << "\n" <<
+                          "Gyromagnetic Ratio (2Pi*Y): " << systemData->gyroMagConst << "\t\t""Shockwave Gradient Time: " << systemData->iterStartShock << "s\n" <<
+                          "Shockwave Application Time: " << systemData->shockwaveGradientTime * systemData->stepsize << "s\n" <<
                           std::endl;
 
         return;
@@ -468,23 +468,23 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using LLG," << useLLG << ",Using Shockwave," << hasShockwave << ",Drive from LHS," << lhsDrive <<
-                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << hasStaticDrive << "\n";
+        outputFileName << "Using LLG," << systemData->useLLG << ",Using Shockwave," << systemData->hasShockwave << ",Drive from LHS," << systemData->lhsDrive <<
+                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << systemData->hasStaticDrive << "\n";
 
         outputFileName << "\n";
 
         outputFileName << "Static Bias Field (H0) [T],Dynamic Bias Field (H_D1) [T],Dynamic Bias Field Scale Factor,Second Dynamic Bias Field (H_D2)[T],"
                           "Driving Frequency (f) [Hz],Driving Region Start Site,Driving Region End Site, Driving Region Width,"
                           "Max. Sim. Time [s],Min. Exchange Val (J)[T],Max. Exchange Val (J)[T],Max. Iterations,No. DataPoints,"
-                          "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, Stepsize (h),Gilbert Damping Factor, Gyromagnetic Ratio (2Pi*Y),"
+                          "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, systemData->stepsize (h),Gilbert Damping Factor, Gyromagnetic Ratio (2Pi*Y),"
                           "Shockwave Gradient Time [s], Shockwave Application Time [s]"
                           "\n";
 
-        outputFileName << GV.GetStaticBiasField() << ", " << dynamicBiasField << ", " << shockwaveInitialStrength << ", " << shockwaveMax << ", "
-                       << drivingFreq << ", " << drivingRegionLhs - numSpinsDamped << ", " << drivingRegionRhs - numSpinsDamped << ", " << drivingRegionWidth << ", "
-                       << maxSimTime << ", " << exchangeEnergyMin << ", " << exchangeEnergyMax << ", " << iterationEnd << ", " << numberOfDataPoints << ", "
-                       << layerSpinsInChain[layer] << ", " << numSpinsDamped << ", " << layerTotalSpins[layer] << ", " << stepsize << ", " << gilbertDamping << ", " << gyroMagConst << ", "
-                       << iterStartShock << ", " << shockwaveGradientTime * stepsize
+        outputFileName << GV.GetStaticBiasField() << ", " << systemData->dynamicBiasField << ", " << systemData->shockwaveInitialStrength << ", " << systemData->shockwaveMax << ", "
+                       << systemData->drivingFreq << ", " << systemData->drivingRegionLhs - systemData->numSpinsDamped << ", " << systemData->drivingRegionRhs - systemData->numSpinsDamped << ", " << systemData->drivingRegionWidth << ", "
+                       << systemData->maxSimTime << ", " << systemData->exchangeEnergyMin << ", " << systemData->exchangeEnergyMax << ", " << systemData->iterationEnd << ", " << systemData->numberOfDataPoints << ", "
+                       << systemData->layerSpinsInChain[layer] << ", " << systemData->numSpinsDamped << ", " << systemData->layerTotalSpins[layer] << ", " << systemData->stepsize << ", " << systemData->gilbertDamping << ", " << systemData->gyroMagConst << ", "
+                       << systemData->iterStartShock << ", " << systemData->shockwaveGradientTime * systemData->stepsize
                        << "\n";
 
         outputFileName << "\n";
@@ -509,18 +509,18 @@ void NMDataHandling::CreateColumnHeaders(std::ofstream &outputFileName, int& lay
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
      */
-    if (printAllData or printFixedLines) {
+    if (systemData->printAllData or systemData->printFixedLines) {
         // Print column heading for every spin simulated.
         outputFileName << "Time [s], ";
-        for (int i = 1; i <= layerTotalSpins[layer]; i++) {
+        for (int i = 1; i <= systemData->layerTotalSpins[layer]; i++) {
             outputFileName << i << ", ";
         }
         outputFileName << std::endl;
 
-    } else if (printFixedSites) {
+    } else if (systemData->printFixedSites) {
 
         outputFileName << "Time";
-        for (int & fixed_out_val : fixedOutputSites)
+        for (int & fixed_out_val : systemData->fixedOutputSites)
             outputFileName << "," << fixed_out_val;
         outputFileName << std::endl;
 
@@ -553,15 +553,15 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
         }
     }
 
-    if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-        if (printFixedLines) {
-            for (int i = 0; i <= layerTotalSpins[layer]; i++) {
+    if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+        if (systemData->printFixedLines) {
+            for (int i = 0; i <= systemData->layerTotalSpins[layer]; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * stepsize) << ",";
+                    outputFileName << (iteration * systemData->stepsize) << ",";
 
-                else if (i == layerTotalSpins[layer])
+                else if (i == systemData->layerTotalSpins[layer])
                     // Ensures that the final line doesn't contain a comma.
                     outputFileName << arrayToWrite[i] << std::flush;
 
@@ -573,15 +573,15 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl;
 
             return;
-        } else if (printFixedSites) {
-            /*outputFileName << (iteration * stepsize) << ","
+        } else if (systemData->printFixedSites) {
+            /*outputFileName << (iteration * systemData->stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
                << arrayToWrite[18000] << ","
                << arrayToWrite[20000] << std::endl;
                */
-            outputFileName << (iteration * stepsize);
-            for (int & fixed_out_val : fixedOutputSites)
+            outputFileName << (iteration * systemData->stepsize);
+            for (int & fixed_out_val : systemData->fixedOutputSites)
                 outputFileName << "," << arrayToWrite[fixed_out_val];
             outputFileName << std::endl;
 
@@ -589,12 +589,12 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
         }
     }
 
-    if (printAllData) {
-        for (int i = 0; i <= layerTotalSpins[layer]; i++) {
+    if (systemData->printAllData) {
+        for (int i = 0; i <= systemData->layerTotalSpins[layer]; i++) {
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if (i == 0)
-                outputFileName << (iteration * stepsize) << ","; // Print current time
-            else if (i == layerTotalSpins[layer])
+                outputFileName << (iteration * systemData->stepsize) << ","; // Print current time
+            else if (i == systemData->layerTotalSpins[layer])
                 outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
             else
                 outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
@@ -605,15 +605,15 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
     }
 
     /*
-    if (printFixedLines) {
-        // iteration >= static_cast<int>(iterationEnd / 2.0) &&
-        if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-            //if (iteration == iterationEnd) {
-            for (int i = 0; i <= systemTotalSpins; i++) {
+    if (systemData->printFixedLines) {
+        // iteration >= static_cast<int>(systemData->iterationEnd / 2.0) &&
+        if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+            //if (iteration == systemData->iterationEnd) {
+            for (int i = 0; i <= systemData->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
                     // Print current time
-                    outputFileName << (iteration * stepsize) << ",";
+                    outputFileName << (iteration * systemData->stepsize) << ",";
 
                 else if (i == GV.GetNumSpins())
                     // Ensures that the final line doesn't contain a comma.
@@ -627,11 +627,11 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl;
         }
     } else {
-        if (printAllData) {
-            for (int i = 0; i <= systemTotalSpins; i++) {
+        if (systemData->printAllData) {
+            for (int i = 0; i <= systemData->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
-                    outputFileName << (iteration * stepsize) << ","; // Print current time
+                    outputFileName << (iteration * systemData->stepsize) << ","; // Print current time
                 else if (i == GV.GetNumSpins())
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
@@ -639,33 +639,33 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             }
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
-            if (iteration % (iterationEnd / numberOfDataPoints) == 0) {
-                if (printFixedSites) {
+            if (iteration % (systemData->iterationEnd / systemData->numberOfDataPoints) == 0) {
+                if (systemData->printFixedSites) {
 
-                    outputFileName << (iteration * stepsize) << ","
-                                   << arrayToWrite[drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[drivingRegionRhs] << ","
+                    outputFileName << (iteration * systemData->stepsize) << ","
+                                   << arrayToWrite[systemData->drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[systemData->drivingRegionRhs] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
-                                   << arrayToWrite[systemTotalSpins] << std::endl;
+                                   << arrayToWrite[systemData->systemTotalSpins] << std::endl;
 
-                    outputFileName << (iteration * stepsize) << ","
+                    outputFileName << (iteration * systemData->stepsize) << ","
                                    << arrayToWrite[400] << ","
                                    << arrayToWrite[1500] << ","
                                    << arrayToWrite[3000] << ","
                                    << arrayToWrite[4500] << ","
                                    << arrayToWrite[5600] << std::endl;
                 } else {
-                    outputFileName << (iteration * stepsize) << ","
-                                   << arrayToWrite[drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[drivingRegionRhs] << ","
-                                   << arrayToWrite[static_cast<int>(systemTotalSpins / 4.0)] << ","
-                                   << arrayToWrite[static_cast<int>(systemTotalSpins / 2.0)] << ","
-                                   << arrayToWrite[3 * static_cast<int>(systemTotalSpins / 4.0)] << ","
-                                   << arrayToWrite[systemTotalSpins] << std::endl;
+                    outputFileName << (iteration * systemData->stepsize) << ","
+                                   << arrayToWrite[systemData->drivingRegionLhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->drivingRegionWidth / 2.0)] << ","
+                                   << arrayToWrite[systemData->drivingRegionRhs] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->systemTotalSpins / 4.0)] << ","
+                                   << arrayToWrite[static_cast<int>(systemData->systemTotalSpins / 2.0)] << ","
+                                   << arrayToWrite[3 * static_cast<int>(systemData->systemTotalSpins / 4.0)] << ","
+                                   << arrayToWrite[systemData->systemTotalSpins] << std::endl;
                 }
             }
         }

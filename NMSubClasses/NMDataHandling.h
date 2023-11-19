@@ -9,8 +9,14 @@
 #include "../include/NMSuperClassTest.h"
 #include "NMMethods.h"
 
+class NMMethods;
+
 class NMDataHandling:  public NMSuperClassTest {
     friend class NMMethods;
+public:
+    NMDataHandling(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};
+    void                performInitialisation() override { std::cout<<"Data Handling called correctly" << std::endl; };
+
 public:
     // ####################################            Define Private Variables            ###################################
 

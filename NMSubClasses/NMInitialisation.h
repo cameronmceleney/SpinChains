@@ -24,14 +24,16 @@ private:
     void                _setMaterialParameters();
     void                _guardClauses();
 
+    void                Initialise();
+
+
 protected:
     //
 
 public:
-    //NMInitialisation(std::shared_ptr<SystemDataContainer> data);
-    void                initialiseSimulation() override;
+    NMInitialisation(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};
     void                testModifyingDouble(double  newValue);
-    void                Initialise();
+    void                performInitialisation() override { Initialise(); };
 };
 
 

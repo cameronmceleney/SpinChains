@@ -220,7 +220,7 @@ void DemagnetisationFields::DemagField1DComplex(std::vector<double>& outDemagX, 
     }
     bool testOutRMS = false;
     if (testOutRMS) {
-        if (iterationEnd >= 100 && iteration % (iterationEnd / 1000) == 0) {
+        if (systemData->iterationEnd >= 100 && iteration % (systemData->iterationEnd / 1000) == 0) {
             if (mxRMSETest || myRMSETest || mzRMSETest) {
                 std::cout << "Iter. #" << iteration << " | RK" << rkStageName << " ";
                 if (mxRMSETest)
@@ -447,7 +447,7 @@ void DemagnetisationFields::DemagField1DReal(std::vector<double>& outDemagX, std
     }
     bool testOutRMS = false;
     if (testOutRMS) {
-        if (iterationEnd >= 100 && iteration % (iterationEnd / 1000) == 0) {
+        if (systemData->iterationEnd >= 100 && iteration % (systemData->iterationEnd / 1000) == 0) {
             if (mxRMSETest || myRMSETest || mzRMSETest) {
                 std::cout << "Iter. #" << iteration << " | RK" << rkStageName << " ";
                 if (mxRMSETest)

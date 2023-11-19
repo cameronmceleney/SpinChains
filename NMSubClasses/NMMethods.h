@@ -9,7 +9,7 @@
 #include "../include/NMSuperClassTest.h"
 
 // C++ User Libraries (Sibling Classes)
-class NMDataHandling;
+#include "NMDataHandling.h"
 
 // C++ User Libraries (Child Classes)
 class DemagnetisationFields;
@@ -21,7 +21,7 @@ class DipolarInteractions;
 class NMMethods:  public NMSuperClassTest {
 private:
     // ####################################            Private Instances            ###################################
-    NMDataHandling* NMData;
+    //NMDataHandling* NMData;
 
     DemagnetisationFields* Demag;
     EffectiveField* EffField;
@@ -58,7 +58,11 @@ public:
     // ####################################            Define Public Variables            ###################################
 
     // ####################################            Define Public Methods            ###################################
-    void                runMethod(const std::string& methodToUse);
+    NMMethods(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};
+    void performInitialisation() override { runMethod(); };
+
+public:
+    void                runMethod();
 };
 
 

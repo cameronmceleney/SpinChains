@@ -45,12 +45,12 @@ double DipolarInteractions::dipolarKernel1D(const int& originSite, const int& in
 
     // ################################ Calculate distance between sites ################################
 
-    if (exchangeVec[influencingSite] == 0) {
+    if (systemData->exchangeVec[influencingSite] == 0) {
         // Guard clause to ensure that the exchange vector is not zero
         return 0.0;
     }
 
-    double latticeConstant = std::sqrt(exchangeStiffness / exchangeVec[influencingSite]);
+    double latticeConstant = std::sqrt(exchangeStiffness / systemData->exchangeVec[influencingSite]);
 
     if (std::isinf(latticeConstant)) {
         // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
@@ -59,7 +59,7 @@ double DipolarInteractions::dipolarKernel1D(const int& originSite, const int& in
 
     double positionVector = (influencingSite - originSite) * latticeConstant;
     // ################################ Calculate dipole kernel ################################
-    if (component == "X") {return PERM_FREESPACE / (2 * M_PI * pow(positionVector, 3.0));}
+    if (component == "X") {return systemData->PERM_FREESPACE / (2 * M_PI * pow(positionVector, 3.0));}
     else {throw std::runtime_error(std::string("Invalid component passed to dipolarKernel1D"));}
 }
 void DipolarInteractions::DipolarInteraction1D(std::vector<double> inMxTerms, std::vector<double>& outDipoleX) {
@@ -69,7 +69,7 @@ void DipolarInteractions::DipolarInteraction1D(std::vector<double> inMxTerms, st
     const double imagTerm = 0.0, normalizationFactor = 1.0 / static_cast<double>(GV.GetNumSpins());
 
     for (int i = 0; i < trueNumSpins; i++) {
-        inMxTerms[i] *= PERMITTIVITY_IRON;
+        inMxTerms[i] *= systemData->PERMITTIVITY_IRON;
     }
 
     // ################################ Lambda Functions ################################
@@ -177,9 +177,9 @@ std::vector<double> DipolarInteractions::DipolarInteractionClassic(std::vector<d
     // sitePositions contains 3 elements: {site to the left, current site, site to the right}
 
     for (int i = 0; i < mxTerms.size(); i++) {
-        mxTerms[i] *= PERMITTIVITY_IRON;
-        myTerms[i] *= PERMITTIVITY_IRON;
-        mzTerms[i] *= PERMITTIVITY_IRON;
+        mxTerms[i] *= systemData->PERMITTIVITY_IRON;
+        myTerms[i] *= systemData->PERMITTIVITY_IRON;
+        mzTerms[i] *= systemData->PERMITTIVITY_IRON;
     }
 
     double exchangeStiffness = 5.3e-17;
@@ -194,12 +194,12 @@ std::vector<double> DipolarInteractions::DipolarInteractionClassic(std::vector<d
             continue;
         }
 
-        if (exchangeVec[sitePositions[i]] == 0) {
+        if (systemData->exchangeVec[sitePositions[i]] == 0) {
             // Guard clause to ensure that the exchange vector is not zero
             continue;
         }
 
-        double latticeConstant = std::sqrt(exchangeStiffness / exchangeVec[sitePositions[i]]);
+        double latticeConstant = std::sqrt(exchangeStiffness / systemData->exchangeVec[sitePositions[i]]);
 
         if (std::isinf(latticeConstant)) {
             // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
@@ -222,7 +222,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionClassic(std::vector<d
         double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
 
         for (int j = 0; j < 3; j++) {
-            double DipoleValue = dipoleConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
+            double DipoleValue = systemData->dipoleConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
             totalDipoleTerms[j] += DipoleValue;
         }
     }
@@ -240,14 +240,14 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
 
     int vecLength, originIndex;
-    if (numberNeighbours == 0) {
+    if (systemData->numberNeighbours == 0) {
         // Guard clause to ensure that the number of neighbours is not zero
         return totalDipoleTerms;
-    } else if (numberNeighbours < 0) {
-        vecLength = layerSpinsInChain[currentLayer];
-        originIndex = currentSite - numSpinsDamped - 1;
+    } else if (systemData->numberNeighbours < 0) {
+        vecLength = systemData->layerSpinsInChain[currentLayer];
+        originIndex = currentSite - systemData->numSpinsDamped - 1;
     } else {
-        vecLength = 2 * numberNeighbours + 1;
+        vecLength = 2 * systemData->numberNeighbours + 1;
         originIndex = vecLength / 2 + 1;
     }
 
@@ -264,25 +264,25 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
      * CUDA is implemented; instead of giving a general 2D mTerms vector and then forcing this function to flatten.
      */
     int iFV = 0; // index flat vector
-    if (numberNeighbours < 0) {
-        for (int site = numSpinsDamped + 1; site <= vecLength + numSpinsDamped; site++) {
+    if (systemData->numberNeighbours < 0) {
+        for (int site = systemData->numSpinsDamped + 1; site <= vecLength + systemData->numSpinsDamped; site++) {
             // Flatting the vectors
-            mxTerms[iFV] = mTerms[site][0] * PERMITTIVITY_IRON;
-            myTerms[iFV] = mTerms[site][1] * PERMITTIVITY_IRON;
-            mzTerms[iFV] = mTerms[site][2] * PERMITTIVITY_IRON;
+            mxTerms[iFV] = mTerms[site][0] * systemData->PERMITTIVITY_IRON;
+            myTerms[iFV] = mTerms[site][1] * systemData->PERMITTIVITY_IRON;
+            mzTerms[iFV] = mTerms[site][2] * systemData->PERMITTIVITY_IRON;
             sitePositions[iFV] = site;
             iFV++;
     }
     } else {
-        for (int site = currentSite - numberNeighbours; site <= currentSite + numberNeighbours; site++) {
-            if (site < numSpinsDamped or site >= layerSpinsInChain[currentLayer] + numSpinsDamped) {
+        for (int site = currentSite - systemData->numberNeighbours; site <= currentSite + systemData->numberNeighbours; site++) {
+            if (site < systemData->numSpinsDamped or site >= systemData->layerSpinsInChain[currentLayer] + systemData->numSpinsDamped) {
                 // Guard clause to skip trying assignment of any element when the index is negative
                 continue;
             }
             // Flatting the vectors
-            mxTerms[iFV] = mTerms[site][0] * PERMITTIVITY_IRON;
-            myTerms[iFV] = mTerms[site][1] * PERMITTIVITY_IRON;
-            mzTerms[iFV] = mTerms[site][2] * PERMITTIVITY_IRON;
+            mxTerms[iFV] = mTerms[site][0] * systemData->PERMITTIVITY_IRON;
+            myTerms[iFV] = mTerms[site][1] * systemData->PERMITTIVITY_IRON;
+            mzTerms[iFV] = mTerms[site][2] * systemData->PERMITTIVITY_IRON;
             sitePositions[iFV] = site;
             iFV++;
         }
@@ -304,12 +304,12 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
             continue;
         }
 
-        if (exchangeStiffness == 0.0 || exchangeVec[sitePositions[i]-1] == 0.0) {
-            // exchangeVec[sitePositions[i]-1] refers to exchange vector to the LHS of the current site; [i] is RHS
+        if (exchangeStiffness == 0.0 || systemData->exchangeVec[sitePositions[i]-1] == 0.0) {
+            // systemData->exchangeVec[sitePositions[i]-1] refers to exchange vector to the LHS of the current site; [i] is RHS
             continue;
         }
 
-        double latticeConstant = std::sqrt(exchangeStiffness / exchangeVec[sitePositions[i]-1]);
+        double latticeConstant = std::sqrt(exchangeStiffness / systemData->exchangeVec[sitePositions[i]-1]);
 
         if (std::isinf(latticeConstant)) {
             // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
@@ -334,7 +334,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
 
         for (int j = 0; j < 3; j++) {
             // Calculate the dipole-dipole coupling term
-            double DipoleValue = dipoleConstant * (((3.0 * positionVector[j] * influencingSiteDotPosition)
+            double DipoleValue = systemData->dipoleConstant * (((3.0 * positionVector[j] * influencingSiteDotPosition)
                                  / positionVector_fifth) - influencingSite[j] / positionVector_cubed);
             totalDipoleTerms[j] += DipoleValue;
         }
@@ -352,7 +352,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayer(std::vecto
     double exchangeStiffness = 5.3e-17;
     double interlayerExchange = 132.0;  // Interlayer exchange coupling in Tesla
 
-    if (currentSite <= numSpinsDamped or currentSite > (layerSpinsInChain[currentLayer] + numSpinsDamped)) {
+    if (currentSite <= systemData->numSpinsDamped or currentSite > (systemData->layerSpinsInChain[currentLayer] + systemData->numSpinsDamped)) {
         return {0.0, 0.0, 0.0};  // Ensure currentSite is valid within the current (target) layer
     }
 
@@ -362,7 +362,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayer(std::vecto
 
     std::vector<double> totalDipoleTermsOtherChains;
     if (findAdj) { totalDipoleTermsOtherChains = DipolarInteractionInterlayerAdjacent(mTermsLayer1, mTermsLayer2,
-                                                                                      numberNeighbours, currentSite,
+                                                                                      systemData->numberNeighbours, currentSite,
                                                                                       currentLayer, exchangeStiffness,
                                                                                       interlayerExchange); }
     else { totalDipoleTermsOtherChains = DipolarInteractionInterlayerAll(mTermsLayer1, mTermsLayer2,
@@ -393,14 +393,14 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAll(std::ve
 
     // Stop-gap code to prevent memory-access violation error. Needs fixed in the future
     int chainTwoOffset;
-    if (!driveAllLayers) {chainTwoOffset = layerSpinsInChain[otherLayer] + numSpinsDamped;}
-    else {chainTwoOffset = layerSpinsInChain[currentLayer] + numSpinsDamped;}
+    if (!systemData->driveAllLayers) {chainTwoOffset = systemData->layerSpinsInChain[otherLayer] + systemData->numSpinsDamped;}
+    else {chainTwoOffset = systemData->layerSpinsInChain[currentLayer] + systemData->numSpinsDamped;}
 
     for (int otherSite = 0; otherSite < mTermsLayer2.size(); otherSite++) {
-        if (otherSite > numSpinsDamped and otherSite <= chainTwoOffset) {
+        if (otherSite > systemData->numSpinsDamped and otherSite <= chainTwoOffset) {
             // Exclude damped regions as they are aphysical and will lead to incorrect results
 
-            double intralayerLatticeConstant = std::sqrt(exchangeStiffness / exchangeVec[currentSite]);
+            double intralayerLatticeConstant = std::sqrt(exchangeStiffness / systemData->exchangeVec[currentSite]);
             double interlayerLatticeConstant = std::sqrt(exchangeStiffness / interlayerExchange);
 
             if (std::isinf(intralayerLatticeConstant) or std::isinf(interlayerLatticeConstant)) {
@@ -415,19 +415,19 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAll(std::ve
             double positionVector_cubed = std::pow(positionVector_norm, 3);
             double positionVector_fifth = std::pow(positionVector_norm, 5);
 
-            std::vector<double> originSite = {mTermsLayer1[currentSite][0] * PERMITTIVITY_IRON,
-                                              mTermsLayer1[currentSite][1] * PERMITTIVITY_IRON,
-                                              mTermsLayer1[currentSite][2] * PERMITTIVITY_IRON};
-            std::vector<double> influencingSite = {mTermsLayer2[otherSite][0] * PERMITTIVITY_IRON,
-                                                   mTermsLayer2[otherSite][1] * PERMITTIVITY_IRON,
-                                                   mTermsLayer2[otherSite][2] * PERMITTIVITY_IRON};
+            std::vector<double> originSite = {mTermsLayer1[currentSite][0] * systemData->PERMITTIVITY_IRON,
+                                              mTermsLayer1[currentSite][1] * systemData->PERMITTIVITY_IRON,
+                                              mTermsLayer1[currentSite][2] * systemData->PERMITTIVITY_IRON};
+            std::vector<double> influencingSite = {mTermsLayer2[otherSite][0] * systemData->PERMITTIVITY_IRON,
+                                                   mTermsLayer2[otherSite][1] * systemData->PERMITTIVITY_IRON,
+                                                   mTermsLayer2[otherSite][2] * systemData->PERMITTIVITY_IRON};
 
             double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1];
             double influencingSiteDotPosition = influencingSite[0] * positionVector[0]
                                                 + influencingSite[1] * positionVector[1];
 
             for (int j = 0; j < 3; j++) {
-                double DipoleValue = dipoleConstant * (((3.0 * positionVector[j] * influencingSiteDotPosition)
+                double DipoleValue = systemData->dipoleConstant * (((3.0 * positionVector[j] * influencingSiteDotPosition)
                                      / positionVector_fifth) - influencingSite[j] / positionVector_cubed);
                 totalDipolarInteractionInterlayer[j] += DipoleValue;
             }
@@ -457,11 +457,11 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAdjacent(st
 
     // Stop-gap code to prevent memory-access violation error. Needs fixed in the future
     int chainTwoOffset;
-    if (!driveAllLayers) {chainTwoOffset = layerSpinsInChain[0] + numSpinsDamped;}
-    else {chainTwoOffset = layerSpinsInChain[currentLayer] + numSpinsDamped;}
+    if (!systemData->driveAllLayers) {chainTwoOffset = systemData->layerSpinsInChain[0] + systemData->numSpinsDamped;}
+    else {chainTwoOffset = systemData->layerSpinsInChain[currentLayer] + systemData->numSpinsDamped;}
 
     // Check if currentSite is a valid index for mTermsChain2 before calculations
-    if (currentSite > numSpinsDamped and currentSite <= chainTwoOffset) {
+    if (currentSite > systemData->numSpinsDamped and currentSite <= chainTwoOffset) {
         // Could also calculate coupling for each site in chain 2, but this is computationally expensive
 
         double interlayerLatticeConstant = std::sqrt(exchangeStiffness / interlayerExchange);
@@ -471,19 +471,19 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAdjacent(st
         double positionVector_cubed = std::pow(positionVector_norm, 3);
         double positionVector_fifth = std::pow(positionVector_norm, 5);
 
-        std::vector<double> originSite = {mTermsChain1[currentSite][0] * PERMITTIVITY_IRON,
-                                          mTermsChain1[currentSite][1] * PERMITTIVITY_IRON,
-                                          mTermsChain1[currentSite][2] * PERMITTIVITY_IRON};
+        std::vector<double> originSite = {mTermsChain1[currentSite][0] * systemData->PERMITTIVITY_IRON,
+                                          mTermsChain1[currentSite][1] * systemData->PERMITTIVITY_IRON,
+                                          mTermsChain1[currentSite][2] * systemData->PERMITTIVITY_IRON};
 
-        std::vector<double> influencingSite = {mTermsChain2[currentSite][0] * PERMITTIVITY_IRON,
-                                               mTermsChain2[currentSite][1] * PERMITTIVITY_IRON,
-                                               mTermsChain2[currentSite][2] * PERMITTIVITY_IRON};
+        std::vector<double> influencingSite = {mTermsChain2[currentSite][0] * systemData->PERMITTIVITY_IRON,
+                                               mTermsChain2[currentSite][1] * systemData->PERMITTIVITY_IRON,
+                                               mTermsChain2[currentSite][2] * systemData->PERMITTIVITY_IRON};
 
         double originSiteDotPosition = originSite[1] * positionVector[1];
         double influencingSiteDotPosition = influencingSite[1] * positionVector[1];
 
         for (int j = 0; j < 3; j++) {
-            double DipoleValue = dipoleConstant * ((3.0*positionVector[j]*influencingSiteDotPosition) / positionVector_fifth
+            double DipoleValue = systemData->dipoleConstant * ((3.0*positionVector[j]*influencingSiteDotPosition) / positionVector_fifth
                                               - influencingSite[j] / positionVector_cubed);
             totalDipolarInteractionInterlayer[j] += DipoleValue;
         }
@@ -498,20 +498,20 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayerDebug(std::
 
     double exchangeStiffness = 5.3e-17;
 
-    if (debugFunc) { std::cout << "DB2.1 | "; }
+    if (systemData->debugFunc) { std::cout << "DB2.1 | "; }
 
     int vecLength, originIndex;
     if (numNeighbours == 0) {
         // Guard clause to ensure that the number of neighbours is not zero
         return totalDipoleTerms;
     } else if (numNeighbours < 0) {
-        vecLength = layerSpinsInChain[currentLayer];
-        originIndex = currentSite - numSpinsDamped - 1;
+        vecLength = systemData->layerSpinsInChain[currentLayer];
+        originIndex = currentSite - systemData->numSpinsDamped - 1;
     } else {
         vecLength = 2 * numNeighbours + 1;
         originIndex = vecLength / 2 + 1;
     }
-    if (debugFunc) { std::cout << "DB2.2 | "; }
+    if (systemData->debugFunc) { std::cout << "DB2.2 | "; }
 
     if (vecLength < 0)
         std::cout << "Error: vecLength is less than zero" << std::endl;
@@ -521,103 +521,103 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayerDebug(std::
     std::vector<double> myTerms(vecLength, 0);
     std::vector<double> mzTerms(vecLength, 0);
     std::vector<int> sitePositions(vecLength, 0);
-    if (debugFunc) { std::cout << "DB2.3 | "; }
+    if (systemData->debugFunc) { std::cout << "DB2.3 | "; }
 
     int iFV = 0; // index flat vector
     if (numNeighbours < 0) {
-        for (int site = numSpinsDamped + 1; site <= vecLength + numSpinsDamped; site++) {
+        for (int site = systemData->numSpinsDamped + 1; site <= vecLength + systemData->numSpinsDamped; site++) {
             // Flatting the vectors
-            mxTerms[iFV] = mTerms[site][0] * PERMITTIVITY_IRON;
-            myTerms[iFV] = mTerms[site][1] * PERMITTIVITY_IRON;
-            mzTerms[iFV] = mTerms[site][2] * PERMITTIVITY_IRON;
+            mxTerms[iFV] = mTerms[site][0] * systemData->PERMITTIVITY_IRON;
+            myTerms[iFV] = mTerms[site][1] * systemData->PERMITTIVITY_IRON;
+            mzTerms[iFV] = mTerms[site][2] * systemData->PERMITTIVITY_IRON;
             sitePositions[iFV] = site;
             iFV++;
     }
     } else {
         for (int site = currentSite - numNeighbours; site <= currentSite + numNeighbours; site++) {
-            if (site < numSpinsDamped or site >= layerSpinsInChain[currentLayer] + numSpinsDamped) {
+            if (site < systemData->numSpinsDamped or site >= systemData->layerSpinsInChain[currentLayer] + systemData->numSpinsDamped) {
                 // Guard clause to skip trying assignment of any element when the index is negative
                 continue;
             }
             // Flatting the vectors
-            mxTerms[iFV] = mTerms[site][0] * PERMITTIVITY_IRON;
-            myTerms[iFV] = mTerms[site][1] * PERMITTIVITY_IRON;
-            mzTerms[iFV] = mTerms[site][2] * PERMITTIVITY_IRON;
+            mxTerms[iFV] = mTerms[site][0] * systemData->PERMITTIVITY_IRON;
+            myTerms[iFV] = mTerms[site][1] * systemData->PERMITTIVITY_IRON;
+            mzTerms[iFV] = mTerms[site][2] * systemData->PERMITTIVITY_IRON;
             sitePositions[iFV] = site;
             iFV++;
         }
     }
-    if (debugFunc) { std::cout << "DB2.4 | "; }
+    if (systemData->debugFunc) { std::cout << "DB2.4 | "; }
     // Here to improve readability; could be removed to improve performance
     std::vector<double> originSite = {mxTerms[originIndex], myTerms[originIndex], mzTerms[originIndex]};
-    if (debugFunc) { std::cout << " INTRA Origin: [" << originSite[0] << ", " << originSite[1] << ", " << originSite[2] << "] | ";}
+    if (systemData->debugFunc) { std::cout << " INTRA Origin: [" << originSite[0] << ", " << originSite[1] << ", " << originSite[2] << "] | ";}
 
-    if (debugFunc) { std::cout << "DB2.5 | "; }
+    if (systemData->debugFunc) { std::cout << "DB2.5 | "; }
     // Start of the loop over the neighbours
     for (int i = 0; i < vecLength; i++) {
-    if (debugFunc) { std::cout << "\nDB2.5.0 (" << i+1 << ") | "; }
+    if (systemData->debugFunc) { std::cout << "\nDB2.5.0 (" << i+1 << ") | "; }
         if (i == originIndex) {
             // Guard clause to ensure that the origin site is not included in the calculation
-            if (debugFunc) { std::cout << "DB2.5.0 - Skip 1 (Same Site) "; }
+            if (systemData->debugFunc) { std::cout << "DB2.5.0 - Skip 1 (Same Site) "; }
             continue;
         }
 
-        if (debugFunc) { std::cout << "DB2.5.1 | "; }
+        if (systemData->debugFunc) { std::cout << "DB2.5.1 | "; }
         // Moment at site i. Here to improve readability; could be removed to improve performance
         std::vector<double> influencingSite = {mxTerms[i], myTerms[i], mzTerms[i]};
-        if (debugFunc) { std::cout << "INTRA Influe: [" << influencingSite[0] << ", " << influencingSite[1] << ", " << influencingSite[2] << "] | ";}
+        if (systemData->debugFunc) { std::cout << "INTRA Influe: [" << influencingSite[0] << ", " << influencingSite[1] << ", " << influencingSite[2] << "] | ";}
         if (influencingSite[0] == 0.0 && influencingSite[1] == 0.0 && influencingSite[2] == 0.0) {
             // If influencing site components are all zero, then they don't impact the calculation. So can be skipped
-            if (debugFunc) { std::cout << "DB2.5.1 - Skip 2 (All influencing components zero)"; }
+            if (systemData->debugFunc) { std::cout << "DB2.5.1 - Skip 2 (All influencing components zero)"; }
             continue;
         }
 
-        if (debugFunc) { std::cout << "DB2.5.2 | "; }
-        if (exchangeStiffness == 0.0 || exchangeVec[sitePositions[i]-1] == 0.0) {
-            if (debugFunc) { std::cout << "DB2.5.2 - Skip 1 (exchange vector zero)"; }
+        if (systemData->debugFunc) { std::cout << "DB2.5.2 | "; }
+        if (exchangeStiffness == 0.0 || systemData->exchangeVec[sitePositions[i]-1] == 0.0) {
+            if (systemData->debugFunc) { std::cout << "DB2.5.2 - Skip 1 (exchange vector zero)"; }
             continue;
         }
 
-        if (debugFunc) { std::cout << "DB2.5.3 | "; }
-        double latticeConstant = std::sqrt(exchangeStiffness / exchangeVec[sitePositions[i]-1]);
+        if (systemData->debugFunc) { std::cout << "DB2.5.3 | "; }
+        double latticeConstant = std::sqrt(exchangeStiffness / systemData->exchangeVec[sitePositions[i]-1]);
 
-        if (debugFunc) { std::cout << "DB2.5.4 | "; }
+        if (systemData->debugFunc) { std::cout << "DB2.5.4 | "; }
         if (std::isinf(latticeConstant)) {
             // Guard clause to ensure that the lattice constant is not infinite (backup test / temporary)
-            if (debugFunc) { std::cout << "DB2.5.4 - Skip 1 (lattice constant inf)"; }
+            if (systemData->debugFunc) { std::cout << "DB2.5.4 - Skip 1 (lattice constant inf)"; }
             continue;
         }
 
-        if (debugFunc) { std::cout << "DB2.5.5 | "; }
+        if (systemData->debugFunc) { std::cout << "DB2.5.5 | "; }
         std::vector<double> positionVector = {(sitePositions[i] - sitePositions[originIndex]) * latticeConstant, 0, 0};
 
-        if (debugFunc) { std::cout << "DB2.5.6 | "; }
+        if (systemData->debugFunc) { std::cout << "DB2.5.6 | "; }
         double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
                                      + std::pow(positionVector[2], 2));
 
-        if (debugFunc) { std::cout << "DB2.5.7 | "; }
+        if (systemData->debugFunc) { std::cout << "DB2.5.7 | "; }
         double positionVector_cubed = std::pow(positionVector_norm, 3);
         double positionVector_fifth = std::pow(positionVector_norm, 5);
 
         if (positionVector_cubed == 0.0 || positionVector_fifth == 0.0) {
             // Could use an epsilon value here to avoid division by zero and to make code more efficient
-            if (debugFunc) { std::cout << "DB2.5.7 - Skip 1 (position vector ^3 &&/|| ^5 zero)"; }
+            if (systemData->debugFunc) { std::cout << "DB2.5.7 - Skip 1 (position vector ^3 &&/|| ^5 zero)"; }
             continue;
         }
         // Calculate the dot products
         double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1] + originSite[2] * positionVector[2];
 
-        if (debugFunc) { std::cout << "DB2.5.8 | "; }
+        if (systemData->debugFunc) { std::cout << "DB2.5.8 | "; }
         double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1] + influencingSite[2] * positionVector[2];
 
-        if (debugFunc) { std::cout << "DB2.5.9 | "; }
+        if (systemData->debugFunc) { std::cout << "DB2.5.9 | "; }
         for (int j = 0; j < 3; j++) {
             // Calculate the dipole-dipole coupling term
-            double DipoleValue = dipoleConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
+            double DipoleValue = systemData->dipoleConstant * ((3.0 * positionVector[j] * influencingSiteDotPosition) / positionVector_fifth - influencingSite[j] / positionVector_cubed);
             totalDipoleTerms[j] += DipoleValue;
         }
     }
-    if (debugFunc) { std::cout << "\nDB2.6 | "; }
+    if (systemData->debugFunc) { std::cout << "\nDB2.6 | "; }
 
     return totalDipoleTerms;
 }
@@ -630,23 +630,23 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerDebug(std::
     double exchangeStiffness = 5.3e-17;
     double interlayerExchange = 132.0;  // Interlayer exchange coupling in Tesla
 
-    if (debugFunc) { std::cout << "DB1.1 | "; }
+    if (systemData->debugFunc) { std::cout << "DB1.1 | "; }
 
-    if (currentSite <= numSpinsDamped or currentSite > (layerSpinsInChain[currentLayer] + numSpinsDamped)) {
+    if (currentSite <= systemData->numSpinsDamped or currentSite > (systemData->layerSpinsInChain[currentLayer] + systemData->numSpinsDamped)) {
         return {0.0, 0.0, 0.0};  // Ensure currentSite is a valid index for mTermsChain1
     }
-    if (debugFunc) { std::cout << "DB1.2 | "; }
+    if (systemData->debugFunc) { std::cout << "DB1.2 | "; }
     // Stop-gap code to prevent memory-access violation error. Needs fixed in the future
     int testLength;
-    if (!driveAllLayers) {testLength = layerSpinsInChain[0] + numSpinsDamped;}
-    else {testLength = layerSpinsInChain[currentLayer] + numSpinsDamped;}
-    if (debugFunc) { std::cout << "DB1.3 / DB2.0 | "; }
+    if (!systemData->driveAllLayers) {testLength = systemData->layerSpinsInChain[0] + systemData->numSpinsDamped;}
+    else {testLength = systemData->layerSpinsInChain[currentLayer] + systemData->numSpinsDamped;}
+    if (systemData->debugFunc) { std::cout << "DB1.3 / DB2.0 | "; }
     // Calculate the dipolar coupling for chain1
     std::vector<double> totalDipoleTermsChain1 = DipolarInteractionIntralayer(mTermsChain1, currentSite, currentLayer,
                                                                               exchangeStiffness);
-    if (debugFunc) { std::cout << "DB1.4 | "; }
+    if (systemData->debugFunc) { std::cout << "DB1.4 | "; }
     // Check if currentSite is a valid index for mTermsChain2 before calculations
-    if (currentSite > numSpinsDamped and currentSite <= testLength) {
+    if (currentSite > systemData->numSpinsDamped and currentSite <= testLength) {
         // Could also calculate coupling for each site in chain 2, but this is computationally expensive
 
         // Here we use the same calculations as in the original function but for two spins at the same site in different chains
@@ -654,38 +654,38 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerDebug(std::
         double interlayerLatticeConstant = std::sqrt(exchangeStiffness / interlayerExchange);
         std::vector<double> positionVector = {0, interlayerLatticeConstant, 0};
 
-        if (debugFunc) { std::cout << "DB1.5 | "; }
+        if (systemData->debugFunc) { std::cout << "DB1.5 | "; }
         double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2) + std::pow(positionVector[1], 2)
                                      + std::pow(positionVector[2], 2));
         double positionVector_cubed = std::pow(positionVector_norm, 3);
         double positionVector_fifth = std::pow(positionVector_norm, 5);
 
-        if (debugFunc) { std::cout << "DB1.6 | "; }
-        std::vector<double> originSite = {mTermsChain1[currentSite][0] * PERMITTIVITY_IRON,
-                                          mTermsChain1[currentSite][1] * PERMITTIVITY_IRON,
-                                          mTermsChain1[currentSite][2] * PERMITTIVITY_IRON};
-        if (debugFunc) { std::cout << "INTER Origin: [" << originSite[0] << ", " << originSite[1] << ", " << originSite[2] << "] | ";}
+        if (systemData->debugFunc) { std::cout << "DB1.6 | "; }
+        std::vector<double> originSite = {mTermsChain1[currentSite][0] * systemData->PERMITTIVITY_IRON,
+                                          mTermsChain1[currentSite][1] * systemData->PERMITTIVITY_IRON,
+                                          mTermsChain1[currentSite][2] * systemData->PERMITTIVITY_IRON};
+        if (systemData->debugFunc) { std::cout << "INTER Origin: [" << originSite[0] << ", " << originSite[1] << ", " << originSite[2] << "] | ";}
 
-        if (debugFunc) { std::cout << "DB1.7 | "; }
-        std::vector<double> influencingSite = {mTermsChain2[currentSite][0] * PERMITTIVITY_IRON,
-                                               mTermsChain2[currentSite][1] * PERMITTIVITY_IRON,
-                                               mTermsChain2[currentSite][2] * PERMITTIVITY_IRON};
-        if (debugFunc) { std::cout << "INTER Influe: [" << influencingSite[0] << ", " << influencingSite[1] << ", " << influencingSite[2] << "] | ";}
+        if (systemData->debugFunc) { std::cout << "DB1.7 | "; }
+        std::vector<double> influencingSite = {mTermsChain2[currentSite][0] * systemData->PERMITTIVITY_IRON,
+                                               mTermsChain2[currentSite][1] * systemData->PERMITTIVITY_IRON,
+                                               mTermsChain2[currentSite][2] * systemData->PERMITTIVITY_IRON};
+        if (systemData->debugFunc) { std::cout << "INTER Influe: [" << influencingSite[0] << ", " << influencingSite[1] << ", " << influencingSite[2] << "] | ";}
 
-        if (debugFunc) { std::cout << "DB1.8 | "; }
+        if (systemData->debugFunc) { std::cout << "DB1.8 | "; }
         double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1]
                                        + originSite[2] * positionVector[2];
         double influencingSiteDotPosition = influencingSite[0] * positionVector[0] + influencingSite[1] * positionVector[1]
                                             + influencingSite[2] * positionVector[2];
 
-        if (debugFunc) { std::cout << "DB1.9 | "; }
+        if (systemData->debugFunc) { std::cout << "DB1.9 | "; }
         for (int j = 0; j < 3; j++) {
-            double DipoleValue = dipoleConstant * ((3.0*positionVector[j]*influencingSiteDotPosition) / positionVector_fifth
+            double DipoleValue = systemData->dipoleConstant * ((3.0*positionVector[j]*influencingSiteDotPosition) / positionVector_fifth
                                               - influencingSite[j] / positionVector_cubed);
             // Only contains y terms so can skip j != 1 (x and z)
             totalDipoleTerms[j] += DipoleValue;
         }
-        if (debugFunc) { std::cout << "DB1.10 | "; }
+        if (systemData->debugFunc) { std::cout << "DB1.10 | "; }
     }
 
     // Finally add the three dipole terms to get the total dipole term for a site in chain 1
@@ -693,7 +693,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerDebug(std::
         // Only contains x positions so can skip i > 1 (y & z)
         totalDipoleTerms[i] += totalDipoleTermsChain1[i];
     }
-    if (debugFunc) { std::cout << "DB1.11 | "; }
-    if (debugFunc && currentLayer == 1) { std::cout << "totalDipoleTerms: [" << totalDipoleTerms[0] << " " << totalDipoleTerms[1] << " " << totalDipoleTerms[2] << "]"; }
+    if (systemData->debugFunc) { std::cout << "DB1.11 | "; }
+    if (systemData->debugFunc && currentLayer == 1) { std::cout << "totalDipoleTerms: [" << totalDipoleTerms[0] << " " << totalDipoleTerms[1] << " " << totalDipoleTerms[2] << "]"; }
     return totalDipoleTerms;
 }

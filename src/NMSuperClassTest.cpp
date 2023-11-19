@@ -9,6 +9,9 @@
 
 // C++ User Libraries (Children)
 #include "../NMSubClasses/NMInitialisation.h"
+#include "../NMSubClasses/NMConfiguration.h"
+#include "../NMSubClasses/NMDataHandling.h"
+#include "../NMSubClasses/NMMethods.h"
 
 
 NMSuperClassTest::~NMSuperClassTest() {
@@ -17,25 +20,42 @@ NMSuperClassTest::~NMSuperClassTest() {
 
 std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createSimulationInstance() {
     // Return instance of the child
-    return std::make_shared<NMInitialisation>();
+    auto sharedData = getSharedDataContainer();
+    return std::make_shared<NMInitialisation>(sharedData);
 }
 
-std::shared_ptr<SystemDataContainer> NMSuperClassTest::getSystemData() {
-    // Lazy initialisation. Left more as a reminder of how to do it than anything else
-    if (!systemData)
-        systemData = std::make_shared<SystemDataContainer>();
+std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createConfigurationInstance() {
+    // Return instance of the child
+    auto sharedData = getSharedDataContainer();
+    return std::make_shared<NMConfiguration>(sharedData);
+}
 
-    return systemData;
+std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createDataHandlingInstance() {
+    // Return instance of the child
+    auto sharedData = getSharedDataContainer();
+    return std::make_shared<NMDataHandling>(sharedData);
+}
+
+std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createMethodsInstance() {
+    // Return instance of the child
+    auto sharedData = getSharedDataContainer();
+    return std::make_shared<NMMethods>(sharedData);
+}
+
+std::shared_ptr<SystemDataContainer> NMSuperClassTest::getSharedDataContainer() {
+    // Lazy initialisation. Left more as a reminder of how to do it than anything else
+    static std::shared_ptr<SystemDataContainer> sharedData = std::make_shared<SystemDataContainer>();
+    return sharedData;
 }
 
 std::pair<double, double> NMSuperClassTest::testInstance() {
     auto instance = std::dynamic_pointer_cast<NMInitialisation>(createSimulationInstance());
-    double before = instance->getSystemData()->ambientTemperature; // Get value of var1 before modification
+    double before = instance->getSharedDataContainer()->ambientTemperature; // Get value of var1 before modification
 
     instance->testModifyingDouble(100); // Modify var1 using ChildClass method
 
     std::cout << "This works because systemData is protected, and the parent can still access it:" << instance->systemData->iterEndShock << std::endl;
 
-    double after = instance->getSystemData()->ambientTemperature; // Get value of var1 after modification
+    double after = instance->getSharedDataContainer()->ambientTemperature; // Get value of var1 after modification
     return {before, after};
 }

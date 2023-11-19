@@ -10,30 +10,30 @@ double EffectiveField::EffectiveFieldX(const int& site, const int& layer, const 
     // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
     double hx;
 
-    if (isFm) {
-        if (site >= drivingRegionLhs && site <= drivingRegionRhs) {
+    if (systemData->isFm) {
+        if (site >= systemData->drivingRegionLhs && site <= systemData->drivingRegionRhs) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-            if (driveAllLayers || layer == 0)
-                hx = exchangeVec[site - 1] * mxLHS + exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
-                        + dynamicBiasField * cos(drivingAngFreq * current_time);
-            else if  (hasStaticDrive)
-                hx = exchangeVec[site - 1] * mxLHS + exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
-                        +dynamicBiasField;
-            else if  ((!driveAllLayers && layer != 0))
-                hx = exchangeVec[site - 1] * mxLHS + exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
+            if (systemData->driveAllLayers || layer == 0)
+                hx = systemData->exchangeVec[site - 1] * mxLHS + systemData->exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
+                        + systemData->dynamicBiasField * cos(systemData->drivingAngFreq * current_time);
+            else if  (systemData->hasStaticDrive)
+                hx = systemData->exchangeVec[site - 1] * mxLHS + systemData->exchangeVec[site] * mxRHS + dipoleTerm + demagTerm
+                        +systemData->dynamicBiasField;
+            else if  ((!systemData->driveAllLayers && layer != 0))
+                hx = systemData->exchangeVec[site - 1] * mxLHS + systemData->exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
         } else
             // All spins along x which are not within the driving region
-            hx = exchangeVec[site - 1] * mxLHS + exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
-    } else if (!isFm) {
-        if (site >= drivingRegionLhs && site <= drivingRegionRhs) {
+            hx = systemData->exchangeVec[site - 1] * mxLHS + systemData->exchangeVec[site] * mxRHS + dipoleTerm + demagTerm;
+    } else if (!systemData->isFm) {
+        if (site >= systemData->drivingRegionLhs && site <= systemData->drivingRegionRhs) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-            if (hasStaticDrive)
-                hx = -1.0 * (exchangeVec[site - 1] * mxLHS + exchangeVec[site] * mxRHS + dynamicBiasField);
-            else if (!hasStaticDrive)
-                hx = -1.0 * (exchangeVec[site - 1] * mxLHS + exchangeVec[site] * mxRHS) + dynamicBiasField * cos(drivingAngFreq * current_time);
+            if (systemData->hasStaticDrive)
+                hx = -1.0 * (systemData->exchangeVec[site - 1] * mxLHS + systemData->exchangeVec[site] * mxRHS + systemData->dynamicBiasField);
+            else if (!systemData->hasStaticDrive)
+                hx = -1.0 * (systemData->exchangeVec[site - 1] * mxLHS + systemData->exchangeVec[site] * mxRHS) + systemData->dynamicBiasField * cos(systemData->drivingAngFreq * current_time);
         } else
             // All spins along x which are not within the driving region
-            hx = -1.0 * (exchangeVec[site - 1] * mxLHS + exchangeVec[site] * mxRHS);
+            hx = -1.0 * (systemData->exchangeVec[site - 1] * mxLHS + systemData->exchangeVec[site] * mxRHS);
     }
 
     return hx;
@@ -43,10 +43,10 @@ double EffectiveField::EffectiveFieldY(const int& site, const int& layer, const 
     // The effective field (H_eff) y-component acting upon a given magnetic moment (site), abbreviated to 'hy'
     double hy;
 
-    if (isFm) {
-        hy = exchangeVec[site-1] * myLHS + exchangeVec[site] * myRHS + dipoleTerm + demagTerm;
-    } else if (!isFm) {
-        hy = -1.0 * (exchangeVec[site-1] * myLHS + exchangeVec[site] * myRHS);
+    if (systemData->isFm) {
+        hy = systemData->exchangeVec[site-1] * myLHS + systemData->exchangeVec[site] * myRHS + dipoleTerm + demagTerm;
+    } else if (!systemData->isFm) {
+        hy = -1.0 * (systemData->exchangeVec[site-1] * myLHS + systemData->exchangeVec[site] * myRHS);
     }
 
     return hy;
@@ -56,14 +56,14 @@ double EffectiveField::EffectiveFieldZ(const int& site, const int& layer, const 
     // The effective field (H_eff) z-component acting upon a given magnetic moment (site), abbreviated to 'hz'
     double hz;
 
-    if (isFm) {
-        hz = exchangeVec[site-1] * mzLHS + exchangeVec[site] * mzRHS + dipoleTerm + demagTerm
+    if (systemData->isFm) {
+        hz = systemData->exchangeVec[site-1] * mzLHS + systemData->exchangeVec[site] * mzRHS + dipoleTerm + demagTerm
                 + GV.GetStaticBiasField();
-    } else if (!isFm) {
+    } else if (!systemData->isFm) {
         if (mzMID > 0)
-            hz = GV.GetStaticBiasField() + anisotropyField - (exchangeVec[site-1] * mzLHS + exchangeVec[site] * mzRHS);
+            hz = GV.GetStaticBiasField() + systemData->anisotropyField - (systemData->exchangeVec[site-1] * mzLHS + systemData->exchangeVec[site] * mzRHS);
         else if (mzMID < 0)
-            hz = GV.GetStaticBiasField() - anisotropyField - (exchangeVec[site-1] * mzLHS + exchangeVec[site] * mzRHS);
+            hz = GV.GetStaticBiasField() - systemData->anisotropyField - (systemData->exchangeVec[site-1] * mzLHS + systemData->exchangeVec[site] * mzRHS);
     }
 
     return hz;

@@ -47,8 +47,13 @@ int main() {
             NMSuperClassTest baseObj(sharedVariables);
             baseObj.executeDerivedMethod(); // Outputs: "Child method called!"
             */
-        auto startSimulation = NMSuperClassTest::createSimulationInstance();
-        startSimulation->initialiseSimulation();
+        auto initialisationInstance = NMSuperClassTest::createSimulationInstance();
+        auto configurationInstance = NMSuperClassTest::createConfigurationInstance();
+        auto methodsInstance = NMSuperClassTest::createMethodsInstance();
+
+        initialisationInstance->performInitialisation();
+        configurationInstance->performInitialisation();
+        methodsInstance->performInitialisation();
 
         // Test modifying a double in the parent class
         //auto [before, after] = NMSuperClassTest::testInstance();

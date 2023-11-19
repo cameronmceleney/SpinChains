@@ -158,13 +158,19 @@ protected:
 
 public:
     //NMSuperClassTest(std::shared_ptr<SystemDataContainer> systemData);
-    NMSuperClassTest() { systemData = std::make_shared<SystemDataContainer>(); }
+    NMSuperClassTest(std::shared_ptr<SystemDataContainer> data) : systemData(data) {}
     ~NMSuperClassTest(); // Destructor (though not strictly necessary with smart pointers)
 
 public:
-    std::shared_ptr<SystemDataContainer> getSystemData();
-    virtual void initialiseSimulation() = 0;
+    virtual void performInitialisation() = 0;
     static std::shared_ptr<NMSuperClassTest> createSimulationInstance();
+    static std::shared_ptr<NMSuperClassTest> createConfigurationInstance();
+    static std::shared_ptr<NMSuperClassTest> createDataHandlingInstance();
+    static std::shared_ptr<NMSuperClassTest> createMethodsInstance();
+
+    static std::shared_ptr<SystemDataContainer> getSharedDataContainer();
+
+
 
     static std::pair<double, double> testInstance();
 };

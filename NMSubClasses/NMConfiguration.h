@@ -60,12 +60,14 @@ public:
     // ####################################            Define Public Variables            ###################################
 
     // ####################################            Define Public Functions            ###################################
-
+    NMConfiguration(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};
     // Assignment of all values required for the simulation
     void                Configure();
 
     void                _setupInitMultilayerMagneticMoments(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
                                                             int layer, double mxInit, double myInit, double mzInit);
+
+    void                performInitialisation() override { Configure(); };
 };
 
 
