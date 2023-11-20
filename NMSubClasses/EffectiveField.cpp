@@ -4,6 +4,9 @@
 
 #include "EffectiveField.h"
 
+EffectiveField::EffectiveField(SystemDataContainer* data) : systemData(data) {}
+
+
 double EffectiveField::EffectiveFieldX(const int& site, const int& layer, const double& mxLHS, const double& mxMID,
                                                 const double& mxRHS, const double& dipoleTerm,
                                                 const double& demagTerm, const double& current_time) {

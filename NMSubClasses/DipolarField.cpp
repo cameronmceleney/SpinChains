@@ -3,6 +3,9 @@
 //
 #include "DipolarField.h"
 
+DipolarInteractions::DipolarInteractions(SystemDataContainer* data) : systemData(data) {}
+
+
 double DipolarInteractions::dipolarKernel3D(const int& originSite, const int& influencingSite, const double& A, const double& alpha) {
     // This function is used to calculate the dipolar interaction between two sites. The kernel is defined as:
     // K = 1 / (4 * pi * r^3) * (3 * cos(theta)^2 - 1)
@@ -304,7 +307,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
         }
 
         if (exchangeStiffness == 0.0 || systemData->exchangeVec[sitePositions[i]-1] == 0.0) {
-            // systemData->exchangeVec[sitePositions[i]-1] refers to exchange vector to the LHS of the current site; [i] is RHS
+            // simState->exchangeVec[sitePositions[i]-1] refers to exchange vector to the LHS of the current site; [i] is RHS
             continue;
         }
 

@@ -4,6 +4,8 @@
 
 #include "DemagField.h"
 
+DemagnetisationFields::DemagnetisationFields(SystemDataContainer* data) : systemData(data) {}
+
 void DemagnetisationFields::DemagnetisationFieldIntense(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
                                                    const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
                                                    const std::vector<double>& mzTerms) {

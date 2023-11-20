@@ -1,11 +1,13 @@
-#include "../include/SpinChainEigenSolverClass.h"
-#include "../include/NMSuperClassTest.h"
 #include "CommonLibs.h"
+#include "../include/NMSuperClassTest.h"
+#include "../include/SpinChainEigenSolverClass.h"
+#include "../NMSubClasses/SystemDataContainer.h"
 
 int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 04 Jun 23)
-    SpinChainEigenSolverClass SolverClass{};
+    auto sharedData = std::make_shared<SystemDataContainer>();
+    //SpinChainEigenSolverClass SolverClass{}; Needs to be turned into a separate class structure
 
     // Global file-related parameters
     GV.SetCurrentTime();
@@ -29,7 +31,7 @@ int main() {
     std::cin >> outputFileID;
     GV.SetFileNameBase("T"+outputFileID);
 
-    GV.SetFilePath("macos");
+    GV.SetFilePath("windows");
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetIsExchangeUniform())
@@ -40,24 +42,15 @@ int main() {
     // Run the simulation
     if (GV.GetShouldFindEigenvalues()) {
         std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
-        SolverClass.CalculateEigenfrequencies(false);
     } else {
-        /*
-            std::shared_ptr<SystemDataContainer> sharedVariables = std::make_shared<SystemDataContainer>();
-            NMSuperClassTest baseObj(sharedVariables);
-            baseObj.executeDerivedMethod(); // Outputs: "Child method called!"
-            */
-        auto initialisationInstance = NMSuperClassTest::createSimulationInstance();
-        auto configurationInstance = NMSuperClassTest::createConfigurationInstance();
-        auto methodsInstance = NMSuperClassTest::createMethodsInstance();
+        auto initialisationInstance = NMSuperClassTest::createSimulationInstance(sharedData);
+        auto configurationInstance = NMSuperClassTest::createConfigurationInstance(sharedData);
+        auto methodsInstance = NMSuperClassTest::createMethodsInstance(sharedData);
 
         initialisationInstance->performInitialisation();
         configurationInstance->performInitialisation();
         methodsInstance->performInitialisation();
 
-        // Test modifying a double in the parent class
-        //auto [before, after] = NMSuperClassTest::testInstance();
-        //std::cout << "Value of ambientTemperature before: " << before << ", after: " << after << std::endl;
 
     }
     return 0;

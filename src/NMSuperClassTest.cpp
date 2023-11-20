@@ -17,27 +17,27 @@ NMSuperClassTest::~NMSuperClassTest() {
     // Memory automatically deallocated by unique_ptr
 }
 
-std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createSimulationInstance() {
+std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createSimulationInstance(std::shared_ptr<SystemDataContainer> sharedData) {
     // Return instance of the child
-    auto sharedData = getSharedDataContainer();
+    //auto sharedData = getSharedDataContainer();
     return std::make_shared<NMInitialisation>(sharedData);
 }
 
-std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createConfigurationInstance() {
+std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createConfigurationInstance(std::shared_ptr<SystemDataContainer> sharedData) {
     // Return instance of the child
-    auto sharedData = getSharedDataContainer();
+    //auto sharedData = getSharedDataContainer();
     return std::make_shared<NMConfiguration>(sharedData);
 }
 
-std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createDataHandlingInstance() {
+std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createDataHandlingInstance(std::shared_ptr<SystemDataContainer> sharedData) {
     // Return instance of the child
-    auto sharedData = getSharedDataContainer();
+    //auto sharedData = getSharedDataContainer();
     return std::make_shared<NMDataHandling>(sharedData);
 }
 
-std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createMethodsInstance() {
+std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createMethodsInstance(std::shared_ptr<SystemDataContainer> sharedData) {
     // Return instance of the child
-    auto sharedData = getSharedDataContainer();
+    //auto sharedData = getSharedDataContainer();
     return std::make_shared<NMMethods>(sharedData);
 }
 
@@ -47,14 +47,16 @@ std::shared_ptr<SystemDataContainer> NMSuperClassTest::getSharedDataContainer() 
     return sharedData;
 }
 
+/*
 std::pair<double, double> NMSuperClassTest::testInstance() {
-    auto instance = std::dynamic_pointer_cast<NMInitialisation>(createSimulationInstance());
+    auto instance = std::dynamic_pointer_cast<NMInitialisation>(createSimulationInstance(sharedData));
     double before = instance->getSharedDataContainer()->ambientTemperature; // Get value of var1 before modification
 
     instance->testModifyingDouble(100); // Modify var1 using ChildClass method
 
-    std::cout << "This works because systemData is protected, and the parent can still access it:" << instance->systemData->iterEndShock << std::endl;
+    std::cout << "This works because simState is protected, and the parent can still access it:" << instance->simState->iterEndShock << std::endl;
 
     double after = instance->getSharedDataContainer()->ambientTemperature; // Get value of var1 after modification
     return {before, after};
 }
+ */

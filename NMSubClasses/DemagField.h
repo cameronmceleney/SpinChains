@@ -6,36 +6,44 @@
 #ifndef SPINCHAINS_DEMAGFIELD_H
 #define SPINCHAINS_DEMAGFIELD_H
 
-#include "NMMethods.h"
-#include "IDemagField.h"
+// C++ Third Party Libraries
+extern "C" {
+    #include <fftw3.h>
+}
 
-class DemagnetisationFields : public NMMethods, public IDemagField {
+// Include the SystemDataContainer
+#include "SystemDataContainer.h"
+
+class DemagnetisationFields {
+private:
+    SystemDataContainer* systemData; // Non-owning pointer to SystemDataContainer
 public:
-    DemagnetisationFields(std::shared_ptr<SystemDataContainer> data) : NMMethods(data) {}
+    explicit DemagnetisationFields(SystemDataContainer* data);
+    ~DemagnetisationFields() = default;
 public:
     void                    DemagField1DComplex(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
                                      std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
-                                     int iteration, std::string rkStage) override;
+                                     int iteration, std::string rkStage);
 
     void                    DemagField1DReal(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,
                                      std::vector<double>& inMxTerms, std::vector<double>& inMyTerms, std::vector<double>& inMzTerms,
-                                     int iteration, std::string rkStage) override;
+                                     int iteration, std::string rkStage);
 
     /*
     void                DemagnetisationFieldFFT (std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
                                                  const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
-                                                 const std::vector<double>& mzTerms) override;
+                                                 const std::vector<double>& mzTerms);
                                                  */
 
     void                DemagnetisationFieldIntense (std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
                                               const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
-                                              const std::vector<double>& mzTerms) override;
+                                              const std::vector<double>& mzTerms);
 
 
     void                    DemagFieldsUsingDipoles(std::vector<double> mxTerms, std::vector<double> myTerms,
                                                   std::vector<double> mzTerms, std::vector<int> sitePositions,
                                                   std::vector<double>& outDemagX, std::vector<double>& outDemagY,
-                                                  std::vector<double>& outDemagZ) override;
+                                                  std::vector<double>& outDemagZ);
 
 
 };

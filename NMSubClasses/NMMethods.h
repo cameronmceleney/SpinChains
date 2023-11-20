@@ -7,26 +7,28 @@
 
 // C++ User Libraries (Parent Class)
 #include <utility>
-
+#include "../libs/progressbar.hpp"
 #include "../include/NMSuperClassTest.h"
+
 // C++ User Libraries (Sibling Classes)
 #include "NMDataHandling.h"
-#include "INMMethods.h"
-// C++ User Libraries (Child Classes)
-#include "IDemagField.h"
-#include "IDipolarField.h"
-#include "IEffectiveField.h"
-#include "ILLG.h"
+
+// C++ User Libraries (Interface)
+#include "Interfaces/INMMethods.h"
+
+// C++ User Libraries (Components)
+#include "DemagField.h"
+#include "EffectiveField.h"
+#include "LLG.h"
+#include "DipolarField.h"
 
 class NMMethods :  public NMSuperClassTest, public INMMethods {
 private:
-    // ####################################            Private Instances            ###################################
-    //NMDataHandling* NMData;
-
-    std::shared_ptr<IDemagField> demagField;
-    std::shared_ptr<IEffectiveField> EffField;
-    std::shared_ptr<ILLG> LLG;
-    std::shared_ptr<IDipolarField> Dipolar;
+    DemagnetisationFields demagField;
+    EffectiveField effectiveField;
+    MagnetisationDynamics llg;
+    DipolarInteractions dipolarField;
+private:
     // Description missing
     void                _testShockwaveConditions(double iteration) override;
             // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
@@ -40,9 +42,10 @@ private:
 
 public:
     NMMethods(std::shared_ptr<SystemDataContainer> data);
+    ~NMMethods() = default;
+public:
     void performInitialisation() override { runMethod(); };
 
-public:
     void                runMethod() override;
 };
 

@@ -5,12 +5,17 @@
 #ifndef SPINCHAINS_LLG_H
 #define SPINCHAINS_LLG_H
 
-#include "NMMethods.h"
-#include "ILLG.h"
+// C++ Third Party Libraries
+#include <random>
 
-class MagnetisationDynamics : public NMMethods, public ILLG {
+// Include the SystemDataContainer
+#include "SystemDataContainer.h"
+
+class MagnetisationDynamics {
+private:
+    SystemDataContainer* systemData; // Non-owning pointer to SystemDataContainer
 public:
-    MagnetisationDynamics(std::shared_ptr<SystemDataContainer> data) : NMMethods(data) {}
+    explicit MagnetisationDynamics(SystemDataContainer* data);
     ~MagnetisationDynamics() = default;
 public:
             /*
@@ -21,30 +26,30 @@ public:
 
     // Simple version of magnetic moment x-component for single-layered systems
     double              MagneticMomentX (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
 
     // Simple version of magnetic moment y-component for single-layered systems
     double              MagneticMomentY (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
 
     // Simple version of magnetic moment z-component for single-layered systems
     double              MagneticMomentZ (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
 
     // Full version of magnetic moment x-component function for multi-layered systems
     double              MagneticMomentX (const int& spin, const int& layer,
                                          const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
 
     // Full version of magnetic moment y-component function for multi-layered systems
     double              MagneticMomentY (const int& spin, const int& layer,
                                          const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
 
     // Full version of magnetic moment z-component function for multi-layered systems
     double              MagneticMomentZ (const int& spin, const int& layer,
                                          const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
+                                         const double& hxMID, const double& hyMID, const double& hzMID);
 
     /*
      * ################################################################################################################
@@ -53,13 +58,13 @@ public:
      */
 
     // Description missing
-    double GenerateGaussianNoise(const double &mean, const double &stddev) override;
+    double GenerateGaussianNoise(const double &mean, const double &stddev);
 
     // Description missing
-    std::vector<double> StochasticTerm(const int& site, const double &timeStep) override;
+    std::vector<double> StochasticTerm(const int& site, const double &timeStep);
 
     // Description missing
-    std::vector<double> ComputeStochasticTerm(const int& site, const double &timeStep) override;
+    std::vector<double> ComputeStochasticTerm(const int& site, const double &timeStep);
 };
 
 

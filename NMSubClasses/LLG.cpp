@@ -4,6 +4,9 @@
 
 #include "LLG.h"
 
+MagnetisationDynamics::MagnetisationDynamics(SystemDataContainer* data) : systemData(data) {}
+
+
 double MagnetisationDynamics::MagneticMomentX(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
                                                 const double& hxMID, const double& hyMID, const double& hzMID) {
 

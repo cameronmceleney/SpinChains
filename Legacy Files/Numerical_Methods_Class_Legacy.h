@@ -4,7 +4,7 @@
 #include "../include/linspace.h"
 #include "../include/SpinChainEigenSolverClass.h"
 #include "../src/CommonLibs.h"
-#include "../include/progressbar.hpp"
+#include "../libs/progressbar.hpp"
 #include <list>
 
 class Numerical_Methods_Class {

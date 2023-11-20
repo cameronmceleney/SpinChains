@@ -15,17 +15,9 @@
 #include <random>
 #include <memory>
 
-// C++ Third Party Libraries
-extern "C" {
-    #include <fftw3.h>
-}
-
 // C++ User Libraries (General)
-#include "linspace.h"
-#include "SpinChainEigenSolverClass.h"
-#include "../src/CommonLibs.h"
-#include "progressbar.hpp"
 #include "../NMSubClasses/SystemDataContainer.h"
+#include "linspace.h"
 
 class NMSuperClassTest {
 private:
@@ -33,19 +25,19 @@ private:
 
 protected:
     // Getter for child classes to access sharedVariables
-    std::shared_ptr<SystemDataContainer> systemData;
+    std::shared_ptr<SystemDataContainer> simState;
 
 public:
-    //NMSuperClassTest(std::shared_ptr<SystemDataContainer> systemData);
-    explicit NMSuperClassTest(std::shared_ptr<SystemDataContainer> data) : systemData(std::move(data)) {}
+    //NMSuperClassTest(std::shared_ptr<SystemDataContainer> simState);
+    NMSuperClassTest(std::shared_ptr<SystemDataContainer> data) : simState(std::move(data)) {}
     virtual ~NMSuperClassTest(); // Destructor (though not strictly necessary with smart pointers)
 
 public:
     virtual void performInitialisation() = 0;
-    static std::shared_ptr<NMSuperClassTest> createSimulationInstance();
-    static std::shared_ptr<NMSuperClassTest> createConfigurationInstance();
-    static std::shared_ptr<NMSuperClassTest> createDataHandlingInstance();
-    static std::shared_ptr<NMSuperClassTest> createMethodsInstance();
+    static std::shared_ptr<NMSuperClassTest> createSimulationInstance(std::shared_ptr<SystemDataContainer> sharedData);
+    static std::shared_ptr<NMSuperClassTest> createConfigurationInstance(std::shared_ptr<SystemDataContainer> sharedData);
+    static std::shared_ptr<NMSuperClassTest> createDataHandlingInstance(std::shared_ptr<SystemDataContainer> sharedData);
+    static std::shared_ptr<NMSuperClassTest> createMethodsInstance(std::shared_ptr<SystemDataContainer> sharedData);
 
     static std::shared_ptr<SystemDataContainer> getSharedDataContainer();
 

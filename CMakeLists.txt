@@ -23,27 +23,23 @@ endif()
 # Links all files to the project. There are numerous classes to encapsulate data so ensure that all .h files have a corresponding .cpp as needed
 add_executable(SpinChains src/main.cpp
         src/CommonLibs.h
+        src/GlobalVariables.cpp include/GlobalVariables.h
+        NMSubClasses/SystemDataContainer.h
         src/linspace.cpp include/linspace.h
-        src/SpinChainEigenSolverClass.cpp include/SpinChainEigenSolverClass.h
+        libs/progressbar.hpp
         #NMSuperClass.cpp NMSuperClass.h
         src/NMSuperClassTest.cpp include/NMSuperClassTest.h
         NMSubClasses/NMInitialisation.cpp NMSubClasses/NMInitialisation.h
+        NMSubClasses/NMConfiguration.cpp NMSubClasses/NMConfiguration.h
         NMSubClasses/NMMethods.cpp NMSubClasses/NMMethods.h
         NMSubClasses/NMDataHandling.cpp NMSubClasses/NMDataHandling.h
-        NMSubClasses/NMConfiguration.cpp NMSubClasses/NMConfiguration.h
-        NMSubClasses/SystemDataContainer.h
-        src/GlobalVariables.cpp include/GlobalVariables.h
-        include/progressbar.hpp
-        src/NewSolver.cpp include/NewSolver.h
         NMSubClasses/DipolarField.cpp NMSubClasses/DipolarField.h
         NMSubClasses/EffectiveField.cpp NMSubClasses/EffectiveField.h
         NMSubClasses/DemagField.cpp NMSubClasses/DemagField.h
         NMSubClasses/LLG.cpp NMSubClasses/LLG.h
-        NMSubClasses/IDemagField.h
-        NMSubClasses/INMMethods.h
-        NMSubClasses/IDipolarField.h
-        NMSubClasses/IEffectiveField.h
-        NMSubClasses/ILLG.h
+        NMSubClasses/Interfaces/INMMethods.h
+        src/SpinChainEigenSolverClass.cpp include/SpinChainEigenSolverClass.h
+        src/NewSolver.cpp include/NewSolver.h
 )
 
 # Include directories for FFTW

@@ -4,7 +4,7 @@
 #include "linspace.h"
 #include "SpinChainEigenSolverClass.h"
 #include "../src/CommonLibs.h"
-#include "progressbar.hpp"
+#include "../libs/progressbar.hpp"
 #include <chrono>
 #include <algorithm>
 #include <iomanip>
