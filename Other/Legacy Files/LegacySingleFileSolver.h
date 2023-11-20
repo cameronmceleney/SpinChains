@@ -1,10 +1,10 @@
 #ifndef SPINCHAINS_NMSUPERCLASS_H
 #define SPINCHAINS_NMSUPERCLASS_H
 
-#include "linspace.h"
-#include "SpinChainEigenSolverClass.h"
-#include "../src/CommonLibs.h"
-#include "../libs/progressbar.hpp"
+#include "../../libs/linspace.h"
+#include "../../include/SpinChainEigenSolverClass.h"
+#include "../../include/CommonLibs.h"
+#include "../../libs/progressbar.hpp"
 #include <chrono>
 #include <algorithm>
 #include <iomanip>

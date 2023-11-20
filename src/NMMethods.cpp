@@ -3,13 +3,13 @@
 //
 
 // C++ User Libraries (Current)
-#include "NMMethods.h"
+#include "../include/NMMethods.h"
 
 
 // C++ User Libraries (Children)
 
 NMMethods::NMMethods(std::shared_ptr<SystemDataContainer> data) :
-        NMSuperClassTest(std::move(data)), 
+        SolversSuperClass(std::move(data)),
         demagField(simState.get()),
         effectiveField(simState.get()),
         dipolarField(simState.get()),

@@ -8,13 +8,13 @@
 // C++ User Libraries (Parent Class)
 #include <utility>
 #include "../libs/progressbar.hpp"
-#include "../include/NMSuperClassTest.h"
+#include "SolversSuperClass.h"
 
 // C++ User Libraries (Sibling Classes)
 #include "NMDataHandling.h"
 
 // C++ User Libraries (Interface)
-#include "Interfaces/INMMethods.h"
+#include "INMMethods.h"
 
 // C++ User Libraries (Components)
 #include "DemagField.h"
@@ -22,7 +22,7 @@
 #include "LLG.h"
 #include "DipolarField.h"
 
-class NMMethods :  public NMSuperClassTest, public INMMethods {
+class NMMethods :  public SolversSuperClass, public INMMethods {
 private:
     DemagnetisationFields demagField;
     EffectiveField effectiveField;

@@ -5,9 +5,9 @@
 #ifndef SPINCHAINS_NMCONFIGURATION_H
 #define SPINCHAINS_NMCONFIGURATION_H
 
-#include "../include/NMSuperClassTest.h"
+#include "SolversSuperClass.h"
 
-class NMConfiguration:  public NMSuperClassTest {
+class NMConfiguration:  public SolversSuperClass {
 private:
     // ####################################            Define Private Variables            ###################################
 
@@ -60,7 +60,7 @@ public:
     // ####################################            Define Public Variables            ###################################
 
     // ####################################            Define Public Functions            ###################################
-    NMConfiguration(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};
+    NMConfiguration(std::shared_ptr<SystemDataContainer> data) : SolversSuperClass(data){};
     // Assignment of all values required for the simulation
     void                Configure();
 

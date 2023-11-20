@@ -2,7 +2,7 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#include "NMConfiguration.h"
+#include "../include/NMConfiguration.h"
 
 void NMConfiguration::Configure() {
     _mxInit = 0.0;

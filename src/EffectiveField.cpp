@@ -2,7 +2,7 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#include "EffectiveField.h"
+#include "../include/EffectiveField.h"
 
 EffectiveField::EffectiveField(SystemDataContainer* data) : systemData(data) {}
 

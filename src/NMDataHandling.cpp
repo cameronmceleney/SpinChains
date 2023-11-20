@@ -2,7 +2,7 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#include "NMDataHandling.h"
+#include "../include/NMDataHandling.h"
 
 void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
     /**

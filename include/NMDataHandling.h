@@ -6,15 +6,15 @@
 #define SPINCHAINS_NMDATAHANDLING_H
 
 // C++ User Libraries (Parent Class)
-#include "../include/NMSuperClassTest.h"
+#include "SolversSuperClass.h"
 #include "NMMethods.h"
 
 class NMMethods;
 
-class NMDataHandling :  public NMSuperClassTest {
+class NMDataHandling :  public SolversSuperClass {
     friend class NMMethods;
 public:
-    NMDataHandling(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};
+    NMDataHandling(std::shared_ptr<SystemDataContainer> data) : SolversSuperClass(data){};
     void                performInitialisation() override { std::cout<<"Data Handling called correctly" << std::endl; };
 
 public:

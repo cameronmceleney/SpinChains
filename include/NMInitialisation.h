@@ -5,9 +5,9 @@
 #ifndef SPINCHAINS_NMINITIALISATION_H
 #define SPINCHAINS_NMINITIALISATION_H
 
-#include "../include/NMSuperClassTest.h"
+#include "SolversSuperClass.h"
 
-class NMInitialisation: public NMSuperClassTest {
+class NMInitialisation: public SolversSuperClass {
 private:
     // ####################################            Define Private Variables            ###################################
 
@@ -31,7 +31,7 @@ protected:
     //
 
 public:
-    NMInitialisation(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};
+    NMInitialisation(std::shared_ptr<SystemDataContainer> data) : SolversSuperClass(data){};
     void                testModifyingDouble(double  newValue);
     void                performInitialisation() override { Initialise(); };
 };

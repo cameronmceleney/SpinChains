@@ -1,7 +1,7 @@
-#include "CommonLibs.h"
-#include "../include/NMSuperClassTest.h"
+#include "../include/CommonLibs.h"
+#include "../include/SolversSuperClass.h"
 #include "../include/SpinChainEigenSolverClass.h"
-#include "../NMSubClasses/SystemDataContainer.h"
+#include "../include/SystemDataContainer.h"
 
 int main() {
 
@@ -43,9 +43,9 @@ int main() {
     if (GV.GetShouldFindEigenvalues()) {
         std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
     } else {
-        auto initialisationInstance = NMSuperClassTest::createSimulationInstance(sharedData);
-        auto configurationInstance = NMSuperClassTest::createConfigurationInstance(sharedData);
-        auto methodsInstance = NMSuperClassTest::createMethodsInstance(sharedData);
+        auto initialisationInstance = SolversSuperClass::createSimulationInstance(sharedData);
+        auto configurationInstance = SolversSuperClass::createConfigurationInstance(sharedData);
+        auto methodsInstance = SolversSuperClass::createMethodsInstance(sharedData);
 
         initialisationInstance->performInitialisation();
         configurationInstance->performInitialisation();

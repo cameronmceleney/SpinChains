@@ -2,7 +2,7 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#include "DemagField.h"
+#include "../include/DemagField.h"
 
 DemagnetisationFields::DemagnetisationFields(SystemDataContainer* data) : systemData(data) {}
 

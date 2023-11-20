@@ -2,13 +2,13 @@
 // Created by Cameron Aidan McEleney on 19/11/2023.
 //
 
-#include <iomanip>
-#include <list>
-
-#include "../src/CommonLibs.h"
-
 #ifndef SPINCHAINS_SYSTEMDATACONTAINER_H
 #define SPINCHAINS_SYSTEMDATACONTAINER_H
+
+#include <iostream>
+#include <vector>
+#include <list>
+#include "CommonLibs.h"
 
 class SystemDataContainer {
     // todo separate this out into several compositions (flags, data structures, etc)
@@ -57,9 +57,9 @@ public:
     double              shockwaveStepsize;                        // Size of incremental increase in shockwave amplitude.
     double              stepsize;                                 // Stepsize between values
     double              stepsizeHalf;                             // Separately defined to avoid repeated unnecessary calculations inside loops
-    std::string         stepsizeString;                           // Object to string conversation for stepsize
+    std::string         stepsizeString = "";                           // Object to string conversation for stepsize
 
-    std::string         stopIterString;                           // Object to string conversion for _stopIterVal
+    std::string         stopIterString = "";                           // Object to string conversion for _stopIterVal
     int                 totalLayers;
 
 
@@ -91,9 +91,9 @@ public:
     bool                useMultilayer;
     bool                debugFunc;
 
-    bool isFm = GV.GetIsFerromagnetic();
-    double exchangeEnergyMin = GV.GetExchangeMinVal();
-    double exchangeEnergyMax = GV.GetExchangeMaxVal();
+    bool isFm;
+    double exchangeEnergyMin;
+    double exchangeEnergyMax;
 
     std::vector<double> gilbertVector = {0};
     std::vector<std::vector<double>> gilbertVectorMulti = {};
@@ -130,6 +130,5 @@ public:
     std::vector<std::vector<std::vector<double>>> m1Nest;
     std::vector<std::vector<std::vector<double>>> m2Nest;
 };
-
 
 #endif //SPINCHAINS_SYSTEMDATACONTAINER_H

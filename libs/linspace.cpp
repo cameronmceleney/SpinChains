@@ -1,4 +1,4 @@
-#include "../include/linspace.h"
+#include "linspace.h"
 
 // Setter function for linspace class
 void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool shouldBuildSpinChain){

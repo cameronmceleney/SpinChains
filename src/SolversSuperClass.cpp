@@ -5,50 +5,50 @@
 #include <utility>
 
 // C++ User Libraries (Parent)
-#include "../include/NMSuperClassTest.h"
+#include "../include/SolversSuperClass.h"
 
 // C++ User Libraries (Children)
-#include "../NMSubClasses/NMInitialisation.h"
-#include "../NMSubClasses/NMConfiguration.h"
-#include "../NMSubClasses/NMDataHandling.h"
-#include "../NMSubClasses/NMMethods.h"
+#include "../include/NMInitialisation.h"
+#include "../include/NMConfiguration.h"
+#include "../include/NMDataHandling.h"
+#include "../include/NMMethods.h"
 
-NMSuperClassTest::~NMSuperClassTest() {
+SolversSuperClass::~SolversSuperClass() {
     // Memory automatically deallocated by unique_ptr
 }
 
-std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createSimulationInstance(std::shared_ptr<SystemDataContainer> sharedData) {
+std::shared_ptr<SolversSuperClass> SolversSuperClass::createSimulationInstance(std::shared_ptr<SystemDataContainer> sharedData) {
     // Return instance of the child
     //auto sharedData = getSharedDataContainer();
     return std::make_shared<NMInitialisation>(sharedData);
 }
 
-std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createConfigurationInstance(std::shared_ptr<SystemDataContainer> sharedData) {
+std::shared_ptr<SolversSuperClass> SolversSuperClass::createConfigurationInstance(std::shared_ptr<SystemDataContainer> sharedData) {
     // Return instance of the child
     //auto sharedData = getSharedDataContainer();
     return std::make_shared<NMConfiguration>(sharedData);
 }
 
-std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createDataHandlingInstance(std::shared_ptr<SystemDataContainer> sharedData) {
+std::shared_ptr<SolversSuperClass> SolversSuperClass::createDataHandlingInstance(std::shared_ptr<SystemDataContainer> sharedData) {
     // Return instance of the child
     //auto sharedData = getSharedDataContainer();
     return std::make_shared<NMDataHandling>(sharedData);
 }
 
-std::shared_ptr<NMSuperClassTest> NMSuperClassTest::createMethodsInstance(std::shared_ptr<SystemDataContainer> sharedData) {
+std::shared_ptr<SolversSuperClass> SolversSuperClass::createMethodsInstance(std::shared_ptr<SystemDataContainer> sharedData) {
     // Return instance of the child
     //auto sharedData = getSharedDataContainer();
     return std::make_shared<NMMethods>(sharedData);
 }
 
-std::shared_ptr<SystemDataContainer> NMSuperClassTest::getSharedDataContainer() {
+std::shared_ptr<SystemDataContainer> SolversSuperClass::getSharedDataContainer() {
     // Lazy initialisation. Left more as a reminder of how to do it than anything else
     static std::shared_ptr<SystemDataContainer> sharedData = std::make_shared<SystemDataContainer>();
     return sharedData;
 }
 
 /*
-std::pair<double, double> NMSuperClassTest::testInstance() {
+std::pair<double, double> SolversSuperClass::testInstance() {
     auto instance = std::dynamic_pointer_cast<NMInitialisation>(createSimulationInstance(sharedData));
     double before = instance->getSharedDataContainer()->ambientTemperature; // Get value of var1 before modification
 

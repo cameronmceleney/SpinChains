@@ -1,4 +1,4 @@
-#include "../include/NMSuperClass.h"
+#include "LegacySingleFileSolver.h"
 
 void NMSuperClass::NumericalMethodsMain() {
 
