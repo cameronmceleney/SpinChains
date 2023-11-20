@@ -6,23 +6,13 @@
 #define SPINCHAINS_LLG_H
 
 #include "NMMethods.h"
+#include "ILLG.h"
 
-class MagnetisationDynamics:  public NMMethods {
-private:
-    // ####################################            Define Private Variables            ###################################
-
-    // ####################################            Define Private Methods            ###################################
-
-protected:
-    // ####################################            Define Protected Variables            ###################################
-
-    // ####################################            Define Protected Functions            ###################################
-
-
+class MagnetisationDynamics : public NMMethods, public ILLG {
 public:
-    // ####################################            Define Public Variables            ###################################
-
-    // ####################################            Define Public Functions            ###################################
+    MagnetisationDynamics(std::shared_ptr<SystemDataContainer> data) : NMMethods(data) {}
+    ~MagnetisationDynamics() = default;
+public:
             /*
      * ################################################################################################################
      * #############    Terms to calculate the magnetic moments of the atoms (doesn't yet include sLLG)    ############
@@ -31,30 +21,30 @@ public:
 
     // Simple version of magnetic moment x-component for single-layered systems
     double              MagneticMomentX (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID);
+                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
 
     // Simple version of magnetic moment y-component for single-layered systems
     double              MagneticMomentY (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID);
+                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
 
     // Simple version of magnetic moment z-component for single-layered systems
     double              MagneticMomentZ (const int& spin, const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID);
+                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
 
     // Full version of magnetic moment x-component function for multi-layered systems
     double              MagneticMomentX (const int& spin, const int& layer,
                                          const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID);
+                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
 
     // Full version of magnetic moment y-component function for multi-layered systems
     double              MagneticMomentY (const int& spin, const int& layer,
                                          const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID);
+                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
 
     // Full version of magnetic moment z-component function for multi-layered systems
     double              MagneticMomentZ (const int& spin, const int& layer,
                                          const double& mxMID, const double& myMID, const double& mzMID,
-                                         const double& hxMID, const double& hyMID, const double& hzMID);
+                                         const double& hxMID, const double& hyMID, const double& hzMID) override;
 
     /*
      * ################################################################################################################
@@ -63,13 +53,13 @@ public:
      */
 
     // Description missing
-    double GenerateGaussianNoise(const double &mean, const double &stddev);
+    double GenerateGaussianNoise(const double &mean, const double &stddev) override;
 
     // Description missing
-    std::vector<double> StochasticTerm(const int& site, const double &timeStep);
+    std::vector<double> StochasticTerm(const int& site, const double &timeStep) override;
 
     // Description missing
-    std::vector<double> ComputeStochasticTerm(const int& site, const double &timeStep);
+    std::vector<double> ComputeStochasticTerm(const int& site, const double &timeStep) override;
 };
 
 

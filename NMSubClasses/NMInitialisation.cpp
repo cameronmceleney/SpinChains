@@ -173,7 +173,7 @@ void NMInitialisation::_guardClauses() {
     }
 
     if (systemData->useLLG and systemData->useSLLG) {
-        std::cout << "Warning: You cannot use both the LLG and sLLG equations. Please choose one or the other.";
+        std::cout << "Warning: You cannot use both the magDynamics and sLLG equations. Please choose one or the other.";
         exit(1);
     }
 

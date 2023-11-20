@@ -249,7 +249,7 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixAntiferromagnets()
         }
     }
 
-    matrixToFill *= _gyroMagConst; // LLG equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
+    matrixToFill *= _gyroMagConst; // magDynamics equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
 
     return matrixToFill;
 }
@@ -336,7 +336,7 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixFerromagnets()
         }
     }
 
-    matrixToFill *= _gyroMagConst; // LLG equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
+    matrixToFill *= _gyroMagConst; // magDynamics equation has 'gamma' term outwith the cross-product so all matrix elements must be multiplied by this value
 
     return matrixToFill;
 }

@@ -5,15 +5,18 @@
 // C++ User Libraries (Current)
 #include "NMMethods.h"
 
+#include <utility>
+
+#include "SystemDataContainer.h"
+
 // C++ User Libraries (Sibling Classes)
 #include "NMDataHandling.h"
 
 // C++ User Libraries (Children)
-#include "DemagField.h"
-#include "DipolarField.h"
-#include "EffectiveField.h"
-#include "LLG.h"
-#include "DebuggingTools.h"
+
+NMMethods::NMMethods(std::shared_ptr<SystemDataContainer> data) :
+        NMSuperClassTest(std::move(data))
+        {}
 
 void NMMethods::_testShockwaveConditions(double iteration) {
 
@@ -108,10 +111,10 @@ void NMMethods::SolveRK2Classic() {
         if (systemData->useDipolar)
             Dipolar -> DipolarInteraction1D(systemData->mx0, dipoleX);
         if (systemData->useDemagIntense) {
-            Demag -> DemagnetisationFieldIntense(demagX, demagY, demagZ, systemData->mx0, systemData->my0, systemData->mz0);
+            demagField -> DemagnetisationFieldIntense(demagX, demagY, demagZ, systemData->mx0, systemData->my0, systemData->mz0);
         } else if (systemData->useDemagFft) {
             std::string rkStageName = "2-1";
-            Demag -> DemagField1DReal(demagX, demagY, demagZ, systemData->mx0, systemData->my0, systemData->mz0, iteration, rkStageName);
+            demagField -> DemagField1DReal(demagX, demagY, demagZ, systemData->mx0, systemData->my0, systemData->mz0, iteration, rkStageName);
 
                 //std::cout << "Iteration #" << iteration <<" | RMSE. mx: " << rmse_mx << " | my: " << rmse_my << " | mz:  " << rmse_mz << std::endl;  // Keep for debugging
 
@@ -193,7 +196,7 @@ void NMMethods::SolveRK2Classic() {
             }
             */
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK0 = EffField -> EffectiveFieldX(site, 0, systemData->mx0[spinLHS], systemData->mx0[site], systemData->mx0[spinRHS], dipoleX[site], demagX[site], t0);
+            double hxK0 = EffField->EffectiveFieldX(site, 0, systemData->mx0[spinLHS], systemData->mx0[site], systemData->mx0[spinRHS], dipoleX[site], demagX[site], t0);
             double hyK0 = EffField -> EffectiveFieldY(site, 0, systemData->my0[spinLHS], systemData->my0[site], systemData->my0[spinRHS], dipoleY[site], demagY[site]);
             double hzK0 = EffField -> EffectiveFieldZ(site, 0, systemData->mz0[spinLHS], systemData->mz0[site], systemData->mz0[spinRHS], dipoleZ[site], demagZ[site]);
 
@@ -216,10 +219,10 @@ void NMMethods::SolveRK2Classic() {
         if (systemData->useDipolar)
             Dipolar -> DipolarInteraction1D(mx1, dipoleX);
         if (systemData->useDemagIntense) {
-            Demag -> DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
+            demagField -> DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
         } else if (systemData->useDemagFft) {
             std::string rkStageName = "2-2";
-            Demag -> DemagField1DReal(demagX, demagY, demagZ, mx1, my1, mz1, iteration, rkStageName);
+            demagField -> DemagField1DReal(demagX, demagY, demagZ, mx1, my1, mz1, iteration, rkStageName);
             // if (iteration > 0) {std::cout << "Stage 2" << std::endl; PrintVector(demagZ, false);}
         }
 

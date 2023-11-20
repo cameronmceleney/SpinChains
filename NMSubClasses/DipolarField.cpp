@@ -1,7 +1,6 @@
 //
 // Created by Cameron McEleney on 31/10/2023.
 //
-
 #include "DipolarField.h"
 
 double DipolarInteractions::dipolarKernel3D(const int& originSite, const int& influencingSite, const double& A, const double& alpha) {

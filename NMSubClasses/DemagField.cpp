@@ -55,10 +55,10 @@ void DemagnetisationFields::DemagField1DComplex(std::vector<double>& outDemagX, 
 
     // Guard clauses. Keep within `DemagField1D` until debugging complete
     if ((Nxx + Nyy + Nzz) > 1.0) {
-        throw std::runtime_error("Demag tensor values are invalid. Sum of all components must be <= 1.0");
+        throw std::runtime_error("demagField tensor values are invalid. Sum of all components must be <= 1.0");
     }
     if ((Nxx < 0.0) || (Nyy < 0.0) || (Nzz < 0.0)) {
-        throw std::runtime_error("Demag tensor values are invalid. All components must be >= 0.0");
+        throw std::runtime_error("demagField tensor values are invalid. All components must be >= 0.0");
     }
 
     auto fftw_alloc_and_check = [](const char* var_name, const int& size) -> fftw_complex* {
@@ -278,10 +278,10 @@ void DemagnetisationFields::DemagField1DReal(std::vector<double>& outDemagX, std
 
     // Guard clauses. Keep within `DemagField1D` until debugging complete
     if ((Nxx + Nyy + Nzz) > 1.0) {
-        throw std::runtime_error("Demag tensor values are invalid. Sum of all components must be <= 1.0");
+        throw std::runtime_error("demagField tensor values are invalid. Sum of all components must be <= 1.0");
     }
     if ((Nxx < 0.0) || (Nyy < 0.0) || (Nzz < 0.0)) {
-        throw std::runtime_error("Demag tensor values are invalid. All components must be >= 0.0");
+        throw std::runtime_error("demagField tensor values are invalid. All components must be >= 0.0");
     }
 
     auto fftw_alloc_and_check = [](const char* var_name, const int& size) -> double* {

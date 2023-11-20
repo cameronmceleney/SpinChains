@@ -11,7 +11,7 @@
 
 class NMMethods;
 
-class NMDataHandling:  public NMSuperClassTest {
+class NMDataHandling :  public NMSuperClassTest {
     friend class NMMethods;
 public:
     NMDataHandling(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};

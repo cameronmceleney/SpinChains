@@ -13,7 +13,7 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using LLG: [" << systemData->useLLG << "]\t\t\t\tUsing Shockwave: [" << systemData->hasShockwave << "]\t\tDrive from LHS: [" << systemData->lhsDrive <<
+        outputFileName << "Using magDynamics: [" << systemData->useLLG << "]\t\t\t\tUsing Shockwave: [" << systemData->hasShockwave << "]\t\tDrive from LHS: [" << systemData->lhsDrive <<
                        "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << systemData->hasStaticDrive << "]\n";
 
         outputFileName << "\n";
@@ -39,7 +39,7 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using LLG," << systemData->useLLG << ",Using Shockwave," << systemData->hasShockwave << ",Drive from LHS," << systemData->lhsDrive <<
+        outputFileName << "Using magDynamics," << systemData->useLLG << ",Using Shockwave," << systemData->hasShockwave << ",Drive from LHS," << systemData->lhsDrive <<
                        ",Numerical Method Used," << methodUsed << ",Has Static Drive," << systemData->hasStaticDrive << "\n";
 
         outputFileName << "\n";
@@ -108,7 +108,7 @@ void NMDataHandling::InformUserOfCodeType(const std::string& nameNumericalMethod
      * Informs the user of the code type they are running, including: solver type; special modules.
      */
     if (systemData->useLLG)
-        std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (LLG) code";
+        std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (magDynamics) code";
     else
         std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (Torque) code";
 
@@ -442,7 +442,7 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using LLG: [" << systemData->useLLG << "]\t\t\t\tUsing Shockwave: [" << systemData->hasShockwave << "]\t\tDrive from LHS: [" << systemData->lhsDrive <<
+        outputFileName << "Using magDynamics: [" << systemData->useLLG << "]\t\t\t\tUsing Shockwave: [" << systemData->hasShockwave << "]\t\tDrive from LHS: [" << systemData->lhsDrive <<
                        "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << systemData->hasStaticDrive << "]\n";
 
         outputFileName << "\n";
@@ -468,7 +468,7 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using LLG," << systemData->useLLG << ",Using Shockwave," << systemData->hasShockwave << ",Drive from LHS," << systemData->lhsDrive <<
+        outputFileName << "Using magDynamics," << systemData->useLLG << ",Using Shockwave," << systemData->hasShockwave << ",Drive from LHS," << systemData->lhsDrive <<
                        ",Numerical Method Used," << methodUsed << ",Has Static Drive," << systemData->hasStaticDrive << "\n";
 
         outputFileName << "\n";

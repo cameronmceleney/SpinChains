@@ -6,63 +6,44 @@
 #define SPINCHAINS_NMMETHODS_H
 
 // C++ User Libraries (Parent Class)
-#include "../include/NMSuperClassTest.h"
+#include <utility>
 
+#include "../include/NMSuperClassTest.h"
 // C++ User Libraries (Sibling Classes)
 #include "NMDataHandling.h"
-
+#include "INMMethods.h"
 // C++ User Libraries (Child Classes)
-class DemagnetisationFields;
-class EffectiveField;
-class MagnetisationDynamics;
-class DebuggingTools;
-class DipolarInteractions;
+#include "IDemagField.h"
+#include "IDipolarField.h"
+#include "IEffectiveField.h"
+#include "ILLG.h"
 
-class NMMethods:  public NMSuperClassTest {
+class NMMethods :  public NMSuperClassTest, public INMMethods {
 private:
     // ####################################            Private Instances            ###################################
     //NMDataHandling* NMData;
 
-    DemagnetisationFields* Demag;
-    EffectiveField* EffField;
-    MagnetisationDynamics* LLG;
-    DebuggingTools* Debug;
-    DipolarInteractions* Dipolar;
-    // ####################################            Define Private Variables            ###################################
-
-    // ####################################            Define Private Methods            ###################################
-
-
+    std::shared_ptr<IDemagField> demagField;
+    std::shared_ptr<IEffectiveField> EffField;
+    std::shared_ptr<ILLG> LLG;
+    std::shared_ptr<IDipolarField> Dipolar;
     // Description missing
-    void                _testShockwaveConditions(double iteration);
+    void                _testShockwaveConditions(double iteration) override;
             // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    void                SolveRK2Classic();
+    void                SolveRK2Classic() override;
 
     // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    void                SolveRK2();
+    void                SolveRK2() override;
 
     // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
     // void                SolveRK2Test();
 
-
-
-protected:
-    // ####################################            Protected Instances            ###################################
-
-    // ####################################            Define Protected Variables            ###################################
-
-    // ####################################            Define Protected Functions            ###################################
-
-
 public:
-    // ####################################            Define Public Variables            ###################################
-
-    // ####################################            Define Public Methods            ###################################
-    NMMethods(std::shared_ptr<SystemDataContainer> data) : NMSuperClassTest(data){};
+    NMMethods(std::shared_ptr<SystemDataContainer> data);
     void performInitialisation() override { runMethod(); };
 
 public:
-    void                runMethod();
+    void                runMethod() override;
 };
 
 

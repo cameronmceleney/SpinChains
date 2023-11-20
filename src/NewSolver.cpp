@@ -186,7 +186,7 @@ double mx_old(double mx0MID, double my0MID, double mz0MID, double gilbert, doubl
     double mxK; // The magnetic moment component along the x-direction for the first stage of RK2
     
     if (useLLG) {
-        // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
+        // The magnetic moment components' coupled equations (obtained from magDynamics equation) with the parameters for the first stage of RK2.
         mxK = gyro * (- (gilbert * hY0 * mx0MID * my0MID) + hY0 * mz0MID - hZ0 * (my0MID + gilbert * mx0MID * mz0MID) + gilbert * hX0 * (pow(my0MID,2) + pow(mz0MID,2)));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
@@ -201,7 +201,7 @@ double my_old(double mx0MID, double my0MID, double mz0MID, double gilbert, doubl
     double myK;
     
     if (useLLG) {
-        // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
+        // The magnetic moment components' coupled equations (obtained from magDynamics equation) with the parameters for the first stage of RK2.
         myK = gyro * (-(hX0 * mz0MID) + hZ0 * (mx0MID - gilbert * my0MID * mz0MID) + gilbert * (hY0 * pow(mx0MID,2) - hX0 * mx0MID * my0MID + hY0 * pow(mz0MID,2)));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
@@ -216,7 +216,7 @@ double mz_old(double mx0MID, double my0MID, double mz0MID, double gilbert, doubl
     double mzK; 
     
     if (useLLG) {
-        // The magnetic moment components' coupled equations (obtained from LLG equation) with the parameters for the first stage of RK2.
+        // The magnetic moment components' coupled equations (obtained from magDynamics equation) with the parameters for the first stage of RK2.
         mzK = gyro * (hX0 * my0MID + gilbert * hZ0 * (pow(mx0MID,2) + pow(my0MID,2)) - gilbert*hX0*mx0MID*mz0MID - hY0 * (mx0MID + gilbert * my0MID * mz0MID));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.

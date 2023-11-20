@@ -13,7 +13,6 @@
 #include "../NMSubClasses/NMDataHandling.h"
 #include "../NMSubClasses/NMMethods.h"
 
-
 NMSuperClassTest::~NMSuperClassTest() {
     // Memory automatically deallocated by unique_ptr
 }
