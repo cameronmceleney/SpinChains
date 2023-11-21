@@ -1,12 +1,18 @@
 #include "../include/CommonLibs.h"
 #include "../include/SolversSuperClass.h"
-#include "../include/SpinChainEigenSolverClass.h"
-#include "../include/SystemDataContainer.h"
+#include "../Other/working_on/SpinChainEigenSolverClass.h"
+
+#include "../include/SimulationParameters.h"
+#include "../include/SimulationStates.h"
+#include "../include/SimulationFlags.h"
 
 int main() {
 
     // GitHub Token: ***REMOVED*** (works as of 04 Jun 23)
-    auto sharedData = std::make_shared<SystemDataContainer>();
+    auto sharedSimParams = std::make_shared<SimulationParameters>();
+    auto sharedSimStates = std::make_shared<SimulationStates>();
+    auto sharedSimFlags = std::make_shared<SimulationFlags>();
+
     //SpinChainEigenSolverClass SolverClass{}; Needs to be turned into a separate class structure
 
     // Global file-related parameters
@@ -31,7 +37,9 @@ int main() {
     std::cin >> outputFileID;
     GV.SetFileNameBase("T"+outputFileID);
 
-    GV.SetFilePath("windows");
+    GV.SetFilePath("macos");
+
+    GV.SetNumericalMethod("RK2c");
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetIsExchangeUniform())
@@ -43,9 +51,9 @@ int main() {
     if (GV.GetShouldFindEigenvalues()) {
         std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
     } else {
-        auto initialisationInstance = SolversSuperClass::createSimulationInstance(sharedData);
-        auto configurationInstance = SolversSuperClass::createConfigurationInstance(sharedData);
-        auto methodsInstance = SolversSuperClass::createMethodsInstance(sharedData);
+        auto initialisationInstance = SolversSuperClass::createSimulationInstance(sharedSimParams, sharedSimStates, sharedSimFlags);
+        auto configurationInstance = SolversSuperClass::createConfigurationInstance(sharedSimParams, sharedSimStates, sharedSimFlags);
+        auto methodsInstance = SolversSuperClass::createMethodsInstance(sharedSimParams, sharedSimStates, sharedSimFlags);
 
         initialisationInstance->performInitialisation();
         configurationInstance->performInitialisation();

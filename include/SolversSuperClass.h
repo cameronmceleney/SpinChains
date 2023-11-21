@@ -16,30 +16,48 @@
 #include <memory>
 
 // C++ User Libraries (General)
-#include "SystemDataContainer.h"
+#include "CommonLibs.h"
+#include "SimulationParameters.h"
+#include "SimulationFlags.h"
+#include "SimulationStates.h"
 #include "../libs/linspace.h"
 
 class SolversSuperClass {
 private:
-    //SystemDataContainer sharedVariables;#
+    //SimulationParameters sharedVariables;#
 
 protected:
     // Getter for child classes to access sharedVariables
-    std::shared_ptr<SystemDataContainer> simState;
+    std::shared_ptr<SimulationParameters> simParams;
+    std::shared_ptr<SimulationStates> simStates;
+    std::shared_ptr<SimulationFlags> simFlags;
 
 public:
-    //SolversSuperClass(std::shared_ptr<SystemDataContainer> simState);
-    SolversSuperClass(std::shared_ptr<SystemDataContainer> data) : simState(std::move(data)) {}
+    //SolversSuperClass(std::shared_ptr<SimulationParameters> simParams);
+    SolversSuperClass(std::shared_ptr<SimulationParameters> sharedSimParams, 
+                      std::shared_ptr<SimulationStates> sharedSimStates, 
+                      std::shared_ptr<SimulationFlags> sharedSimFlags);
     virtual ~SolversSuperClass(); // Destructor (though not strictly necessary with smart pointers)
 
 public:
     virtual void performInitialisation() = 0;
-    static std::shared_ptr<SolversSuperClass> createSimulationInstance(std::shared_ptr<SystemDataContainer> sharedData);
-    static std::shared_ptr<SolversSuperClass> createConfigurationInstance(std::shared_ptr<SystemDataContainer> sharedData);
-    static std::shared_ptr<SolversSuperClass> createDataHandlingInstance(std::shared_ptr<SystemDataContainer> sharedData);
-    static std::shared_ptr<SolversSuperClass> createMethodsInstance(std::shared_ptr<SystemDataContainer> sharedData);
 
-    static std::shared_ptr<SystemDataContainer> getSharedDataContainer();
+    static std::shared_ptr<SolversSuperClass> createSimulationInstance(std::shared_ptr<SimulationParameters> sharedSimParams,
+                                                                       std::shared_ptr<SimulationStates> sharedSimStates, 
+                                                                       std::shared_ptr<SimulationFlags> sharedSimFlags);
+    static std::shared_ptr<SolversSuperClass> createConfigurationInstance(std::shared_ptr<SimulationParameters> sharedSimParams,
+                                                                          std::shared_ptr<SimulationStates> sharedSimStates, 
+                                                                          std::shared_ptr<SimulationFlags> sharedSimFlags);
+    static std::shared_ptr<SolversSuperClass> createDataHandlingInstance(std::shared_ptr<SimulationParameters> sharedSimParams,
+                                                                         std::shared_ptr<SimulationStates> sharedSimStates, 
+                                                                         std::shared_ptr<SimulationFlags> sharedSimFlags);
+    static std::shared_ptr<SolversSuperClass> createMethodsInstance(std::shared_ptr<SimulationParameters> sharedSimParams,
+                                                                    std::shared_ptr<SimulationStates> sharedSimStates, 
+                                                                    std::shared_ptr<SimulationFlags> sharedSimFlags);
+
+    static std::shared_ptr<SimulationParameters> getSimulationParamsContainer();
+    static std::shared_ptr<SimulationStates> getSimulationStatesContainer();
+    static std::shared_ptr<SimulationFlags> getSimulationFlagsContainer();
 
     static std::pair<double, double> testInstance();
 };

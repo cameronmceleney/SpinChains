@@ -29,6 +29,7 @@ private:
     std::optional<bool>  _shouldSendEmail;
     double              _staticBiasField;                       // Applied bias field [T]. Often written as H_0 or H_static in literature.
 
+    std::string         _chosenNumericalMethod;
     // Private Functions
     std::string         FindDateToday();                        // Finds today's date in the standard format for this code.
 
@@ -79,6 +80,9 @@ public:
 
     bool                GetShouldFindEigenvalues();
     void                SetShouldFindEigenvalues(bool shouldFindEigenvalues);
+
+    std::string         GetNumericalMethod();
+    void                SetNumericalMethod(std::string chosenNumericalMethod);
 };
 
 

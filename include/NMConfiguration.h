@@ -50,17 +50,16 @@ private:
 
 
 protected:
-    // ####################################            Define Protected Variables            ###################################
-
-    // ####################################            Define Protected Functions            ###################################
-        // Description missing
     void                _testShockwaveInitConditions();
 
 public:
-    // ####################################            Define Public Variables            ###################################
+    NMConfiguration(std::shared_ptr<SimulationParameters> paramsData,
+                                   std::shared_ptr<SimulationStates> sharedSimStates,
+                                   std::shared_ptr<SimulationFlags> sharedSimFlags);
 
-    // ####################################            Define Public Functions            ###################################
-    NMConfiguration(std::shared_ptr<SystemDataContainer> data) : SolversSuperClass(data){};
+    ~NMConfiguration() = default;
+
+public:
     // Assignment of all values required for the simulation
     void                Configure();
 

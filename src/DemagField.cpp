@@ -4,7 +4,11 @@
 
 #include "../include/DemagField.h"
 
-DemagnetisationFields::DemagnetisationFields(SystemDataContainer* data) : systemData(data) {}
+DemagnetisationFields::DemagnetisationFields(SimulationParameters* sharedSimParams,
+                                             SimulationStates* sharedSimStates,
+                                             SimulationFlags* sharedSimFlags)
+
+   : _simParams(sharedSimParams), _simStates(sharedSimStates), _simFlags(sharedSimFlags) {}
 
 void DemagnetisationFields::DemagnetisationFieldIntense(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
                                                    const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
@@ -222,7 +226,7 @@ void DemagnetisationFields::DemagField1DComplex(std::vector<double>& outDemagX, 
     }
     bool testOutRMS = false;
     if (testOutRMS) {
-        if (systemData->iterationEnd >= 100 && iteration % (systemData->iterationEnd / 1000) == 0) {
+        if (_simParams->iterationEnd >= 100 && iteration % (_simParams->iterationEnd / 1000) == 0) {
             if (mxRMSETest || myRMSETest || mzRMSETest) {
                 std::cout << "Iter. #" << iteration << " | RK" << rkStageName << " ";
                 if (mxRMSETest)
@@ -449,7 +453,7 @@ void DemagnetisationFields::DemagField1DReal(std::vector<double>& outDemagX, std
     }
     bool testOutRMS = false;
     if (testOutRMS) {
-        if (systemData->iterationEnd >= 100 && iteration % (systemData->iterationEnd / 1000) == 0) {
+        if (_simParams->iterationEnd >= 100 && iteration % (_simParams->iterationEnd / 1000) == 0) {
             if (mxRMSETest || myRMSETest || mzRMSETest) {
                 std::cout << "Iter. #" << iteration << " | RK" << rkStageName << " ";
                 if (mxRMSETest)

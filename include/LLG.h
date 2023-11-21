@@ -8,14 +8,20 @@
 // C++ Third Party Libraries
 #include <random>
 
-// Include the SystemDataContainer
-#include "SystemDataContainer.h"
+// Include the SimulationParameters
+#include "SimulationParameters.h"
+#include "SimulationStates.h"
+#include "SimulationFlags.h"
 
 class MagnetisationDynamics {
 private:
-    SystemDataContainer* systemData; // Non-owning pointer to SystemDataContainer
+    SimulationParameters* _simParams; // Non-owning pointer to SimulationParameters
+    SimulationStates* _simStates;
+    SimulationFlags* _simFlags;
 public:
-    explicit MagnetisationDynamics(SystemDataContainer* data);
+    explicit MagnetisationDynamics(SimulationParameters* sharedSimParams,
+                                   SimulationStates* sharedSimStates,
+                                   SimulationFlags* sharedSimFlags);
     ~MagnetisationDynamics() = default;
 public:
             /*

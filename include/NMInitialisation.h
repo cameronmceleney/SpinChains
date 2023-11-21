@@ -31,7 +31,10 @@ protected:
     //
 
 public:
-    NMInitialisation(std::shared_ptr<SystemDataContainer> data) : SolversSuperClass(data){};
+    NMInitialisation(std::shared_ptr<SimulationParameters> paramsData,
+                     std::shared_ptr<SimulationStates> sharedSimStates,
+                     std::shared_ptr<SimulationFlags> sharedSimFlags);
+
     void                testModifyingDouble(double  newValue);
     void                performInitialisation() override { Initialise(); };
 };

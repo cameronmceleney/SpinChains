@@ -14,8 +14,11 @@ class NMMethods;
 class NMDataHandling :  public SolversSuperClass {
     friend class NMMethods;
 public:
-    NMDataHandling(std::shared_ptr<SystemDataContainer> data) : SolversSuperClass(data){};
-    void                performInitialisation() override { std::cout<<"Data Handling called correctly" << std::endl; };
+    NMDataHandling(std::shared_ptr<SimulationParameters> paramsData,
+                   std::shared_ptr<SimulationStates> sharedSimStates,
+                   std::shared_ptr<SimulationFlags> sharedSimFlags);
+    ~NMDataHandling() = default;
+    void                performInitialisation() override {};
 
 public:
     // ####################################            Define Private Variables            ###################################

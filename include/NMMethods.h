@@ -41,7 +41,9 @@ private:
     // void                SolveRK2Test();
 
 public:
-    NMMethods(std::shared_ptr<SystemDataContainer> data);
+    NMMethods(std::shared_ptr<SimulationParameters> paramsData,
+              std::shared_ptr<SimulationStates> sharedSimStates,
+              std::shared_ptr<SimulationFlags> sharedSimFlags);
     ~NMMethods() = default;
 public:
     void performInitialisation() override { runMethod(); };

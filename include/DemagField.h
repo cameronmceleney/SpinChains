@@ -11,14 +11,21 @@ extern "C" {
     #include <fftw3.h>
 }
 
-// Include the SystemDataContainer
-#include "SystemDataContainer.h"
+// Include the SimulationParameters
+#include "SimulationParameters.h"
+#include "SimulationStates.h"
+#include "SimulationFlags.h"
+#include "CommonLibs.h"
 
 class DemagnetisationFields {
 private:
-    SystemDataContainer* systemData; // Non-owning pointer to SystemDataContainer
+    SimulationParameters* _simParams; // Non-owning pointer to SimulationParameters
+    SimulationStates* _simStates;
+    SimulationFlags* _simFlags;
 public:
-    explicit DemagnetisationFields(SystemDataContainer* data);
+    explicit DemagnetisationFields(SimulationParameters* sharedSimParams,
+                                   SimulationStates* sharedSimStates,
+                                   SimulationFlags* sharedSimFlags);
     ~DemagnetisationFields() = default;
 public:
     void                    DemagField1DComplex(std::vector<double>& outDemagX, std::vector<double>& outDemagY, std::vector<double>& outDemagZ,

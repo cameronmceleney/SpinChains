@@ -11,14 +11,21 @@ extern "C" {
 }
 
 
-// Include the SystemDataContainer
-#include "SystemDataContainer.h"
+// Include the SimulationParameters
+#include "SimulationParameters.h"
+#include "SimulationStates.h"
+#include "SimulationFlags.h"
+#include "CommonLibs.h"
 
 class DipolarInteractions {
 private:
-    SystemDataContainer* systemData; // Non-owning pointer to SystemDataContainer
+    SimulationParameters* _simParams; // Non-owning pointer to SimulationParameters
+    SimulationStates* _simStates;
+    SimulationFlags* _simFlags;
 public:
-    explicit DipolarInteractions(SystemDataContainer* data);
+    explicit DipolarInteractions(SimulationParameters* sharedSimParams,
+                                 SimulationStates* sharedSimStates,
+                                 SimulationFlags* sharedSimFlags);
     ~DipolarInteractions() = default;
 public:
     // ####################################            Define Public Variables            ###################################

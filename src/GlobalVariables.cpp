@@ -153,6 +153,13 @@ void GlobalVariablesClass::SetStaticBiasField(double staticBiasField) {
     _staticBiasField = staticBiasField;
 }
 
+std::string GlobalVariablesClass::GetNumericalMethod() {
+    return _chosenNumericalMethod;
+}
+void GlobalVariablesClass::SetNumericalMethod(std::string chosenNumericalMethod) {
+    _chosenNumericalMethod = chosenNumericalMethod;
+}
+
 bool GlobalVariablesClass::GetShouldFindEigenvalues() {
     if (_shouldFindEigenvalues.has_value())
         return _shouldFindEigenvalues.value();

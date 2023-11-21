@@ -24,7 +24,7 @@ endif()
 add_executable(SpinChains src/main.cpp
         include/CommonLibs.h
         src/GlobalVariables.cpp include/GlobalVariables.h
-        include/SystemDataContainer.h
+        include/SimulationParameters.h
         libs/linspace.cpp libs/linspace.h
         libs/progressbar.hpp
         #NMSuperClass.cpp NMSuperClass.h
@@ -38,8 +38,10 @@ add_executable(SpinChains src/main.cpp
         src/DemagField.cpp include/DemagField.h
         src/LLG.cpp include/LLG.h
         include/INMMethods.h
-        Other/working_on/SpinChainEigenSolverClass.cpp include/SpinChainEigenSolverClass.h
+        Other/working_on/SpinChainEigenSolverClass.cpp Other/working_on/SpinChainEigenSolverClass.h
         "Other/Legacy Files/NewSolver.cpp" "Other/Legacy Files/NewSolver.h"
+        include/SimulationFlags.h
+        include/SimulationStates.h
 )
 
 # Include directories for FFTW

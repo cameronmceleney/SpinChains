@@ -2,7 +2,7 @@
 #define SPINCHAINS_NMSUPERCLASS_H
 
 #include "../../libs/linspace.h"
-#include "../../include/SpinChainEigenSolverClass.h"
+#include "../working_on/SpinChainEigenSolverClass.h"
 #include "../../include/CommonLibs.h"
 #include "../../libs/progressbar.hpp"
 #include <chrono>

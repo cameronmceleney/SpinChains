@@ -6,14 +6,21 @@
 #ifndef SPINCHAINS_EFFECTIVEFIELD_H
 #define SPINCHAINS_EFFECTIVEFIELD_H
 
-// Include the SystemDataContainer
-#include "SystemDataContainer.h"
+// Include the SimulationParameters
+#include "SimulationParameters.h"
+#include "SimulationStates.h"
+#include "SimulationFlags.h"
+#include "CommonLibs.h"
 
 class EffectiveField {
 private:
-    SystemDataContainer* systemData; // Non-owning pointer to SystemDataContainer
+    SimulationParameters* _simParams; // Non-owning pointer to SimulationParameters
+    SimulationStates* _simStates;
+    SimulationFlags* _simFlags;
 public:
-    explicit EffectiveField(SystemDataContainer* data);
+    explicit EffectiveField(SimulationParameters* sharedSimParams,
+                            SimulationStates* sharedSimStates,
+                            SimulationFlags* sharedSimFlags);
     ~EffectiveField() = default;
     
 public:

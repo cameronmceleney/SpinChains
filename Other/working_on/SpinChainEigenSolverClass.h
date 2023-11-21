@@ -1,10 +1,10 @@
 #ifndef SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
 #define SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
 
-#include "CommonLibs.h"
+#include "../../include/CommonLibs.h"
 #include <chrono>
 #include <ctime>
-#include "../libs/linspace.h"
+#include "../../libs/linspace.h"
 
 class SpinChainEigenSolverClass {
 

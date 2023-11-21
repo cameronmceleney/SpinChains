@@ -2,7 +2,15 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
+#include <utility>
+
 #include "../include/NMInitialisation.h"
+
+NMInitialisation::NMInitialisation(std::shared_ptr<SimulationParameters> paramsData,
+                                   std::shared_ptr<SimulationStates> sharedSimStates,
+                                   std::shared_ptr<SimulationFlags> sharedSimFlags)  :
+
+   SolversSuperClass(std::move(paramsData), std::move(sharedSimStates), std::move(sharedSimFlags)) {}
 
 void NMInitialisation::Initialise() {
     // Constructor implementation
@@ -11,188 +19,185 @@ void NMInitialisation::Initialise() {
     _generateRemainingParameters();
     _setMaterialParameters();
     _guardClauses();
-
-    std::cout << "ambientTemp in init: " << simState->ambientTemperature << std::endl;
-    std::cout<<"Completed initialisation of init vals" << std::endl;
 }
 void NMInitialisation::_setSimulationFlags() {
 
     // Debugging Flags
-    simState->shouldTrackMValues = true;
+    simFlags->shouldTrackMValues = true;
 
     // Model Type
-    simState->useLLG = true;
-    simState->useSLLG = false;
+    simFlags->useLLG = true;
+    simFlags->useSLLG = false;
 
     // Interaction Flags
-    simState->hasShockwave = false;
-    simState->useDipolar = false;
-    simState->useZeeman = true;
-    simState->useDemagIntense = false;
-    simState->useDemagFft = false;
+    simFlags->hasShockwave = false;
+    simFlags->useDipolar = false;
+    simFlags->useZeeman = true;
+    simFlags->useDemagIntense = false;
+    simFlags->useDemagFft = false;
 
     // Material Flags
-    simState->useMultilayer = false;
+    simFlags->useMultilayer = false;
 
     // Drive Flags
-    simState->centralDrive = false;
-    simState->driveAllLayers = false;
-    simState->dualDrive = false;
-    simState->lhsDrive = false;
-    simState->rhsDrive = true;
-    simState->hasStaticDrive = false;
-    simState->shouldDriveCease = false;
+    simFlags->centralDrive = false;
+    simFlags->driveAllLayers = false;
+    simFlags->dualDrive = false;
+    simFlags->lhsDrive = false;
+    simFlags->rhsDrive = true;
+    simFlags->hasStaticDrive = false;
+    simFlags->shouldDriveCease = false;
 
     // Output Flags
-    simState->printAllData = false;
-    simState->printFixedLines = true;
-    simState->printFixedSites = false;
+    simFlags->printAllData = false;
+    simFlags->printFixedLines = true;
+    simFlags->printFixedSites = false;
 }
 
 void NMInitialisation::_setSimulationParameters() {
 
 
-    simState->isFm = GV.GetIsFerromagnetic();
-    simState->exchangeEnergyMin = GV.GetExchangeMinVal();
-    simState->exchangeEnergyMax = GV.GetExchangeMaxVal();
+    simFlags->isFm = GV.GetIsFerromagnetic();
+    simParams->exchangeEnergyMin = GV.GetExchangeMinVal();
+    simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
 
     // Main Parameters
-    simState->ambientTemperature = 273; // Kelvin
+    simParams->ambientTemperature = 273; // Kelvin
 
-    simState->drivingFreq = 43.5 * 1e9;
-    simState->dynamicBiasField = 3e-3;
-    simState->forceStopAtIteration = -1;
-    simState->gyroMagConst = GV.GetGyromagneticConstant();
-    simState->maxSimTime = 0.7e-9;
-    simState->satMag = 0.010032;
-    simState->stepsize = 1e-15;
+    simParams->drivingFreq = 43.5 * 1e9;
+    simParams->dynamicBiasField = 3e-3;
+    simParams->forceStopAtIteration = -1;
+    simParams->gyroMagConst = GV.GetGyromagneticConstant();
+    simParams->maxSimTime = 0.7e-9;
+    simParams->satMag = 0.010032;
+    simParams->stepsize = 1e-15;
 
     // Shockwave Parameters
-    simState->iterStartShock = 0.0;
-    simState->iterEndShock = 0.0001;
-    simState->shockwaveGradientTime = 1;
-    simState->shockwaveInitialStrength = 0;  // Set equal to dynamicBiasField if NOT starting at time=0
-    simState->shockwaveMax = 3e-3;
-    simState->shockwaveScaling = 1;
+    simParams->iterStartShock = 0.0;
+    simParams->iterEndShock = 0.0001;
+    simParams->shockwaveGradientTime = 1;
+    simParams->shockwaveInitialStrength = 0;  // Set equal to dynamicBiasField if NOT starting at time=0
+    simParams->shockwaveMax = 3e-3;
+    simParams->shockwaveScaling = 1;
 
     // Data Output Parameters
-    simState->fixedOutputSites = {12158, 14529, 15320};
+    simParams->fixedOutputSites = {12158, 14529, 15320};
     // _recordingInterval = 1e-15;
-    simState->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
+    simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
     _layerOfInterest = 1;
 
     // Damping Factors
-    simState->gilbertABCInner = 1e-4;
-    simState->gilbertABCOuter = 1e0;
+    simParams->gilbertABCInner = 1e-4;
+    simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
-    simState->drivingRegionWidth = 200;
-    simState->numberNeighbours = -1;
-    simState->numSpinsDamped = 0;
-    simState->totalLayers = 1;
+    simParams->drivingRegionWidth = 200;
+    simParams->numberNeighbours = -1;
+    simParams->numSpinsDamped = 0;
+    simParams->totalLayers = 1;
 }
 
 void NMInitialisation::_generateRemainingParameters() {
     // Computations based upon other inputs
-    simState->drivingAngFreq = 2 * M_PI * simState->drivingFreq;
-    simState->PERMITTIVITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
-    simState->dipoleConstant = SystemDataContainer::PERM_FREESPACE / (4.0 * M_PI);
+    simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;
+    simParams->PERMITTIVITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
+    simParams->dipoleConstant = SimulationParameters::PERM_FREESPACE / (4.0 * M_PI);
 
-    simState->iterationEnd = static_cast<int>(simState->maxSimTime / simState->stepsize);
-    simState->stepsizeHalf = simState->stepsize / 2.0;
+    simParams->iterationEnd = static_cast<int>(simParams->maxSimTime / simParams->stepsize);
+    simParams->stepsizeHalf = simParams->stepsize / 2.0;
 
-    simState->numSpinsInChain = GV.GetNumSpins();
-    simState->numberOfSpinPairs = simState->numSpinsInChain - 1;
-    simState->layerSpinsInChain = {simState->drivingRegionWidth, simState->numSpinsInChain};
-    GV.SetNumSpins(simState->numSpinsInChain + 2 * simState->numSpinsDamped);
-    simState->systemTotalSpins = GV.GetNumSpins();
+    simParams->numSpinsInChain = GV.GetNumSpins();
+    simParams->numberOfSpinPairs = simParams->numSpinsInChain - 1;
+    simStates->layerSpinsInChain = {simParams->drivingRegionWidth, simParams->numSpinsInChain};
+    GV.SetNumSpins(simParams->numSpinsInChain + 2 * simParams->numSpinsDamped);
+    simParams->systemTotalSpins = GV.GetNumSpins();
 
-    simState->layerSpinPairs.clear();
-    simState->layerTotalSpins.clear();
-    for (int& spinsInChain: simState->layerSpinsInChain) {
-        simState->layerSpinPairs.push_back(spinsInChain - 1);
-        simState->layerTotalSpins.push_back(spinsInChain + 2 * simState->numSpinsDamped);
+    simStates->layerSpinPairs.clear();
+    simStates->layerTotalSpins.clear();
+    for (int& spinsInChain: simStates->layerSpinsInChain) {
+        simStates->layerSpinPairs.push_back(spinsInChain - 1);
+        simStates->layerTotalSpins.push_back(spinsInChain + 2 * simParams->numSpinsDamped);
     }
-    simState->gilbertVectorMulti.resize(simState->totalLayers, {0});
+    simStates->gilbertVectorMulti.resize(simParams->totalLayers, {0});
 
     _layerOfInterest -= 1;  // To correct for 0-indexing
 }
 
 void NMInitialisation::_setMaterialParameters() {
 
-    if (simState->isFm)
-        simState->anisotropyField = 0;
-    else if (!simState->isFm)
-        simState->anisotropyField = GV.GetAnisotropyField();
+    if (simFlags->isFm)
+        simParams->anisotropyField = 0;
+    else if (!simFlags->isFm)
+        simParams->anisotropyField = GV.GetAnisotropyField();
 
-    if (!simState->useZeeman)
+    if (!simFlags->useZeeman)
         GV.SetStaticBiasField(0);
 }
 
 void NMInitialisation::_guardClauses() {
 
-    if (simState->shouldDriveCease and simState->iterEndShock <= 0) {
-        std::cout << "Warning: [shouldDriveCease: True] however [iterEndShock: " << simState->iterEndShock << " ! > 0.0]"
+    if (simFlags->shouldDriveCease and simParams->iterEndShock <= 0) {
+        std::cout << "Warning: [shouldDriveCease: True] however [iterEndShock: " << simParams->iterEndShock << " ! > 0.0]"
                   << std::endl;
         exit(1);
     }
 
-    if (simState->lhsDrive and simState->rhsDrive) {
+    if (simFlags->lhsDrive and simFlags->rhsDrive) {
         std::cout << "Warning: [lhsDrive: True] and [rhsDrive: True] are both TRUE. Please choose one or the other."
                   << std::endl;
         exit(1);
     }
 
-    if (simState->hasShockwave and simState->iterStartShock < 0) {
-        std::cout << "Warning: [hasShockwave: True] however [iterStartShock: " << simState->iterStartShock << " ! > 0.0]"
+    if (simFlags->hasShockwave and simParams->iterStartShock < 0) {
+        std::cout << "Warning: [hasShockwave: True] however [iterStartShock: " << simParams->iterStartShock << " ! > 0.0]"
                   << std::endl;
         exit(1);
     }
 
-    if ((simState->printFixedSites and simState->printFixedLines) or (simState->printFixedSites and simState->printAllData) or
-        (simState->printFixedLines and simState->printAllData)) {
-        std::cout << "Warning: Multiple output flags detected. [printFixedSites: " << simState->printFixedSites
-                  << "] | [printFixedLines: " << simState->printFixedLines << "] | [printAllData: " << simState->printAllData << "]"
+    if ((simFlags->printFixedSites and simFlags->printFixedLines) or (simFlags->printFixedSites and simFlags->printAllData) or
+        (simFlags->printFixedLines and simFlags->printAllData)) {
+        std::cout << "Warning: Multiple output flags detected. [printFixedSites: " << simFlags->printFixedSites
+                  << "] | [printFixedLines: " << simFlags->printFixedLines << "] | [printAllData: " << simFlags->printAllData << "]"
                   << std::endl;
         exit(1);
     }
 
-    if ((simState->lhsDrive && simState->centralDrive) || (simState->lhsDrive && simState->dualDrive) || (simState->centralDrive && simState->dualDrive)) {
+    if ((simFlags->lhsDrive && simFlags->centralDrive) || (simFlags->lhsDrive && simFlags->dualDrive) || (simFlags->centralDrive && simFlags->dualDrive)) {
         std::cout << "Warning: two (or more) conflicting driving region booleans were TRUE"
-                  << "\n_lhsDrive: " << simState->lhsDrive << "\n_centralDrive: " << simState->centralDrive << "\n_dualDrive: " << simState->dualDrive
+                  << "\n_lhsDrive: " << simFlags->lhsDrive << "\n_centralDrive: " << simFlags->centralDrive << "\n_dualDrive: " << simFlags->dualDrive
                   << "\n\nExiting...";
         exit(1);
     }
 
-    if (simState->printFixedSites and simState->fixedOutputSites.empty()) {
+    if (simFlags->printFixedSites and simParams->fixedOutputSites.empty()) {
         std::cout << "Warning: Request to print fixed sites, but no sites were given [fixedOutputSites: (";
-        for (int & fixed_out_val : simState->fixedOutputSites)
+        for (int & fixed_out_val : simParams->fixedOutputSites)
                 std::cout << fixed_out_val << ", ";
         std::cout << ")].";
         exit(1);
     }
 
-    if (simState->numberOfDataPoints > simState->iterationEnd) {
+    if (simParams->numberOfDataPoints > simParams->iterationEnd) {
         std::cout << "Warning: You tried to print more data than was generated [numberOfDataPoints > iterationEnd]";
         exit(1);
     }
 
-    if (simState->useLLG and simState->useSLLG) {
+    if (simFlags->useLLG and simFlags->useSLLG) {
         std::cout << "Warning: You cannot use both the magDynamics and sLLG equations. Please choose one or the other.";
         exit(1);
     }
 
-    if (simState->useMultilayer and simState->totalLayers < 2) {
+    if (simFlags->useMultilayer and simParams->totalLayers < 2) {
         std::cout << "Warning: You cannot use the multilayer solver with less than 2 layers.";
         exit(1);
     }
 
-    if (simState->useDemagIntense && simState->useDemagFft) {
+    if (simFlags->useDemagIntense && simFlags->useDemagFft) {
         std::cout << "Warning: You cannot use both the intense and FFT demag solvers. Please choose one or the other.";
         exit(1);
     }
 
-    if ((simState->useDemagIntense && !GV.GetIsFerromagnetic()) || (simState->useDemagFft && !GV.GetIsFerromagnetic())) {
+    if ((simFlags->useDemagIntense && !GV.GetIsFerromagnetic()) || (simFlags->useDemagFft && !GV.GetIsFerromagnetic())) {
         std::cout << "Warning: You cannot use the demag solvers with non-ferromagnetic materials.";
         exit(1);
     }
@@ -201,7 +206,7 @@ void NMInitialisation::_guardClauses() {
 
 void NMInitialisation::testModifyingDouble(double newValue) {
     // Test modifying a double in the parent class from the child
-    simState->ambientTemperature = newValue;
-    simState->iterEndShock = 0.12345;
-    std::cout << "I changed another value: " << simState->iterEndShock << std::endl;
+    simParams->ambientTemperature = newValue;
+    simParams->iterEndShock = 0.12345;
+    std::cout << "I changed another value: " << simParams->iterEndShock << std::endl;
 }

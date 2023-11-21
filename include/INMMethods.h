@@ -7,7 +7,7 @@
 
 #include <memory>
 
-class SystemDataContainer;
+class SimulationParameters;
 
 class INMMethods {
 public:
