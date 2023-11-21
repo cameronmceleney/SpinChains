@@ -11,6 +11,12 @@
 // C++ Standard Libraries
 #include <string>
 
+// C++ Third Party Library
+#include <tbb/blocked_range.h>
+#include <tbb/global_control.h>
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_invoke.h>
+
 // C++ User Libraries (General)
 #include "GlobalVariables.h"
 #include "../libs/progressbar.hpp"
@@ -33,17 +39,33 @@ private:
     MagnetisationDynamics llg;
     DipolarFields dipolarField;
 private:
-    // Description missing
+    /**
+     * Description missing
+     */
     void                _testShockwaveConditions(double iteration) override;
-            // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
+    /**
+     * Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method. Original
+     * implementation of the RK2 method; used for testing purposes
+     */
     void                SolveRK2Classic() override;
 
     // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
     void                SolveRK2() override;
 
-    // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    // void                SolveRK2Test();
+    /**
+     * Evaluate the given system using the RK2 method which has been configured to enabled
+     * parallelisation through Intel's oneAPI TBB
+     */
+    void                RK2Parallel() override;
 
+    /**
+     * Description missing
+     */
+    void                RK2StageMultithreaded(const std::vector<double>& mxIn, const std::vector<double>& myIn, const std::vector<double>& mzIn,
+                                              std::vector<double>& mxOut, std::vector<double>& myOut, std::vector<double>& mzOut,
+                                              std::vector<double>& demagX, std::vector<double>& demagY, std::vector<double>& demagZ,
+                                              std::vector<double>& dipoleX, std::vector<double>& dipoleY, std::vector<double>& dipoleZ,
+                                              double& currentTime, double& stepsize, int& iteration, std::string rkStage);
 public:
     SolversImplementation(std::shared_ptr<SimulationParameters> paramsData,
               std::shared_ptr<SimulationStates> sharedSimStates,

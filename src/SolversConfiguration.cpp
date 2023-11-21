@@ -55,7 +55,7 @@ void SolversConfiguration::_generateAbsorbingRegions(int numSpinsInChain, int nu
     if (numSpinsAbsorbingRegion < 0) {
         // Guard clause.
         std::cout << "numGilbert is less than zero!";
-        exit(0);
+        exit(1);
     }
 
     std::vector<double> gilbertChain(numSpinsInChain, gilbertSpinChain);
@@ -73,6 +73,17 @@ void SolversConfiguration::_generateAbsorbingRegions(int numSpinsInChain, int nu
 }
 
 void SolversConfiguration::_setupDrivingRegion(int numSpinsInChain, int numSpinsAbsorbingRegion, int drivingRegionWidth) {
+
+    if (simFlags->shouldDriveDiscreteSites) {
+        for (int& drivenSite: simStates->discreteDrivenSites)
+            drivenSite -= 1;
+
+        // Update so that output file is intuitive
+        simParams->drivingRegionWidth = 0;
+        simParams->drivingRegionLhs = 0;
+        simParams->drivingRegionRhs = 0;
+        return;
+    }
 
     if (simFlags->shouldDriveCentre) {
         simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
@@ -96,6 +107,13 @@ void SolversConfiguration::_setupDrivingRegion(int numSpinsInChain, int numSpins
         return;
     }
 
+    if (simFlags->hasCustomDrivePosition) {
+        // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
+        simParams->drivingRegionLhs = 0 + 1;
+        simParams->drivingRegionRhs = simParams->drivingRegionLhs + drivingRegionWidth - 1;
+        return;
+    }
+
 }
 void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, int numSpinPairs, double exchangeMin, double exchangeMax) {
     /*
@@ -103,17 +121,33 @@ void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, 
      * induce a 'kick' into the system by initialising certain spins to have differing parameters to their neighbours.
      */
     LinspaceClass SpinChainExchange;
+    LinspaceClass SpinChainExchangeLHS;
+    LinspaceClass SpinChainExchangeRHS;
+
+    int customDampedSite = 300; // Lets the driving regions be a single exchange region with the main chain
 
     if (numSpinsAbsorbingRegion > 0) {
-        SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, false);
-        simStates->exchangeVec = SpinChainExchange.generate_array();
+        if (simParams->numSpinsInABC == customDampedSite) {
+            numSpinPairs += (2 * simParams->numSpinsInABC);
+            SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, true);
+            simStates->exchangeVec = SpinChainExchange.generate_array();
+        } else {
+            simStates->exchangeVec.push_back(0.0);
 
-        std::vector<double> dampingRegionLeftExchange(numSpinsAbsorbingRegion, exchangeMin), dampingRegionRightExchange(numSpinsAbsorbingRegion, exchangeMax);
-        dampingRegionLeftExchange.insert(dampingRegionLeftExchange.begin(), 0);
-        dampingRegionRightExchange.push_back(0);
+            SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, false);
+            std::vector<double> tempExchangeChain = SpinChainExchange.generate_array();
 
-        simStates->exchangeVec.insert(simStates->exchangeVec.begin(), dampingRegionLeftExchange.begin(), dampingRegionLeftExchange.end());
-        simStates->exchangeVec.insert(simStates->exchangeVec.end(), dampingRegionRightExchange.begin(), dampingRegionRightExchange.end());
+            SpinChainExchangeLHS.set_values(exchangeMin, exchangeMax, numSpinsAbsorbingRegion, true, false);
+            std::vector<double> tempExchangeLHS = SpinChainExchangeLHS.generate_array();
+
+            SpinChainExchangeRHS.set_values(exchangeMax, exchangeMin, numSpinsAbsorbingRegion, true, false);
+            std::vector<double> tempExchangeRHS = SpinChainExchangeRHS.generate_array();
+
+            simStates->exchangeVec.insert(simStates->exchangeVec.end(), tempExchangeLHS.begin(), tempExchangeLHS.end());
+            simStates->exchangeVec.insert(simStates->exchangeVec.end(), tempExchangeChain.begin(), tempExchangeChain.end());
+            simStates->exchangeVec.insert(simStates->exchangeVec.end(), tempExchangeRHS.begin(), tempExchangeRHS.end());
+            simStates->exchangeVec.push_back(0.0);
+        }
     } else {
         // The linearly spaced vector is saved as the class member 'exchangeVec' simply to increase code readability
         SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, true);
@@ -169,14 +203,13 @@ void SolversConfiguration::_testShockwaveInitConditions() {
 void SolversConfiguration::_generateMultilayerAbsorbingRegions(int numSpinsAbsorbingRegion, double gilbertSpinChain,
                                                           double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter) {
 
-
     LinspaceClass AbsorbingRegionLHS;
     LinspaceClass AbsorbingRegionRHS;
 
     if (numSpinsAbsorbingRegion < 0) {
         // Guard clause.
         std::cout << "numGilbert is less than zero!";
-        exit(0);
+        exit(1);
     }
 
     for (int& layer: simStates->layerSpinsInChain) {
@@ -220,6 +253,23 @@ void SolversConfiguration::_setupInitMultilayerMagneticMoments(std::vector<std::
     nestedNestedVector[layer].push_back({0.0, 0.0, 0.0});
 
 }
+std::vector<std::vector<std::vector<double>>> SolversConfiguration::initializeNestedNestedVector(int numSites,
+                                                                                                 bool includeEnd) {
+    /* Legacy code not used currently. Example implementation is below
+     * std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;
+     * mValsNested3["nestedNestedVector3"] = initializeNestedNestedVector(1, true);
+     * std::vector<std::vector<std::vector<double>>> m2Nest = mValsNested3["nestedNestedVector3"];
+     * _setupInitMultilayerMagneticMoments(m2Nest, 1, 0, 0 , 0);
+     */
+    std::vector<std::vector<std::vector<double>>> innerNestedVector;
+    for (int j = 0; j < numSites; j++) {
+        std::vector<std::vector<double>> innerVector;
+        std::vector<double> innermostVector = {0.0, 0.0, 0.0};
+        innerVector.push_back(innermostVector);
+        innerNestedVector.push_back(innerVector);
+    }
+    return innerNestedVector;
+}
 
 std::vector<std::vector<std::vector<double>>> SolversConfiguration::InitialiseNestedVectors(int& totalLayer, double& mxInit, double& myInit, double& mzInit) {
 
@@ -245,21 +295,4 @@ std::vector<std::vector<std::vector<double>>> SolversConfiguration::InitialiseNe
         _setupInitMultilayerMagneticMoments(mTermsNested, layer, mxInit, myInit , mzInit);
 
     return mTermsNested;
-}
-std::vector<std::vector<std::vector<double>>> SolversConfiguration::initializeNestedNestedVector(int numLayers, bool includeEnd) {
-    /* Legacy code, not used in current implementation. Example implementation is below
-
-    std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;
-    mValsNested3["nestedNestedVector3"] = initializeNestedNestedVector(1, true);
-    std::vector<std::vector<std::vector<double>>> m2Nest = mValsNested3["nestedNestedVector3"];
-    _setupInitMultilayerMagneticMoments(m2Nest, 1, 0, 0 , 0);
-    */
-    std::vector<std::vector<std::vector<double>>> innerNestedVector;
-    for (int j = 0; j < numLayers; j++) {
-        std::vector<std::vector<double>> innerVector;
-        std::vector<double> innermostVector = {0.0, 0.0, 0.0};
-        innerVector.push_back(innermostVector);
-        innerNestedVector.push_back(innerVector);
-    }
-    return innerNestedVector;
 }

@@ -83,6 +83,11 @@ public:
     void                SetShouldFindEigenvalues(bool shouldFindEigenvalues);
 
     std::string         GetNumericalMethod();
+
+    /**
+     * Set the numerical method to be used for the simulation.
+     * @param chosenNumericalMethod Can be either "RK2", "RK2c", or "RK2p"
+     */
     void                SetNumericalMethod(std::string chosenNumericalMethod);
 };
 

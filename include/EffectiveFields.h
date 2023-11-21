@@ -45,6 +45,8 @@ public:
     double              EffectiveFieldZ (const int& site, const int& layer, const double& mzLHS, const double& mzMID,
                                          const double& mzRHS, const double& dipoleTerm,
                                          const double& demagTerm);
+
+    bool                isSiteDriven(const int& site);
 };
 
 

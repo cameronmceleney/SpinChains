@@ -17,10 +17,7 @@
 
 class SolversInitialisation: public SolversSuperClass {
 private:
-    double              _recordingInterval;
-    int                 _layerOfInterest;
     const double        _BOHR_MAGNETON = 9.274e-24;
-
 
     void                _setSimulationFlags();
     void                _setSimulationParameters();

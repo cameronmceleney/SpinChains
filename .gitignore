@@ -1,6 +1,11 @@
+# Ignore for all OS
 /.idea/
+
+# Windows specific
 /cmake-build-debug-mingw64/
 /cmake-build-release-mingw64/
+/BaseVEnv/
+
+# MacOS specific
 /cmake-build-debug-mac/
 /cmake-build-release-mac/
-/BaseVEnv/

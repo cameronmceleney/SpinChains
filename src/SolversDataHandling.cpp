@@ -96,7 +96,7 @@ void SolversDataHandling::CreateColumnHeaders(std::ofstream &outputFileName) {
     } else if (simFlags->shouldPrintDiscreteSites) {
 
         outputFileName << "Time";
-        for (int & fixed_out_val : simParams->fixedOutputSites)
+        for (int & fixed_out_val : simStates->fixedOutputSites)
             outputFileName << "," << fixed_out_val;
         outputFileName << std::endl;
 
@@ -197,7 +197,7 @@ void SolversDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vec
                << arrayToWrite[20000] << std::endl;
                */
             outputFileName << (iteration * simParams->stepsize);
-            for (int & fixed_out_val : simParams->fixedOutputSites)
+            for (int & fixed_out_val : simStates->fixedOutputSites)
                 outputFileName << "," << arrayToWrite[fixed_out_val];
             outputFileName << std::endl;
 
@@ -327,7 +327,7 @@ void SolversDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName
                << arrayToWrite[20000] << std::endl;
                */
             outputFileName << (iteration * simParams->stepsize);
-            for (int & fixed_out_val : simParams->fixedOutputSites)
+            for (int & fixed_out_val : simStates->fixedOutputSites)
                 outputFileName << "," << arrayToWrite[fixed_out_val];
             outputFileName << std::endl;
 
@@ -525,7 +525,7 @@ void SolversDataHandling::CreateColumnHeaders(std::ofstream &outputFileName, int
     } else if (simFlags->shouldPrintDiscreteSites) {
 
         outputFileName << "Time";
-        for (int & fixed_out_val : simParams->fixedOutputSites)
+        for (int & fixed_out_val : simStates->fixedOutputSites)
             outputFileName << "," << fixed_out_val;
         outputFileName << std::endl;
 
@@ -586,7 +586,7 @@ void SolversDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName
                << arrayToWrite[20000] << std::endl;
                */
             outputFileName << (iteration * simParams->stepsize);
-            for (int & fixed_out_val : simParams->fixedOutputSites)
+            for (int & fixed_out_val : simStates->fixedOutputSites)
                 outputFileName << "," << arrayToWrite[fixed_out_val];
             outputFileName << std::endl;
 

@@ -13,6 +13,8 @@
 extern "C" {
     #include <fftw3.h>
 }
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
 
 // C++ User Libraries (General)
 #include "CommonLibs.h"
@@ -74,6 +76,37 @@ public:
     std::vector<double> DipolarInteractionInterlayerDebug(std::vector<std::vector<double>>& mTermsChain1,
                                                      std::vector<std::vector<double>>& mTermsChain2, int& numNeighbours,
                                                      int& currentSite, const int& currentLayer = 0);
+
+    // New stuff here
+
+    /**
+     * Missing description
+     *
+     * @param currentSite
+     * @param mxTerms
+     * @param myTerms
+     * @param mzTerms
+     * @param dipoleXOut
+     * @param dipoleYOut
+     * @param dipoleZOut
+     */
+    void DipolarInteractionClassicThreaded(const int& currentSite, const std::vector<double>& mxTerms,
+                                           const std::vector<double>& myTerms, const std::vector<double>& mzTerms,
+                                           double& dipoleXOut, double& dipoleYOut, double& dipoleZOut);
+
+    /**
+     * Missing description
+     *
+     * @param mxTerms
+     * @param myTerms
+     * @param mzTerms
+     * @param dipoleXOut
+     * @param dipoleYOut
+     * @param dipoleZOut
+     */
+    void DipolarInteractionClassicThreaded(const std::vector<double>& mxTerms, const std::vector<double>& myTerms,
+                                           const std::vector<double>& mzTerms, std::vector<double>& dipoleXOut, std::vector<double>& dipoleYOut,
+                                           std::vector<double>& dipoleZOut);
 };
 
 

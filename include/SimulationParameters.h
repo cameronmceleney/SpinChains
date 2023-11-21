@@ -6,7 +6,6 @@
 #define SPINCHAINS_SIMULATIONPARAMETERS_H
 
 // C++ Standard Library
-#include <list>
 
 class SimulationParameters {
     // todo separate this out into several compositions (flags, data structures, etc)
@@ -16,7 +15,6 @@ public:
     double PERMITTIVITY_IRON = 2.22; // cobalt = 1.72, iron = 2.22, nickel = 0.6;
 
     // Sites to be printed if shouldPrintDiscreteSites is TRUE.
-    std::list <int> fixedOutputSites;
 
 
     double              ambientTemperature;
@@ -38,9 +36,11 @@ public:
     double              gyroMagConst;                             // Gyromagnetic ratio of an electron [GHz/T].
 
     int                 iterationEnd;                             // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
+    int                 iterationStart= 0;                        // The iteration step that the program will begin at (Default: 0.0)
     double              iterStartShock;                           // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the maxSimTime.
 
     double              iterEndShock;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the maxSimTime.
+    double              largestMNorm = 1e-50;                     // Computes sqrt(_mx**2 + _my**2 + _mz**2) for each site at each moment to track any abnormalities. Initialises to be arbitrarily small
     double              maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
     // The initial values of the squares of the magnetic moments (m) along each axis. [mxInit + myInit + mzInit]  CANNOT sum to greater than 1.0
@@ -62,12 +62,12 @@ public:
     double              stepsize;                                 // Stepsize between values
     double              stepsizeHalf;                             // Separately defined to avoid repeated unnecessary calculations inside loops
     int                 numLayers;
+    double              recordingInterval;                        // Time between each data point recorded.
+    int                 layerOfInterest;
 
     double exchangeEnergyMin;
     double exchangeEnergyMax;
 
-    int iterationStart= 0;
-    double largestMNorm = 1e-50;
     double totalTime = 0;
 
 };

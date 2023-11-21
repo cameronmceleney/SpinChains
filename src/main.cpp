@@ -39,7 +39,7 @@ int main() {
 
     GV.SetFilePath("windows");
 
-    GV.SetNumericalMethod("RK2c");
+    GV.SetNumericalMethod("RK2p");
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetIsExchangeUniform())

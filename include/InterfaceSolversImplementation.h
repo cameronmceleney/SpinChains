@@ -17,6 +17,8 @@ public:
     // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
     virtual void                SolveRK2() = 0;
 
+    virtual void                RK2Parallel() = 0;
+
     ~iSolversImplementation() = default;
 
 };

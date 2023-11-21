@@ -18,6 +18,9 @@ public:
 
     bool                shouldDriveLHS;                                   // Drive from the LHS
     bool                shouldDriveRHS;                                   // Drive from the RHS
+    bool                shouldDriveDiscreteSites;
+    bool                hasCustomDrivePosition;
+
     bool                shouldPrintAllData;                               // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
     bool                shouldPrintDiscreteTimes;                            // Saves m-component(s) of every spin at regular intervals. Total save points are set by numberOfDataPoints.
     bool                shouldPrintDiscreteSites;                            // Saves a discrete set of m-component(s) at regular intervals governed by numberOfDataPoints.

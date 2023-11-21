@@ -67,27 +67,23 @@ void SolversImplementation::SolveRK2Classic() {
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
-    //std::ofstream myRK2File(GV.GetFilePath() + "rk2_my_" + GV.GetFileNameBase() + ".csv");
-    //std::ofstream mzRK2File(GV.GetFilePath() + "rk2_mz_" + GV.GetFileNameBase() + ".csv");
 
     if (simFlags->isFerromagnetic) {
         childNMData->InformUserOfCodeType("RK2 Midpoint (Classic)(FM)");
         childNMData->CreateFileHeader(mxRK2File, "RK2 Midpoint (Classic)(FM)");
-        //childNMData -> CreateFileHeader(myRK2File, "RK2 Midpoint (FM)");
-        //childNMData -> CreateFileHeader(mzRK2File, "RK2 Midpoint (FM)");
     } else if (!simFlags->isFerromagnetic) {
-        childNMData -> InformUserOfCodeType("RK2 Midpoint (Classic)(AFM)");
-        childNMData -> CreateFileHeader(mxRK2File, "RK2 Midpoint (Classic)(AFM)");
+        childNMData->InformUserOfCodeType("RK2 Midpoint (Classic)(AFM)");
+        childNMData->CreateFileHeader(mxRK2File, "RK2 Midpoint (Classic)(AFM)");
     }
 
     if (GV.GetEmailWhenCompleted()) {
-        childNMData -> CreateMetadata();
+        childNMData->CreateMetadata();
     }
 
     progressbar bar(100);
 
     std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(GV.GetNumSpins() + 2, 0.0);
-    std::vector<double> dipoleX(GV.GetNumSpins() + 2, 0.0), dipoleY(GV.GetNumSpins() + 2, 0.0), dipoleZ(GV.GetNumSpins() + 2, 0.0);
+    //std::vector<double> dipoleX(GV.GetNumSpins() + 2, 0.0), dipoleY(GV.GetNumSpins() + 2, 0.0), dipoleZ(GV.GetNumSpins() + 2, 0.0);
 
     for (int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++) {
 
@@ -101,8 +97,8 @@ void SolversImplementation::SolveRK2Classic() {
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
         // EASY FIND
-        if (simFlags->hasDipolar)
-            dipolarField.DipolarInteraction1D(simStates->mx0, dipoleX);
+        // if (simFlags->hasDipolar)
+        //     dipolarField.DipolarInteraction1D(simStates->mx0, dipoleX);
         if (simFlags->hasDemagIntense) {
             demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, simStates->mx0, simStates->my0, simStates->mz0);
         } else if (simFlags->hasDemagFFT) {
@@ -173,25 +169,25 @@ void SolversImplementation::SolveRK2Classic() {
                 //std::cout << std::endl;
             }
             */
-            /*double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
-            if (simParams->hasDipolar) {
-                std::vector<double> mxTermsForDipole = {simParams->mx0[spinLHS], simParams->mx0[site], simParams->mx0[spinRHS]};
-                std::vector<double> myTermsForDipole = {simParams->my0[spinLHS], simParams->my0[site], simParams->my0[spinRHS]};
-                std::vector<double> mzTermsForDipole = {simParams->mz0[spinLHS], simParams->mz0[site], simParams->mz0[spinRHS]};
+            double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
+            if (simFlags->hasDipolar) {
+                std::vector<double> mxTermsForDipole = {simStates->mx0[spinLHS], simStates->mx0[site], simStates->mx0[spinRHS]};
+                std::vector<double> myTermsForDipole = {simStates->my0[spinLHS], simStates->my0[site], simStates->my0[spinRHS]};
+                std::vector<double> mzTermsForDipole = {simStates->mz0[spinLHS], simStates->mz0[site], simStates->mz0[spinRHS]};
                 std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
 
-                std::vector<double> dipoleTerms = DipolarInteractionClassic(mxTermsForDipole, myTermsForDipole,
+                std::vector<double> dipoleTerms = dipolarField.DipolarInteractionClassic(mxTermsForDipole, myTermsForDipole,
                                                                             mzTermsForDipole, siteTermsForDipole);
 
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];
                 dipoleZ = dipoleTerms[2];
             }
-            */
+            
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK0 = effectiveField.EffectiveFieldX(site, 0, simStates->mx0[spinLHS], simStates->mx0[site], simStates->mx0[spinRHS], dipoleX[site], demagX[site], t0);
-            double hyK0 = effectiveField.EffectiveFieldY(site, 0, simStates->my0[spinLHS], simStates->my0[site], simStates->my0[spinRHS], dipoleY[site], demagY[site]);
-            double hzK0 = effectiveField.EffectiveFieldZ(site, 0, simStates->mz0[spinLHS], simStates->mz0[site], simStates->mz0[spinRHS], dipoleZ[site], demagZ[site]);
+            double hxK0 = effectiveField.EffectiveFieldX(site, 0, simStates->mx0[spinLHS], simStates->mx0[site], simStates->mx0[spinRHS], dipoleX, demagX[site], t0);
+            double hyK0 = effectiveField.EffectiveFieldY(site, 0, simStates->my0[spinLHS], simStates->my0[site], simStates->my0[spinRHS], dipoleY, demagY[site]);
+            double hzK0 = effectiveField.EffectiveFieldZ(site, 0, simStates->mz0[spinLHS], simStates->mz0[site], simStates->mz0[spinRHS], dipoleZ, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mxK1 = llg.MagneticMomentX(site, simStates->mx0[site], simStates->my0[site], simStates->mz0[site], hxK0, hyK0, hzK0);
@@ -207,10 +203,10 @@ void SolversImplementation::SolveRK2Classic() {
         // EASY FIND
         std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
         std::fill(demagX.begin(), demagX.end(), 0.0); std::fill(demagY.begin(), demagY.end(), 0.0); std::fill(demagZ.begin(), demagZ.end(), 0.0);
-        std::fill(dipoleX.begin(), dipoleX.end(), 0.0); std::fill(dipoleY.begin(), dipoleY.end(), 0.0); std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
+        //std::fill(dipoleX.begin(), dipoleX.end(), 0.0); std::fill(dipoleY.begin(), dipoleY.end(), 0.0); std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
 
-        if (simFlags->hasDipolar)
-            dipolarField.DipolarInteraction1D(mx1, dipoleX);
+        //if (simFlags->hasDipolar)
+        //    dipolarField.DipolarInteraction1D(mx1, dipoleX);
         if (simFlags->hasDemagIntense) {
             demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
         } else if (simFlags->hasDemagFFT) {
@@ -225,25 +221,25 @@ void SolversImplementation::SolveRK2Classic() {
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
 
-            /*double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
-            if (simParams->hasDipolar) {
+            double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
+            if (simFlags->hasDipolar) {
                 std::vector<double> mxTermsForDipole = {mx1[spinLHS], mx1[site], mx1[spinRHS]};
                 std::vector<double> myTermsForDipole = {my1[spinLHS], my1[site], my1[spinRHS]};
                 std::vector<double> mzTermsForDipole = {mz1[spinLHS], mz1[site], mz1[spinRHS]};
                 std::vector<int> siteTermsForDipole = {spinLHS, site, spinRHS};
 
-                std::vector<double> dipoleTerms = DipolarInteractionClassic(mxTermsForDipole, myTermsForDipole,
+                std::vector<double> dipoleTerms = dipolarField.DipolarInteractionClassic(mxTermsForDipole, myTermsForDipole,
                                                                        mzTermsForDipole, siteTermsForDipole);
 
                 dipoleX = dipoleTerms[0];
                 dipoleY = dipoleTerms[1];
                 dipoleZ = dipoleTerms[2];
             }
-            */
+            
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK1 = effectiveField.EffectiveFieldX(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX[site], demagX[site], t0);
-            double hyK1 = effectiveField.EffectiveFieldY(site, 0, my1[spinLHS], my1[site], my1[spinRHS], dipoleY[site], demagY[site]);
-            double hzK1 = effectiveField.EffectiveFieldZ(site, 0, mz1[spinLHS], mz1[site], mz1[spinRHS], dipoleZ[site], demagZ[site]);
+            double hxK1 = effectiveField.EffectiveFieldX(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX, demagX[site], t0);
+            double hyK1 = effectiveField.EffectiveFieldY(site, 0, my1[spinLHS], my1[site], my1[spinRHS], dipoleY, demagY[site]);
+            double hzK1 = effectiveField.EffectiveFieldZ(site, 0, mz1[spinLHS], mz1[site], mz1[spinRHS], dipoleZ, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mxK2 = llg.MagneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
@@ -257,7 +253,7 @@ void SolversImplementation::SolveRK2Classic() {
             if (simFlags->shouldTrackMagneticMomentNorm) {
                 double mIterationNorm = sqrt(pow(mx2[site], 2) + pow(my2[site], 2) + pow(mz2[site], 2));
                 if ((simParams->largestMNorm) > (1.0 - mIterationNorm)) { simParams->largestMNorm = (1.0 - mIterationNorm); }
-                if (mIterationNorm > 1.00005) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
+                //if (mIterationNorm > 1.00005) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
             }
         }
         // Everything below here is part of the class method, but not the internal RK2 stage loops.
@@ -269,9 +265,7 @@ void SolversImplementation::SolveRK2Classic() {
         simStates->mx0.clear(); simStates->my0.clear(); simStates->mz0.clear();
         mx1.clear(); my1.clear(); mz1.clear();
 
-        childNMData -> SaveDataToFile(mxRK2File, mx2, iteration);
-        //childNMData -> SaveDataToFile(myRK2File, my2, iteration);
-        //childNMData -> SaveDataToFile(mzRK2File, mz2, iteration);
+        childNMData->SaveDataToFile(mxRK2File, mx2, iteration);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         simStates->mx0 = mx2; simStates->my0 = my2; simStates->mz0 = mz2;
@@ -284,11 +278,9 @@ void SolversImplementation::SolveRK2Classic() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
-    //myRK2File.close();
-    //mzRK2File.close();
 
     if (GV.GetEmailWhenCompleted()) {
-        childNMData -> CreateMetadata(true);
+        childNMData->CreateMetadata(true);
     }
 
     if (simFlags->shouldTrackMagneticMomentNorm)
@@ -307,17 +299,17 @@ void SolversImplementation::SolveRK2() {
 
     // User information and file header is magnetic-material specific.
     if (simFlags->isFerromagnetic) {
-        childNMData -> InformUserOfCodeType("RK2 Midpoint (FM)");
-        childNMData -> CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)", false, 0);
-        childNMData -> CreateFileHeader(mxRK2File1, "RK2 Midpoint (FM)", false, 1);
+        childNMData->InformUserOfCodeType("RK2 Midpoint (FM)");
+        childNMData->CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)", false, 0);
+        childNMData->CreateFileHeader(mxRK2File1, "RK2 Midpoint (FM)", false, 1);
     } else if (!simFlags->isFerromagnetic) {
-        childNMData -> InformUserOfCodeType("RK2 Midpoint (AFM)");
-        childNMData -> CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
-        childNMData -> CreateFileHeader(mxRK2File1, "RK2 Midpoint (AFM)");
+        childNMData->InformUserOfCodeType("RK2 Midpoint (AFM)");
+        childNMData->CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
+        childNMData->CreateFileHeader(mxRK2File1, "RK2 Midpoint (AFM)");
     }
 
     if (GV.GetEmailWhenCompleted()) {
-        childNMData -> CreateMetadata();
+        childNMData->CreateMetadata();
     }
 
     progressbar bar(100);
@@ -445,8 +437,8 @@ void SolversImplementation::SolveRK2() {
          * these between loop iterations sometimes led to incorrect values cropping up.
          */
 
-        childNMData -> SaveDataToFileMultilayer(mxRK2File, simStates->m2Nest[0], iteration, 0);
-        childNMData -> SaveDataToFileMultilayer(mxRK2File1, simStates->m2Nest[1], iteration, 1);
+        childNMData->SaveDataToFileMultilayer(mxRK2File, simStates->m2Nest[0], iteration, 0);
+        childNMData->SaveDataToFileMultilayer(mxRK2File1, simStates->m2Nest[1], iteration, 1);
 
         //Sets the final value of the current iteration of the loop to be the starting value of the next loop.
         simStates->m0Nest = simStates->m2Nest;
@@ -461,7 +453,7 @@ void SolversImplementation::SolveRK2() {
     mxRK2File.close();
 
     if (GV.GetEmailWhenCompleted()) {
-        childNMData -> CreateMetadata(true);
+        childNMData->CreateMetadata(true);
     }
 
     if (simFlags->shouldTrackMagneticMomentNorm) {
@@ -474,15 +466,211 @@ void SolversImplementation::SolveRK2() {
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
+void SolversImplementation::RK2Parallel() {
+    // Only works for a 1D spin chain
+    std::shared_ptr<SolversDataHandling> solverOutputs = std::make_shared<SolversDataHandling>(simParams, simStates, simFlags);
+
+    // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
+    std::ofstream mxOutputFile(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
+
+    if ( simFlags->isFerromagnetic ) {
+        solverOutputs->InformUserOfCodeType("RK2 Midpoint (Parallel)(FM)");
+        solverOutputs->CreateFileHeader(mxOutputFile, "RK2 Midpoint (Parallel)(FM)");
+    } else {
+        solverOutputs->InformUserOfCodeType("RK2 Midpoint (AFM)");
+        solverOutputs->CreateFileHeader(mxOutputFile, "RK2 Midpoint (AFM)");
+    }
+
+    if ( GV.GetEmailWhenCompleted() ) { solverOutputs->CreateMetadata(); }
+
+    progressbar bar(100);
+
+    // Faster to declare memory and then read/write repeatedly
+    std::vector<double> demagX(simParams->systemTotalSpins + 2, 0.0), demagY(simParams->systemTotalSpins + 2, 0.0), demagZ(simParams->systemTotalSpins + 2, 0.0);
+    std::vector<double> dipoleX(simParams->systemTotalSpins + 2, 0.0), dipoleY(simParams->systemTotalSpins + 2, 0.0), dipoleZ(simParams->systemTotalSpins + 2, 0.0);
+
+    for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
+
+        if ( simParams->iterationEnd >= 100 && iteration % (simParams->iterationEnd / 100) == 0 )
+            bar.update(); // Doesn't work for fewer than 100 iterations
+
+        _testShockwaveConditions(iteration);
+
+        double t0 = simParams->totalTime;
+
+        // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
+        std::vector<double> mx1(simParams->systemTotalSpins + 2, 0), my1(simParams->systemTotalSpins + 2, 0), mz1(simParams->systemTotalSpins + 2, 0);
+        RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1, my1, mz1,
+                              demagX, demagY, demagZ, dipoleX, dipoleY, dipoleZ, t0, simParams->stepsizeHalf, iteration, "1");
+
+        // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
+        std::vector<double> mx2(simParams->systemTotalSpins + 2, 0), my2(simParams->systemTotalSpins + 2, 0), mz2(simParams->systemTotalSpins + 2, 0);
+        RK2StageMultithreaded(mx1, my1, mz1, mx2, my2, mz2,
+                              demagX, demagY, demagZ, dipoleX, dipoleY, dipoleZ, t0, simParams->stepsize, iteration, "2");
+
+        // Everything below heere is part of the method, but not the RK2 stage loops calculations.
+
+        simStates->mx0.clear(); simStates->my0.clear(); simStates->mz0.clear();
+        mx1.clear(); my1.clear(); mz1.clear();
+
+        solverOutputs->SaveDataToFile(mxOutputFile, mx2, iteration);
+
+        // Set final value of current iteration to be starting value of next iteration.
+        simStates->mx0 = mx2; simStates->my0 = my2; simStates->mz0 = mz2;
+        mx2.clear(); my2.clear(); mz2.clear();
+
+        if (iteration == simParams->forceStopAtIteration) {
+            std::cout << "Force stop at iteration #" << iteration << std::endl;
+            exit(0);
+        }
+
+        simParams->totalTime += simParams->stepsize;
+    } // End of RK2 FOR loop; all iterations now complete.
+
+    mxOutputFile.close();
+
+    if ( GV.GetEmailWhenCompleted() ) { solverOutputs->CreateMetadata(true); }
+
+    if (simFlags->shouldTrackMagneticMomentNorm) { std::cout << "\nMax norm. value of M is: " << simParams->largestMNorm << std::endl; }
+
+    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+}
+
+void SolversImplementation::RK2StageMultithreaded(const std::vector<double>& mxIn, const std::vector<double>& myIn, const std::vector<double>& mzIn,
+                                                  std::vector<double>& mxOut, std::vector<double>& myOut, std::vector<double>& mzOut,
+                                                  std::vector<double>& demagX, std::vector<double>& demagY, std::vector<double>& demagZ,
+                                                  std::vector<double>& dipoleX, std::vector<double>& dipoleY, std::vector<double>& dipoleZ,
+                                                  double& currentTime, double& stepsize, int& iteration, std::string rkStage) {
+
+    bool useParallelInvoke = false;  // Mainly for testing purposes at the moment
+
+    if ( simFlags->hasDemagIntense )
+        demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, mxIn, myIn, mzIn);
+
+    std::vector<double> mxInMu, myInMu, mzInMu;
+    if ( simFlags->hasDipolar ) {
+        mxInMu = mxIn; myInMu = myIn; mzInMu = mzIn;
+        for ( int i = 1; i <= mxIn.size(); i++ ) {
+            mxInMu[i] += simParams->PERMITTIVITY_IRON;
+            myInMu[i] += simParams->PERMITTIVITY_IRON;
+            mzInMu[i] += simParams->PERMITTIVITY_IRON;
+        }
+    }
+
+    // Use below line to only use one thread to compare method's results to sequential method
+    // tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
+    tbb::parallel_for( tbb::blocked_range<int>(1, simParams->systemTotalSpins),
+                       [&]( const tbb::blocked_range<int> r ) {
+        for ( int site = r.begin(); site <= r.end(); site++ ) {
+            // Relative to the current site (site) we have siteLHS and siteRHS
+            int siteLHSLocal = site - 1, siteRHSLocal = site + 1;
+            double dipoleXLocal = 0.0, dipoleYLocal = 0.0, dipoleZLocal = 0.0;
+            double demagXLocal = 0.0, demagYLocal = 0.0, demagZLocal = 0.0;
+
+            if ( simFlags->hasDipolar )
+                dipolarField.DipolarInteractionClassicThreaded(site, mxInMu, myInMu, mzInMu, dipoleXLocal, dipoleYLocal,
+                                                               dipoleZLocal);
+            double hxKLocal, hyKLocal, hzKLocal;
+            double mxKLocal, myKLocal, mzKLocal;
+            if ( useParallelInvoke ) {
+                tbb::parallel_invoke(
+                        // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+                        [&] { hxKLocal = effectiveField.EffectiveFieldX(site, 0, mxIn[siteLHSLocal], mxIn[site],
+                                                                        mxIn[siteRHSLocal], dipoleX[site], demagX[site],
+                                                                        currentTime); },
+                        [&] { hyKLocal = effectiveField.EffectiveFieldY(site, 0, myIn[siteLHSLocal], myIn[site],
+                                                                        myIn[siteRHSLocal], dipoleY[site], demagY[site]); },
+                        [&] { hzKLocal = effectiveField.EffectiveFieldZ(site, 0, mzIn[siteLHSLocal], mzIn[site],
+                                                                        mzIn[siteRHSLocal], dipoleZ[site], demagZ[site]); }
+                );
+
+                tbb::parallel_invoke(
+                        // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                        [&] { mxKLocal = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal,
+                                                             hzKLocal); },
+                        [&] { myKLocal = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal,
+                                                             hzKLocal); },
+                        [&] { mzKLocal = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal,
+                                                             hzKLocal); }
+                );
+            } else {
+
+                // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+                hxKLocal = effectiveField.EffectiveFieldX(site, 0, mxIn[siteLHSLocal], mxIn[site],
+                                                          mxIn[siteRHSLocal], dipoleXLocal, demagXLocal,
+                                                          currentTime);
+                hyKLocal = effectiveField.EffectiveFieldY(site, 0, myIn[siteLHSLocal], myIn[site],
+                                                          myIn[siteRHSLocal], dipoleYLocal, demagYLocal);
+                hzKLocal = effectiveField.EffectiveFieldZ(site, 0, mzIn[siteLHSLocal], mzIn[site],
+                                                                 mzIn[siteRHSLocal], dipoleZLocal, demagZLocal);
+
+                // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+               mxKLocal = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal,
+                                              hzKLocal);
+               myKLocal = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal,
+                                              hzKLocal);
+               mzKLocal = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hxKLocal, hyKLocal,
+                                                      hzKLocal);
+            }
+
+            mxOut[site] = simStates->mx0[site] + stepsize * mxKLocal;
+            myOut[site] = simStates->my0[site] + stepsize * myKLocal;
+            mzOut[site] = simStates->mz0[site] + stepsize * mzKLocal;
+
+            if ( std::isinf(mxOut[site]) )
+                throw std::runtime_error(
+                        "mxOut is INF at site " + std::to_string(site) + " at iteration " + std::to_string(iteration) +
+                        " in RK2 stage " + rkStage);
+            if ( std::isnan(mxOut[site]) )
+                throw std::runtime_error(
+                        "mxOut is NaN at site " + std::to_string(site) + " at iteration " + std::to_string(iteration) +
+                        " in RK2 stage " + rkStage);
+
+            if ( std::isinf(myOut[site]) )
+                throw std::runtime_error(
+                        "myOut is INF at site " + std::to_string(site) + " at iteration " + std::to_string(iteration) +
+                        " in RK2 stage " + rkStage);
+            if ( std::isnan(myOut[site]) )
+                throw std::runtime_error(
+                        "myOut is NaN at site " + std::to_string(site) + " at iteration " + std::to_string(iteration) +
+                        " in RK2 stage " + rkStage);
+
+            if ( std::isinf(mzOut[site]) )
+                throw std::runtime_error(
+                        "mzOut is INF at site " + std::to_string(site) + " at iteration " + std::to_string(iteration) +
+                        " in RK2 stage " + rkStage);
+            if ( std::isnan(mzOut[site]) )
+                throw std::runtime_error(
+                        "mzOut is NaN at site " + std::to_string(site) + " at iteration " + std::to_string(iteration) +
+                        " in RK2 stage " + rkStage);
+        }
+    }, tbb::auto_partitioner() );
+
+    if ( simFlags->shouldTrackMagneticMomentNorm && rkStage == "2" ) {
+        for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
+            double mIterationNorm = sqrt(pow(mxOut[site], 2) + pow(myOut[site], 2) + pow(mzOut[site], 2));
+            if ((simParams->largestMNorm) > (1.0 - mIterationNorm)) { simParams->largestMNorm = (1.0 - mIterationNorm); }
+        }
+    }
+    // if (simParams->largestMNorm > 1.00005) { throw std::runtime_error("mag. moments are no longer below <= 1.00005"); }
+
+    if ( simFlags->hasDemagFFT )
+        std::fill( demagX.begin(), demagX.end(), 0.0 ); std::fill( demagY.begin(), demagY.end(), 0.0 ); std::fill( demagZ.begin(), demagZ.end(), 0.0 );
+    if ( simFlags->hasDipolar && useParallelInvoke)
+        std::fill( dipoleX.begin(), dipoleX.end(), 0.0 ); std::fill( dipoleY.begin(), dipoleY.end(), 0.0 ); std::fill( dipoleZ.begin(), dipoleZ.end(), 0.0 );
+
+}
 
 void SolversImplementation::runMethod() {
 
     std::string methodToUse = GV.GetNumericalMethod();
 
-    if (methodToUse == "RK2")
+    if ( methodToUse == "RK2" )
         SolveRK2();
-    else if (methodToUse == "RK2c")
+    else if ( methodToUse == "RK2c" )
         SolveRK2Classic();
+    else if ( methodToUse == "RK2p" )
+        RK2Parallel();
     else
         throw std::runtime_error("Method not recognised");
 }

@@ -10,10 +10,6 @@ SolversInitialisation::SolversInitialisation(std::shared_ptr<SimulationParameter
                                    std::shared_ptr<SimulationFlags> sharedSimFlags)
 
     : SolversSuperClass(std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {
-
-    // Constructor implementations for parameters which are not used in inherited containers
-    _layerOfInterest = 1;
-    _recordingInterval = 1e-15;
 }
 
 void SolversInitialisation::Initialise() {
@@ -34,7 +30,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldUseLLG = true;
     simFlags->shouldUseSLLG = false;
 
-    // Interaction Flags
+    // Magnetic Interaction Flags
     simFlags->hasShockwave = false;
     simFlags->hasDipolar = false;
     simFlags->hasZeeman = true;
@@ -45,11 +41,13 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasMultipleLayers = false;
 
     // Drive Position Flags
+    simFlags->shouldDriveDiscreteSites = false;
+    simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
     simFlags->shouldDriveCentre = false;
-    simFlags->shouldDriveLHS = true;
-    simFlags->shouldDriveRHS = false;
+    simFlags->shouldDriveLHS = false;
+    simFlags->shouldDriveRHS = true;
 
     // Drive Manipulation Flags
     simFlags->isDriveStatic = false;
@@ -65,7 +63,6 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 273; // Kelvin
-
     simParams->drivingFreq = 42.5 * 1e9;
     simParams->dynamicBiasField = 3e-3;
     simParams->forceStopAtIteration = -1;
@@ -83,7 +80,7 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->shockwaveScaling = 1;
 
     // Data Output Parameters
-    simParams->fixedOutputSites = {12158, 14529, 15320};
+    simStates->fixedOutputSites = {12158, 14529, 15320};
     simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
@@ -92,10 +89,15 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
+    simStates->discreteDrivenSites = {300, 500};
     simParams->drivingRegionWidth = 200;
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 0;
     simParams->numLayers = 1;
+
+    // Currently unused parameters
+    simParams->recordingInterval = 2.5e-15;
+    simParams->layerOfInterest = 1;
 }
 
 void SolversInitialisation::_generateRemainingParameters() {
@@ -112,21 +114,23 @@ void SolversInitialisation::_generateRemainingParameters() {
     simParams->iterationEnd = static_cast<int>(simParams->maxSimTime / simParams->stepsize);
     simParams->stepsizeHalf = simParams->stepsize / 2.0;
 
-    simParams->numSpinsInChain = GV.GetNumSpins();
-    simParams->numberOfSpinPairs = simParams->numSpinsInChain - 1;
     simStates->layerSpinsInChain = {simParams->drivingRegionWidth, simParams->numSpinsInChain};
-    GV.SetNumSpins(simParams->numSpinsInChain + 2 * simParams->numSpinsInABC);
-    simParams->systemTotalSpins = GV.GetNumSpins();
-
     simStates->layerSpinPairs.clear();
     simStates->layerTotalSpins.clear();
     for (int& spinsInChain: simStates->layerSpinsInChain) {
         simStates->layerSpinPairs.push_back(spinsInChain - 1);
         simStates->layerTotalSpins.push_back(spinsInChain + 2 * simParams->numSpinsInABC);
     }
-    simStates->gilbertVectorMulti.resize(simParams->numLayers, {0});
 
-    _layerOfInterest -= 1;  // To correct for 0-indexing
+    simStates->gilbertVectorMulti.resize(simParams->numLayers, {0});
+    simParams->layerOfInterest -= 1;  // To correct for 0-indexing
+
+
+    simParams->numSpinsInChain = GV.GetNumSpins();
+    simParams->numberOfSpinPairs = simParams->numSpinsInChain - 1;
+
+    GV.SetNumSpins(simParams->numSpinsInChain + 2 * simParams->numSpinsInABC); // TODO turn this into a simParam
+    simParams->systemTotalSpins = GV.GetNumSpins();
 }
 
 void SolversInitialisation::_setMaterialParameters() {
@@ -148,12 +152,6 @@ void SolversInitialisation::_guardClauses() {
         exit(1);
     }
 
-    if (simFlags->shouldDriveLHS and simFlags->shouldDriveRHS) {
-        std::cout << "Warning: [shouldDriveLHS: True] and [shouldDriveRHS: True] are both TRUE. Please choose one or the other."
-                  << std::endl;
-        exit(1);
-    }
-
     if (simFlags->hasShockwave and simParams->iterStartShock < 0) {
         std::cout << "Warning: [hasShockwave: True] however [iterStartShock: " << simParams->iterStartShock << " ! > 0.0]"
                   << std::endl;
@@ -168,16 +166,17 @@ void SolversInitialisation::_guardClauses() {
         exit(1);
     }
 
-    if ((simFlags->shouldDriveLHS && simFlags->shouldDriveCentre) || (simFlags->shouldDriveLHS && simFlags->shouldDriveBothSides) || (simFlags->shouldDriveCentre && simFlags->shouldDriveBothSides)) {
+    if ((simFlags->shouldDriveLHS && simFlags->shouldDriveCentre) || (simFlags->shouldDriveLHS && simFlags->shouldDriveBothSides)
+        || (simFlags->shouldDriveCentre && simFlags->shouldDriveBothSides) || (simFlags->shouldDriveLHS && simFlags->shouldDriveRHS)) {
         std::cout << "Warning: two (or more) conflicting driving region booleans were TRUE"
-                  << "\n_lhsDrive: " << simFlags->shouldDriveLHS << "\n_centralDrive: " << simFlags->shouldDriveCentre << "\n_dualDrive: " << simFlags->shouldDriveBothSides
-                  << "\n\nExiting...";
+                  << "\n_lhsDrive: " << simFlags->shouldDriveLHS << "\n_centralDrive: " << simFlags->shouldDriveCentre
+                  << "\n_dualDrive: " << simFlags->shouldDriveBothSides << "\n _rhsDrive: " << simFlags->shouldDriveRHS << "\n\nExiting...";
         exit(1);
     }
 
-    if (simFlags->shouldPrintDiscreteSites and simParams->fixedOutputSites.empty()) {
+    if (simFlags->shouldPrintDiscreteSites and simStates->fixedOutputSites.empty()) {
         std::cout << "Warning: Request to print fixed sites, but no sites were given [fixedOutputSites: (";
-        for (int & fixed_out_val : simParams->fixedOutputSites)
+        for (int & fixed_out_val : simStates->fixedOutputSites)
                 std::cout << fixed_out_val << ", ";
         std::cout << ")].";
         exit(1);
@@ -205,6 +204,11 @@ void SolversInitialisation::_guardClauses() {
 
     if ((simFlags->hasDemagIntense && !GV.GetIsFerromagnetic()) || (simFlags->hasDemagFFT && !GV.GetIsFerromagnetic())) {
         std::cout << "Warning: You cannot use the demag solvers with non-ferromagnetic materials.";
+        exit(1);
+    }
+
+    if (simFlags->shouldDriveDiscreteSites && simStates->discreteDrivenSites.empty()) {
+        std::cout << "Warning: Request to drive discrete sites, but no sites were given [discreteDrivenSites].";
         exit(1);
     }
 

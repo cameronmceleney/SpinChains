@@ -705,3 +705,112 @@ std::vector<double> DipolarFields::DipolarInteractionInterlayerDebug(std::vector
     if (_simFlags->debugFunc && currentLayer == 1) { std::cout << "totalDipoleTerms: [" << totalDipoleTerms[0] << " " << totalDipoleTerms[1] << " " << totalDipoleTerms[2] << "]"; }
     return totalDipoleTerms;
 }
+
+void DipolarFields::DipolarInteractionClassicThreaded(const int& currentSite, const std::vector<double>& mxTerms,
+                                           const std::vector<double>& myTerms, const std::vector<double>& mzTerms,
+                                           double& dipoleXOut, double& dipoleYOut, double& dipoleZOut) {
+    // Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
+    if ( currentSite <= _simParams->numSpinsInABC ||
+         currentSite > (_simParams->systemTotalSpins + _simParams->numSpinsInABC) ) {
+        // Guard clause to ensure that the current site is valid
+        dipoleXOut = 0.0; dipoleYOut = 0.0; dipoleZOut = 0.0;
+        return;
+    }
+
+    double exchangeStiffness = 5.3e-17;
+    double dipoleXTotal = 0.0;
+
+    // Reference moment i.e. currentSite
+    std::vector<double> originSite = {mxTerms[currentSite], myTerms[currentSite], mzTerms[currentSite]};
+
+    tbb::parallel_for( tbb::blocked_range<int>(1, _simParams->systemTotalSpins), [&](const tbb::blocked_range<int> tbbRange) {
+        for ( int iSite = tbbRange.begin(); iSite <= tbbRange.end(); iSite++) {
+            if ( iSite <= _simParams->numSpinsInABC || iSite > (mxTerms.size() + _simParams->numSpinsInABC) )
+                continue;  // Ensure that the absorbing regions are not included in the calculation
+
+            if ( iSite == currentSite )
+                continue;  // Ensure that the origin site isn't included in calculation
+
+            if ( _simStates->exchangeVec[iSite] == 0.0 )
+                continue;  // Ensure that the exchange vector is not zero
+
+            double latticeConstant = std::sqrt( exchangeStiffness / _simStates->exchangeVec[iSite] );
+
+            if ( std::isinf(latticeConstant) )
+                continue;  // Ensure that the lattice constant is not infinite (backup test / temporary)
+
+            std::vector<double> positionVector = {(iSite - currentSite) * latticeConstant, 0, 0};
+
+            double positionVector_norm = std::sqrt( std::pow(positionVector[0], 2) );
+            double positionVector_cubed = std::pow(positionVector_norm, 3);
+            double positionVector_fifth = std::pow(positionVector_norm, 5);
+
+            std::vector<double> influencingSite = {mxTerms[iSite], myTerms[iSite], mzTerms[iSite]};
+
+            // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0];
+            double originSiteDotPosition = originSite[0] * positionVector[0];
+            double influencingSiteDotPosition = influencingSite[0] * positionVector[0];
+
+            dipoleXTotal += _simParams->dipoleConstant * ( (3.0 * positionVector[0] * influencingSiteDotPosition) / positionVector_fifth
+                                                           - influencingSite[0] / positionVector_cubed );
+        }
+        dipoleXOut = dipoleXTotal; dipoleYOut = 0.0; dipoleZOut = 0.0;
+    } );
+}
+void DipolarFields::DipolarInteractionClassicThreaded(const std::vector<double>& mxTerms, const std::vector<double>& myTerms,
+                                                      const std::vector<double>& mzTerms, std::vector<double>& dipoleXOut, std::vector<double>& dipoleYOut,
+                                                      std::vector<double>& dipoleZOut) {
+    // Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
+
+    double exchangeStiffness = 5.3e-17;
+
+    tbb::parallel_for( tbb::blocked_range<int>(1, _simParams->systemTotalSpins), [&](const tbb::blocked_range<int> tbbRange) {
+        for (int currentSite = tbbRange.begin(); currentSite <= tbbRange.end(); currentSite++) {
+            if (currentSite <= _simParams->numSpinsInABC ||
+                currentSite > (_simParams->systemTotalSpins + _simParams->numSpinsInABC)) {
+                // Guard clause to ensure that the current site is valid
+                dipoleXOut[currentSite] = 0.0;
+                dipoleYOut[currentSite] = 0.0;
+                dipoleZOut[currentSite] = 0.0;
+                return;
+            }
+
+            // Reference moment i.e. currentSite
+            std::vector<double> originSite = {mxTerms[currentSite], myTerms[currentSite], mzTerms[currentSite]};
+            double dipoleXTotal = 0.0;
+
+            for (int iSite = 1; iSite <= mxTerms.size(); iSite++) {
+                if (iSite <= _simParams->numSpinsInABC || iSite > (mxTerms.size() + _simParams->numSpinsInABC))
+                    continue;  // Ensure that the absorbing regions are not included in the calculation
+
+                if (iSite == currentSite)
+                    continue;  // Ensure that the origin site isn't included in calculation
+
+                if (_simStates->exchangeVec[iSite] == 0.0)
+                    continue;  // Ensure that the exchange vector is not zero
+
+                double latticeConstant = std::sqrt(exchangeStiffness / _simStates->exchangeVec[iSite]);
+
+                if (std::isinf(latticeConstant))
+                    continue;  // Ensure that the lattice constant is not infinite (backup test / temporary)
+
+                std::vector<double> positionVector = {(iSite - currentSite) * latticeConstant, 0, 0};
+
+                double positionVector_norm = std::sqrt(std::pow(positionVector[0], 2));
+                double positionVector_cubed = std::pow(positionVector_norm, 3);
+                double positionVector_fifth = std::pow(positionVector_norm, 5);
+
+                std::vector<double> influencingSite = {mxTerms[iSite], myTerms[iSite], mzTerms[iSite]};
+
+                // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0];
+                double originSiteDotPosition = originSite[0] * positionVector[0];
+                double influencingSiteDotPosition = influencingSite[0] * positionVector[0];
+
+                dipoleXTotal += _simParams->dipoleConstant *
+                                ((3.0 * positionVector[0] * influencingSiteDotPosition) / positionVector_fifth
+                                 - influencingSite[0] / positionVector_cubed);
+            }
+            dipoleXOut[currentSite] = dipoleXTotal; dipoleYOut[currentSite] = 0.0; dipoleZOut[currentSite] = 0.0;
+        }
+    } );
+}
