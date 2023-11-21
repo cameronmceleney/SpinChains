@@ -2,22 +2,32 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#ifndef SPINCHAINS_NMDATAHANDLING_H
-#define SPINCHAINS_NMDATAHANDLING_H
+#ifndef SPINCHAINS_SOLVERSDATAHANDLING_H
+#define SPINCHAINS_SOLVERSDATAHANDLING_H
 
-// C++ User Libraries (Parent Class)
+// C++ Standard Library
+#include <fstream>
+#include <iomanip>
+#include <string>
+
+// C++ User Libraries (General)
+#include "GlobalVariables.h"
+
+// C++ User Libraries (Class' Parent)
 #include "SolversSuperClass.h"
-#include "NMMethods.h"
 
-class NMMethods;
+// C++ User Libraries (Class' Sibling)
+#include "SolversImplementation.h"
 
-class NMDataHandling :  public SolversSuperClass {
-    friend class NMMethods;
+class SolversImplementation;
+
+class SolversDataHandling :  public SolversSuperClass {
+    friend class SolversImplementation;
 public:
-    NMDataHandling(std::shared_ptr<SimulationParameters> paramsData,
+    SolversDataHandling(std::shared_ptr<SimulationParameters> paramsData,
                    std::shared_ptr<SimulationStates> sharedSimStates,
                    std::shared_ptr<SimulationFlags> sharedSimFlags);
-    ~NMDataHandling() = default;
+    ~SolversDataHandling() = default;
     void                performInitialisation() override {};
 
 public:
@@ -31,7 +41,9 @@ public:
     // Description missing
     void                CreateColumnHeaders(std::ofstream &outputFileName);
 
-    // Description missing
+    /**
+     * Write all non-data information to the output file.
+     */
     void                CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata=false);
 
     // Description missing
@@ -79,4 +91,4 @@ public:
 };
 
 
-#endif //SPINCHAINS_NMDATAHANDLING_H
+#endif //SPINCHAINS_SOLVERSDATAHANDLING_H

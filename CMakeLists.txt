@@ -1,4 +1,4 @@
-# Latest version of CMake is 3.21 (as of 20 Jan 21)
+# Latest version of CMake is 3.21 (as of 20 Jan 21)SolversSuperClass.
 cmake_minimum_required(VERSION 3.21)
 # Project name here (SpinChains) should not be confused with the old local project (Chainspins) that is not available on Git
 project(SpinChains)
@@ -29,15 +29,15 @@ add_executable(SpinChains src/main.cpp
         libs/progressbar.hpp
         #NMSuperClass.cpp NMSuperClass.h
         src/SolversSuperClass.cpp include/SolversSuperClass.h
-        src/NMInitialisation.cpp include/NMInitialisation.h
-        src/NMConfiguration.cpp include/NMConfiguration.h
-        src/NMMethods.cpp include/NMMethods.h
-        src/NMDataHandling.cpp include/NMDataHandling.h
-        src/DipolarField.cpp include/DipolarField.h
-        src/EffectiveField.cpp include/EffectiveField.h
-        src/DemagField.cpp include/DemagField.h
-        src/LLG.cpp include/LLG.h
-        include/INMMethods.h
+        src/SolversInitialisation.cpp include/SolversInitialisation.h
+        src/SolversConfiguration.cpp include/SolversConfiguration.h
+        src/SolversImplementation.cpp include/SolversImplementation.h
+        src/SolversDataHandling.cpp include/SolversDataHandling.h
+        src/DipolarFields.cpp include/DipolarFields.h
+        src/EffectiveFields.cpp include/EffectiveFields.h
+        src/DemagnetisationFields.cpp include/DemagnetisationFields.h
+        src/MagnetisationDynamics.cpp include/MagnetisationDynamics.h
+        include/InterfaceSolversImplementation.h
         Other/working_on/SpinChainEigenSolverClass.cpp Other/working_on/SpinChainEigenSolverClass.h
         "Other/Legacy Files/NewSolver.cpp" "Other/Legacy Files/NewSolver.h"
         include/SimulationFlags.h

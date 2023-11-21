@@ -1,16 +1,18 @@
 //
 // Created by Cameron McEleney on 31/10/2023.
 //
-#include "../include/DipolarField.h"
 
-DipolarInteractions::DipolarInteractions(SimulationParameters* sharedSimParams, 
-                                         SimulationStates* sharedSimStates, 
-                                         SimulationFlags* sharedSimFlags)
+// Corresponding header
+#include "../include/DipolarFields.h"
+
+DipolarFields::DipolarFields(SimulationParameters* sharedSimParams,
+                             SimulationStates* sharedSimStates,
+                             SimulationFlags* sharedSimFlags)
                                    
    : _simParams(sharedSimParams), _simStates(sharedSimStates), _simFlags(sharedSimFlags) {}
 
 
-double DipolarInteractions::dipolarKernel3D(const int& originSite, const int& influencingSite, const double& A, const double& alpha) {
+double DipolarFields::dipolarKernel3D(const int& originSite, const int& influencingSite, const double& A, const double& alpha) {
     // This function is used to calculate the dipolar interaction between two sites. The kernel is defined as:
     // K = 1 / (4 * pi * r^3) * (3 * cos(theta)^2 - 1)
     // where r is the distance between the two sites, and theta is the angle between the two sites.
@@ -45,7 +47,7 @@ double DipolarInteractions::dipolarKernel3D(const int& originSite, const int& in
     double dipoleKernel = dipoleKernelDirect + dipoleKernelIndirect;
     return dipoleKernelDirect;
 }
-double DipolarInteractions::dipolarKernel1D(const int& originSite, const int& influencingSite, const std::string& component) {
+double DipolarFields::dipolarKernel1D(const int& originSite, const int& influencingSite, const std::string& component) {
     // ################################ Declare initial Values ################################
     double exchangeStiffness = 5.3e-17;
 
@@ -68,7 +70,7 @@ double DipolarInteractions::dipolarKernel1D(const int& originSite, const int& in
     if (component == "X") {return _simParams->PERM_FREESPACE / (2 * M_PI * pow(positionVector, 3.0));}
     else {throw std::runtime_error(std::string("Invalid component passed to dipolarKernel1D"));}
 }
-void DipolarInteractions::DipolarInteraction1D(std::vector<double> inMxTerms, std::vector<double>& outDipoleX) {
+void DipolarFields::DipolarInteraction1D(std::vector<double> inMxTerms, std::vector<double>& outDipoleX) {
     // Modelling a one-dimensional chain of spins and calculating the dipolar interaction among them.
     // ################################ Declare initial Values ################################
     int trueNumSpins = GV.GetNumSpins() + 2;  // Vectors and arrays defined out with function include pinned end terms; 4002 sites in length instead of 4000
@@ -176,8 +178,8 @@ void DipolarInteractions::DipolarInteraction1D(std::vector<double> inMxTerms, st
     fftw_free(HDipoleX);
 }
 
-std::vector<double> DipolarInteractions::DipolarInteractionClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
-                                                                  std::vector<double> mzTerms, std::vector<int> sitePositions) {
+std::vector<double> DipolarFields::DipolarInteractionClassic(std::vector<double> mxTerms, std::vector<double> myTerms,
+                                                             std::vector<double> mzTerms, std::vector<int> sitePositions) {
 
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};  // Returns Dipole terms for a single site
     // sitePositions contains 3 elements: {site to the left, current site, site to the right}
@@ -234,9 +236,9 @@ std::vector<double> DipolarInteractions::DipolarInteractionClassic(std::vector<d
     }
     return totalDipoleTerms;
 }
-std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms,
-                                                                          int& currentSite, const int& currentLayer,
-                                                                          const double& exchangeStiffness) {
+std::vector<double> DipolarFields::DipolarInteractionIntralayer(std::vector<std::vector<double>>& mTerms,
+                                                                int& currentSite, const int& currentLayer,
+                                                                const double& exchangeStiffness) {
     /* This function calculates the dipolar interaction between the current site and its neighbours within a single layer.
      *
      * WARNING. This function assumes that every site is aligned along the x-axis which is only valid for specific
@@ -246,14 +248,14 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
 
     int vecLength, originIndex;
-    if (_simParams->numberNeighbours == 0) {
+    if (_simParams->numNeighbours == 0) {
         // Guard clause to ensure that the number of neighbours is not zero
         return totalDipoleTerms;
-    } else if (_simParams->numberNeighbours < 0) {
+    } else if (_simParams->numNeighbours < 0) {
         vecLength = _simStates->layerSpinsInChain[currentLayer];
-        originIndex = currentSite - _simParams->numSpinsDamped - 1;
+        originIndex = currentSite - _simParams->numSpinsInABC - 1;
     } else {
-        vecLength = 2 * _simParams->numberNeighbours + 1;
+        vecLength = 2 * _simParams->numNeighbours + 1;
         originIndex = vecLength / 2 + 1;
     }
 
@@ -270,8 +272,8 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
      * CUDA is implemented; instead of giving a general 2D mTerms vector and then forcing this function to flatten.
      */
     int iFV = 0; // index flat vector
-    if (_simParams->numberNeighbours < 0) {
-        for (int site = _simParams->numSpinsDamped + 1; site <= vecLength + _simParams->numSpinsDamped; site++) {
+    if (_simParams->numNeighbours < 0) {
+        for (int site = _simParams->numSpinsInABC + 1; site <= vecLength + _simParams->numSpinsInABC; site++) {
             // Flatting the vectors
             mxTerms[iFV] = mTerms[site][0] * _simParams->PERMITTIVITY_IRON;
             myTerms[iFV] = mTerms[site][1] * _simParams->PERMITTIVITY_IRON;
@@ -280,8 +282,8 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
             iFV++;
     }
     } else {
-        for (int site = currentSite - _simParams->numberNeighbours; site <= currentSite + _simParams->numberNeighbours; site++) {
-            if (site < _simParams->numSpinsDamped or site >= _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsDamped) {
+        for (int site = currentSite - _simParams->numNeighbours; site <= currentSite + _simParams->numNeighbours; site++) {
+            if (site < _simParams->numSpinsInABC or site >= _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsInABC) {
                 // Guard clause to skip trying assignment of any element when the index is negative
                 continue;
             }
@@ -348,17 +350,17 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayer(std::vecto
 
     return totalDipoleTerms;
 }
-std::vector<double> DipolarInteractions::DipolarInteractionInterlayer(std::vector<std::vector<double>>& mTermsLayer1,
-                                                                          std::vector<std::vector<double>>& mTermsLayer2,
-                                                                          int& currentSite, const int& currentLayer,
-                                                                          const int& otherLayer) {
+std::vector<double> DipolarFields::DipolarInteractionInterlayer(std::vector<std::vector<double>>& mTermsLayer1,
+                                                                std::vector<std::vector<double>>& mTermsLayer2,
+                                                                int& currentSite, const int& currentLayer,
+                                                                const int& otherLayer) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
     bool findAdj = false;
 
     double exchangeStiffness = 5.3e-17;
     double interlayerExchange = 132.0;  // Interlayer exchange coupling in Tesla
 
-    if (currentSite <= _simParams->numSpinsDamped or currentSite > (_simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsDamped)) {
+    if (currentSite <= _simParams->numSpinsInABC or currentSite > (_simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsInABC)) {
         return {0.0, 0.0, 0.0};  // Ensure currentSite is valid within the current (target) layer
     }
 
@@ -368,7 +370,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayer(std::vecto
 
     std::vector<double> totalDipoleTermsOtherChains;
     if (findAdj) { totalDipoleTermsOtherChains = DipolarInteractionInterlayerAdjacent(mTermsLayer1, mTermsLayer2,
-                                                                                      _simParams->numberNeighbours, currentSite,
+                                                                                      _simParams->numNeighbours, currentSite,
                                                                                       currentLayer, exchangeStiffness,
                                                                                       interlayerExchange); }
     else { totalDipoleTermsOtherChains = DipolarInteractionInterlayerAll(mTermsLayer1, mTermsLayer2,
@@ -382,11 +384,11 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayer(std::vecto
 
     return totalDipoleTerms;
 }
-std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAll(std::vector<std::vector<double>>& mTermsLayer1,
-                                                                             std::vector<std::vector<double>>& mTermsLayer2,
-                                                                             int& currentSite, const int& currentLayer,
-                                                                             const int& otherLayer, double& exchangeStiffness,
-                                                                             double& interlayerExchange) {
+std::vector<double> DipolarFields::DipolarInteractionInterlayerAll(std::vector<std::vector<double>>& mTermsLayer1,
+                                                                   std::vector<std::vector<double>>& mTermsLayer2,
+                                                                   int& currentSite, const int& currentLayer,
+                                                                   const int& otherLayer, double& exchangeStiffness,
+                                                                   double& interlayerExchange) {
     /* Calculate the dipolar interaction between a site in Layer1 (chain 1), and every other site in another layer (chain 2).
      *
      * WARNING. This function is only valid for the following conditions: the two layers are parallel; the distance
@@ -399,11 +401,11 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAll(std::ve
 
     // Stop-gap code to prevent memory-access violation error. Needs fixed in the future
     int chainTwoOffset;
-    if (!_simFlags->driveAllLayers) {chainTwoOffset = _simStates->layerSpinsInChain[otherLayer] + _simParams->numSpinsDamped;}
-    else {chainTwoOffset = _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsDamped;}
+    if (!_simFlags->shouldDriveAllLayers) { chainTwoOffset = _simStates->layerSpinsInChain[otherLayer] + _simParams->numSpinsInABC;}
+    else {chainTwoOffset = _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsInABC;}
 
     for (int otherSite = 0; otherSite < mTermsLayer2.size(); otherSite++) {
-        if (otherSite > _simParams->numSpinsDamped and otherSite <= chainTwoOffset) {
+        if (otherSite > _simParams->numSpinsInABC and otherSite <= chainTwoOffset) {
             // Exclude damped regions as they are aphysical and will lead to incorrect results
 
             double intralayerLatticeConstant = std::sqrt(exchangeStiffness / _simStates->exchangeVec[currentSite]);
@@ -443,10 +445,10 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAll(std::ve
 
     return totalDipolarInteractionInterlayer;
 }
-std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAdjacent(std::vector<std::vector<double>>& mTermsChain1,
-                                                                          std::vector<std::vector<double>>& mTermsChain2,
-                                                                          int& numNeighbours, int& currentSite, const int& currentLayer,
-                                                                          double& exchangeStiffness, double& interlayerExchange) {
+std::vector<double> DipolarFields::DipolarInteractionInterlayerAdjacent(std::vector<std::vector<double>>& mTermsChain1,
+                                                                        std::vector<std::vector<double>>& mTermsChain2,
+                                                                        int& numNeighbours, int& currentSite, const int& currentLayer,
+                                                                        double& exchangeStiffness, double& interlayerExchange) {
     /* Calculate the dipolar interaction between a site in Layer1 (chain 1), and every other site in another layer
      * (chain 2) within the driving region.
      *
@@ -463,11 +465,11 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAdjacent(st
 
     // Stop-gap code to prevent memory-access violation error. Needs fixed in the future
     int chainTwoOffset;
-    if (!_simFlags->driveAllLayers) {chainTwoOffset = _simStates->layerSpinsInChain[0] + _simParams->numSpinsDamped;}
-    else {chainTwoOffset = _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsDamped;}
+    if (!_simFlags->shouldDriveAllLayers) { chainTwoOffset = _simStates->layerSpinsInChain[0] + _simParams->numSpinsInABC;}
+    else {chainTwoOffset = _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsInABC;}
 
     // Check if currentSite is a valid index for mTermsChain2 before calculations
-    if (currentSite > _simParams->numSpinsDamped and currentSite <= chainTwoOffset) {
+    if (currentSite > _simParams->numSpinsInABC and currentSite <= chainTwoOffset) {
         // Could also calculate coupling for each site in chain 2, but this is computationally expensive
 
         double interlayerLatticeConstant = std::sqrt(exchangeStiffness / interlayerExchange);
@@ -498,8 +500,8 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerAdjacent(st
     return totalDipolarInteractionInterlayer;
 }
 
-std::vector<double> DipolarInteractions::DipolarInteractionIntralayerDebug(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
-                                                                  int& currentSite, const int& currentLayer) {
+std::vector<double> DipolarFields::DipolarInteractionIntralayerDebug(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
+                                                                     int& currentSite, const int& currentLayer) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
 
     double exchangeStiffness = 5.3e-17;
@@ -512,7 +514,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayerDebug(std::
         return totalDipoleTerms;
     } else if (numNeighbours < 0) {
         vecLength = _simStates->layerSpinsInChain[currentLayer];
-        originIndex = currentSite - _simParams->numSpinsDamped - 1;
+        originIndex = currentSite - _simParams->numSpinsInABC - 1;
     } else {
         vecLength = 2 * numNeighbours + 1;
         originIndex = vecLength / 2 + 1;
@@ -531,7 +533,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayerDebug(std::
 
     int iFV = 0; // index flat vector
     if (numNeighbours < 0) {
-        for (int site = _simParams->numSpinsDamped + 1; site <= vecLength + _simParams->numSpinsDamped; site++) {
+        for (int site = _simParams->numSpinsInABC + 1; site <= vecLength + _simParams->numSpinsInABC; site++) {
             // Flatting the vectors
             mxTerms[iFV] = mTerms[site][0] * _simParams->PERMITTIVITY_IRON;
             myTerms[iFV] = mTerms[site][1] * _simParams->PERMITTIVITY_IRON;
@@ -541,7 +543,7 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayerDebug(std::
     }
     } else {
         for (int site = currentSite - numNeighbours; site <= currentSite + numNeighbours; site++) {
-            if (site < _simParams->numSpinsDamped or site >= _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsDamped) {
+            if (site < _simParams->numSpinsInABC or site >= _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsInABC) {
                 // Guard clause to skip trying assignment of any element when the index is negative
                 continue;
             }
@@ -628,9 +630,9 @@ std::vector<double> DipolarInteractions::DipolarInteractionIntralayerDebug(std::
     return totalDipoleTerms;
 }
 
-std::vector<double> DipolarInteractions::DipolarInteractionInterlayerDebug(std::vector<std::vector<double>>& mTermsChain1,
-                                                                          std::vector<std::vector<double>>& mTermsChain2,
-                                                                          int& numNeighbours, int& currentSite, const int& currentLayer) {
+std::vector<double> DipolarFields::DipolarInteractionInterlayerDebug(std::vector<std::vector<double>>& mTermsChain1,
+                                                                     std::vector<std::vector<double>>& mTermsChain2,
+                                                                     int& numNeighbours, int& currentSite, const int& currentLayer) {
     std::vector<double> totalDipoleTerms = {0.0, 0.0, 0.0};
 
     double exchangeStiffness = 5.3e-17;
@@ -638,21 +640,21 @@ std::vector<double> DipolarInteractions::DipolarInteractionInterlayerDebug(std::
 
     if (_simFlags->debugFunc) { std::cout << "DB1.1 | "; }
 
-    if (currentSite <= _simParams->numSpinsDamped or currentSite > (_simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsDamped)) {
+    if (currentSite <= _simParams->numSpinsInABC or currentSite > (_simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsInABC)) {
         return {0.0, 0.0, 0.0};  // Ensure currentSite is a valid index for mTermsChain1
     }
     if (_simFlags->debugFunc) { std::cout << "DB1.2 | "; }
     // Stop-gap code to prevent memory-access violation error. Needs fixed in the future
     int testLength;
-    if (!_simFlags->driveAllLayers) {testLength = _simStates->layerSpinsInChain[0] + _simParams->numSpinsDamped;}
-    else {testLength = _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsDamped;}
+    if (!_simFlags->shouldDriveAllLayers) { testLength = _simStates->layerSpinsInChain[0] + _simParams->numSpinsInABC;}
+    else {testLength = _simStates->layerSpinsInChain[currentLayer] + _simParams->numSpinsInABC;}
     if (_simFlags->debugFunc) { std::cout << "DB1.3 / DB2.0 | "; }
     // Calculate the dipolar coupling for chain1
     std::vector<double> totalDipoleTermsChain1 = DipolarInteractionIntralayer(mTermsChain1, currentSite, currentLayer,
                                                                               exchangeStiffness);
     if (_simFlags->debugFunc) { std::cout << "DB1.4 | "; }
     // Check if currentSite is a valid index for mTermsChain2 before calculations
-    if (currentSite > _simParams->numSpinsDamped and currentSite <= testLength) {
+    if (currentSite > _simParams->numSpinsInABC and currentSite <= testLength) {
         // Could also calculate coupling for each site in chain 2, but this is computationally expensive
 
         // Here we use the same calculations as in the original function but for two spins at the same site in different chains

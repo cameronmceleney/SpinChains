@@ -3,25 +3,33 @@
 //
 #pragma once
 
-#ifndef SPINCHAINS_EFFECTIVEFIELD_H
-#define SPINCHAINS_EFFECTIVEFIELD_H
+#ifndef SPINCHAINS_EFFECTIVEFIELDS_H
+#define SPINCHAINS_EFFECTIVEFIELDS_H
 
-// Include the SimulationParameters
+// C++ Standard Library
+#include <vector>
+
+// C++ User Libraries (General)
+#include "CommonLibs.h"
+
+// C++ User Libraries (General)
+#include "GlobalVariables.h"
+
+// C++ User Libraries (Containers)
 #include "SimulationParameters.h"
 #include "SimulationStates.h"
 #include "SimulationFlags.h"
-#include "CommonLibs.h"
 
-class EffectiveField {
+class EffectiveFields {
 private:
     SimulationParameters* _simParams; // Non-owning pointer to SimulationParameters
     SimulationStates* _simStates;
     SimulationFlags* _simFlags;
 public:
-    explicit EffectiveField(SimulationParameters* sharedSimParams,
+    explicit EffectiveFields(SimulationParameters* sharedSimParams,
                             SimulationStates* sharedSimStates,
                             SimulationFlags* sharedSimFlags);
-    ~EffectiveField() = default;
+    ~EffectiveFields() = default;
     
 public:
     double              EffectiveFieldX (const int& site, const int& layer, const double& mxLHS, const double& mxMID,
@@ -40,4 +48,4 @@ public:
 };
 
 
-#endif //SPINCHAINS_EFFECTIVEFIELD_H
+#endif //SPINCHAINS_EFFECTIVEFIELDS_H

@@ -2,16 +2,14 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#include <utility>
-
-// C++ User Libraries (Parent)
+// Corresponding header
 #include "../include/SolversSuperClass.h"
 
-// C++ User Libraries (Children)
-#include "../include/NMInitialisation.h"
-#include "../include/NMConfiguration.h"
-#include "../include/NMDataHandling.h"
-#include "../include/NMMethods.h"
+// C++ User Libraries (Class' Children)
+#include "../include/SolversInitialisation.h"
+#include "../include/SolversConfiguration.h"
+#include "../include/SolversDataHandling.h"
+#include "../include/SolversImplementation.h"  // not used due to inclusion in SolversDataHandling (for now; that'll change in the future)
 
 SolversSuperClass::SolversSuperClass(std::shared_ptr<SimulationParameters> sharedSimParams,
                                      std::shared_ptr<SimulationStates> sharedSimStates, 
@@ -28,15 +26,15 @@ std::shared_ptr<SolversSuperClass> SolversSuperClass::createSimulationInstance(s
                                                                                std::shared_ptr<SimulationFlags> sharedSimFlags) {
     // Return instance of the child
     //auto sharedSimParams = getsharedSimParamsContainer();
-    return std::make_shared<NMInitialisation>(sharedSimParams, sharedSimStates, sharedSimFlags);
+    return std::make_shared<SolversInitialisation>(sharedSimParams, sharedSimStates, sharedSimFlags);
 }
 
-std::shared_ptr<SolversSuperClass> SolversSuperClass::createConfigurationInstance(std::shared_ptr<SimulationParameters> sharedSimParams, 
+std::shared_ptr<SolversSuperClass> SolversSuperClass::createConfigurationInstance(std::shared_ptr<SimulationParameters> sharedSimParams,
                                                                                   std::shared_ptr<SimulationStates> sharedSimStates, 
                                                                                   std::shared_ptr<SimulationFlags> sharedSimFlags) {
     // Return instance of the child
     //auto sharedSimParams = getsharedSimParamsContainer();
-    return std::make_shared<NMConfiguration>(sharedSimParams, sharedSimStates, sharedSimFlags);
+    return std::make_shared<SolversConfiguration>(sharedSimParams, sharedSimStates, sharedSimFlags);
 }
 
 std::shared_ptr<SolversSuperClass> SolversSuperClass::createDataHandlingInstance(std::shared_ptr<SimulationParameters> sharedSimParams,
@@ -44,7 +42,7 @@ std::shared_ptr<SolversSuperClass> SolversSuperClass::createDataHandlingInstance
                                                                                  std::shared_ptr<SimulationFlags> sharedSimFlags) {
     // Return instance of the child
     //auto sharedSimParams = getsharedSimParamsContainer();
-    return std::make_shared<NMDataHandling>(sharedSimParams, sharedSimStates, sharedSimFlags);
+    return std::make_shared<SolversDataHandling>(sharedSimParams, sharedSimStates, sharedSimFlags);
 }
 
 std::shared_ptr<SolversSuperClass> SolversSuperClass::createMethodsInstance(std::shared_ptr<SimulationParameters> sharedSimParams,
@@ -52,7 +50,7 @@ std::shared_ptr<SolversSuperClass> SolversSuperClass::createMethodsInstance(std:
                                                                             std::shared_ptr<SimulationFlags> sharedSimFlags) {
     // Return instance of the child
     //auto sharedSimParams = getsharedSimParamsContainer();
-    return std::make_shared<NMMethods>(sharedSimParams, sharedSimStates, sharedSimFlags);
+    return std::make_shared<SolversImplementation>(sharedSimParams, sharedSimStates, sharedSimFlags);
 }
 
 std::shared_ptr<SimulationParameters> SolversSuperClass::getSimulationParamsContainer() {
@@ -75,7 +73,7 @@ std::shared_ptr<SimulationFlags> SolversSuperClass::getSimulationFlagsContainer(
 
 /*
 std::pair<double, double> SolversSuperClass::testInstance() {
-    auto instance = std::dynamic_pointer_cast<NMInitialisation>(createSimulationInstance(sharedSimParams));
+    auto instance = std::dynamic_pointer_cast<SolversInitialisation>(createSimulationInstance(sharedSimParams));
     double before = instance->getsharedSimParamsContainer()->ambientTemperature; // Get value of var1 before modification
 
     instance->testModifyingDouble(100); // Modify var1 using ChildClass method

@@ -2,21 +2,25 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#ifndef SPINCHAINS_NMINITIALISATION_H
-#define SPINCHAINS_NMINITIALISATION_H
+#ifndef SPINCHAINS_SOLVERSINITIALISATION_H
+#define SPINCHAINS_SOLVERSINITIALISATION_H
 
+// C++ Standard Libraries
+#include <cmath>
+#include <iostream>
+
+// C++ User Libraries (General)
+#include "GlobalVariables.h"
+
+// C++ User Libraries (Class' Parent)
 #include "SolversSuperClass.h"
 
-class NMInitialisation: public SolversSuperClass {
+class SolversInitialisation: public SolversSuperClass {
 private:
-    // ####################################            Define Private Variables            ###################################
-
     double              _recordingInterval;
     int                 _layerOfInterest;
     const double        _BOHR_MAGNETON = 9.274e-24;
 
-
-    // ####################################            Define Private Functions            ###################################
 
     void                _setSimulationFlags();
     void                _setSimulationParameters();
@@ -26,18 +30,15 @@ private:
 
     void                Initialise();
 
-
-protected:
-    //
-
 public:
-    NMInitialisation(std::shared_ptr<SimulationParameters> paramsData,
+    SolversInitialisation(std::shared_ptr<SimulationParameters> sharedSimParams,
                      std::shared_ptr<SimulationStates> sharedSimStates,
                      std::shared_ptr<SimulationFlags> sharedSimFlags);
-
+    ~SolversInitialisation() = default;
+public:
     void                testModifyingDouble(double  newValue);
     void                performInitialisation() override { Initialise(); };
 };
 
 
-#endif //SPINCHAINS_NMINITIALISATION_H
+#endif //SPINCHAINS_SOLVERSINITIALISATION_H

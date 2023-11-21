@@ -1,18 +1,13 @@
 #ifndef SPINCHAINS_COMMONLIBS_H
 #define SPINCHAINS_COMMONLIBS_H
 
-#define _USE_MATH_DEFINES
-#include <cmath>
-#include <fstream>
-#include <string>
-#include <vector>
+// C++ Standard Libraries
+#include <complex>
 
-#include "Eigen/Eigenvalues" // header for Eigen
+// C++ User Libraries (General)
 #include "GlobalVariables.h"
 
-typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Matrix_xd; //using a custom definition of Eigen::MatrixXd to enable easy changes in the future
-//static std::complex<double> I(0.0, 1.0); //Complex number I
-
-inline GlobalVariablesClass GV;
+static std::complex<double> I(0.0, 1.0);  // Complex number I
+inline GlobalVariablesClass GV;  // Legacy. todo change GV into a container with interfaces.
 
 #endif //SPINCHAINS_COMMONLIBS_H

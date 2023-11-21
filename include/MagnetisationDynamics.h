@@ -2,16 +2,17 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#ifndef SPINCHAINS_LLG_H
-#define SPINCHAINS_LLG_H
+#ifndef SPINCHAINS_MAGNETISATIONDYNAMICS_H
+#define SPINCHAINS_MAGNETISATIONDYNAMICS_H
 
-// C++ Third Party Libraries
+// C++ Standard Libraries
+#include <cmath>
 #include <random>
 
-// Include the SimulationParameters
+// C++ User Libraries (Containers)
+#include "SimulationFlags.h"
 #include "SimulationParameters.h"
 #include "SimulationStates.h"
-#include "SimulationFlags.h"
 
 class MagnetisationDynamics {
 private:
@@ -74,4 +75,4 @@ public:
 };
 
 
-#endif //SPINCHAINS_LLG_H
+#endif //SPINCHAINS_MAGNETISATIONDYNAMICS_H

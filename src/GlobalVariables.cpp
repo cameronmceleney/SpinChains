@@ -1,3 +1,5 @@
+
+// Corresponding header
 #include "../include/GlobalVariables.h"
 
 double GlobalVariablesClass::GetAnisotropyField() {

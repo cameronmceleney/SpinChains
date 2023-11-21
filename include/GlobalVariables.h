@@ -1,9 +1,10 @@
 #ifndef SPINCHAINS_GLOBALVARIABLES_H
 #define SPINCHAINS_GLOBALVARIABLES_H
-#define _USE_MATH_DEFINES
+
+// C++ Standard Libraries
+#include <chrono>
 #include <cmath>
 #include <filesystem>
-#include <iomanip>
 #include <iostream>
 #include <optional>  // Use to create sentinels for booleans
 #include <string>

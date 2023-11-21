@@ -2,14 +2,12 @@
 // Created by Cameron Aidan McEleney on 19/11/2023.
 //
 
-#ifndef SPINCHAINS_INMMETHODS_H
-#define SPINCHAINS_INMMETHODS_H
-
-#include <memory>
+#ifndef SPINCHAINS_INTERFACESOLVERSIMPLEMENTATION_H
+#define SPINCHAINS_INTERFACESOLVERSIMPLEMENTATION_H
 
 class SimulationParameters;
 
-class INMMethods {
+class iSolversImplementation {
 public:
     virtual void runMethod() = 0;
     virtual void                _testShockwaveConditions(double iteration) = 0;
@@ -19,9 +17,9 @@ public:
     // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
     virtual void                SolveRK2() = 0;
 
-    ~INMMethods() = default;
+    ~iSolversImplementation() = default;
 
 };
 
 
-#endif //SPINCHAINS_INMMETHODS_H
+#endif //SPINCHAINS_INTERFACESOLVERSIMPLEMENTATION_H

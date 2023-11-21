@@ -2,31 +2,38 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#ifndef SPINCHAINS_DIPOLARFIELD_H
-#define SPINCHAINS_DIPOLARFIELD_H
+#ifndef SPINCHAINS_DIPOLARFIELDS_H
+#define SPINCHAINS_DIPOLARFIELDS_H
+
+// C++ Standard Library
+#include <cstring>
+#include <iostream>
 
 // C++ Third Party Libraries
 extern "C" {
     #include <fftw3.h>
 }
 
+// C++ User Libraries (General)
+#include "CommonLibs.h"
+#include "GlobalVariables.h"
 
-// Include the SimulationParameters
+// C++ User Libraries (Containers)
 #include "SimulationParameters.h"
 #include "SimulationStates.h"
 #include "SimulationFlags.h"
-#include "CommonLibs.h"
 
-class DipolarInteractions {
+
+class DipolarFields {
 private:
     SimulationParameters* _simParams; // Non-owning pointer to SimulationParameters
     SimulationStates* _simStates;
     SimulationFlags* _simFlags;
 public:
-    explicit DipolarInteractions(SimulationParameters* sharedSimParams,
-                                 SimulationStates* sharedSimStates,
-                                 SimulationFlags* sharedSimFlags);
-    ~DipolarInteractions() = default;
+    explicit DipolarFields(SimulationParameters* sharedSimParams,
+                           SimulationStates* sharedSimStates,
+                           SimulationFlags* sharedSimFlags);
+    ~DipolarFields() = default;
 public:
     // ####################################            Define Public Variables            ###################################
 
@@ -70,4 +77,4 @@ public:
 };
 
 
-#endif //SPINCHAINS_DIPOLARFIELD_H
+#endif //SPINCHAINS_DIPOLARFIELDS_H

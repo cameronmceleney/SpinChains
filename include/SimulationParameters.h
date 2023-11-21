@@ -5,6 +5,7 @@
 #ifndef SPINCHAINS_SIMULATIONPARAMETERS_H
 #define SPINCHAINS_SIMULATIONPARAMETERS_H
 
+// C++ Standard Library
 #include <list>
 
 class SimulationParameters {
@@ -14,7 +15,7 @@ public:
     constexpr static double    BOLTZMANN_CONSTANT = 1.380649e-23;         // Boltzmann Constant [m^{2} kg s^{-2} K^{-1}].
     double PERMITTIVITY_IRON = 2.22; // cobalt = 1.72, iron = 2.22, nickel = 0.6;
 
-    // Sites to be printed if printFixedSites is TRUE.
+    // Sites to be printed if shouldPrintDiscreteSites is TRUE.
     std::list <int> fixedOutputSites;
 
 
@@ -43,10 +44,10 @@ public:
     double              maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
     // The initial values of the squares of the magnetic moments (m) along each axis. [mxInit + myInit + mzInit]  CANNOT sum to greater than 1.0
-    int                 numberNeighbours;
+    int                 numNeighbours;
     int                 numberOfDataPoints;                       // Number of datapoints sent to output file. Higher number gives greater precision, but drastically increases filesize. Set equal to _stopIterVal to save all data, else 100.
     int                 numberOfSpinPairs;                        // Number of pairs of spins in the chain. Used for array lengths and tidying notation.
-    int                 numSpinsDamped;                           // Number of spins in the damped regions (previously called _numGilbert).
+    int                 numSpinsInABC;                           // Number of spins in the damped regions (previously called _numGilbert).
 
     int                 numSpinsInChain;                          // The number of spin sites in the spin chain to be simulated.
     int                 systemTotalSpins;                         // The total number of spins in the system (chain plus ABCs).
@@ -60,7 +61,7 @@ public:
     double              shockwaveStepsize;                        // Size of incremental increase in shockwave amplitude.
     double              stepsize;                                 // Stepsize between values
     double              stepsizeHalf;                             // Separately defined to avoid repeated unnecessary calculations inside loops
-    int                 totalLayers;
+    int                 numLayers;
 
     double exchangeEnergyMin;
     double exchangeEnergyMax;

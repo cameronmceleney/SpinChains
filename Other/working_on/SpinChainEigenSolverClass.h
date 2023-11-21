@@ -1,10 +1,22 @@
 #ifndef SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
 #define SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H
 
-#include "../../include/CommonLibs.h"
+// C++ Standard Library
 #include <chrono>
-#include <ctime>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+
+// C++ Third Party Libraries
+#include "Eigen/Eigenvalues" // header for only Eigen is needed. Path taken from CMakeLists.txt
+
+// C++ User Libraries (General)
+#include "../../include/CommonLibs.h"
+#include "../../include/GlobalVariables.h"
 #include "../../libs/linspace.h"
+
+// Definitions
+typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Matrix_xd; //using a custom definition of Eigen::MatrixXd to enable easy changes in the future
 
 class SpinChainEigenSolverClass {
 

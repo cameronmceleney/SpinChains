@@ -2,18 +2,28 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#ifndef SPINCHAINS_NMCONFIGURATION_H
-#define SPINCHAINS_NMCONFIGURATION_H
+#ifndef SPINCHAINS_SOLVERSCONFIGURATION_H
+#define SPINCHAINS_SOLVERSCONFIGURATION_H
 
+// C++ Standard Library
+#include <iostream>
+#include <map>
+#include <string>
+
+// C++ User Library (Parent)
 #include "SolversSuperClass.h"
 
-class NMConfiguration:  public SolversSuperClass {
+// C++ User Library (General)
+#include "../libs/linspace.h"
+
+class SolversConfiguration:  public SolversSuperClass {
 private:
     // ####################################            Define Private Variables            ###################################
 
     double _mxInit;  // Initial magnetisation in the x-direction
     double _myInit;  // Initial magnetisation in the y-direction
     double _mzInit;  // Initial magnetisation in the z-direction
+    double _zeroValue; // Saves retyping 0.0
 
     // ####################################            Define Private Functions            ###################################
     // #################################     all systems    ###############################
@@ -53,11 +63,11 @@ protected:
     void                _testShockwaveInitConditions();
 
 public:
-    NMConfiguration(std::shared_ptr<SimulationParameters> paramsData,
+    SolversConfiguration(std::shared_ptr<SimulationParameters> paramsData,
                                    std::shared_ptr<SimulationStates> sharedSimStates,
                                    std::shared_ptr<SimulationFlags> sharedSimFlags);
 
-    ~NMConfiguration() = default;
+    ~SolversConfiguration() = default;
 
 public:
     // Assignment of all values required for the simulation
@@ -70,4 +80,4 @@ public:
 };
 
 
-#endif //SPINCHAINS_NMCONFIGURATION_H
+#endif //SPINCHAINS_SOLVERSCONFIGURATION_H

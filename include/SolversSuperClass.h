@@ -5,22 +5,18 @@
 #ifndef SPINCHAINS_SOLVERSSUPERCLASS_H
 #define SPINCHAINS_SOLVERSSUPERCLASS_H
 
-// C++ Standard Library
-#include <chrono>
-#include <algorithm>
-#include <iomanip>
-#include <iostream>
-#include <list>
-#include <map>
-#include <random>
-#include <memory>
+// C++ Standard Libraries
+//#include <algorithm>  // Will need in future. Left here so I don't forget
+
+// C++ Third Party Libraries
 
 // C++ User Libraries (General)
 #include "CommonLibs.h"
-#include "SimulationParameters.h"
+
+// C++ User Libraries (Containers)
 #include "SimulationFlags.h"
+#include "SimulationParameters.h"
 #include "SimulationStates.h"
-#include "../libs/linspace.h"
 
 class SolversSuperClass {
 private:
@@ -34,7 +30,7 @@ protected:
 
 public:
     //SolversSuperClass(std::shared_ptr<SimulationParameters> simParams);
-    SolversSuperClass(std::shared_ptr<SimulationParameters> sharedSimParams, 
+    SolversSuperClass(std::shared_ptr<SimulationParameters> sharedSimParams,
                       std::shared_ptr<SimulationStates> sharedSimStates, 
                       std::shared_ptr<SimulationFlags> sharedSimFlags);
     virtual ~SolversSuperClass(); // Destructor (though not strictly necessary with smart pointers)

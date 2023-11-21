@@ -2,25 +2,22 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-// C++ User Libraries (Current)
-#include "../include/NMMethods.h"
+// Corresponding header
+#include "../include/SolversImplementation.h"
 
-
-// C++ User Libraries (Children)
-
-NMMethods::NMMethods(std::shared_ptr<SimulationParameters> paramsData,
+SolversImplementation::SolversImplementation(std::shared_ptr<SimulationParameters> sharedSimParams,
                      std::shared_ptr<SimulationStates> sharedSimStates,
-                     std::shared_ptr<SimulationFlags> sharedSimFlags) :
+                     std::shared_ptr<SimulationFlags> sharedSimFlags)
 
-    SolversSuperClass(std::move(paramsData), std::move(sharedSimStates), std::move(sharedSimFlags)),
-    demagField(simParams.get(), simStates.get(), simFlags.get()),
-    effectiveField(simParams.get(), simStates.get(), simFlags.get()),
-    dipolarField(simParams.get(), simStates.get(), simFlags.get()),
-    llg(simParams.get(), simStates.get(), simFlags.get()){}
+    : SolversSuperClass(std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)),
+      demagField(simParams.get(), simStates.get(), simFlags.get()),
+      effectiveField(simParams.get(), simStates.get(), simFlags.get()),
+      dipolarField(simParams.get(), simStates.get(), simFlags.get()),
+      llg(simParams.get(), simStates.get(), simFlags.get()){}
 
-void NMMethods::_testShockwaveConditions(double iteration) {
+void SolversImplementation::_testShockwaveConditions(double iteration) {
 
-    if (simFlags->shouldDriveCease) {
+    if (simFlags->shouldDriveCeaseEarly) {
         // and (simParams->isShockwaveOn and simParams->isShockwaveAtMax)) {
         if (simFlags->isShockwaveOn and not simFlags->isShockwaveAtMax)
             std::cout << "Shock not at maximum when cut-off" << std::endl;
@@ -64,8 +61,8 @@ void NMMethods::_testShockwaveConditions(double iteration) {
 
 }
 
-void NMMethods::SolveRK2Classic() {
-    std::shared_ptr<NMDataHandling> childNMData = std::make_shared<NMDataHandling>(simParams, simStates, simFlags);
+void SolversImplementation::SolveRK2Classic() {
+    std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simParams, simStates, simFlags);
     // Only uses a single spin chain to solve the RK2 midpoint method.
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
@@ -73,12 +70,12 @@ void NMMethods::SolveRK2Classic() {
     //std::ofstream myRK2File(GV.GetFilePath() + "rk2_my_" + GV.GetFileNameBase() + ".csv");
     //std::ofstream mzRK2File(GV.GetFilePath() + "rk2_mz_" + GV.GetFileNameBase() + ".csv");
 
-    if (simFlags->isFm) {
+    if (simFlags->isFerromagnetic) {
         childNMData->InformUserOfCodeType("RK2 Midpoint (Classic)(FM)");
         childNMData->CreateFileHeader(mxRK2File, "RK2 Midpoint (Classic)(FM)");
         //childNMData -> CreateFileHeader(myRK2File, "RK2 Midpoint (FM)");
         //childNMData -> CreateFileHeader(mzRK2File, "RK2 Midpoint (FM)");
-    } else if (!simFlags->isFm) {
+    } else if (!simFlags->isFerromagnetic) {
         childNMData -> InformUserOfCodeType("RK2 Midpoint (Classic)(AFM)");
         childNMData -> CreateFileHeader(mxRK2File, "RK2 Midpoint (Classic)(AFM)");
     }
@@ -104,11 +101,11 @@ void NMMethods::SolveRK2Classic() {
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
         // EASY FIND
-        if (simFlags->useDipolar)
+        if (simFlags->hasDipolar)
             dipolarField.DipolarInteraction1D(simStates->mx0, dipoleX);
-        if (simFlags->useDemagIntense) {
+        if (simFlags->hasDemagIntense) {
             demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, simStates->mx0, simStates->my0, simStates->mz0);
-        } else if (simFlags->useDemagFft) {
+        } else if (simFlags->hasDemagFFT) {
             std::string rkStageName = "2-1";
             demagField.DemagField1DReal(demagX, demagY, demagZ, simStates->mx0, simStates->my0, simStates->mz0, iteration, rkStageName);
 
@@ -177,7 +174,7 @@ void NMMethods::SolveRK2Classic() {
             }
             */
             /*double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
-            if (simParams->useDipolar) {
+            if (simParams->hasDipolar) {
                 std::vector<double> mxTermsForDipole = {simParams->mx0[spinLHS], simParams->mx0[site], simParams->mx0[spinRHS]};
                 std::vector<double> myTermsForDipole = {simParams->my0[spinLHS], simParams->my0[site], simParams->my0[spinRHS]};
                 std::vector<double> mzTermsForDipole = {simParams->mz0[spinLHS], simParams->mz0[site], simParams->mz0[spinRHS]};
@@ -212,11 +209,11 @@ void NMMethods::SolveRK2Classic() {
         std::fill(demagX.begin(), demagX.end(), 0.0); std::fill(demagY.begin(), demagY.end(), 0.0); std::fill(demagZ.begin(), demagZ.end(), 0.0);
         std::fill(dipoleX.begin(), dipoleX.end(), 0.0); std::fill(dipoleY.begin(), dipoleY.end(), 0.0); std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
 
-        if (simFlags->useDipolar)
+        if (simFlags->hasDipolar)
             dipolarField.DipolarInteraction1D(mx1, dipoleX);
-        if (simFlags->useDemagIntense) {
+        if (simFlags->hasDemagIntense) {
             demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
-        } else if (simFlags->useDemagFft) {
+        } else if (simFlags->hasDemagFFT) {
             std::string rkStageName = "2-2";
             demagField.DemagField1DReal(demagX, demagY, demagZ, mx1, my1, mz1, iteration, rkStageName);
             // if (iteration > 0) {std::cout << "Stage 2" << std::endl; PrintVector(demagZ, false);}
@@ -229,7 +226,7 @@ void NMMethods::SolveRK2Classic() {
             int spinLHS = site - 1, spinRHS = site + 1;
 
             /*double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
-            if (simParams->useDipolar) {
+            if (simParams->hasDipolar) {
                 std::vector<double> mxTermsForDipole = {mx1[spinLHS], mx1[site], mx1[spinRHS]};
                 std::vector<double> myTermsForDipole = {my1[spinLHS], my1[site], my1[spinRHS]};
                 std::vector<double> mzTermsForDipole = {mz1[spinLHS], mz1[site], mz1[spinRHS]};
@@ -257,7 +254,7 @@ void NMMethods::SolveRK2Classic() {
             my2[site] = simStates->my0[site] + simParams->stepsize * myK2;
             mz2[site] = simStates->mz0[site] + simParams->stepsize * mzK2;
 
-            if (simFlags->shouldTrackMValues) {
+            if (simFlags->shouldTrackMagneticMomentNorm) {
                 double mIterationNorm = sqrt(pow(mx2[site], 2) + pow(my2[site], 2) + pow(mz2[site], 2));
                 if ((simParams->largestMNorm) > (1.0 - mIterationNorm)) { simParams->largestMNorm = (1.0 - mIterationNorm); }
                 if (mIterationNorm > 1.00005) {throw std::runtime_error("mag. moments are no longer below <= 1.00005");}
@@ -294,14 +291,14 @@ void NMMethods::SolveRK2Classic() {
         childNMData -> CreateMetadata(true);
     }
 
-    if (simFlags->shouldTrackMValues)
+    if (simFlags->shouldTrackMagneticMomentNorm)
         std::cout << "\nMax norm. value of M is: " << simParams->largestMNorm << std::endl;
 
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
-void NMMethods::SolveRK2() {
-    std::shared_ptr<NMDataHandling> childNMData = std::make_shared<NMDataHandling>(simParams, simStates, simFlags);
+void SolversImplementation::SolveRK2() {
+    std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simParams, simStates, simFlags);
     // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
@@ -309,11 +306,11 @@ void NMMethods::SolveRK2() {
     std::ofstream mxRK2File1(GV.GetFilePath() + "rk2_mx1_" + GV.GetFileNameBase() + ".csv");
 
     // User information and file header is magnetic-material specific.
-    if (simFlags->isFm) {
+    if (simFlags->isFerromagnetic) {
         childNMData -> InformUserOfCodeType("RK2 Midpoint (FM)");
         childNMData -> CreateFileHeader(mxRK2File, "RK2 Midpoint (FM)", false, 0);
         childNMData -> CreateFileHeader(mxRK2File1, "RK2 Midpoint (FM)", false, 1);
-    } else if (!simFlags->isFm) {
+    } else if (!simFlags->isFerromagnetic) {
         childNMData -> InformUserOfCodeType("RK2 Midpoint (AFM)");
         childNMData -> CreateFileHeader(mxRK2File, "RK2 Midpoint (AFM)");
         childNMData -> CreateFileHeader(mxRK2File1, "RK2 Midpoint (AFM)");
@@ -337,7 +334,7 @@ void NMMethods::SolveRK2() {
 
         double t0 = simParams->totalTime;
 
-        for (int layer = 0; layer < simParams->totalLayers; layer++) {
+        for (int layer = 0; layer < simParams->numLayers; layer++) {
             // RK2 Stage 1. Takes initial conditions as inputs.
 
             for (int site = 1; site <= simStates->layerTotalSpins[layer]; site++) {
@@ -351,7 +348,7 @@ void NMMethods::SolveRK2() {
                 double mzLHS = simStates->m0Nest[layer][spinLHS][2], mzMID = simStates->m0Nest[layer][site][2], mzRHS = simStates->m0Nest[layer][spinRHS][2];
 
                 double dipoleX, dipoleY, dipoleZ;
-                if (simFlags->useDipolar) {
+                if (simFlags->hasDipolar) {
 
                     int layer1, layer2;
                     if (layer == 0) {layer1 = 0; layer2 = 1;}
@@ -387,7 +384,7 @@ void NMMethods::SolveRK2() {
             }
         }
 
-        for (int layer = 0; layer < simParams->totalLayers; layer++) {
+        for (int layer = 0; layer < simParams->numLayers; layer++) {
             // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
             for (int site = 1; site <= simStates->layerTotalSpins[layer]; site++) {
 
@@ -399,7 +396,7 @@ void NMMethods::SolveRK2() {
                 double mzLHS = simStates->m1Nest[layer][spinLHS][2], mzMID = simStates->m1Nest[layer][site][2], mzRHS = simStates->m1Nest[layer][spinRHS][2];
 
                 double dipoleX, dipoleY, dipoleZ;
-                if (simFlags->useDipolar) {
+                if (simFlags->hasDipolar) {
 
                     int layer1, layer2;
                     if (layer == 0) {layer1 = 0; layer2 = 1;}
@@ -433,7 +430,7 @@ void NMMethods::SolveRK2() {
                 simStates->m2Nest[layer][site][1] = simStates->m0Nest[layer][site][1] + simParams->stepsize * myK2;
                 simStates->m2Nest[layer][site][2] = simStates->m0Nest[layer][site][2] + simParams->stepsize * mzK2;
 
-                if (simFlags->shouldTrackMValues) {
+                if (simFlags->shouldTrackMagneticMomentNorm) {
                     double mIterationNorm = sqrt(
                             pow(simStates->m2Nest[layer][site][0], 2) + pow(simStates->m2Nest[layer][site][1], 2) + pow(simStates->m2Nest[layer][site][2], 2));
                     if ((simStates->largestMNormMulti[layer]) > (1.0 - mIterationNorm)) { simStates->largestMNormMulti[layer] = (1.0 - mIterationNorm); }
@@ -467,7 +464,7 @@ void NMMethods::SolveRK2() {
         childNMData -> CreateMetadata(true);
     }
 
-    if (simFlags->shouldTrackMValues) {
+    if (simFlags->shouldTrackMagneticMomentNorm) {
         std::cout << "\nMax norm. values of M are: ";
         for (int i = 0; i < simStates->largestMNormMulti.size(); i++) {
             std::cout << "Layer " << i << ": " << simStates->largestMNormMulti[i] << " | ";
@@ -478,7 +475,7 @@ void NMMethods::SolveRK2() {
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
 }
 
-void NMMethods::runMethod() {
+void SolversImplementation::runMethod() {
 
     std::string methodToUse = GV.GetNumericalMethod();
 

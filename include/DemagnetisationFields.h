@@ -3,19 +3,28 @@
 //
 #pragma once
 
-#ifndef SPINCHAINS_DEMAGFIELD_H
-#define SPINCHAINS_DEMAGFIELD_H
+#ifndef SPINCHAINS_DEMAGNETISATIONFIELDS_H
+#define SPINCHAINS_DEMAGNETISATIONFIELDS_H
 
-// C++ Third Party Libraries
-extern "C" {
+// C++ Standard Library
+#include <cstring>
+#include <iostream>
+#include <vector>
+
+
+// C++ Third Party Library
+extern "C"{
     #include <fftw3.h>
 }
 
-// Include the SimulationParameters
+// C++ User Libraries (General)
+#include "CommonLibs.h"
+#include "GlobalVariables.h"
+
+// C++ User Libraries (Containers)
 #include "SimulationParameters.h"
 #include "SimulationStates.h"
 #include "SimulationFlags.h"
-#include "CommonLibs.h"
 
 class DemagnetisationFields {
 private:
@@ -56,4 +65,4 @@ public:
 };
 
 
-#endif //SPINCHAINS_DEMAGFIELD_H
+#endif //SPINCHAINS_DEMAGNETISATIONFIELDS_H

@@ -1,10 +1,10 @@
+// C++ Standard Libraries
+#include <iostream>
+
+// C++ User Libraries (General)
 #include "../include/CommonLibs.h"
 #include "../include/SolversSuperClass.h"
-#include "../Other/working_on/SpinChainEigenSolverClass.h"
-
-#include "../include/SimulationParameters.h"
-#include "../include/SimulationStates.h"
-#include "../include/SimulationFlags.h"
+// #include "../Other/working_on/SpinChainEigenSolverClass.h"
 
 int main() {
 
@@ -37,7 +37,7 @@ int main() {
     std::cin >> outputFileID;
     GV.SetFileNameBase("T"+outputFileID);
 
-    GV.SetFilePath("macos");
+    GV.SetFilePath("windows");
 
     GV.SetNumericalMethod("RK2c");
 

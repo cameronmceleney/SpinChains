@@ -2,44 +2,50 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#include "../include/NMConfiguration.h"
+// Corresponding header
+#include "../include/SolversConfiguration.h"
 
-NMConfiguration::NMConfiguration(std::shared_ptr<SimulationParameters> paramsData,
+SolversConfiguration::SolversConfiguration(std::shared_ptr<SimulationParameters> sharedSimParams,
                                    std::shared_ptr<SimulationStates> sharedSimStates,
-                                   std::shared_ptr<SimulationFlags> sharedSimFlags)  :
+                                   std::shared_ptr<SimulationFlags> sharedSimFlags)
 
-   SolversSuperClass(std::move(paramsData), std::move(sharedSimStates), std::move(sharedSimFlags)) {}
-
-void NMConfiguration::Configure() {
+    : SolversSuperClass(std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {
     _mxInit = 0.0;
     _myInit = 0.0;
     _mzInit = 1.0;
-    double zeroValue = 0.0;
+    _zeroValue = 0.0;
+}
+
+void SolversConfiguration::Configure() {
+
 
     // ###################### Core Method Invocations ######################
     // Order is intentional, and must be maintained!
     _testShockwaveInitConditions();
-    if (simFlags->useMultilayer) {
-        _generateMultilayerAbsorbingRegions(simParams->numSpinsDamped, simParams->gilbertDamping,
+
+    if (simFlags->hasMultipleLayers) {
+        _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
                                             simParams->gilbertABCInner, simParams->gilbertABCOuter);
     } else {
-        _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsDamped, simParams->gilbertDamping,
-                                  simParams->gilbertABCInner, simParams->gilbertABCOuter);}
-    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsDamped, simParams->drivingRegionWidth);
-    _generateExchangeVector(simParams->numSpinsDamped, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
+        _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
+                                  simParams->gilbertABCInner, simParams->gilbertABCOuter);
+    }
+
+    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
+    _generateExchangeVector(simParams->numSpinsInABC, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
                             simParams->exchangeEnergyMax);
 
-    if (simFlags->useMultilayer) {
-        simStates->m0Nest = InitialiseNestedVectors(simParams->totalLayers, _mxInit, _myInit, _mzInit);
-        simStates->m1Nest = InitialiseNestedVectors(simParams->totalLayers, _mxInit, _myInit, zeroValue);
-        simStates->m2Nest = InitialiseNestedVectors(simParams->totalLayers, _mxInit, _myInit, zeroValue);
-    } else if (!simFlags->useMultilayer) {
+    if (simFlags->hasMultipleLayers) {
+        simStates->m0Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _mzInit);
+        simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
+        simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
+    } else if (!simFlags->hasMultipleLayers) {
         _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
     }
 }
 
-void NMConfiguration::_generateAbsorbingRegions(int numSpinsInChain, int numSpinsAbsorbingRegion, double gilbertSpinChain,
-                                                double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter) {
+void SolversConfiguration::_generateAbsorbingRegions(int numSpinsInChain, int numSpinsAbsorbingRegion, double gilbertSpinChain,
+                                                     double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter) {
     // Generate the damping regions that are appended to either end of the spin chain.
 
     // These damping regions are part of my Periodic Boundary Conditions (PBCs) as Absorbing Boundary Conditions (ABCs).
@@ -66,24 +72,24 @@ void NMConfiguration::_generateAbsorbingRegions(int numSpinsInChain, int numSpin
     simStates->gilbertVector.push_back(0);
 }
 
-void NMConfiguration::_setupDrivingRegion(int numSpinsInChain, int numSpinsAbsorbingRegion, int drivingRegionWidth) {
+void SolversConfiguration::_setupDrivingRegion(int numSpinsInChain, int numSpinsAbsorbingRegion, int drivingRegionWidth) {
 
-    if (simFlags->centralDrive) {
+    if (simFlags->shouldDriveCentre) {
         simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
         simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
         return;
     }
 
-    if (simFlags->dualDrive) {throw std::runtime_error(std::string("dualDrive has been selected, but this feature is not yet implemented"));}
+    if (simFlags->shouldDriveBothSides) {throw std::runtime_error(std::string("shouldDriveBothSides has been selected, but this feature is not yet implemented"));}
 
-    if (simFlags->lhsDrive) {
+    if (simFlags->shouldDriveLHS) {
         // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
         simParams->drivingRegionLhs = numSpinsAbsorbingRegion + 1;
         simParams->drivingRegionRhs = simParams->drivingRegionLhs + drivingRegionWidth - 1;
         return;
     }
 
-    if (simFlags->rhsDrive) {
+    if (simFlags->shouldDriveRHS) {
         // The +1 is to correct the offset of adding a zeroth spin
         simParams->drivingRegionRhs = simParams->systemTotalSpins - numSpinsAbsorbingRegion - 1;
         simParams->drivingRegionLhs = simParams->drivingRegionRhs - drivingRegionWidth + 1;
@@ -91,7 +97,7 @@ void NMConfiguration::_setupDrivingRegion(int numSpinsInChain, int numSpinsAbsor
     }
 
 }
-void NMConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, int numSpinPairs, double exchangeMin, double exchangeMax) {
+void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, int numSpinPairs, double exchangeMin, double exchangeMax) {
     /*
      * Create the arrays which house the exchange integral values. There are options to have a non-uniform exchange coded in, as well as the option to
      * induce a 'kick' into the system by initialising certain spins to have differing parameters to their neighbours.
@@ -114,7 +120,7 @@ void NMConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, int n
         simStates->exchangeVec = SpinChainExchange.generate_array();
     }
 }
-void NMConfiguration::_setupInitMagneticMoments(double mxInit, double myInit, double mzInit) {
+void SolversConfiguration::_setupInitMagneticMoments(double mxInit, double myInit, double mzInit) {
 
     //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
     std::vector<double> mxInitCond(simParams->systemTotalSpins, mxInit), myInitCond(simParams->systemTotalSpins, myInit), mzInitCond(simParams->systemTotalSpins, mzInit);
@@ -128,7 +134,7 @@ void NMConfiguration::_setupInitMagneticMoments(double mxInit, double myInit, do
     }
     */
 
-    if (!simFlags->isFm) {
+    if (!simFlags->isFerromagnetic) {
         for (int i = 0; i < simParams->systemTotalSpins; i++) {
             if (i % 2 == 1)
                 mzInitCond[i] *= -1.0;
@@ -145,7 +151,7 @@ void NMConfiguration::_setupInitMagneticMoments(double mxInit, double myInit, do
     simStates->my0.push_back(0);
     simStates->mz0.push_back(0);
 }
-void NMConfiguration::_testShockwaveInitConditions() {
+void SolversConfiguration::_testShockwaveInitConditions() {
 
     if (simFlags->hasShockwave) {
         simParams->shockwaveStepsize = (simParams->shockwaveMax - simParams->shockwaveInitialStrength) / simParams->shockwaveGradientTime;
@@ -160,7 +166,7 @@ void NMConfiguration::_testShockwaveInitConditions() {
     }
 }
 
-void NMConfiguration::_generateMultilayerAbsorbingRegions(int numSpinsAbsorbingRegion, double gilbertSpinChain,
+void SolversConfiguration::_generateMultilayerAbsorbingRegions(int numSpinsAbsorbingRegion, double gilbertSpinChain,
                                                           double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter) {
 
 
@@ -192,7 +198,7 @@ void NMConfiguration::_generateMultilayerAbsorbingRegions(int numSpinsAbsorbingR
         //PrintVector(gilbertVectorMulti[i], false);
     }
 }
-void NMConfiguration::_setupInitMultilayerMagneticMoments(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
+void SolversConfiguration::_setupInitMultilayerMagneticMoments(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
                                                           int layer, double mxInit, double myInit, double mzInit) {
 
     // mxInitCond[0] = mxInit; // Only perturb initial spin
@@ -215,7 +221,7 @@ void NMConfiguration::_setupInitMultilayerMagneticMoments(std::vector<std::vecto
 
 }
 
-std::vector<std::vector<std::vector<double>>> NMConfiguration::InitialiseNestedVectors(int& totalLayer, double& mxInit, double& myInit, double& mzInit) {
+std::vector<std::vector<std::vector<double>>> SolversConfiguration::InitialiseNestedVectors(int& totalLayer, double& mxInit, double& myInit, double& mzInit) {
 
     // Initialise mapping
     std::map<std::string, std::vector<std::vector<std::vector<double>>>> mTermsMapping;
@@ -240,7 +246,7 @@ std::vector<std::vector<std::vector<double>>> NMConfiguration::InitialiseNestedV
 
     return mTermsNested;
 }
-std::vector<std::vector<std::vector<double>>> NMConfiguration::initializeNestedNestedVector(int numLayers, bool includeEnd) {
+std::vector<std::vector<std::vector<double>>> SolversConfiguration::initializeNestedNestedVector(int numLayers, bool includeEnd) {
     /* Legacy code, not used in current implementation. Example implementation is below
 
     std::map<std::string, std::vector<std::vector<std::vector<double>>>> mValsNested3;

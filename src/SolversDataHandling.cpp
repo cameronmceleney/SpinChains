@@ -2,36 +2,35 @@
 // Created by Cameron McEleney on 31/10/2023.
 //
 
-#include "../include/NMDataHandling.h"
+// C++ Standard Library
+#include "../include/SolversDataHandling.h"
 
-NMDataHandling::NMDataHandling(std::shared_ptr<SimulationParameters> paramsData, 
+SolversDataHandling::SolversDataHandling(std::shared_ptr<SimulationParameters> sharedSimParams,
                                std::shared_ptr<SimulationStates> sharedSimStates, 
-                               std::shared_ptr<SimulationFlags> sharedSimFlags)  : 
-                                   
-   SolversSuperClass(std::move(paramsData), std::move(sharedSimStates), std::move(sharedSimFlags)) {} 
+                               std::shared_ptr<SimulationFlags> sharedSimFlags)
 
-void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
-    /**
-     * Write all non-data information to the output file.
-     */
+    : SolversSuperClass(std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {}
+
+void SolversDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata) {
+
     if (is_metadata) {
         outputFileName << "Key Data\n\n";
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using magDynamics: [" << simFlags->useLLG << "]\t\t\t\tUsing Shockwave: [" << simFlags->hasShockwave << "]\t\tDrive from LHS: [" << simFlags->lhsDrive <<
-                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << simFlags->hasStaticDrive << "]\n";
+        outputFileName << "Using magDynamics: [" << simFlags->shouldUseLLG << "]\t\t\t\tUsing Shockwave: [" << simFlags->hasShockwave << "]\t\tDrive from LHS: [" << simFlags->shouldDriveLHS <<
+                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << simFlags->isDriveStatic << "]\n";
 
         outputFileName << "\n";
 
         outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t" << "Dynamic Bias Field (H_D1): " << simParams->dynamicBiasField << " T\n" <<
                        "Dynamic Bias Field Scale Factor: " << simParams->shockwaveInitialStrength << "\t\t" << "Second Dynamic Bias Field (H_D2): " << simParams->shockwaveMax << " T\n" <<
-                       "Driving Frequency (f): " << simParams->drivingFreq << "Hz\t\t""Driving Region Start Site: " << simParams->drivingRegionLhs - simParams->numSpinsDamped << "\n" <<
-                       "Driving Region End Site: " << simParams->drivingRegionRhs - simParams->numSpinsDamped << " \t\t\t" << "Driving Region Width: " << simParams->drivingRegionWidth << " \n" <<
+                       "Driving Frequency (f): " << simParams->drivingFreq << "Hz\t\t""Driving Region Start Site: " << simParams->drivingRegionLhs - simParams->numSpinsInABC << "\n" <<
+                       "Driving Region End Site: " << simParams->drivingRegionRhs - simParams->numSpinsInABC << " \t\t\t" << "Driving Region Width: " << simParams->drivingRegionWidth << " \n" <<
                        "Max. Sim. Time: " << simParams->maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): " << simParams->exchangeEnergyMin << " T\n" <<
                        "Max. Exchange Val (J): " << simParams->exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: " << simParams->iterationEnd << "\n" <<
                        "No. DataPoints: " << simParams->numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: " << simParams->numSpinsInChain << "\n" <<
-                       "No. Damped Spins: " << simParams->numSpinsDamped << "per side\t\t\t" << "No. Total Spins: " << simParams->systemTotalSpins << " \n" <<
+                       "No. Damped Spins: " << simParams->numSpinsInABC << "per side\t\t\t" << "No. Total Spins: " << simParams->systemTotalSpins << " \n" <<
                        "simParams->stepsize (h): " << simParams->stepsize << "\t\t\t\t" << "Gilbert Damping Factor: " << simParams->gilbertDamping << "\n" <<
                        "Gyromagnetic Ratio (2Pi*Y): " << simParams->gyroMagConst << "\t\t""Shockwave Gradient Time: " << simParams->iterStartShock << "s\n" <<
                        "Shockwave Application Time: " << simParams->shockwaveGradientTime * simParams->stepsize << "s\n" <<
@@ -45,8 +44,8 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using magDynamics," << simFlags->useLLG << ",Using Shockwave," << simFlags->hasShockwave << ",Drive from LHS," << simFlags->lhsDrive <<
-                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->hasStaticDrive << "\n";
+        outputFileName << "Using magDynamics," << simFlags->shouldUseLLG << ",Using Shockwave," << simFlags->hasShockwave << ",Drive from LHS," << simFlags->shouldDriveLHS <<
+                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->isDriveStatic << "\n";
 
         outputFileName << "\n";
 
@@ -58,9 +57,9 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
                           "\n";
 
         outputFileName << GV.GetStaticBiasField() << ", " << simParams->dynamicBiasField << ", " << simParams->shockwaveInitialStrength << ", " << simParams->shockwaveMax << ", "
-                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsDamped << ", " << simParams->drivingRegionRhs - simParams->numSpinsDamped << ", " << simParams->drivingRegionWidth << ", "
+                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsInABC << ", " << simParams->drivingRegionRhs - simParams->numSpinsInABC << ", " << simParams->drivingRegionWidth << ", "
                        << simParams->maxSimTime << ", " << simParams->exchangeEnergyMin << ", " << simParams->exchangeEnergyMax << ", " << simParams->iterationEnd << ", " << simParams->numberOfDataPoints << ", "
-                       << simParams->numSpinsInChain << ", " << simParams->numSpinsDamped << ", " << simParams->systemTotalSpins << ", " << simParams->stepsize << ", " << simParams->gilbertDamping << ", " << simParams->gyroMagConst << ", "
+                       << simParams->numSpinsInChain << ", " << simParams->numSpinsInABC << ", " << simParams->systemTotalSpins << ", " << simParams->stepsize << ", " << simParams->gilbertDamping << ", " << simParams->gyroMagConst << ", "
                        << simParams->iterStartShock << ", " << simParams->shockwaveGradientTime * simParams->stepsize
                        << "\n";
 
@@ -81,12 +80,12 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
     std::cout << "\n";
 }
-void NMDataHandling::CreateColumnHeaders(std::ofstream &outputFileName) {
+void SolversDataHandling::CreateColumnHeaders(std::ofstream &outputFileName) {
     /**
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
      */
-    if (simFlags->printAllData or simFlags->printFixedLines) {
+    if (simFlags->shouldPrintAllData or simFlags->shouldPrintDiscreteTimes) {
         // Print column heading for every spin simulated.
         outputFileName << "Time [s], ";
         for (int i = 1; i <= simParams->systemTotalSpins; i++) {
@@ -94,7 +93,7 @@ void NMDataHandling::CreateColumnHeaders(std::ofstream &outputFileName) {
         }
         outputFileName << std::endl;
 
-    } else if (simFlags->printFixedSites) {
+    } else if (simFlags->shouldPrintDiscreteSites) {
 
         outputFileName << "Time";
         for (int & fixed_out_val : simParams->fixedOutputSites)
@@ -109,11 +108,11 @@ void NMDataHandling::CreateColumnHeaders(std::ofstream &outputFileName) {
 
     }
 }
-void NMDataHandling::InformUserOfCodeType(const std::string& nameNumericalMethod) {
+void SolversDataHandling::InformUserOfCodeType(const std::string& nameNumericalMethod) {
     /**
      * Informs the user of the code type they are running, including: solver type; special modules.
      */
-    if (simFlags->useLLG)
+    if (simFlags->shouldUseLLG)
         std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (LLG) code";
     else
         std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (Torque) code";
@@ -124,7 +123,7 @@ void NMDataHandling::InformUserOfCodeType(const std::string& nameNumericalMethod
         std::cout << ".\n";
 
 }
-void NMDataHandling::PrintVector(std::vector<double> &vectorToPrint, bool shouldExitAfterPrint) {
+void SolversDataHandling::PrintVector(std::vector<double> &vectorToPrint, bool shouldExitAfterPrint) {
 
     std::cout << "\n\n";
 
@@ -140,7 +139,7 @@ void NMDataHandling::PrintVector(std::vector<double> &vectorToPrint, bool should
     if (shouldExitAfterPrint)
         exit(0);
 }
-void NMDataHandling::PrintNestedNestedVector(std::vector<std::vector<std::vector<double>>> nestedNestedVector){
+void SolversDataHandling::PrintNestedNestedVector(std::vector<std::vector<std::vector<double>>> nestedNestedVector){
         // Print the contents of nestedNestedVector1
     std::cout << "{";
     for (size_t i = 0; i < nestedNestedVector.size(); ++i) {
@@ -166,12 +165,12 @@ void NMDataHandling::PrintNestedNestedVector(std::vector<std::vector<std::vector
     }
     std::cout << "}" << std::endl;
 }
-void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
+void SolversDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<double> &arrayToWrite, int &iteration) {
     std::cout.precision(6);
     std::cout << std::scientific;
 
     if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
-        if (simFlags->printFixedLines) {
+        if (simFlags->shouldPrintDiscreteTimes) {
             for (int i = 0; i <= simParams->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
@@ -190,7 +189,7 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
             outputFileName << std::endl;
 
             return;
-        } else if (simFlags->printFixedSites) {
+        } else if (simFlags->shouldPrintDiscreteSites) {
             /*outputFileName << (iteration * simParams->stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
@@ -206,7 +205,7 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
         }
     }
 
-    if (simFlags->printAllData) {
+    if (simFlags->shouldPrintAllData) {
         for (int i = 0; i <= simParams->systemTotalSpins; i++) {
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if (i == 0)
@@ -222,7 +221,7 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
     }
 
     /*
-    if (simFlags->printFixedLines) {
+    if (simFlags->shouldPrintDiscreteTimes) {
         // iteration >= static_cast<int>(simParams->iterationEnd / 2.0) &&
         if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
             //if (iteration == simParams->iterationEnd) {
@@ -244,7 +243,7 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
             outputFileName << std::endl;
         }
     } else {
-        if (simFlags->printAllData) {
+        if (simFlags->shouldPrintAllData) {
             for (int i = 0; i <= simParams->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
@@ -257,7 +256,7 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
             if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
-                if (simFlags->printFixedSites) {
+                if (simFlags->shouldPrintDiscreteSites) {
 
                     outputFileName << (iteration * simParams->stepsize) << ","
                                    << arrayToWrite[simParams->drivingRegionLhs] << ","
@@ -288,7 +287,7 @@ void NMDataHandling::SaveDataToFile(std::ofstream &outputFileName, std::vector<d
         }
     } */
 }
-void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration) {
+void SolversDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration) {
     std::cout.precision(6);
     std::cout << std::scientific;
 
@@ -301,7 +300,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
     }
 
     if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
-        if (simFlags->printFixedLines) {
+        if (simFlags->shouldPrintDiscreteTimes) {
             for (int i = 0; i <= simParams->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
@@ -320,7 +319,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl;
 
             return;
-        } else if (simFlags->printFixedSites) {
+        } else if (simFlags->shouldPrintDiscreteSites) {
             /*outputFileName << (iteration * simParams->stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
@@ -336,7 +335,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
         }
     }
 
-    if (simFlags->printAllData) {
+    if (simFlags->shouldPrintAllData) {
         for (int i = 0; i <= simParams->systemTotalSpins; i++) {
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if (i == 0)
@@ -352,7 +351,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
     }
 
     /*
-    if (simFlags->printFixedLines) {
+    if (simFlags->shouldPrintDiscreteTimes) {
         // iteration >= static_cast<int>(simParams->iterationEnd / 2.0) &&
         if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
             //if (iteration == simParams->iterationEnd) {
@@ -374,7 +373,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl;
         }
     } else {
-        if (simFlags->printAllData) {
+        if (simFlags->shouldPrintAllData) {
             for (int i = 0; i <= simParams->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
@@ -387,7 +386,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
             if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
-                if (simFlags->printFixedSites) {
+                if (simFlags->shouldPrintDiscreteSites) {
 
                     outputFileName << (iteration * simParams->stepsize) << ","
                                    << arrayToWrite[simParams->drivingRegionLhs] << ","
@@ -419,7 +418,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
     } */
 }
 
-void NMDataHandling::CreateMetadata(bool print_end_time) {
+void SolversDataHandling::CreateMetadata(bool print_end_time) {
 
     std::string file_name = "simulation_metadata.txt";
 
@@ -439,7 +438,7 @@ void NMDataHandling::CreateMetadata(bool print_end_time) {
     }
 }
 
-void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata, int layer) {
+void SolversDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string methodUsed, bool is_metadata, int layer) {
     /**
      * Write all non-data information to the output file.
      */
@@ -448,19 +447,19 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using magDynamics: [" << simFlags->useLLG << "]\t\t\t\tUsing Shockwave: [" << simFlags->hasShockwave << "]\t\tDrive from LHS: [" << simFlags->lhsDrive <<
-                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << simFlags->hasStaticDrive << "]\n";
+        outputFileName << "Using magDynamics: [" << simFlags->shouldUseLLG << "]\t\t\t\tUsing Shockwave: [" << simFlags->hasShockwave << "]\t\tDrive from LHS: [" << simFlags->shouldDriveLHS <<
+                       "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: [" << simFlags->isDriveStatic << "]\n";
 
         outputFileName << "\n";
 
         outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t" << "Dynamic Bias Field (H_D1): " << simParams->dynamicBiasField << " T\n" <<
                        "Dynamic Bias Field Scale Factor: " << simParams->shockwaveInitialStrength << "\t\t" << "Second Dynamic Bias Field (H_D2): " << simParams->shockwaveMax << " T\n" <<
-                       "Driving Frequency (f): " << simParams->drivingFreq << "Hz\t\t""Driving Region Start Site: " << simParams->drivingRegionLhs - simParams->numSpinsDamped << "\n" <<
-                       "Driving Region End Site: " << simParams->drivingRegionRhs - simParams->numSpinsDamped << " \t\t\t" << "Driving Region Width: " << simParams->drivingRegionWidth << " \n" <<
+                       "Driving Frequency (f): " << simParams->drivingFreq << "Hz\t\t""Driving Region Start Site: " << simParams->drivingRegionLhs - simParams->numSpinsInABC << "\n" <<
+                       "Driving Region End Site: " << simParams->drivingRegionRhs - simParams->numSpinsInABC << " \t\t\t" << "Driving Region Width: " << simParams->drivingRegionWidth << " \n" <<
                        "Max. Sim. Time: " << simParams->maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): " << simParams->exchangeEnergyMin << " T\n" <<
                        "Max. Exchange Val (J): " << simParams->exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: " << simParams->iterationEnd << "\n" <<
                        "No. DataPoints: " << simParams->numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: " << simStates->layerSpinsInChain[layer] << "\n" <<
-                       "No. Damped Spins: " << simParams->numSpinsDamped << "per side\t\t\t" << "No. Total Spins: " << simStates->layerTotalSpins[layer] << " \n" <<
+                       "No. Damped Spins: " << simParams->numSpinsInABC << "per side\t\t\t" << "No. Total Spins: " << simStates->layerTotalSpins[layer] << " \n" <<
                        "simParams->stepsize (h): " << simParams->stepsize << "\t\t\t\t" << "Gilbert Damping Factor: " << simParams->gilbertDamping << "\n" <<
                        "Gyromagnetic Ratio (2Pi*Y): " << simParams->gyroMagConst << "\t\t""Shockwave Gradient Time: " << simParams->iterStartShock << "s\n" <<
                        "Shockwave Application Time: " << simParams->shockwaveGradientTime * simParams->stepsize << "s\n" <<
@@ -474,8 +473,8 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
-        outputFileName << "Using magDynamics," << simFlags->useLLG << ",Using Shockwave," << simFlags->hasShockwave << ",Drive from LHS," << simFlags->lhsDrive <<
-                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->hasStaticDrive << "\n";
+        outputFileName << "Using magDynamics," << simFlags->shouldUseLLG << ",Using Shockwave," << simFlags->hasShockwave << ",Drive from LHS," << simFlags->shouldDriveLHS <<
+                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->isDriveStatic << "\n";
 
         outputFileName << "\n";
 
@@ -487,9 +486,9 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
                           "\n";
 
         outputFileName << GV.GetStaticBiasField() << ", " << simParams->dynamicBiasField << ", " << simParams->shockwaveInitialStrength << ", " << simParams->shockwaveMax << ", "
-                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsDamped << ", " << simParams->drivingRegionRhs - simParams->numSpinsDamped << ", " << simParams->drivingRegionWidth << ", "
+                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsInABC << ", " << simParams->drivingRegionRhs - simParams->numSpinsInABC << ", " << simParams->drivingRegionWidth << ", "
                        << simParams->maxSimTime << ", " << simParams->exchangeEnergyMin << ", " << simParams->exchangeEnergyMax << ", " << simParams->iterationEnd << ", " << simParams->numberOfDataPoints << ", "
-                       << simStates->layerSpinsInChain[layer] << ", " << simParams->numSpinsDamped << ", " << simStates->layerTotalSpins[layer] << ", " << simParams->stepsize << ", " << simParams->gilbertDamping << ", " << simParams->gyroMagConst << ", "
+                       << simStates->layerSpinsInChain[layer] << ", " << simParams->numSpinsInABC << ", " << simStates->layerTotalSpins[layer] << ", " << simParams->stepsize << ", " << simParams->gilbertDamping << ", " << simParams->gyroMagConst << ", "
                        << simParams->iterStartShock << ", " << simParams->shockwaveGradientTime * simParams->stepsize
                        << "\n";
 
@@ -510,12 +509,12 @@ void NMDataHandling::CreateFileHeader(std::ofstream &outputFileName, std::string
 
     std::cout << "\n";
 }
-void NMDataHandling::CreateColumnHeaders(std::ofstream &outputFileName, int& layer) {
+void SolversDataHandling::CreateColumnHeaders(std::ofstream &outputFileName, int& layer) {
     /**
      * Creates the column headers for each spin site simulated. This code can change often, so compartmentalising it in
      * a separate function is necessary to reduce bugs.
      */
-    if (simFlags->printAllData or simFlags->printFixedLines) {
+    if (simFlags->shouldPrintAllData or simFlags->shouldPrintDiscreteTimes) {
         // Print column heading for every spin simulated.
         outputFileName << "Time [s], ";
         for (int i = 1; i <= simStates->layerTotalSpins[layer]; i++) {
@@ -523,7 +522,7 @@ void NMDataHandling::CreateColumnHeaders(std::ofstream &outputFileName, int& lay
         }
         outputFileName << std::endl;
 
-    } else if (simFlags->printFixedSites) {
+    } else if (simFlags->shouldPrintDiscreteSites) {
 
         outputFileName << "Time";
         for (int & fixed_out_val : simParams->fixedOutputSites)
@@ -538,7 +537,7 @@ void NMDataHandling::CreateColumnHeaders(std::ofstream &outputFileName, int& lay
 
     }
 }
-std::vector<double> NMDataHandling::flattenNestedVector(const std::vector<std::vector<double>>& nestedVector) {
+std::vector<double> SolversDataHandling::flattenNestedVector(const std::vector<std::vector<double>>& nestedVector) {
     std::vector<double> flattenedVector;
 
     for (const auto& innerVector : nestedVector) {
@@ -547,7 +546,7 @@ std::vector<double> NMDataHandling::flattenNestedVector(const std::vector<std::v
 
     return flattenedVector;
 }
-void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration, int layer) {
+void SolversDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std::vector<std::vector<double>> &nestedArrayToWrite, int &iteration, int layer) {
     std::cout.precision(6);
     std::cout << std::scientific;
 
@@ -560,7 +559,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
     }
 
     if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
-        if (simFlags->printFixedLines) {
+        if (simFlags->shouldPrintDiscreteTimes) {
             for (int i = 0; i <= simStates->layerTotalSpins[layer]; i++) {
                 // Steps through vectors containing all mag. moment components and saves to files
                 if (i == 0)
@@ -579,7 +578,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl;
 
             return;
-        } else if (simFlags->printFixedSites) {
+        } else if (simFlags->shouldPrintDiscreteSites) {
             /*outputFileName << (iteration * simParams->stepsize) << ","
                << arrayToWrite[14000] << ","
                << arrayToWrite[16000] << ","
@@ -595,7 +594,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
         }
     }
 
-    if (simFlags->printAllData) {
+    if (simFlags->shouldPrintAllData) {
         for (int i = 0; i <= simStates->layerTotalSpins[layer]; i++) {
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if (i == 0)
@@ -611,7 +610,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
     }
 
     /*
-    if (simFlags->printFixedLines) {
+    if (simFlags->shouldPrintDiscreteTimes) {
         // iteration >= static_cast<int>(simParams->iterationEnd / 2.0) &&
         if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
             //if (iteration == simParams->iterationEnd) {
@@ -633,7 +632,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl;
         }
     } else {
-        if (simFlags->printAllData) {
+        if (simFlags->shouldPrintAllData) {
             for (int i = 0; i <= simParams->systemTotalSpins; i++) {
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
@@ -646,7 +645,7 @@ void NMDataHandling::SaveDataToFileMultilayer(std::ofstream &outputFileName, std
             outputFileName << std::endl; // Take new line after current row is finished being written.
         } else {
             if (iteration % (simParams->iterationEnd / simParams->numberOfDataPoints) == 0) {
-                if (simFlags->printFixedSites) {
+                if (simFlags->shouldPrintDiscreteSites) {
 
                     outputFileName << (iteration * simParams->stepsize) << ","
                                    << arrayToWrite[simParams->drivingRegionLhs] << ","

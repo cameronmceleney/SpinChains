@@ -1,3 +1,4 @@
+// Corresponding header
 #include "SpinChainEigenSolverClass.h"
 
 void SpinChainEigenSolverClass::CalculateEigenfrequencies(bool hasAngularFrequency=false) {
