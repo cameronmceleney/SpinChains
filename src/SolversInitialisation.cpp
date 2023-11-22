@@ -33,6 +33,7 @@ void SolversInitialisation::_setSimulationFlags() {
     // Magnetic Interaction Flags
     simFlags->hasShockwave = false;
     simFlags->hasDipolar = false;
+    simFlags->hasDMI = true;
     simFlags->hasZeeman = true;
     simFlags->hasDemagIntense = false;
     simFlags->hasDemagFFT = false;
@@ -105,6 +106,7 @@ void SolversInitialisation::_generateRemainingParameters() {
     simFlags->isFerromagnetic = GV.GetIsFerromagnetic();
     simParams->exchangeEnergyMin = GV.GetExchangeMinVal();
     simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
+    simParams->dmiConstant = GV.GetDMIConstant();
 
     // Computations based upon other inputs
     simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;

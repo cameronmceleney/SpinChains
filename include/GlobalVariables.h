@@ -14,6 +14,8 @@ class GlobalVariablesClass{
 private:
 //  Dtype               Member Name                             // Comment
     double              _anisotropyField;                       // Anisotropy field [T]
+    double              _dmiConstant;
+
     std::string         _currentTime;
     std::string         _dateToday;                             // Contains today's date.
     double              _exchangeMaxVal = -3.141592;            // Maximum exchange field constant value (J_min).
@@ -89,6 +91,11 @@ public:
      * @param chosenNumericalMethod Can be either "RK2", "RK2c", or "RK2p"
      */
     void                SetNumericalMethod(std::string chosenNumericalMethod);
+
+    double GetDMIConstant();
+
+    void SetDMIConstant( double dmiConstant );
+
 };
 
 

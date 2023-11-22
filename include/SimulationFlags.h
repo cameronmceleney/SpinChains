@@ -31,6 +31,7 @@ public:
     bool                shouldUseSLLG;
 
     bool                hasDipolar;
+    bool                hasDMI;
     bool                hasZeeman;
     bool                hasDemagIntense;                            // todo doesn't work
     bool                hasDemagFFT;                                // todo doesn't work

@@ -29,6 +29,7 @@ public:
     double              dynamicBiasField;                         // Driving field amplitude [T] (caution: papers often give in [mT]).
     int                 forceStopAtIteration;                     // Legacy breakpoint variable. Set as a -ve value to deactivate.
     double              dipoleConstant;                           // Scaling factor which is constant across dipolar interaction calculations.
+    double              dmiConstant;
 
     double              gilbertDamping;                           // Gilbert damping factor for main chain.
     double              gilbertABCInner;                          // The lower Gilbert damping factor for the Absorbing boundary conditions (ABCs) at the point where the chain meets the ABC.

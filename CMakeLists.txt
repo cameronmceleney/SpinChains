@@ -83,6 +83,8 @@ set(SOLVER_CLASS_COMPONENTS
         src/DipolarFields.cpp include/DipolarFields.h
         src/EffectiveFields.cpp include/EffectiveFields.h
         src/MagnetisationDynamics.cpp include/MagnetisationDynamics.h
+        src/DzyaloshinskiiMoriyaInteraction.cpp
+        include/DzyaloshinskiiMoriyaInteraction.h
 )
 
 # Must be before add_executable()

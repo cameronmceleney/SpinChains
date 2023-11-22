@@ -173,3 +173,10 @@ bool GlobalVariablesClass::GetShouldFindEigenvalues() {
 void GlobalVariablesClass::SetShouldFindEigenvalues(bool shouldFindEigenvalues) {
     _shouldFindEigenvalues = shouldFindEigenvalues;
 }
+
+double GlobalVariablesClass::GetDMIConstant() {
+    return _dmiConstant;
+}
+void GlobalVariablesClass::SetDMIConstant(double dmiConstant) {
+    _dmiConstant = dmiConstant;
+}

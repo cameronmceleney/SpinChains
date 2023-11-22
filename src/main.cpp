@@ -26,6 +26,7 @@ int main() {
     GV.SetExchangeMinVal(43.5);
     GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2);
+    GV.SetDMIConstant(10.0);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -39,7 +40,7 @@ int main() {
 
     GV.SetFilePath("windows");
 
-    GV.SetNumericalMethod("RK2p");
+    GV.SetNumericalMethod("RK2c");
 
     // I keep forgetting to check the exchanges, hence this warning
     if (GV.GetIsExchangeUniform())

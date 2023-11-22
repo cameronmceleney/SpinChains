@@ -28,6 +28,7 @@
 
 // C++ User Libraries (Class' Components)
 #include "DemagnetisationFields.h"
+#include "DzyaloshinskiiMoriyaInteraction.h"
 #include "EffectiveFields.h"
 #include "MagnetisationDynamics.h"
 #include "DipolarFields.h"
@@ -35,6 +36,7 @@
 class SolversImplementation :  public SolversSuperClass, public iSolversImplementation {
 private:
     DemagnetisationFields demagField;
+    DzyaloshinskiiMoriyaInteraction dmInteraction;
     EffectiveFields effectiveField;
     MagnetisationDynamics llg;
     DipolarFields dipolarField;
@@ -61,11 +63,15 @@ private:
     /**
      * Description missing
      */
-    void                RK2StageMultithreaded(const std::vector<double>& mxIn, const std::vector<double>& myIn, const std::vector<double>& mzIn,
-                                              std::vector<double>& mxOut, std::vector<double>& myOut, std::vector<double>& mzOut,
-                                              std::vector<double>& demagX, std::vector<double>& demagY, std::vector<double>& demagZ,
-                                              std::vector<double>& dipoleX, std::vector<double>& dipoleY, std::vector<double>& dipoleZ,
-                                              double& currentTime, double& stepsize, int& iteration, std::string rkStage);
+    void RK2StageMultithreaded(const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                               const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                               std::vector<double> &myOut, std::vector<double> &mzOut,
+                               std::vector<double> &demagX, std::vector<double> &demagY,
+                               std::vector<double> &demagZ, std::vector<double> &dipoleX,
+                               std::vector<double> &dipoleY, std::vector<double> &dipoleZ,
+                               std::vector<double> &dmiX, std::vector<double> &dmiY,
+                               std::vector<double> &dmiZ, double &currentTime, double &stepsize,
+                               int &iteration, std::string rkStage);
 public:
     SolversImplementation(std::shared_ptr<SimulationParameters> paramsData,
               std::shared_ptr<SimulationStates> sharedSimStates,
