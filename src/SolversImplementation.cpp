@@ -62,6 +62,7 @@ void SolversImplementation::SolveRK2Classic() {
     std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simParams, simStates,
                                                                                              simFlags);
     // Only uses a single spin chain to solve the RK2 midpoint method.
+    CustomTimer methodTimer;
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -79,6 +80,9 @@ void SolversImplementation::SolveRK2Classic() {
     }
 
     progressbar bar(100);
+
+    methodTimer.setName("RK2 Sequential (Classic)");
+    methodTimer.start();
 
     std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(
             GV.GetNumSpins() + 2, 0.0);
@@ -331,6 +335,7 @@ void SolversImplementation::SolveRK2Classic() {
 
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
+    methodTimer.stop();
 
     if ( GV.GetEmailWhenCompleted()) {
         childNMData->CreateMetadata(true);
@@ -341,12 +346,14 @@ void SolversImplementation::SolveRK2Classic() {
 
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+    methodTimer.print();
 }
 
 void SolversImplementation::SolveRK2() {
     std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simParams, simStates,
                                                                                              simFlags);
     // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
+    CustomTimer rk2Timer;
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -368,6 +375,9 @@ void SolversImplementation::SolveRK2() {
     }
 
     progressbar bar(100);
+
+    rk2Timer.setName("RK2 Sequential (Layers)");
+    rk2Timer.start();
 
     std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(
             GV.GetNumSpins() + 2, 0.0);
@@ -563,6 +573,8 @@ void SolversImplementation::SolveRK2() {
     // Ensures files are closed; sometimes are left open if the writing process above fails
     mxRK2File.close();
 
+    rk2Timer.stop();
+
     if ( GV.GetEmailWhenCompleted()) {
         childNMData->CreateMetadata(true);
     }
@@ -576,9 +588,11 @@ void SolversImplementation::SolveRK2() {
 
     // Filename can be copy/pasted from C++ console to Python function's console.
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+    rk2Timer.print();
 }
 
 void SolversImplementation::RK2Parallel() {
+    CustomTimer parallelTimer;
     // Only works for a 1D spin chain
     std::shared_ptr<SolversDataHandling> solverOutputs = std::make_shared<SolversDataHandling>(simParams, simStates,
                                                                                                simFlags);
@@ -598,16 +612,12 @@ void SolversImplementation::RK2Parallel() {
 
     progressbar bar(100);
 
-    // Faster to declare memory and then read/write repeatedly
+    parallelTimer.setName("RK2 Midpoint (Parallel)");
+    parallelTimer.start();
+
     // TODO. As this is all multi-threaded, having such larger vectors is excessive. Change methods to work by element (so that onl mx/my/mz are large in memory)
-    std::vector<double> demagX(simParams->systemTotalSpins + 2, 0.0), demagY(simParams->systemTotalSpins + 2,
-                                                                             0.0), demagZ(
-            simParams->systemTotalSpins + 2, 0.0);
-    std::vector<double> dipoleX(simParams->systemTotalSpins + 2, 0.0), dipoleY(simParams->systemTotalSpins + 2,
-                                                                               0.0), dipoleZ(
-            simParams->systemTotalSpins + 2, 0.0);
-    std::vector<double> dmiX(simParams->systemTotalSpins + 2, 0.0), dmiY(simParams->systemTotalSpins + 2, 0.0), dmiZ(
-            simParams->systemTotalSpins + 2, 0.0);
+    // Only create vectors once to reuse memory. Only assign memory if flags are true. Faster to declare loop-wide vectors than define them in each loop iteration.
+    _resizeClassContainers();
 
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
@@ -619,37 +629,25 @@ void SolversImplementation::RK2Parallel() {
         double t0 = simParams->totalTime;
 
         // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
-        std::vector<double> mx1(simParams->systemTotalSpins + 2, 0), my1(simParams->systemTotalSpins + 2, 0), mz1(
-                simParams->systemTotalSpins + 2, 0);
-        RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1, my1, mz1,
-                              demagX, demagY, demagZ, dipoleX, dipoleY, dipoleZ, dmiX, dmiY,
-                              dmiZ, t0, simParams->stepsizeHalf, iteration, "1");
+        RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
+                              demagXp, demagYp, demagZp, dipoleXp, dipoleYp, dipoleZp, dmiXp, dmiYp,
+                              dmiZp, t0, simParams->stepsizeHalf, iteration, "1");
 
         // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
-        std::vector<double> mx2(simParams->systemTotalSpins + 2, 0), my2(simParams->systemTotalSpins + 2, 0), mz2(
-                simParams->systemTotalSpins + 2, 0);
-        RK2StageMultithreaded(mx1, my1, mz1, mx2, my2, mz2,
-                              demagX, demagY, demagZ, dipoleX, dipoleY, dipoleZ, dmiX, dmiY,
-                              dmiZ, t0, simParams->stepsize, iteration, "2");
+        RK2StageMultithreaded(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
+                              demagXp, demagYp, demagZp, dipoleXp, dipoleYp, dipoleZp, dmiXp, dmiYp,
+                              dmiZp, t0, simParams->stepsize, iteration, "2");
 
-        // Everything below heere is part of the method, but not the RK2 stage loops calculations.
+        // Everything below here is part of the method, but not the RK2 stage loops calculations.
 
-        simStates->mx0.clear();
-        simStates->my0.clear();
-        simStates->mz0.clear();
-        mx1.clear();
-        my1.clear();
-        mz1.clear();
+        // Do not clear mx0/mx1/mx2 (etc) if they are never resized and only to be refilled.
 
-        solverOutputs->SaveDataToFile(mxOutputFile, mx2, iteration);
+        solverOutputs->SaveDataToFile(mxOutputFile, mx2p, iteration);
 
         // Set final value of current iteration to be starting value of next iteration.
-        simStates->mx0 = mx2;
-        simStates->my0 = my2;
-        simStates->mz0 = mz2;
-        mx2.clear();
-        my2.clear();
-        mz2.clear();
+        simStates->mx0 = mx2p;
+        simStates->my0 = my2p;
+        simStates->mz0 = mz2p;
 
         if ( iteration == simParams->forceStopAtIteration ) {
             std::cout << "Force stop at iteration #" << iteration << std::endl;
@@ -661,6 +659,8 @@ void SolversImplementation::RK2Parallel() {
 
     mxOutputFile.close();
 
+    parallelTimer.stop();
+
     if ( GV.GetEmailWhenCompleted()) { solverOutputs->CreateMetadata(true); }
 
     if ( simFlags->shouldTrackMagneticMomentNorm ) {
@@ -668,6 +668,7 @@ void SolversImplementation::RK2Parallel() {
     }
 
     std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+    parallelTimer.print();
 }
 
 void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mxIn, const std::vector<double> &myIn,
@@ -681,12 +682,15 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                                                    int &iteration, std::string rkStage ) {
 
     bool useParallelInvoke = false;  // Mainly for testing purposes at the moment
+    bool useParallel = true;
 
     if ( simFlags->hasDemagIntense )
         demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, mxIn, myIn, mzIn);
 
+
     std::vector<double> mxInMu, myInMu, mzInMu;
     if ( simFlags->hasDipolar ) {
+        // Required step to convert the magnetic moment components to the magnetic field components
         mxInMu = mxIn;
         myInMu = myIn;
         mzInMu = mzIn;
@@ -698,19 +702,30 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
     }
 
     if ( simFlags->hasDMI )
-        dmInteraction.calculateOneDimension(mxIn, myIn, mzIn, dmiX, dmiY, dmiZ);
-
+        dmInteraction.calculateOneDimension(mxIn, myIn, mzIn, dmiX, dmiY, dmiZ, useParallel);
 
     // Use below line to only use one thread to compare method's results to sequential method
     // tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
     tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins),
                       [&]( const tbb::blocked_range<int> r ) {
                           for ( int site = r.begin(); site <= r.end(); site++ ) {
+                              /*
+                               * All declarations of overwritten variables are placed here as 'local' to ensure
+                               * that each thread has its own definition; else variables are not threadsafe
+                               */
+
                               // Relative to the current site (site) we have siteLHS and siteRHS
                               int siteLHSLocal = site - 1, siteRHSLocal = site + 1;
+
+                              // All need to be defined as default cases in case their flags aren't called to overwrite
+                              // TODO. Turn each line into an array (or perhaps them all into a struct?) - cleaner to pass these than many variables
                               double dipoleXLocal = 0.0, dipoleYLocal = 0.0, dipoleZLocal = 0.0;
                               double demagXLocal = 0.0, demagYLocal = 0.0, demagZLocal = 0.0;
                               double dmiXLocal = 0.0, dmiYLocal = 0.0, dmiZLocal = 0.0;
+
+                              // Will always be initialised so only need to declare here
+                              double hxKLocal, hyKLocal, hzKLocal;
+                              double mxKLocal, myKLocal, mzKLocal;
 
                               if ( simFlags->hasDipolar )
                                   dipolarField.DipolarInteractionClassicThreaded(site, mxInMu, myInMu, mzInMu,
@@ -718,8 +733,6 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                                                                                  dipoleZLocal);
 
 
-                              double hxKLocal, hyKLocal, hzKLocal;
-                              double mxKLocal, myKLocal, mzKLocal;
                               if ( useParallelInvoke ) {
                                   tbb::parallel_invoke(
                                           // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
@@ -796,38 +809,7 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                               myOut[site] = simStates->my0[site] + stepsize * myKLocal;
                               mzOut[site] = simStates->mz0[site] + stepsize * mzKLocal;
 
-                              if ( std::isinf(mxOut[site]))
-                                  throw std::runtime_error(
-                                          "mxOut is INF at site " + std::to_string(site) + " at iteration " +
-                                          std::to_string(iteration) +
-                                          " in RK2 stage " + rkStage);
-                              if ( std::isnan(mxOut[site]))
-                                  throw std::runtime_error(
-                                          "mxOut is NaN at site " + std::to_string(site) + " at iteration " +
-                                          std::to_string(iteration) +
-                                          " in RK2 stage " + rkStage);
-
-                              if ( std::isinf(myOut[site]))
-                                  throw std::runtime_error(
-                                          "myOut is INF at site " + std::to_string(site) + " at iteration " +
-                                          std::to_string(iteration) +
-                                          " in RK2 stage " + rkStage);
-                              if ( std::isnan(myOut[site]))
-                                  throw std::runtime_error(
-                                          "myOut is NaN at site " + std::to_string(site) + " at iteration " +
-                                          std::to_string(iteration) +
-                                          " in RK2 stage " + rkStage);
-
-                              if ( std::isinf(mzOut[site]))
-                                  throw std::runtime_error(
-                                          "mzOut is INF at site " + std::to_string(site) + " at iteration " +
-                                          std::to_string(iteration) +
-                                          " in RK2 stage " + rkStage);
-                              if ( std::isnan(mzOut[site]))
-                                  throw std::runtime_error(
-                                          "mzOut is NaN at site " + std::to_string(site) + " at iteration " +
-                                          std::to_string(iteration) +
-                                          " in RK2 stage " + rkStage);
+                              _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
                           }
                       }, tbb::auto_partitioner());
 
@@ -841,14 +823,7 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
     }
     // if (simParams->largestMNorm > 1.00005) { throw std::runtime_error("mag. moments are no longer below <= 1.00005"); }
 
-    if ( simFlags->hasDemagFFT )
-        std::fill(demagX.begin(), demagX.end(), 0.0);
-    std::fill(demagY.begin(), demagY.end(), 0.0);
-    std::fill(demagZ.begin(), demagZ.end(), 0.0);
-    if ( simFlags->hasDipolar && useParallelInvoke )
-        std::fill(dipoleX.begin(), dipoleX.end(), 0.0);
-    std::fill(dipoleY.begin(), dipoleY.end(), 0.0);
-    std::fill(dipoleZ.begin(), dipoleZ.end(), 0.0);
+    // No need to fill demagX/dipoleX (etc) here they are constantly overwritten; filling to zeroes is just a waste unless debugging
 
 }
 
@@ -864,4 +839,77 @@ void SolversImplementation::runMethod() {
         RK2Parallel();
     else
         throw std::runtime_error("Method not recognised");
+}
+
+void SolversImplementation::_resizeClassContainers() {
+    // Should contain all interactions/fields that are calculated
+
+    if ( (simFlags->hasDemagIntense or simFlags->hasDemagIntense) || (!simFlags->hasDemagIntense or !simFlags->hasDemagIntense) ) {
+        demagXp.resize(simParams->systemTotalSpins + 2);
+        std::fill(demagXp.begin(), demagXp.end(), 0.0);
+        demagYp.resize(simParams->systemTotalSpins + 2);
+        std::fill(demagYp.begin(), demagYp.end(), 0.0);
+        demagZp.resize(simParams->systemTotalSpins + 2);
+        std::fill(demagZp.begin(), demagZp.end(), 0.0);
+    }
+    // TODO. Fix ugly, nasty code below
+    // Horrible IF statement is because not all methods currenty access single elements and instead use the whole vector
+    // There would then be a SIGSEGV error if the vector was not resized even if the vector was never used during a calculation
+    if ( simFlags->hasDipolar || !simFlags->hasDipolar ) {
+        dipoleXp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dipoleXp.begin(), dipoleXp.end(), 0.0);
+        dipoleYp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dipoleYp.begin(), dipoleYp.end(), 0.0);
+        dipoleZp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dipoleZp.begin(), dipoleZp.end(), 0.0);
+    }
+
+    if ( simFlags->hasDMI || !simFlags->hasDMI ) {
+        dmiXp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dmiXp.begin(), dmiXp.end(), 0.0);
+        dmiYp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dmiYp.begin(), dmiYp.end(), 0.0);
+        dmiZp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dmiZp.begin(), dmiZp.end(), 0.0);
+    }
+
+    // Fill RK2 Stage magnetic moment containers. Ensure only to include methods that use class-wide containers
+    if ( GV.GetNumericalMethod() == "RK2p" ) {
+        mx1p.resize(simParams->systemTotalSpins + 2);
+        my1p.resize(simParams->systemTotalSpins + 2);
+        mz1p.resize(simParams->systemTotalSpins + 2);
+        mx2p.resize(simParams->systemTotalSpins + 2);
+        my2p.resize(simParams->systemTotalSpins + 2);
+        mz2p.resize(simParams->systemTotalSpins + 2);
+    }
+}
+
+void SolversImplementation::_testOutputValues( double &mxTerm, double &myTerm, double &mzTerm, int site, int iteration,
+                                               std::string rkStage ) {
+    if ( std::isinf(mxTerm))
+        throw std::runtime_error(
+                "mxOut is INF at site " + std::to_string(site) + " at iteration " +
+                std::to_string(iteration) + " in RK2 stage " + rkStage);
+    if ( std::isnan(mxTerm))
+        throw std::runtime_error(
+                "mxOut is NaN at site " + std::to_string(site) + " at iteration " +
+                std::to_string(iteration) + " in RK2 stage " + rkStage);
+
+    if ( std::isinf(myTerm))
+        throw std::runtime_error(
+                "myOut is INF at site " + std::to_string(site) + " at iteration " +
+                std::to_string(iteration) + " in RK2 stage " + rkStage);
+    if ( std::isnan(myTerm))
+        throw std::runtime_error(
+                "myOut is NaN at site " + std::to_string(site) + " at iteration " +
+                std::to_string(iteration) + " in RK2 stage " + rkStage);
+
+    if ( std::isinf(mzTerm))
+        throw std::runtime_error(
+                "mzOut is INF at site " + std::to_string(site) + " at iteration " +
+                std::to_string(iteration) + " in RK2 stage " + rkStage);
+    if ( std::isnan(mzTerm))
+        throw std::runtime_error(
+                "mzOut is NaN at site " + std::to_string(site) + " at iteration " +
+                std::to_string(iteration) + " in RK2 stage " + rkStage);
 }

@@ -9,6 +9,7 @@
 #include "InterfaceSolversImplementation.h"
 
 // C++ Standard Libraries
+#include <chrono>
 #include <string>
 
 // C++ Third Party Library
@@ -33,54 +34,85 @@
 #include "MagnetisationDynamics.h"
 #include "DipolarFields.h"
 
-class SolversImplementation :  public SolversSuperClass, public iSolversImplementation {
+class SolversImplementation :
+        public SolversSuperClass, public iSolversImplementation {
 private:
     DemagnetisationFields demagField;
     DzyaloshinskiiMoriyaInteraction dmInteraction;
     EffectiveFields effectiveField;
     MagnetisationDynamics llg;
     DipolarFields dipolarField;
+
 private:
+    std::chrono::time_point<std::chrono::high_resolution_clock> startSolver;
+    std::chrono::time_point<std::chrono::high_resolution_clock> endSolver;
+    long long solverElapsedTime;
+    void _resizeClassContainers();
+
+    void _testOutputValues( double& mxTerm, double& myTerm, double& mzTerm, int site, int iteration, std::string rkStage );
     /**
      * Description missing
      */
-    void                _testShockwaveConditions(double iteration) override;
+    void _testShockwaveConditions( double iteration ) override;
+
     /**
      * Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method. Original
      * implementation of the RK2 method; used for testing purposes
      */
-    void                SolveRK2Classic() override;
+    void SolveRK2Classic() override;
 
     // Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method
-    void                SolveRK2() override;
+    void SolveRK2() override;
 
     /**
      * Evaluate the given system using the RK2 method which has been configured to enabled
      * parallelisation through Intel's oneAPI TBB
      */
-    void                RK2Parallel() override;
+    void RK2Parallel() override;
 
     /**
      * Description missing
      */
-    void RK2StageMultithreaded(const std::vector<double> &mxIn, const std::vector<double> &myIn,
-                               const std::vector<double> &mzIn, std::vector<double> &mxOut,
-                               std::vector<double> &myOut, std::vector<double> &mzOut,
-                               std::vector<double> &demagX, std::vector<double> &demagY,
-                               std::vector<double> &demagZ, std::vector<double> &dipoleX,
-                               std::vector<double> &dipoleY, std::vector<double> &dipoleZ,
-                               std::vector<double> &dmiX, std::vector<double> &dmiY,
-                               std::vector<double> &dmiZ, double &currentTime, double &stepsize,
-                               int &iteration, std::string rkStage);
+    void RK2StageMultithreaded( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                std::vector<double> &myOut, std::vector<double> &mzOut,
+                                std::vector<double> &demagX, std::vector<double> &demagY,
+                                std::vector<double> &demagZ, std::vector<double> &dipoleX,
+                                std::vector<double> &dipoleY, std::vector<double> &dipoleZ,
+                                std::vector<double> &dmiX, std::vector<double> &dmiY,
+                                std::vector<double> &dmiZ, double &currentTime, double &stepsize,
+                                int &iteration, std::string rkStage );
+
 public:
-    SolversImplementation(std::shared_ptr<SimulationParameters> paramsData,
-              std::shared_ptr<SimulationStates> sharedSimStates,
-              std::shared_ptr<SimulationFlags> sharedSimFlags);
+    SolversImplementation( std::shared_ptr<SimulationParameters> paramsData,
+                           std::shared_ptr<SimulationStates> sharedSimStates,
+                           std::shared_ptr<SimulationFlags> sharedSimFlags );
+
     ~SolversImplementation() = default;
+public:
+    // TODO. Temp as public for testing. In future, will be private members (need to sort inheritance first)
+    // TODO. Update all methods (currently only Parallel) to use class members as containers
+    std::vector<double> demagXp;
+    std::vector<double> demagYp;
+    std::vector<double> demagZp;
+    std::vector<double> dipoleXp;
+    std::vector<double> dipoleYp;
+    std::vector<double> dipoleZp;
+    std::vector<double> dmiXp;
+    std::vector<double> dmiYp;
+    std::vector<double> dmiZp;
+
+    // RK Stage Containers for reuse
+    std::vector<double> mx1p;
+    std::vector<double> my1p;
+    std::vector<double> mz1p;
+    std::vector<double> mx2p;
+    std::vector<double> my2p;
+    std::vector<double> mz2p;
 public:
     void performInitialisation() override { runMethod(); };
 
-    void                runMethod() override;
+    void runMethod() override;
 };
 
 
