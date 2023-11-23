@@ -13,7 +13,7 @@ std::string GlobalVariablesClass::GetCurrentTime() {
     return _currentTime;
 }
 void GlobalVariablesClass::SetCurrentTime() {
-    time_t     now = time(0);
+    time_t     now = time(nullptr);
     struct tm  timeStruct;
     char       buf[80];
     timeStruct = *localtime(&now);
@@ -58,7 +58,7 @@ void GlobalVariablesClass::SetExchangeMinVal(double exchangeMinVal) {
 
 std::string GlobalVariablesClass::FindDateToday() {
 
-    time_t     now = time(0);
+    time_t     now = time(nullptr);
     struct tm  timeStruct;
     char       buf[80];
     timeStruct = *localtime(&now);
@@ -83,10 +83,10 @@ std::string GlobalVariablesClass::GetFilePath() {
 }
 void GlobalVariablesClass::SetFilePath(std::string osName) {
 
-    for (size_t i = 0; i < osName.size(); ++i) {
-        osName[i] = toupper(static_cast<unsigned char>(osName[i]));
-    }
+    for (char & i : osName)
+        i = toupper(static_cast<unsigned char>(i));
 
+        // OS dependent logic
     if (GetShouldFindEigenvalues()) {
         std::filesystem::path filepath = _filePath;
         bool filepathExists = std::filesystem::is_directory(filepath.parent_path());
@@ -102,16 +102,43 @@ void GlobalVariablesClass::SetFilePath(std::string osName) {
     } else {
         if (osName == "MACOS") {
             // Default Windows filepath for my laptop
-            _filePath = "/Users/cameronaidanmceleney/CLionProjects/Data/" + FindDateToday() + "/Simulation_Data/";
+                _filePath = "/Users/cameronaidanmceleney/CLionProjects/Data/";
         } else if (osName == "WINDOWS") {
             // Default Windows filepath for my desktop
-            _filePath = "D:/Data/" + FindDateToday() + "/Simulation_Data/";
+            _filePath = "D:/Data/";
         } else {
             // Guard clause
             std::cout << "The operating system name " << osName << " is not recognised. Please check the operating system name and try again." << std::endl;
             std::exit(1);
         }
     }
+
+    // Determine base directory and construct new directory path
+    std::string appendDirs = FindDateToday() + "/Simulation_Data/";
+    std::filesystem::path dirPath = _filePath + appendDirs;
+
+    // Check if the new directory path after 'Data' exists
+    if (!std::filesystem::exists(dirPath) && std::filesystem::exists(_filePath)) {
+        std::cout << "--------------------------------" << std::endl;
+        std::cout << "WARNING: The PATH [" << appendDirs << "] does not exist after '/Data/'. Create this path? (Y/N): ";
+        char userInput;
+        std::cin >> userInput;
+
+        if (userInput == 'Y' || userInput == 'y') {
+            std::filesystem::create_directories(dirPath);
+            std::cout << "Directories created at: " << dirPath << std::endl;
+            std::cout << "--------------------------------" << std::endl;
+        } else {
+            std::cout << "Directory not created. Exiting program.\n";
+            std::exit(1);
+        }
+    } else if (!std::filesystem::exists(_filePath)) {
+        std::cout << "The base PATH does not exist on " << osName << ". Please ensure [" << _filePath << "] is correct.\n";
+        std::exit(1);
+    }
+
+    // Set the file path to the new directory
+    _filePath = dirPath.string();
 }
 
 double GlobalVariablesClass::GetGyromagneticConstant() {
