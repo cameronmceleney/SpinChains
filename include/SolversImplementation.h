@@ -44,12 +44,9 @@ private:
     DipolarFields dipolarField;
 
 private:
-    std::chrono::time_point<std::chrono::high_resolution_clock> startSolver;
-    std::chrono::time_point<std::chrono::high_resolution_clock> endSolver;
-    long long solverElapsedTime;
     void _resizeClassContainers();
 
-    void _testOutputValues( double& mxTerm, double& myTerm, double& mzTerm, int site, int iteration, std::string rkStage );
+    void _testOutputValues( double& mxTerm, double& myTerm, double& mzTerm, int site, int iteration, const std::string &rkStage );
     /**
      * Description missing
      */

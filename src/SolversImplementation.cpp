@@ -196,10 +196,10 @@ void SolversImplementation::SolveRK2Classic() {
 
             double dmiZ = 0;
             if ( simFlags->hasDMI ) {
-                std::vector<double> mxTermsForDMI = {simStates->mx0[spinLHS], simStates->mx0[site]};
-                std::vector<double> myTermsForDMI = {simStates->my0[spinLHS], simStates->my0[site]};
-                std::vector<double> mzTermsForDMI = {simStates->mz0[spinLHS], simStates->mz0[site]};
-                std::vector<double> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
+                std::array<double, 2> mxTermsForDMI = {simStates->mx0[spinLHS], simStates->mx0[site]};
+                std::array<double, 2> myTermsForDMI = {simStates->my0[spinLHS], simStates->my0[site]};
+                std::array<double, 2> mzTermsForDMI = {simStates->mz0[spinLHS], simStates->mz0[site]};
+                std::array<double, 3> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
                                                                               myTermsForDMI,
                                                                               mzTermsForDMI);
 
@@ -272,10 +272,10 @@ void SolversImplementation::SolveRK2Classic() {
 
             double dmiZ = 0;
             if ( simFlags->hasDMI ) {
-                std::vector<double> mxTermsForDMI = {simStates->mx0[spinLHS], simStates->mx0[site]};
-                std::vector<double> myTermsForDMI = {simStates->my0[spinLHS], simStates->my0[site]};
-                std::vector<double> mzTermsForDMI = {simStates->mz0[spinLHS], simStates->mz0[site]};
-                std::vector<double> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
+                std::array<double, 2> mxTermsForDMI = {simStates->mx0[spinLHS], simStates->mx0[site]};
+                std::array<double, 2> myTermsForDMI = {simStates->my0[spinLHS], simStates->my0[site]};
+                std::array<double, 2> mzTermsForDMI = {simStates->mz0[spinLHS], simStates->mz0[site]};
+                std::array<double, 3> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
                                                                               myTermsForDMI,
                                                                               mzTermsForDMI);
 
@@ -436,13 +436,13 @@ void SolversImplementation::SolveRK2() {
 
                 double dmiZ = 0;
                 if ( simFlags->hasDMI ) {
-                    std::vector<double> mxTermsForDMI = {simStates->m0Nest[layer][spinLHS][0],
+                    std::array<double, 2> mxTermsForDMI = {simStates->m0Nest[layer][spinLHS][0],
                                                          simStates->m0Nest[layer][site][0]};
-                    std::vector<double> myTermsForDMI = {simStates->m0Nest[layer][spinLHS][1],
+                    std::array<double, 2> myTermsForDMI = {simStates->m0Nest[layer][spinLHS][1],
                                                          simStates->m0Nest[layer][site][1]};
-                    std::vector<double> mzTermsForDMI = {simStates->m0Nest[layer][spinLHS][2],
+                    std::array<double, 2> mzTermsForDMI = {simStates->m0Nest[layer][spinLHS][2],
                                                          simStates->m0Nest[layer][site][2]};
-                    std::vector<double> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
+                    std::array<double, 3> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
                                                                                   myTermsForDMI,
                                                                                   mzTermsForDMI);
 
@@ -513,13 +513,13 @@ void SolversImplementation::SolveRK2() {
 
                 double dmiZ = 0;
                 if ( simFlags->hasDMI ) {
-                    std::vector<double> mxTermsForDMI = {simStates->m0Nest[layer][spinLHS][0],
+                    std::array<double, 2> mxTermsForDMI = {simStates->m0Nest[layer][spinLHS][0],
                                                          simStates->m0Nest[layer][site][0]};
-                    std::vector<double> myTermsForDMI = {simStates->m0Nest[layer][spinLHS][1],
+                    std::array<double, 2> myTermsForDMI = {simStates->m0Nest[layer][spinLHS][1],
                                                          simStates->m0Nest[layer][site][1]};
-                    std::vector<double> mzTermsForDMI = {simStates->m0Nest[layer][spinLHS][2],
+                    std::array<double, 2> mzTermsForDMI = {simStates->m0Nest[layer][spinLHS][2],
                                                          simStates->m0Nest[layer][site][2]};
-                    std::vector<double> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
+                    std::array<double, 3> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
                                                                                   myTermsForDMI,
                                                                                   mzTermsForDMI);
 
@@ -885,7 +885,7 @@ void SolversImplementation::_resizeClassContainers() {
 }
 
 void SolversImplementation::_testOutputValues( double &mxTerm, double &myTerm, double &mzTerm, int site, int iteration,
-                                               std::string rkStage ) {
+                                               const std::string &rkStage ) {
     if ( std::isinf(mxTerm))
         throw std::runtime_error(
                 "mxOut is INF at site " + std::to_string(site) + " at iteration " +

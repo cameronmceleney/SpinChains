@@ -46,9 +46,9 @@ public:
                                    const std::vector<double> &mzTerms, std::vector<double> &dmiXOut,
                                    std::vector<double> &dmiYOut, std::vector<double> &dmiZOut, bool shouldUseTBB );
 
-    std::array<double, 3> calculateClassic( const int &currentSite, const std::vector<double> &mxTerms,
-                                          const std::vector<double> &myTerms,
-                                          const std::vector<double> &mzTerms );
+    std::array<double, 3> calculateClassic( const int &currentSite, const std::array<double, 2> &mxTerms,
+                                            const std::array<double, 2> &myTerms,
+                                            const std::array<double, 2> &mzTerms );
 
 private:
     SimulationParameters *_simParams; // Non-owning pointer to SimulationParameters
@@ -64,7 +64,7 @@ private:
      * @param jSite
      * @return
      */
-    inline static std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite );
+    inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite );
 
     /**
      * To be used in multi-threaded cases and is optimised for efficiency
@@ -72,7 +72,7 @@ private:
      * @param jSite
      * @return
      */
-    inline static std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite,
+    inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite,
                                                 const bool & shouldUseTBB);
 
     std::array<double, 3> _calculateDMIField1D( const int &currentSite, const std::vector<double> &mxTerms,
@@ -90,9 +90,9 @@ private:
                                           const bool &shouldUseTBB);
 
     std::array<double, 3>
-    _calculateDMIFieldClassic( auto &currentSite, const std::vector<double> &mxTerms,
-                               const std::vector<double> &myTerms,
-                               const std::vector<double> &mzTerms );
+    _calculateDMIFieldClassic( auto &currentSite, const std::array<double, 2> &mxTerms,
+                               const std::array<double, 2> &myTerms,
+                               const std::array<double, 2> &mzTerms );
 };
 
 
