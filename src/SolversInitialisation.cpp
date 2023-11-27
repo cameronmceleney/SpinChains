@@ -34,8 +34,9 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasShockwave = false;
     simFlags->hasDipolar = false;
     simFlags->hasDMI = true;
+    simFlags->hasSTT = false;
     simFlags->hasZeeman = true;
-    simFlags->hasDemagIntense = true;
+    simFlags->hasDemagIntense = false;
     simFlags->hasDemagFFT = false;
 
     // Material Flags
@@ -46,9 +47,9 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = false;
+    simFlags->shouldDriveCentre = true;
     simFlags->shouldDriveLHS = false;
-    simFlags->shouldDriveRHS = true;
+    simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
     simFlags->isDriveStatic = false;
@@ -68,7 +69,7 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->dynamicBiasField = 3e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 1e-11;
+    simParams->maxSimTime = 0.7e-9;
     simParams->satMag = 0.010032;
     simParams->stepsize = 1e-15;
 
@@ -108,6 +109,8 @@ void SolversInitialisation::_generateRemainingParameters() {
     simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
     simParams->dmiConstant = GV.GetDMIConstant();
     simParams->exchangeStiffness = 5.3e-17;
+    simParams->spinPolarisation = 0.5;
+    simParams->spinTransferEfficiency = 0.4;
 
     // Computations based upon other inputs
     simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;

@@ -85,6 +85,8 @@ set(SOLVER_CLASS_COMPONENTS
         src/MagnetisationDynamics.cpp include/MagnetisationDynamics.h
         src/DzyaloshinskiiMoriyaInteraction.cpp
         include/DzyaloshinskiiMoriyaInteraction.h
+        src/SpinTransferTorque.cpp
+        include/SpinTransferTorque.h
 )
 
 # Must be before add_executable()

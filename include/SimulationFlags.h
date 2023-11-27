@@ -32,6 +32,7 @@ public:
 
     bool                hasDipolar;
     bool                hasDMI;
+    bool                hasSTT;
     bool                hasZeeman;
     bool                hasDemagIntense;                            // todo doesn't work
     bool                hasDemagFFT;                                // todo doesn't work

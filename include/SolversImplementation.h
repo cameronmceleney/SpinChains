@@ -33,6 +33,7 @@
 #include "EffectiveFields.h"
 #include "MagnetisationDynamics.h"
 #include "DipolarFields.h"
+#include "SpinTransferTorque.h"
 
 class SolversImplementation :
         public SolversSuperClass, public iSolversImplementation {
@@ -42,6 +43,7 @@ private:
     EffectiveFields effectiveField;
     MagnetisationDynamics llg;
     DipolarFields dipolarField;
+    SpinTransferTorque stt;
 
 private:
     void _resizeClassContainers();
@@ -73,12 +75,8 @@ private:
     void RK2StageMultithreaded( const std::vector<double> &mxIn, const std::vector<double> &myIn,
                                 const std::vector<double> &mzIn, std::vector<double> &mxOut,
                                 std::vector<double> &myOut, std::vector<double> &mzOut,
-                                std::vector<double> &demagX, std::vector<double> &demagY,
-                                std::vector<double> &demagZ, std::vector<double> &dipoleX,
-                                std::vector<double> &dipoleY, std::vector<double> &dipoleZ,
-                                std::vector<double> &dmiX, std::vector<double> &dmiY,
-                                std::vector<double> &dmiZ, double &currentTime, double &stepsize,
-                                int &iteration, std::string rkStage );
+                                double &currentTime, double &stepsize, int &iteration,
+                                std::string rkStage );
 
 public:
     SolversImplementation( std::shared_ptr<SimulationParameters> paramsData,
@@ -98,6 +96,9 @@ public:
     std::vector<double> dmiXp;
     std::vector<double> dmiYp;
     std::vector<double> dmiZp;
+    std::vector<double> sttXp;
+    std::vector<double> sttYp;
+    std::vector<double> sttZp;
 
     // RK Stage Containers for reuse
     std::vector<double> mx1p;
@@ -132,6 +133,15 @@ public:
 
         DemagTerms() : x(0.0), y(0.0), z(0.0){}
         DemagTerms(double updateX, double updateY, double updateZ) : x(updateX), y(updateY), z(updateZ){}
+    };
+
+    struct STTTerms {
+        double x;
+        double y;
+        double z;
+
+        STTTerms() : x(0.0), y(0.0), z(0.0){}
+        STTTerms(double updateX, double updateY, double updateZ) : x(updateX), y(updateY), z(updateZ){}
     };
 
     struct HkTerms {

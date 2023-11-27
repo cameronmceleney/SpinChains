@@ -14,7 +14,8 @@ SolversImplementation::SolversImplementation( std::shared_ptr<SimulationParamete
           dmInteraction(simParams.get(), simStates.get(), simFlags.get()),
           effectiveField(simParams.get(), simStates.get(), simFlags.get()),
           dipolarField(simParams.get(), simStates.get(), simFlags.get()),
-          llg(simParams.get(), simStates.get(), simFlags.get()) {}
+          llg(simParams.get(), simStates.get(), simFlags.get()),
+          stt(simParams.get(), simStates.get(), simFlags.get()){}
 
 void SolversImplementation::_testShockwaveConditions( double iteration ) {
 
@@ -619,6 +620,7 @@ void SolversImplementation::RK2Parallel() {
     // Only create vectors once to reuse memory. Only assign memory if flags are true. Faster to declare loop-wide vectors than define them in each loop iteration.
     _resizeClassContainers();
 
+    double totalTime = 0;
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
         if ( simParams->iterationEnd >= 100 && iteration % (simParams->iterationEnd / 100) == 0 )
@@ -626,17 +628,15 @@ void SolversImplementation::RK2Parallel() {
 
         _testShockwaveConditions(iteration);
 
-        double t0 = simParams->totalTime;
+        double t0 = totalTime;
 
         // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
-        RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
-                              demagXp, demagYp, demagZp, dipoleXp, dipoleYp, dipoleZp, dmiXp, dmiYp,
-                              dmiZp, t0, simParams->stepsizeHalf, iteration, "1");
+        RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p, t0,
+                              simParams->stepsize, iteration, "1");
 
         // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
-        RK2StageMultithreaded(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
-                              demagXp, demagYp, demagZp, dipoleXp, dipoleYp, dipoleZp, dmiXp, dmiYp,
-                              dmiZp, t0, simParams->stepsize, iteration, "2");
+        RK2StageMultithreaded(mx1p, my1p, mz1p, mx2p, my2p, mz2p, t0, simParams->stepsize, iteration,
+                              "2");
 
         // Everything below here is part of the method, but not the RK2 stage loops calculations.
 
@@ -654,7 +654,7 @@ void SolversImplementation::RK2Parallel() {
             exit(0);
         }
 
-        simParams->totalTime += simParams->stepsize;
+        totalTime += simParams->stepsize;
     } // End of RK2 FOR loop; all iterations now complete.
 
     mxOutputFile.close();
@@ -674,18 +674,14 @@ void SolversImplementation::RK2Parallel() {
 void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mxIn, const std::vector<double> &myIn,
                                                    const std::vector<double> &mzIn, std::vector<double> &mxOut,
                                                    std::vector<double> &myOut, std::vector<double> &mzOut,
-                                                   std::vector<double> &demagX, std::vector<double> &demagY,
-                                                   std::vector<double> &demagZ, std::vector<double> &dipoleX,
-                                                   std::vector<double> &dipoleY, std::vector<double> &dipoleZ,
-                                                   std::vector<double> &dmiX, std::vector<double> &dmiY,
-                                                   std::vector<double> &dmiZ, double &currentTime, double &stepsize,
-                                                   int &iteration, std::string rkStage ) {
+                                                   double &currentTime, double &stepsize, int &iteration,
+                                                   std::string rkStage ) {
     CustomTimer dipolarTimer;
     bool useParallelInvoke = false;  // Mainly for testing purposes at the moment
     bool useParallel = true;
 
     if ( simFlags->hasDemagIntense )
-        demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, mxIn, myIn, mzIn);
+        demagField.DemagnetisationFieldIntense(demagXp, demagYp, demagZp, mxIn, myIn, mzIn);
 
 
     std::vector<double> mxInMu, myInMu, mzInMu;
@@ -700,11 +696,15 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
             mzInMu[i] *= 0;//simParams->satMag * simParams->systemTotalSpins;
         }
         // Option 1
-        dipolarField.DipolarInteractionClassicThreaded(mxInMu, myInMu, mzInMu, dipoleX, dipoleY, dipoleZ);
+        dipolarField.DipolarInteractionClassicThreaded(mxInMu, myInMu, mzInMu, dipoleXp, dipoleYp, dipoleZp);
     }
 
     if ( simFlags->hasDMI )
-        dmInteraction.calculateOneDimension(mxIn, myIn, mzIn, dmiX, dmiY, dmiZ, useParallel);
+        dmInteraction.calculateOneDimension(mxIn, myIn, mzIn, dmiXp, dmiYp, dmiZp, useParallel);
+
+    if (simFlags->hasSTT)
+        // placeholder for example. Find STT for each site at all sites before main loop
+        stt.calculateOneDimension(mxIn, myIn, mzIn, sttXp, sttYp, sttZp);
 
     dipolarTimer.setName("Dipolar");
 
@@ -720,11 +720,16 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
 
                               // Relative to the current site (site) we have siteLHS and siteRHS
                               int siteLHSLocal = site - 1, siteRHSLocal = site + 1;
+                              DipoleTerms dipoleLocal;
+                              DemagTerms demagLocal;
+                              DMITerms dmiLocal;
+                              STTTerms sttLocal;
 
                               // All need to be defined as default cases in case their flags aren't called to overwrite
-                              DipoleTerms dipoleLocal{dipoleX[site], dipoleY[site], dipoleZ[site]};
-                              DemagTerms demagLocal{demagX[site], demagY[site], demagZ[site]};
-                              DMITerms dmiLocal{0.0, 0.0, dmiZ[site]};
+                              if (simFlags->hasDipolar) { dipoleLocal.x = dipoleXp[site]; dipoleLocal.y = dipoleYp[site]; dipoleLocal.z = dipoleZp[site]; }
+                              if (simFlags->hasDemagIntense) { demagLocal.x = demagXp[site]; demagLocal.y = demagYp[site]; demagLocal.z = demagZp[site]; }
+                              if (simFlags->hasDMI) { dmiLocal.z = dmiZp[site]; }
+                              if (simFlags->hasSTT) { sttLocal.x = sttXp[site]; sttLocal.y = sttYp[site]; sttLocal.z = sttZp[site]; }
 
                               // Will always be initialised so only need to declare here
                               HkTerms hkLocal;
@@ -737,22 +742,22 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                                               hkLocal.x = effectiveField.EffectiveFieldX(site, 0, mxIn[siteLHSLocal],
                                                                                          mxIn[site],
                                                                                          mxIn[siteRHSLocal],
-                                                                                         dipoleX[site], demagX[site],
-                                                                                         dmiZ[site],
+                                                                                         dipoleXp[site], demagXp[site],
+                                                                                         dmiZp[site],
                                                                                          currentTime);
                                           },
                                           [&] {
                                               hkLocal.y = effectiveField.EffectiveFieldY(site, 0, myIn[siteLHSLocal],
                                                                                          myIn[site],
                                                                                          myIn[siteRHSLocal],
-                                                                                         dipoleY[site], demagY[site],
-                                                                                         dmiZ[site]);
+                                                                                         dipoleYp[site], demagYp[site],
+                                                                                         dmiZp[site]);
                                           },
                                           [&] {
                                               hkLocal.z = effectiveField.EffectiveFieldZ(site, 0, mzIn[siteLHSLocal],
                                                                                          mzIn[site],
                                                                                          mzIn[siteRHSLocal],
-                                                                                         dipoleZ[site], demagZ[site]);
+                                                                                         dipoleZp[site], demagZp[site]);
                                           }
                                   );
 
@@ -835,8 +840,7 @@ void SolversImplementation::runMethod() {
 void SolversImplementation::_resizeClassContainers() {
     // Should contain all interactions/fields that are calculated
 
-    if ((simFlags->hasDemagIntense or simFlags->hasDemagIntense) ||
-        (!simFlags->hasDemagIntense or !simFlags->hasDemagIntense)) {
+    if ((simFlags->hasDemagIntense) || (!simFlags->hasDemagIntense)) {
         demagXp.resize(simParams->systemTotalSpins + 2);
         std::fill(demagXp.begin(), demagXp.end(), 0.0);
         demagYp.resize(simParams->systemTotalSpins + 2);
@@ -847,7 +851,7 @@ void SolversImplementation::_resizeClassContainers() {
     // TODO. Fix ugly, nasty code below
     // Horrible IF statement is because not all methods currently access single elements and instead use the whole vector
     // There would then be a SIGSEGV error if the vector was not resized even if the vector was never used during a calculation
-    if ( simFlags->hasDipolar || !simFlags->hasDipolar ) {
+    if ( simFlags->hasDipolar ) {
         dipoleXp.resize(simParams->systemTotalSpins + 2);
         std::fill(dipoleXp.begin(), dipoleXp.end(), 0.0);
         dipoleYp.resize(simParams->systemTotalSpins + 2);
@@ -856,7 +860,25 @@ void SolversImplementation::_resizeClassContainers() {
         std::fill(dipoleZp.begin(), dipoleZp.end(), 0.0);
     }
 
-    if ( simFlags->hasDMI || !simFlags->hasDMI ) {
+    if ( simFlags->hasDMI ) {
+        dmiXp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dmiXp.begin(), dmiXp.end(), 0.0);
+        dmiYp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dmiYp.begin(), dmiYp.end(), 0.0);
+        dmiZp.resize(simParams->systemTotalSpins + 2);
+        std::fill(dmiZp.begin(), dmiZp.end(), 0.0);
+    }
+
+    if ( simFlags->hasSTT ) {
+        sttXp.resize(simParams->systemTotalSpins + 2);
+        std::fill(sttXp.begin(), sttXp.end(), 0.0);
+        sttYp.resize(simParams->systemTotalSpins + 2);
+        std::fill(sttYp.begin(), sttYp.end(), 0.0);
+        sttZp.resize(simParams->systemTotalSpins + 2);
+        std::fill(sttZp.begin(), sttZp.end(), 0.0);
+    }
+
+    if ( simFlags->hasDMI ) {
         dmiXp.resize(simParams->systemTotalSpins + 2);
         std::fill(dmiXp.begin(), dmiXp.end(), 0.0);
         dmiYp.resize(simParams->systemTotalSpins + 2);
