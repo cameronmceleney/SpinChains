@@ -22,16 +22,16 @@ class SolversSuperClass {
 public:
     struct CustomTimer {
         std::string timerName;
-        std::chrono::time_point<std::chrono::high_resolution_clock> startSolver;
-        std::chrono::time_point<std::chrono::high_resolution_clock> endSolver;
+        std::chrono::time_point<std::chrono::system_clock> startSolver;
+        std::chrono::time_point<std::chrono::system_clock> endSolver;
         long long solverElapsedTime = 0;
 
         void start() {
-            startSolver = std::chrono::high_resolution_clock::now();
+            startSolver = std::chrono::system_clock::now();
         }
 
         void stop() {
-            endSolver = std::chrono::high_resolution_clock::now();
+            endSolver = std::chrono::system_clock::now();
             solverElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(endSolver - startSolver).count();
         }
 
@@ -40,9 +40,9 @@ public:
         }
 
         void print() const {
-            auto printTimePoint = []( const std::chrono::time_point<std::chrono::high_resolution_clock> &timePoint ) {
-                std::time_t printTime = std::chrono::high_resolution_clock::to_time_t(timePoint);
-                return std::ctime(&printTime);
+            auto printTimePoint = []( auto &timePoint) {
+                                        std::time_t printTime = std::chrono::system_clock::to_time_t(timePoint);
+                                        return std::ctime(&printTime);
             };
 
             std::cout << "----------------------------------------------------------------\n";

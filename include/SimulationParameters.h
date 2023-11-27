@@ -30,6 +30,7 @@ public:
     int                 forceStopAtIteration;                     // Legacy breakpoint variable. Set as a -ve value to deactivate.
     double              dipoleConstant;                           // Scaling factor which is constant across dipolar interaction calculations.
     double              dmiConstant;
+    double              exchangeStiffness;
 
     double              gilbertDamping;                           // Gilbert damping factor for main chain.
     double              gilbertABCInner;                          // The lower Gilbert damping factor for the Absorbing boundary conditions (ABCs) at the point where the chain meets the ABC.

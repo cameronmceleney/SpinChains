@@ -22,11 +22,11 @@ int main() {
     // Global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(4000);
+    GV.SetNumSpins(1000);
     GV.SetExchangeMinVal(43.5);
     GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2);
-    GV.SetDMIConstant(20.0);
+    GV.SetDMIConstant(0.0);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -38,7 +38,7 @@ int main() {
     std::cin >> outputFileID;
     GV.SetFileNameBase("T"+outputFileID);
 
-    GV.SetFilePath("windows");
+    GV.SetFilePath("macos");
 
     GV.SetNumericalMethod("RK2p");
 

@@ -15,6 +15,7 @@ extern "C" {
 }
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
 
 // C++ User Libraries (General)
 #include "CommonLibs.h"
@@ -31,6 +32,11 @@ private:
     SimulationParameters* _simParams; // Non-owning pointer to SimulationParameters
     SimulationStates* _simStates;
     SimulationFlags* _simFlags;
+
+private:
+    std::array<double, 3> _calculateClassicThreaded( const int &currentSite, const std::vector<double> &mxTerms,
+                                                     const std::vector<double> &myTerms,
+                                                     const std::vector<double> &mzTerms );
 public:
     explicit DipolarFields(SimulationParameters* sharedSimParams,
                            SimulationStates* sharedSimStates,

@@ -107,6 +107,51 @@ public:
     std::vector<double> my2p;
     std::vector<double> mz2p;
 public:
+    struct DipoleTerms {
+        double x;
+        double y;
+        double z;
+
+        DipoleTerms() : x(0.0), y(0.0), z(0.0){}
+        DipoleTerms(double updateX, double updateY, double updateZ) : x(updateX), y(updateY), z(updateZ){}
+    };
+
+    struct DMITerms {
+        double x;
+        double y;
+        double z;
+
+        DMITerms() : x(0.0), y(0.0), z(0.0){}
+        DMITerms(double updateX, double updateY, double updateZ) : x(updateX), y(updateY), z(updateZ){}
+    };
+
+    struct DemagTerms {
+        double x;
+        double y;
+        double z;
+
+        DemagTerms() : x(0.0), y(0.0), z(0.0){}
+        DemagTerms(double updateX, double updateY, double updateZ) : x(updateX), y(updateY), z(updateZ){}
+    };
+
+    struct HkTerms {
+        double x;
+        double y;
+        double z;
+
+        HkTerms() : x(0.0), y(0.0), z(0.0){}
+        HkTerms(double updateX, double updateY, double updateZ) : x(updateX), y(updateY), z(updateZ){}
+    };
+
+    struct MkTerms {
+        double x;
+        double y;
+        double z;
+
+        MkTerms() : x(0.0), y(0.0), z(0.0){}
+        MkTerms(double updateX, double updateY, double updateZ) : x(updateX), y(updateY), z(updateZ){}
+    };
+public:
     void performInitialisation() override { runMethod(); };
 
     void runMethod() override;

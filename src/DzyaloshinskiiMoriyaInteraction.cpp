@@ -198,11 +198,11 @@ DzyaloshinskiiMoriyaInteraction::_calculateDMIField3D( auto &currentSite, const 
     if ( shouldUseTBB ) {
         if ( currentSite <= _simParams->numSpinsInABC ||
              currentSite > (_simParams->systemTotalSpins + _simParams->numSpinsInABC)) {
-            // Guard clause to ensure that the current site doesn't lie within the aborbing boundary condition region
+            // Guard clause to ensure that the current site doesn't lie within the absorbing boundary condition region
             return {0.0, 0.0, 0.0};
         }
 
-        // As cross produt of vectors A x B = - B x A, we can use the same function for both cases. So only process leftwise
+        // As cross product of vectors A x B = - B x A, we can use the same function for both cases. So only process leftwise
         std::array<double, 3> originSite = {mxTerms[currentSite], myTerms[currentSite], mzTerms[currentSite]};
         std::array<double, 3> influencingSite = {mxTerms[currentSite - 1], myTerms[currentSite - 1],
                                                  mzTerms[currentSite - 1]};

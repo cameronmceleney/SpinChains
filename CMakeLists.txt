@@ -44,7 +44,7 @@ elseif(APPLE)
     set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3.a")
 
     # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI version
-    set(TBB_BASE "/usr/loca/Cellar/tbb/2021.10.0")
+    set(TBB_BASE "/usr/local/Cellar/tbb/2021.10.0")
     set(TBB_DIR "${TBB_BASE}/include/oneapi")
     set(TBB_LIB "${TBB_BASE}/lib/libtbb.a" "${TBB_BASE}/lib/libtbbmalloc.a")
 endif()

@@ -35,7 +35,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasDipolar = false;
     simFlags->hasDMI = true;
     simFlags->hasZeeman = true;
-    simFlags->hasDemagIntense = false;
+    simFlags->hasDemagIntense = true;
     simFlags->hasDemagFFT = false;
 
     // Material Flags
@@ -68,7 +68,7 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->dynamicBiasField = 3e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 0.7e-9;
+    simParams->maxSimTime = 1e-11;
     simParams->satMag = 0.010032;
     simParams->stepsize = 1e-15;
 
@@ -107,6 +107,7 @@ void SolversInitialisation::_generateRemainingParameters() {
     simParams->exchangeEnergyMin = GV.GetExchangeMinVal();
     simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
     simParams->dmiConstant = GV.GetDMIConstant();
+    simParams->exchangeStiffness = 5.3e-17;
 
     // Computations based upon other inputs
     simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;
