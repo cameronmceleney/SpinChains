@@ -127,3 +127,7 @@ std::array<double, 3> SpinTransferTorque::_crossProduct( const std::array<double
     else
         throw std::invalid_argument("_crossProduct hasn't got CUDA implementation yet");
 }
+
+std::array<double, 3> SpinTransferTorque::_calculateSTT1D() {
+    return {0.0, 0.0, 0.0};
+}

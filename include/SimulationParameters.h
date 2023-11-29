@@ -12,7 +12,7 @@ class SimulationParameters {
 public:
     constexpr static double    PERM_FREESPACE = 1.25663706212e-6;         // Permeability of free space [H/m] (mu_0)
     constexpr static double    BOLTZMANN_CONSTANT = 1.380649e-23;         // Boltzmann Constant [m^{2} kg s^{-2} K^{-1}].
-    double PERMITTIVITY_IRON = 2.22; // cobalt = 1.72, iron = 2.22, nickel = 0.6;
+    double PERMEABILITY_IRON = 2.22; // cobalt = 1.72, iron = 2.22, nickel = 0.6;
 
     // Sites to be printed if shouldPrintDiscreteSites is TRUE.
 

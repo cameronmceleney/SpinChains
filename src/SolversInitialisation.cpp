@@ -73,14 +73,6 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->satMag = 0.010032;
     simParams->stepsize = 1e-15;
 
-    // Shockwave Parameters
-    simParams->iterStartShock = 0.0;
-    simParams->iterEndShock = 0.0001;
-    simParams->shockwaveGradientTime = 1;
-    simParams->shockwaveInitialStrength = 0;  // Set equal to dynamicBiasField if NOT starting at time=0
-    simParams->shockwaveMax = 3e-3;
-    simParams->shockwaveScaling = 1;
-
     // Data Output Parameters
     simStates->fixedOutputSites = {12158, 14529, 15320};
     simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
@@ -96,6 +88,14 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 0;
     simParams->numLayers = 1;
+
+    // Shockwave Parameters (rarely used)
+    simParams->iterStartShock = 0.0;
+    simParams->iterEndShock = 0.0001;
+    simParams->shockwaveGradientTime = 1;
+    simParams->shockwaveInitialStrength = 0;  // Set equal to dynamicBiasField if NOT starting at time=0
+    simParams->shockwaveMax = 3e-3;
+    simParams->shockwaveScaling = 1;
 
     // Currently unused parameters
     simParams->recordingInterval = 2.5e-15;
@@ -114,7 +114,7 @@ void SolversInitialisation::_generateRemainingParameters() {
 
     // Computations based upon other inputs
     simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;
-    simParams->PERMITTIVITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
+    simParams->PERMEABILITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
     simParams->dipoleConstant = SimulationParameters::PERM_FREESPACE / (4.0 * M_PI);
 
     simParams->iterationEnd = static_cast<int>(simParams->maxSimTime / simParams->stepsize);

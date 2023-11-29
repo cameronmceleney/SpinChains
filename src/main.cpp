@@ -26,7 +26,7 @@ int main() {
     GV.SetExchangeMinVal(43.5);
     GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2);
-    GV.SetDMIConstant(13.2);
+    GV.SetDMIConstant(400);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);

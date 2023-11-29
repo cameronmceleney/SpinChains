@@ -44,9 +44,7 @@ private:
     std::array<double, 3> _calculateExchangeDrivenSpinCurrentDensity( const int &currentSite, const std::vector<double> &mxTerms,
                                                                       const std::vector<double> &myTerms,
                                                                       const std::vector<double> &mzTerms);
-    std::array<double, 3> _calculateSTT1D() {
-
-    }
+    std::array<double, 3> _calculateSTT1D();
 
     /**
      * To be used in all cases where readability is key for debugging, and all single-threaded cases

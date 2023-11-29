@@ -87,7 +87,7 @@ void DipolarFields::DipolarInteraction1D( std::vector<double> inMxTerms, std::ve
     const double imagTerm = 0.0, normalizationFactor = 1.0 / static_cast<double>(GV.GetNumSpins());
 
     for ( int i = 0; i < trueNumSpins; i++ ) {
-        inMxTerms[i] *= _simParams->PERMITTIVITY_IRON;
+        inMxTerms[i] *= _simParams->PERMEABILITY_IRON;
     }
 
     // ################################ Lambda Functions ################################
@@ -204,9 +204,9 @@ std::vector<double> DipolarFields::DipolarInteractionClassic( std::vector<double
     // sitePositions contains 3 elements: {site to the left, current site, site to the right}
 
     for ( int i = 0; i < mxTerms.size(); i++ ) {
-        mxTerms[i] *= _simParams->PERMITTIVITY_IRON;
-        myTerms[i] *= _simParams->PERMITTIVITY_IRON;
-        mzTerms[i] *= _simParams->PERMITTIVITY_IRON;
+        mxTerms[i] *= _simParams->PERMEABILITY_IRON;
+        myTerms[i] *= _simParams->PERMEABILITY_IRON;
+        mzTerms[i] *= _simParams->PERMEABILITY_IRON;
     }
 
     double exchangeStiffness = 5.3e-17;
@@ -300,9 +300,9 @@ std::vector<double> DipolarFields::DipolarInteractionIntralayer( std::vector<std
     if ( _simParams->numNeighbours < 0 ) {
         for ( int site = _simParams->numSpinsInABC + 1; site <= vecLength + _simParams->numSpinsInABC; site++ ) {
             // Flatting the vectors
-            mxTerms[iFV] = mTerms[site][0] * _simParams->PERMITTIVITY_IRON;
-            myTerms[iFV] = mTerms[site][1] * _simParams->PERMITTIVITY_IRON;
-            mzTerms[iFV] = mTerms[site][2] * _simParams->PERMITTIVITY_IRON;
+            mxTerms[iFV] = mTerms[site][0] * _simParams->PERMEABILITY_IRON;
+            myTerms[iFV] = mTerms[site][1] * _simParams->PERMEABILITY_IRON;
+            mzTerms[iFV] = mTerms[site][2] * _simParams->PERMEABILITY_IRON;
             sitePositions[iFV] = site;
             iFV++;
         }
@@ -315,9 +315,9 @@ std::vector<double> DipolarFields::DipolarInteractionIntralayer( std::vector<std
                 continue;
             }
             // Flatting the vectors
-            mxTerms[iFV] = mTerms[site][0] * _simParams->PERMITTIVITY_IRON;
-            myTerms[iFV] = mTerms[site][1] * _simParams->PERMITTIVITY_IRON;
-            mzTerms[iFV] = mTerms[site][2] * _simParams->PERMITTIVITY_IRON;
+            mxTerms[iFV] = mTerms[site][0] * _simParams->PERMEABILITY_IRON;
+            myTerms[iFV] = mTerms[site][1] * _simParams->PERMEABILITY_IRON;
+            mzTerms[iFV] = mTerms[site][2] * _simParams->PERMEABILITY_IRON;
             sitePositions[iFV] = site;
             iFV++;
         }
@@ -458,12 +458,12 @@ std::vector<double> DipolarFields::DipolarInteractionInterlayerAll( std::vector<
             double positionVector_cubed = std::pow(positionVector_norm, 3);
             double positionVector_fifth = std::pow(positionVector_norm, 5);
 
-            std::vector<double> originSite = {mTermsLayer1[currentSite][0] * _simParams->PERMITTIVITY_IRON,
-                                              mTermsLayer1[currentSite][1] * _simParams->PERMITTIVITY_IRON,
-                                              mTermsLayer1[currentSite][2] * _simParams->PERMITTIVITY_IRON};
-            std::vector<double> influencingSite = {mTermsLayer2[otherSite][0] * _simParams->PERMITTIVITY_IRON,
-                                                   mTermsLayer2[otherSite][1] * _simParams->PERMITTIVITY_IRON,
-                                                   mTermsLayer2[otherSite][2] * _simParams->PERMITTIVITY_IRON};
+            std::vector<double> originSite = {mTermsLayer1[currentSite][0] * _simParams->PERMEABILITY_IRON,
+                                              mTermsLayer1[currentSite][1] * _simParams->PERMEABILITY_IRON,
+                                              mTermsLayer1[currentSite][2] * _simParams->PERMEABILITY_IRON};
+            std::vector<double> influencingSite = {mTermsLayer2[otherSite][0] * _simParams->PERMEABILITY_IRON,
+                                                   mTermsLayer2[otherSite][1] * _simParams->PERMEABILITY_IRON,
+                                                   mTermsLayer2[otherSite][2] * _simParams->PERMEABILITY_IRON};
 
             double originSiteDotPosition = originSite[0] * positionVector[0] + originSite[1] * positionVector[1];
             double influencingSiteDotPosition = influencingSite[0] * positionVector[0]
@@ -520,13 +520,13 @@ std::vector<double> DipolarFields::DipolarInteractionInterlayerAdjacent( std::ve
         double positionVector_cubed = std::pow(positionVector_norm, 3);
         double positionVector_fifth = std::pow(positionVector_norm, 5);
 
-        std::vector<double> originSite = {mTermsChain1[currentSite][0] * _simParams->PERMITTIVITY_IRON,
-                                          mTermsChain1[currentSite][1] * _simParams->PERMITTIVITY_IRON,
-                                          mTermsChain1[currentSite][2] * _simParams->PERMITTIVITY_IRON};
+        std::vector<double> originSite = {mTermsChain1[currentSite][0] * _simParams->PERMEABILITY_IRON,
+                                          mTermsChain1[currentSite][1] * _simParams->PERMEABILITY_IRON,
+                                          mTermsChain1[currentSite][2] * _simParams->PERMEABILITY_IRON};
 
-        std::vector<double> influencingSite = {mTermsChain2[currentSite][0] * _simParams->PERMITTIVITY_IRON,
-                                               mTermsChain2[currentSite][1] * _simParams->PERMITTIVITY_IRON,
-                                               mTermsChain2[currentSite][2] * _simParams->PERMITTIVITY_IRON};
+        std::vector<double> influencingSite = {mTermsChain2[currentSite][0] * _simParams->PERMEABILITY_IRON,
+                                               mTermsChain2[currentSite][1] * _simParams->PERMEABILITY_IRON,
+                                               mTermsChain2[currentSite][2] * _simParams->PERMEABILITY_IRON};
 
         double originSiteDotPosition = originSite[1] * positionVector[1];
         double influencingSiteDotPosition = influencingSite[1] * positionVector[1];
@@ -578,9 +578,9 @@ DipolarFields::DipolarInteractionIntralayerDebug( std::vector<std::vector<double
     if ( numNeighbours < 0 ) {
         for ( int site = _simParams->numSpinsInABC + 1; site <= vecLength + _simParams->numSpinsInABC; site++ ) {
             // Flatting the vectors
-            mxTerms[iFV] = mTerms[site][0] * _simParams->PERMITTIVITY_IRON;
-            myTerms[iFV] = mTerms[site][1] * _simParams->PERMITTIVITY_IRON;
-            mzTerms[iFV] = mTerms[site][2] * _simParams->PERMITTIVITY_IRON;
+            mxTerms[iFV] = mTerms[site][0] * _simParams->PERMEABILITY_IRON;
+            myTerms[iFV] = mTerms[site][1] * _simParams->PERMEABILITY_IRON;
+            mzTerms[iFV] = mTerms[site][2] * _simParams->PERMEABILITY_IRON;
             sitePositions[iFV] = site;
             iFV++;
         }
@@ -592,9 +592,9 @@ DipolarFields::DipolarInteractionIntralayerDebug( std::vector<std::vector<double
                 continue;
             }
             // Flatting the vectors
-            mxTerms[iFV] = mTerms[site][0] * _simParams->PERMITTIVITY_IRON;
-            myTerms[iFV] = mTerms[site][1] * _simParams->PERMITTIVITY_IRON;
-            mzTerms[iFV] = mTerms[site][2] * _simParams->PERMITTIVITY_IRON;
+            mxTerms[iFV] = mTerms[site][0] * _simParams->PERMEABILITY_IRON;
+            myTerms[iFV] = mTerms[site][1] * _simParams->PERMEABILITY_IRON;
+            mzTerms[iFV] = mTerms[site][2] * _simParams->PERMEABILITY_IRON;
             sitePositions[iFV] = site;
             iFV++;
         }
@@ -726,17 +726,17 @@ std::vector<double> DipolarFields::DipolarInteractionInterlayerDebug( std::vecto
         double positionVector_fifth = std::pow(positionVector_norm, 5);
 
         if ( _simFlags->debugFunc ) { std::cout << "DB1.6 | "; }
-        std::vector<double> originSite = {mTermsChain1[currentSite][0] * _simParams->PERMITTIVITY_IRON,
-                                          mTermsChain1[currentSite][1] * _simParams->PERMITTIVITY_IRON,
-                                          mTermsChain1[currentSite][2] * _simParams->PERMITTIVITY_IRON};
+        std::vector<double> originSite = {mTermsChain1[currentSite][0] * _simParams->PERMEABILITY_IRON,
+                                          mTermsChain1[currentSite][1] * _simParams->PERMEABILITY_IRON,
+                                          mTermsChain1[currentSite][2] * _simParams->PERMEABILITY_IRON};
         if ( _simFlags->debugFunc ) {
             std::cout << "INTER Origin: [" << originSite[0] << ", " << originSite[1] << ", " << originSite[2] << "] | ";
         }
 
         if ( _simFlags->debugFunc ) { std::cout << "DB1.7 | "; }
-        std::vector<double> influencingSite = {mTermsChain2[currentSite][0] * _simParams->PERMITTIVITY_IRON,
-                                               mTermsChain2[currentSite][1] * _simParams->PERMITTIVITY_IRON,
-                                               mTermsChain2[currentSite][2] * _simParams->PERMITTIVITY_IRON};
+        std::vector<double> influencingSite = {mTermsChain2[currentSite][0] * _simParams->PERMEABILITY_IRON,
+                                               mTermsChain2[currentSite][1] * _simParams->PERMEABILITY_IRON,
+                                               mTermsChain2[currentSite][2] * _simParams->PERMEABILITY_IRON};
         if ( _simFlags->debugFunc ) {
             std::cout << "INTER Influe: [" << influencingSite[0] << ", " << influencingSite[1] << ", "
                       << influencingSite[2] << "] | ";

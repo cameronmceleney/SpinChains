@@ -682,21 +682,19 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
 
     if ( simFlags->hasDemagIntense )
         demagField.DemagnetisationFieldIntense(demagXp, demagYp, demagZp, mxIn, myIn, mzIn);
-
-
     std::vector<double> mxInMu, myInMu, mzInMu;
     if ( simFlags->hasDipolar ) {
         // Required step to convert the magnetic moment components to the magnetic field components
-        mxInMu = mxIn;
-        myInMu = myIn;
-        mzInMu = mzIn;
-        for ( int i = 1; i <= mxIn.size(); i++ ) {
-            mxInMu[i] *= 0;//simParams->satMag * simParams->systemTotalSpins;
-            myInMu[i] *= 0;//simParams->satMag * simParams->systemTotalSpins;
-            mzInMu[i] *= 0;//simParams->satMag * simParams->systemTotalSpins;
-        }
-        // Option 1
-        dipolarField.DipolarInteractionClassicThreaded(mxInMu, myInMu, mzInMu, dipoleXp, dipoleYp, dipoleZp);
+        //mxInMu = mxIn;
+        //myInMu = myIn;
+        //mzInMu = mzIn;
+        //for ( int i = 1; i <= mxIn.size(); i++ ) {
+        //    mxInMu[i] *= simParams.PERMEABILITY_IRON;//simParams->satMag * simParams->systemTotalSpins;
+        //    myInMu[i] *= simParams.PERMEABILITY_IRON;//simParams->satMag * simParams->systemTotalSpins;
+        //    mzInMu[i] *= simParams.PERMEABILITY_IRON;//simParams->satMag * simParams->systemTotalSpins;
+        //}
+        //// Option 1
+        dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
     }
 
     if ( simFlags->hasDMI )
@@ -876,15 +874,6 @@ void SolversImplementation::_resizeClassContainers() {
         std::fill(sttYp.begin(), sttYp.end(), 0.0);
         sttZp.resize(simParams->systemTotalSpins + 2);
         std::fill(sttZp.begin(), sttZp.end(), 0.0);
-    }
-
-    if ( simFlags->hasDMI ) {
-        dmiXp.resize(simParams->systemTotalSpins + 2);
-        std::fill(dmiXp.begin(), dmiXp.end(), 0.0);
-        dmiYp.resize(simParams->systemTotalSpins + 2);
-        std::fill(dmiYp.begin(), dmiYp.end(), 0.0);
-        dmiZp.resize(simParams->systemTotalSpins + 2);
-        std::fill(dmiZp.begin(), dmiZp.end(), 0.0);
     }
 
     // Fill RK2 Stage magnetic moment containers. Ensure only to include methods that use class-wide containers
