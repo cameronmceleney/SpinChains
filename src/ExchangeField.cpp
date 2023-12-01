@@ -117,8 +117,7 @@ ExchangeField::_calculateExchangeField1D( const int &currentSite, const std::vec
      * the future
      */
 
-    if ( shouldUseTBB ) {
-        if ( _simFlags->isFerromagnetic ) {
+    if ( shouldUseTBB && _simFlags->isFerromagnetic ) {
             return {
                     _simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1] +
                     _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1],
@@ -127,12 +126,8 @@ ExchangeField::_calculateExchangeField1D( const int &currentSite, const std::vec
                     _simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1] +
                     _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1],
             };
-        } else if ( !_simFlags->isFerromagnetic ) {
-            throw std::invalid_argument("_calculateExchangeField1D hasn't got AFM implementation yet");
-        }
-    } else {
+    } else
         throw std::invalid_argument("_calculateExchangeField1D hasn't got CUDA implementation yet");
-    }
 }
 
 std::array<double, 3>

@@ -49,8 +49,8 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
     simFlags->shouldDriveCentre = false;
-    simFlags->shouldDriveLHS = true;
-    simFlags->shouldDriveRHS = false;
+    simFlags->shouldDriveLHS = false;
+    simFlags->shouldDriveRHS = true;
 
     // Drive Manipulation Flags
     simFlags->isOscillatingZeemanStatic = false;
@@ -58,25 +58,25 @@ void SolversInitialisation::_setSimulationFlags() {
 
     // Output Flags
     simFlags->shouldPrintAllData = false;
-    simFlags->shouldPrintDiscreteTimes = false;
-    simFlags->shouldPrintDiscreteSites = true;
+    simFlags->shouldPrintDiscreteTimes = true;
+    simFlags->shouldPrintDiscreteSites = false;
 }
 
 void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 273; // Kelvin
-    simParams->drivingFreq = 62.8 * 1e9;
+    simParams->drivingFreq = 42.5 * 1e9;
     simParams->oscillatingZeemanStrength = 3e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 1.5e-9;
+    simParams->maxSimTime = 0.7e-9;
     simParams->satMag = 0.010032;
-    simParams->stepsize = 1e-17;
+    simParams->stepsize = 1e-15;
 
     // Data Output Parameters
     simStates->fixedOutputSites = {1300, 2300, 3300, 4300};
-    simParams->numberOfDataPoints = 1000000; //static_cast<int>(maxSimTime / recordingInterval);
+    simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
     simParams->gilbertDamping = 1e-4;
@@ -85,9 +85,9 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 500;
+    simParams->drivingRegionWidth = 200;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 300;
+    simParams->numSpinsInABC = 0;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)
