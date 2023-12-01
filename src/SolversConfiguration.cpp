@@ -109,7 +109,7 @@ void SolversConfiguration::_setupDrivingRegion(int numSpinsInChain, int numSpins
 
     if (simFlags->hasCustomDrivePosition) {
         // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
-        simParams->drivingRegionLhs = 0 + 1;
+        simParams->drivingRegionLhs = simParams->numSpinsInABC + 1;
         simParams->drivingRegionRhs = simParams->drivingRegionLhs + drivingRegionWidth - 1;
         return;
     }
@@ -124,7 +124,7 @@ void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, 
     LinspaceClass SpinChainExchangeLHS;
     LinspaceClass SpinChainExchangeRHS;
 
-    int customDampedSite = 300; // Lets the driving regions be a single exchange region with the main chain
+    int customDampedSite = 300; // Lets the damping regions be a single exchange region with the main chain
 
     if (numSpinsAbsorbingRegion > 0) {
         if (simParams->numSpinsInABC == customDampedSite) {

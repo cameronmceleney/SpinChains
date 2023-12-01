@@ -23,7 +23,8 @@ bool EffectiveFields::isSiteDriven( const int &site ) {
     return false;
 }
 
-double EffectiveFields::EffectiveFieldX( const int &site, const int &layer, const double &mxLHS, const double &mxMID,
+double
+EffectiveFields::EffectiveFieldXClassic( const int &site, const int &layer, const double &mxLHS, const double &mxMID,
                                          const double &mxRHS, const double &dipoleTerm, const double &demagTerm,
                                          const double &dmiTerm, const double &current_time ) {
     // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
@@ -36,10 +37,11 @@ double EffectiveFields::EffectiveFieldX( const int &site, const int &layer, cons
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
             if ( _simFlags->shouldDriveAllLayers || layer == 0 ) {
                 hx = _simStates->exchangeVec[site - 1] * mxLHS + _simStates->exchangeVec[site] * mxRHS + dmiTerm;
-                hx += dipoleTerm + demagTerm + _simParams->dynamicBiasField * cos(_simParams->drivingAngFreq * current_time);
-            } else if ( _simFlags->isDriveStatic ) {
+                hx += dipoleTerm + demagTerm +
+                      _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * current_time);
+            } else if ( _simFlags->isOscillatingZeemanStatic ) {
                 hx = _simStates->exchangeVec[site - 1] * mxLHS + _simStates->exchangeVec[site] * mxRHS + dmiTerm;
-                hx += + dipoleTerm + demagTerm + _simParams->dynamicBiasField;
+                hx += +dipoleTerm + demagTerm + _simParams->oscillatingZeemanStrength;
             } else if ((!_simFlags->shouldDriveAllLayers && layer != 0)) {
                 hx = _simStates->exchangeVec[site - 1] * mxLHS + _simStates->exchangeVec[site] * mxRHS + dmiTerm;
                 hx += dipoleTerm + demagTerm;
@@ -52,12 +54,12 @@ double EffectiveFields::EffectiveFieldX( const int &site, const int &layer, cons
     } else if ( !_simFlags->isFerromagnetic ) {
         if ( isSiteDriven(site)) {
             // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
-            if ( _simFlags->isDriveStatic )
+            if ( _simFlags->isOscillatingZeemanStatic )
                 hx = -1.0 * (_simStates->exchangeVec[site - 1] * mxLHS + _simStates->exchangeVec[site] * mxRHS +
-                             _simParams->dynamicBiasField);
-            else if ( !_simFlags->isDriveStatic )
+                             _simParams->oscillatingZeemanStrength);
+            else if ( !_simFlags->isOscillatingZeemanStatic )
                 hx = -1.0 * (_simStates->exchangeVec[site - 1] * mxLHS + _simStates->exchangeVec[site] * mxRHS) +
-                     _simParams->dynamicBiasField * cos(_simParams->drivingAngFreq * current_time);
+                     _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * current_time);
         } else
             // All spins along x which are not within the driving region
             hx = -1.0 * (_simStates->exchangeVec[site - 1] * mxLHS + _simStates->exchangeVec[site] * mxRHS);
@@ -66,7 +68,8 @@ double EffectiveFields::EffectiveFieldX( const int &site, const int &layer, cons
     return hx;
 }
 
-double EffectiveFields::EffectiveFieldY( const int &site, const int &layer, const double &myLHS, const double &myMID,
+double
+EffectiveFields::EffectiveFieldYClassic( const int &site, const int &layer, const double &myLHS, const double &myMID,
                                          const double &myRHS, const double &dipoleTerm, const double &demagTerm,
                                          const double &dmiTerm ) {
     // The effective field (H_eff) y-component acting upon a given magnetic moment (site), abbreviated to 'hy'
@@ -77,15 +80,15 @@ double EffectiveFields::EffectiveFieldY( const int &site, const int &layer, cons
     if ( _simFlags->isFerromagnetic ) {
         hy = _simStates->exchangeVec[site - 1] * myLHS + _simStates->exchangeVec[site] * myRHS - dmiTerm;
         hy += dipoleTerm + demagTerm;
-    }
-    else if ( !_simFlags->isFerromagnetic ) {
+    } else if ( !_simFlags->isFerromagnetic ) {
         hy = -1.0 * (_simStates->exchangeVec[site - 1] * myLHS + _simStates->exchangeVec[site] * myRHS);
     }
 
     return hy;
 }
 
-double EffectiveFields::EffectiveFieldZ( const int &site, const int &layer, const double &mzLHS, const double &mzMID,
+double
+EffectiveFields::EffectiveFieldZClassic( const int &site, const int &layer, const double &mzLHS, const double &mzMID,
                                          const double &mzRHS,
                                          const double &dipoleTerm, const double &demagTerm ) {
     // The effective field (H_eff) z-component acting upon a given magnetic moment (site), abbreviated to 'hz'

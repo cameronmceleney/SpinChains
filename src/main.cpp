@@ -7,7 +7,6 @@
 // #include "../Other/working_on/SpinChainEigenSolverClass.h"
 
 int main() {
-
     // GitHub Token: ***REMOVED*** (works as of 04 Jun 23)
     auto sharedSimParams = std::make_shared<SimulationParameters>();
     auto sharedSimStates = std::make_shared<SimulationStates>();
@@ -22,11 +21,11 @@ int main() {
     // Global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(4000);
+    GV.SetNumSpins(4600);
     GV.SetExchangeMinVal(43.5);
     GV.SetExchangeMaxVal(132.0);
     GV.SetGyromagneticConstant(29.2);
-    GV.SetDMIConstant(400);
+    GV.SetDMIConstant(0);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -36,25 +35,28 @@ int main() {
     std::string outputFileID;
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> outputFileID;
-    GV.SetFileNameBase("T"+outputFileID);
+    GV.SetFileNameBase("T" + outputFileID);
 
     GV.SetFilePath("windows");
 
     GV.SetNumericalMethod("RK2p");
 
     // I keep forgetting to check the exchanges, hence this warning
-    if (GV.GetIsExchangeUniform())
+    if ( GV.GetIsExchangeUniform())
         std::cout << "Uniform Exchange" << std::endl;
     else
         std::cout << "Non-Uniform Exchange" << std::endl;
 
     // Run the simulation
-    if (GV.GetShouldFindEigenvalues()) {
+    if ( GV.GetShouldFindEigenvalues()) {
         std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
     } else {
-        auto initialisationInstance = SolversSuperClass::createSimulationInstance(sharedSimParams, sharedSimStates, sharedSimFlags);
-        auto configurationInstance = SolversSuperClass::createConfigurationInstance(sharedSimParams, sharedSimStates, sharedSimFlags);
-        auto methodsInstance = SolversSuperClass::createMethodsInstance(sharedSimParams, sharedSimStates, sharedSimFlags);
+        auto initialisationInstance = SolversSuperClass::createSimulationInstance(sharedSimParams, sharedSimStates,
+                                                                                  sharedSimFlags);
+        auto configurationInstance = SolversSuperClass::createConfigurationInstance(sharedSimParams, sharedSimStates,
+                                                                                    sharedSimFlags);
+        auto methodsInstance = SolversSuperClass::createMethodsInstance(sharedSimParams, sharedSimStates,
+                                                                        sharedSimFlags);
 
         initialisationInstance->performInitialisation();
         configurationInstance->performInitialisation();

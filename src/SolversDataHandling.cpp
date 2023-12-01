@@ -21,12 +21,12 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         outputFileName << "Using LLG: [" << simFlags->shouldUseLLG << "]\t\t\t\tUsing Shockwave: ["
                        << simFlags->hasShockwave << "]\t\tDrive from LHS: [" << simFlags->shouldDriveLHS <<
                        "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: ["
-                       << simFlags->isDriveStatic << "]\n";
+                       << simFlags->isOscillatingZeemanStatic << "]\n";
 
         outputFileName << "\n";
 
         outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t"
-                       << "Dynamic Bias Field (H_D1): " << simParams->dynamicBiasField << " T\n" <<
+                       << "Dynamic Bias Field (H_D1): " << simParams->oscillatingZeemanStrength << " T\n" <<
                        "Dynamic Bias Field Scale Factor: " << simParams->shockwaveInitialStrength << "\t\t"
                        << "Second Dynamic Bias Field (H_D2): " << simParams->shockwaveMax << " T\n" <<
                        "Driving Frequency (f): " << simParams->drivingFreq << "Hz\t\t""Driving Region Start Site: "
@@ -58,9 +58,9 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
 
         outputFileName << "Using magDynamics," << simFlags->shouldUseLLG << ",Using Shockwave,"
                        << simFlags->hasShockwave << ",Drive from LHS," << simFlags->shouldDriveLHS
-                       << ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->isDriveStatic
+                       << ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->isOscillatingZeemanStatic
                        << ",Has Dipolar," << simFlags->hasDipolar << ",Has DMI," << simFlags->hasDMI
-                       << ",Has STT," << simFlags->hasSTT << ",Has Zeeman," << simFlags->hasZeeman
+                       << ",Has STT," << simFlags->hasSTT << ",Has Zeeman," << simFlags->hasStaticZeeman
                        << ",Has Demag Intense," << simFlags->hasDemagIntense << ",Has Demag FFT," << simFlags->hasDemagFFT
                        << "\n";
 
@@ -74,7 +74,7 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                    "Shockwave Gradient Time [s], Shockwave Application Time [s]"
                    "\n";
 
-        outputFileName << GV.GetStaticBiasField() << ", " << simParams->dynamicBiasField << ", "
+        outputFileName << GV.GetStaticBiasField() << ", " << simParams->oscillatingZeemanStrength << ", "
                        << simParams->shockwaveInitialStrength << ", " << simParams->shockwaveMax << ", "
                        << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsInABC
                        << ", " << simParams->drivingRegionRhs - simParams->numSpinsInABC << ", "
@@ -485,12 +485,12 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         outputFileName << "Using magDynamics: [" << simFlags->shouldUseLLG << "]\t\t\t\tUsing Shockwave: ["
                        << simFlags->hasShockwave << "]\t\tDrive from LHS: [" << simFlags->shouldDriveLHS <<
                        "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: ["
-                       << simFlags->isDriveStatic << "]\n";
+                       << simFlags->isOscillatingZeemanStatic << "]\n";
 
         outputFileName << "\n";
 
         outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t"
-                       << "Dynamic Bias Field (H_D1): " << simParams->dynamicBiasField << " T\n" <<
+                       << "Dynamic Bias Field (H_D1): " << simParams->oscillatingZeemanStrength << " T\n" <<
                        "Dynamic Bias Field Scale Factor: " << simParams->shockwaveInitialStrength << "\t\t"
                        << "Second Dynamic Bias Field (H_D2): " << simParams->shockwaveMax << " T\n" <<
                        "Driving Frequency (f): " << simParams->drivingFreq << "Hz\t\t""Driving Region Start Site: "
@@ -522,7 +522,7 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
 
         outputFileName << "Using magDynamics," << simFlags->shouldUseLLG << ",Using Shockwave,"
                        << simFlags->hasShockwave << ",Drive from LHS," << simFlags->shouldDriveLHS <<
-                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->isDriveStatic
+                       ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->isOscillatingZeemanStatic
                        << "\n";
 
         outputFileName << "\n";
@@ -535,7 +535,7 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                    "Shockwave Gradient Time [s], Shockwave Application Time [s]"
                    "\n";
 
-        outputFileName << GV.GetStaticBiasField() << ", " << simParams->dynamicBiasField << ", "
+        outputFileName << GV.GetStaticBiasField() << ", " << simParams->oscillatingZeemanStrength << ", "
                        << simParams->shockwaveInitialStrength << ", " << simParams->shockwaveMax << ", "
                        << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsInABC
                        << ", " << simParams->drivingRegionRhs - simParams->numSpinsInABC << ", "

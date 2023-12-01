@@ -12,7 +12,7 @@ public:
     bool                shouldDriveBothSides;                                  // Drive from both sides of the system
     bool                hasShockwave;                               // Simulation contains a single driving bias field if (false).
 
-    bool                isDriveStatic;                             // Selects (if true) whether drive has sinusoidal term
+    bool                isOscillatingZeemanStatic;                             // Selects (if true) whether drive has sinusoidal term
     bool                isShockwaveOn;                              // Tests if the conditions to trigger a shockwave have been reached. Not to be altered by the user.
     bool                isShockwaveAtMax;                           // Tests if the shockwave is at its maximum amplitude. Not to be altered by the user.
 
@@ -33,11 +33,13 @@ public:
     bool                hasDipolar;
     bool                hasDMI;
     bool                hasSTT;
-    bool                hasZeeman;
+    bool                hasStaticZeeman;
     bool                hasDemagIntense;                            // todo doesn't work
     bool                hasDemagFFT;                                // todo doesn't work
     bool                hasMultipleLayers;
     bool                debugFunc;
+    bool                hasShapeAnisotropy;
+    int                 preferredDirection;                         // Establish preferred magnetic field direction; set static external field and DMI along this in 1D. [0] = x, [1] = y, [2] = z
 
     bool isFerromagnetic;
 };

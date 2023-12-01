@@ -75,6 +75,23 @@ private:
     inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite,
                                                 const bool & shouldUseTBB);
 
+    /**
+     * To be used in all cases where readability is key for debugging, and all single-threaded cases
+     * @param iSite
+     * @param jSite
+     * @return
+     */
+    inline std::array<double, 3> _dotProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite );
+
+    /**
+     * To be used in multi-threaded cases and is optimised for efficiency
+     * @param iSite
+     * @param jSite
+     * @return
+     */
+    inline std::array<double, 3> _dotProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite,
+                                                const bool & shouldUseTBB);
+
     std::array<double, 3> _calculateDMIField1D( const int &currentSite, const std::vector<double> &mxTerms,
                                               const std::vector<double> &myTerms, const std::vector<double> &mzTerms );
 

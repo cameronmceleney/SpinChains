@@ -87,6 +87,10 @@ set(SOLVER_CLASS_COMPONENTS
         include/DzyaloshinskiiMoriyaInteraction.h
         src/SpinTransferTorque.cpp
         include/SpinTransferTorque.h
+        src/ExchangeField.cpp
+        include/ExchangeField.h
+        src/BiasFields.cpp
+        include/BiasFields.h
 )
 
 # Must be before add_executable()

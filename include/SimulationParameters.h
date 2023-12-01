@@ -19,6 +19,7 @@ public:
 
     double              ambientTemperature;
     double              anisotropyField;
+    double              staticZeemanStrength;
 
     double              drivingAngFreq;                           // Angular frequency of oscillatory driving field [rad*s^{-1}].
     double              drivingFreq;                              // Frequency of oscillatory driving field. [GHz] (f_d in literature) (e.g.  42.5 * 1e9)
@@ -26,7 +27,7 @@ public:
     int                 drivingRegionRhs;                         // The position of the spin which is rightmost in the driving region.
 
     int                 drivingRegionWidth;                       // Driving region width.
-    double              dynamicBiasField;                         // Driving field amplitude [T] (caution: papers often give in [mT]).
+    double              oscillatingZeemanStrength;                         // Driving field amplitude [T] (caution: papers often give in [mT]).
     int                 forceStopAtIteration;                     // Legacy breakpoint variable. Set as a -ve value to deactivate.
     double              dipoleConstant;                           // Scaling factor which is constant across dipolar interaction calculations.
     double              dmiConstant;
@@ -59,7 +60,7 @@ public:
     double              satMag;                                   // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
 
     double              shockwaveGradientTime;                    // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[ps] when stepsize=1e-15.
-    double              shockwaveInitialStrength;                 // Initial strength of the shockwave before shockwaveScaling occurs. (Default: = dynamicBiasField)
+    double              shockwaveInitialStrength;                 // Initial strength of the shockwave before shockwaveScaling occurs. (Default: = oscillatingZeemanStrength)
     double              shockwaveMax;                             // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
     double              shockwaveScaling;                         // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
 

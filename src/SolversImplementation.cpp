@@ -28,7 +28,7 @@ void SolversImplementation::_testShockwaveConditions( double iteration ) {
             // Shockwave begins once simulation is a certain % complete
             simFlags->hasShockwave = false;
             simFlags->isShockwaveOn = false;
-            simParams->dynamicBiasField = 0;
+            simParams->oscillatingZeemanStrength = 0;
         }
 
         return;
@@ -39,17 +39,17 @@ void SolversImplementation::_testShockwaveConditions( double iteration ) {
         if ( iteration >= simParams->iterationEnd * simParams->iterStartShock ) {
             // Shockwave begins once simulation is a certain % complete
             simFlags->isShockwaveOn = true;
-            simParams->dynamicBiasField = simParams->shockwaveInitialStrength;
+            simParams->oscillatingZeemanStrength = simParams->shockwaveInitialStrength;
         }
 
         return;
     }
 
     if ( simFlags->isShockwaveOn and not simFlags->isShockwaveAtMax ) {
-        simParams->dynamicBiasField += simParams->shockwaveStepsize;
+        simParams->oscillatingZeemanStrength += simParams->shockwaveStepsize;
 
-        if ( simParams->dynamicBiasField >= simParams->shockwaveMax ) {
-            simParams->dynamicBiasField = simParams->shockwaveMax;
+        if ( simParams->oscillatingZeemanStrength >= simParams->shockwaveMax ) {
+            simParams->oscillatingZeemanStrength = simParams->shockwaveMax;
             simFlags->isShockwaveAtMax = true;
 
         }
@@ -208,14 +208,14 @@ void SolversImplementation::SolveRK2Classic() {
             }
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK0 = effectiveField.EffectiveFieldX(site, 0, simStates->mx0[spinLHS], simStates->mx0[site],
-                                                         simStates->mx0[spinRHS], dipoleX, demagX[site],
-                                                         dmiZ, t0);
-            double hyK0 = effectiveField.EffectiveFieldY(site, 0, simStates->my0[spinLHS], simStates->my0[site],
-                                                         simStates->my0[spinRHS], dipoleY, demagY[site],
-                                                         dmiZ);
-            double hzK0 = effectiveField.EffectiveFieldZ(site, 0, simStates->mz0[spinLHS], simStates->mz0[site],
-                                                         simStates->mz0[spinRHS], dipoleZ, demagZ[site]);
+            double hxK0 = effectiveField.EffectiveFieldXClassic(site, 0, simStates->mx0[spinLHS], simStates->mx0[site],
+                                                                simStates->mx0[spinRHS], dipoleX, demagX[site],
+                                                                dmiZ, t0);
+            double hyK0 = effectiveField.EffectiveFieldYClassic(site, 0, simStates->my0[spinLHS], simStates->my0[site],
+                                                                simStates->my0[spinRHS], dipoleY, demagY[site],
+                                                                dmiZ);
+            double hzK0 = effectiveField.EffectiveFieldZClassic(site, 0, simStates->mz0[spinLHS], simStates->mz0[site],
+                                                                simStates->mz0[spinRHS], dipoleZ, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mxK1 = llg.MagneticMomentX(site, simStates->mx0[site], simStates->my0[site], simStates->mz0[site],
@@ -284,12 +284,12 @@ void SolversImplementation::SolveRK2Classic() {
             }
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-            double hxK1 = effectiveField.EffectiveFieldX(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX,
-                                                         demagX[site], dmiZ, t0);
-            double hyK1 = effectiveField.EffectiveFieldY(site, 0, my1[spinLHS], my1[site], my1[spinRHS], dipoleY,
-                                                         demagY[site], dmiZ);
-            double hzK1 = effectiveField.EffectiveFieldZ(site, 0, mz1[spinLHS], mz1[site], mz1[spinRHS], dipoleZ,
-                                                         demagZ[site]);
+            double hxK1 = effectiveField.EffectiveFieldXClassic(site, 0, mx1[spinLHS], mx1[site], mx1[spinRHS], dipoleX,
+                                                                demagX[site], dmiZ, t0);
+            double hyK1 = effectiveField.EffectiveFieldYClassic(site, 0, my1[spinLHS], my1[site], my1[spinRHS], dipoleY,
+                                                                demagY[site], dmiZ);
+            double hzK1 = effectiveField.EffectiveFieldZClassic(site, 0, mz1[spinLHS], mz1[site], mz1[spinRHS], dipoleZ,
+                                                                demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mxK2 = llg.MagneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
@@ -451,11 +451,14 @@ void SolversImplementation::SolveRK2() {
                 }
 
                 // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-                double hxK0 = effectiveField.EffectiveFieldX(site, layer, mxLHS, mxMID, mxRHS, dipoleX, demagX[site],
-                                                             dmiZ, t0);
-                double hyK0 = effectiveField.EffectiveFieldY(site, layer, myLHS, myMID, myRHS, dipoleY, demagY[site],
-                                                             dmiZ);
-                double hzK0 = effectiveField.EffectiveFieldZ(site, layer, mzLHS, mzMID, mzRHS, dipoleZ, demagZ[site]);
+                double hxK0 = effectiveField.EffectiveFieldXClassic(site, layer, mxLHS, mxMID, mxRHS, dipoleX,
+                                                                    demagX[site],
+                                                                    dmiZ, t0);
+                double hyK0 = effectiveField.EffectiveFieldYClassic(site, layer, myLHS, myMID, myRHS, dipoleY,
+                                                                    demagY[site],
+                                                                    dmiZ);
+                double hzK0 = effectiveField.EffectiveFieldZClassic(site, layer, mzLHS, mzMID, mzRHS, dipoleZ,
+                                                                    demagZ[site]);
 
                 // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
                 double mxK1 = llg.MagneticMomentX(site, layer, mxMID, myMID, mzMID, hxK0, hyK0, hzK0);
@@ -527,11 +530,14 @@ void SolversImplementation::SolveRK2() {
                     dmiZ = dmiTerms[2];
                 }
                 // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-                double hxK1 = effectiveField.EffectiveFieldX(site, layer, mxLHS, mxMID, mxRHS, dipoleX, demagX[site],
-                                                             dmiZ, t0);
-                double hyK1 = effectiveField.EffectiveFieldY(site, layer, myLHS, myMID, myRHS, dipoleY, demagY[site],
-                                                             dmiZ);
-                double hzK1 = effectiveField.EffectiveFieldZ(site, layer, mzLHS, mzMID, mzRHS, dipoleZ, demagZ[site]);
+                double hxK1 = effectiveField.EffectiveFieldXClassic(site, layer, mxLHS, mxMID, mxRHS, dipoleX,
+                                                                    demagX[site],
+                                                                    dmiZ, t0);
+                double hyK1 = effectiveField.EffectiveFieldYClassic(site, layer, myLHS, myMID, myRHS, dipoleY,
+                                                                    demagY[site],
+                                                                    dmiZ);
+                double hzK1 = effectiveField.EffectiveFieldZClassic(site, layer, mzLHS, mzMID, mzRHS, dipoleZ,
+                                                                    demagZ[site]);
 
                 // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
                 double mxK2 = llg.MagneticMomentX(site, layer, mxMID, myMID, mzMID, hxK1, hyK1, hzK1);
@@ -737,25 +743,31 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                                   tbb::parallel_invoke(
                                           // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
                                           [&] {
-                                              hkLocal.x = effectiveField.EffectiveFieldX(site, 0, mxIn[siteLHSLocal],
-                                                                                         mxIn[site],
-                                                                                         mxIn[siteRHSLocal],
-                                                                                         dipoleXp[site], demagXp[site],
-                                                                                         dmiZp[site],
-                                                                                         currentTime);
+                                              hkLocal.x = effectiveField.EffectiveFieldXClassic(site, 0,
+                                                                                                mxIn[siteLHSLocal],
+                                                                                                mxIn[site],
+                                                                                                mxIn[siteRHSLocal],
+                                                                                                dipoleXp[site],
+                                                                                                demagXp[site],
+                                                                                                dmiZp[site],
+                                                                                                currentTime);
                                           },
                                           [&] {
-                                              hkLocal.y = effectiveField.EffectiveFieldY(site, 0, myIn[siteLHSLocal],
-                                                                                         myIn[site],
-                                                                                         myIn[siteRHSLocal],
-                                                                                         dipoleYp[site], demagYp[site],
-                                                                                         dmiZp[site]);
+                                              hkLocal.y = effectiveField.EffectiveFieldYClassic(site, 0,
+                                                                                                myIn[siteLHSLocal],
+                                                                                                myIn[site],
+                                                                                                myIn[siteRHSLocal],
+                                                                                                dipoleYp[site],
+                                                                                                demagYp[site],
+                                                                                                dmiZp[site]);
                                           },
                                           [&] {
-                                              hkLocal.z = effectiveField.EffectiveFieldZ(site, 0, mzIn[siteLHSLocal],
-                                                                                         mzIn[site],
-                                                                                         mzIn[siteRHSLocal],
-                                                                                         dipoleZp[site], demagZp[site]);
+                                              hkLocal.z = effectiveField.EffectiveFieldZClassic(site, 0,
+                                                                                                mzIn[siteLHSLocal],
+                                                                                                mzIn[site],
+                                                                                                mzIn[siteRHSLocal],
+                                                                                                dipoleZp[site],
+                                                                                                demagZp[site]);
                                           }
                                   );
 
@@ -780,15 +792,19 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                               } else {
 
                                   // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-                                  hkLocal.x = effectiveField.EffectiveFieldX(site, 0, mxIn[siteLHSLocal], mxIn[site],
-                                                                             mxIn[siteRHSLocal], dipoleLocal.x,
-                                                                             demagLocal.x, dmiLocal.z, currentTime);
-                                  hkLocal.y = effectiveField.EffectiveFieldY(site, 0, myIn[siteLHSLocal], myIn[site],
-                                                                             myIn[siteRHSLocal], dipoleLocal.y,
-                                                                             demagLocal.y, dmiLocal.z);
-                                  hkLocal.z = effectiveField.EffectiveFieldZ(site, 0, mzIn[siteLHSLocal], mzIn[site],
-                                                                             mzIn[siteRHSLocal], dipoleLocal.z,
-                                                                             demagLocal.z);
+                                  hkLocal.x = effectiveField.EffectiveFieldXClassic(site, 0, mxIn[siteLHSLocal],
+                                                                                    mxIn[site],
+                                                                                    mxIn[siteRHSLocal], dipoleLocal.x,
+                                                                                    demagLocal.x, dmiLocal.z,
+                                                                                    currentTime);
+                                  hkLocal.y = effectiveField.EffectiveFieldYClassic(site, 0, myIn[siteLHSLocal],
+                                                                                    myIn[site],
+                                                                                    myIn[siteRHSLocal], dipoleLocal.y,
+                                                                                    demagLocal.y, dmiLocal.z);
+                                  hkLocal.z = effectiveField.EffectiveFieldZClassic(site, 0, mzIn[siteLHSLocal],
+                                                                                    mzIn[site],
+                                                                                    mzIn[siteRHSLocal], dipoleLocal.z,
+                                                                                    demagLocal.z);
 
                                   // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
                                   mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocal.x,

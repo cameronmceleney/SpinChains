@@ -33,11 +33,12 @@ void SolversInitialisation::_setSimulationFlags() {
     // Magnetic Interaction Flags
     simFlags->hasShockwave = false;
     simFlags->hasDipolar = false;
-    simFlags->hasDMI = true;
+    simFlags->hasDMI = false;
     simFlags->hasSTT = false;
-    simFlags->hasZeeman = true;
+    simFlags->hasStaticZeeman = true;
     simFlags->hasDemagIntense = false;
     simFlags->hasDemagFFT = false;
+    simFlags->hasShapeAnisotropy = false;
 
     // Material Flags
     simFlags->hasMultipleLayers = false;
@@ -47,35 +48,35 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = true;
-    simFlags->shouldDriveLHS = false;
+    simFlags->shouldDriveCentre = false;
+    simFlags->shouldDriveLHS = true;
     simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
-    simFlags->isDriveStatic = false;
+    simFlags->isOscillatingZeemanStatic = false;
     simFlags->shouldDriveCeaseEarly = false;
 
     // Output Flags
     simFlags->shouldPrintAllData = false;
-    simFlags->shouldPrintDiscreteTimes = true;
-    simFlags->shouldPrintDiscreteSites = false;
+    simFlags->shouldPrintDiscreteTimes = false;
+    simFlags->shouldPrintDiscreteSites = true;
 }
 
 void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 273; // Kelvin
-    simParams->drivingFreq = 42.5 * 1e9;
-    simParams->dynamicBiasField = 3e-3;
+    simParams->drivingFreq = 62.8 * 1e9;
+    simParams->oscillatingZeemanStrength = 3e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 0.7e-9;
+    simParams->maxSimTime = 1.5e-9;
     simParams->satMag = 0.010032;
-    simParams->stepsize = 1e-15;
+    simParams->stepsize = 1e-17;
 
     // Data Output Parameters
-    simStates->fixedOutputSites = {12158, 14529, 15320};
-    simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
+    simStates->fixedOutputSites = {1300, 2300, 3300, 4300};
+    simParams->numberOfDataPoints = 1000000; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
     simParams->gilbertDamping = 1e-4;
@@ -83,17 +84,17 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
-    simStates->discreteDrivenSites = {300, 500};
-    simParams->drivingRegionWidth = 200;
+    simStates->discreteDrivenSites = {1};
+    simParams->drivingRegionWidth = 500;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 0;
+    simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)
     simParams->iterStartShock = 0.0;
     simParams->iterEndShock = 0.0001;
     simParams->shockwaveGradientTime = 1;
-    simParams->shockwaveInitialStrength = 0;  // Set equal to dynamicBiasField if NOT starting at time=0
+    simParams->shockwaveInitialStrength = 0;  // Set equal to oscillatingZeemanStrength if NOT starting at time=0
     simParams->shockwaveMax = 3e-3;
     simParams->shockwaveScaling = 1;
 
@@ -108,9 +109,11 @@ void SolversInitialisation::_generateRemainingParameters() {
     simParams->exchangeEnergyMin = GV.GetExchangeMinVal();
     simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
     simParams->dmiConstant = GV.GetDMIConstant();
+    simParams->staticZeemanStrength = GV.GetStaticBiasField();
     simParams->exchangeStiffness = 5.3e-17;
     simParams->spinPolarisation = 0.5;
     simParams->spinTransferEfficiency = 0.4;
+    simFlags->preferredDirection = 2;
 
     // Computations based upon other inputs
     simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;
@@ -146,7 +149,7 @@ void SolversInitialisation::_setMaterialParameters() {
     else if (!simFlags->isFerromagnetic)
         simParams->anisotropyField = GV.GetAnisotropyField();
 
-    if (!simFlags->hasZeeman)
+    if (!simFlags->hasStaticZeeman)
         GV.SetStaticBiasField(0);
 }
 
@@ -215,6 +218,11 @@ void SolversInitialisation::_guardClauses() {
 
     if (simFlags->shouldDriveDiscreteSites && simStates->discreteDrivenSites.empty()) {
         std::cout << "Warning: Request to drive discrete sites, but no sites were given [discreteDrivenSites].";
+        exit(1);
+    }
+
+    if (simFlags->hasShapeAnisotropy && simFlags->isFerromagnetic) {
+        std::cout << "Warning: You cannot use shape anisotropy with ferromagnetic materials.";
         exit(1);
     }
 
