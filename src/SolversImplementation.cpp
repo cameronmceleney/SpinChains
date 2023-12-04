@@ -747,12 +747,11 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
     // Test case only - use old H_{eff} calculation to see if issue is within memory management, or new methods
     tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
         for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
-            effectiveFieldXLocal[i] = effectiveField.EffectiveFieldXTest(i, 0, mxIn[i - 1],
-                                                                            mxIn[i + 1], currentTime);
-            effectiveFieldYLocal[i] = effectiveField.EffectiveFieldYTest(i, 0, myIn[i - 1],
-                                                                            myIn[i + 1]);
-            effectiveFieldZLocal[i] = effectiveField.EffectiveFieldZTest(i, 0, mzIn[i - 1], mzIn[i],
-                                                                            mzIn[i + 1]);
+            // effectiveField.EffectiveFieldXTest(i, 0, mxIn, effectiveFieldXLocal, currentTime);
+            // effectiveField.EffectiveFieldYTest(i, 0, myIn, effectiveFieldYLocal);
+            // effectiveField.EffectiveFieldZTest(i, 0, mzIn, effectiveFieldZLocal);
+            effectiveField.EffectiveFieldsCombinedTest(i, 0, mxIn, myIn, mzIn, effectiveFieldXLocal,
+                                                       effectiveFieldYLocal, effectiveFieldZLocal, currentTime);
         }
     }, tbb::auto_partitioner());
 

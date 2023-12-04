@@ -22,15 +22,16 @@
 
 class EffectiveFields {
 private:
-    SimulationParameters* _simParams; // Non-owning pointer to SimulationParameters
-    SimulationStates* _simStates;
-    SimulationFlags* _simFlags;
+    SimulationParameters *_simParams; // Non-owning pointer to SimulationParameters
+    SimulationStates *_simStates;
+    SimulationFlags *_simFlags;
 public:
-    explicit EffectiveFields(SimulationParameters* sharedSimParams,
-                            SimulationStates* sharedSimStates,
-                            SimulationFlags* sharedSimFlags);
+    explicit EffectiveFields( SimulationParameters *sharedSimParams,
+                              SimulationStates *sharedSimStates,
+                              SimulationFlags *sharedSimFlags );
+
     ~EffectiveFields() = default;
-    
+
 public:
     double EffectiveFieldXClassic( const int &site, const int &layer, const double &mxLHS, const double &mxMID,
                                    const double &mxRHS, const double &dipoleTerm, const double &demagTerm,
@@ -42,22 +43,28 @@ public:
                                    const double &dmiTerm );
 
     // Description missing
-    double              EffectiveFieldZClassic ( const int& site, const int& layer, const double& mzLHS, const double& mzMID,
-                                                 const double& mzRHS, const double& dipoleTerm,
-                                                 const double& demagTerm);
+    double EffectiveFieldZClassic( const int &site, const int &layer, const double &mzLHS, const double &mzMID,
+                                   const double &mzRHS, const double &dipoleTerm,
+                                   const double &demagTerm );
 
-    double              EffectiveFieldXTest( const int &site, const int &layer, const double &mxLHS,
-                                   const double &mxRHS, const double &current_time );
-
-    // Description missing
-    double              EffectiveFieldYTest( const int &site, const int &layer, const double &myLHS,
-                                             const double &myRHS);
+    void EffectiveFieldXTest( const int &currentSite, const int &layer, const std::vector<double> &mxTermsIn,
+                              std::vector<double> &effectiveFieldXTermsOut, const double &current_time );
 
     // Description missing
-    double              EffectiveFieldZTest ( const int& site, const int& layer, const double& mzLHS, const double& mzMID,
-                                              const double& mzRHS);
+    void EffectiveFieldYTest( const int &currentSite, const int &layer, const std::vector<double> &myTermsIn,
+                              std::vector<double> &effectiveFieldYTermsOut );
 
-    bool                isSiteDriven(const int& site);
+    // Description missing
+    void EffectiveFieldZTest( const int &currentSite, const int &layer, const std::vector<double> &mzTermsIn,
+                              std::vector<double> &effectiveFieldZTermsOut );
+
+    void EffectiveFieldsCombinedTest( const int &currentSite, const int &layer, const std::vector<double> &mxTermsIn,
+                                      const std::vector<double> &myTermsIn, const std::vector<double> &mzTermsIn,
+                                      std::vector<double> &effectiveFieldXTermsOut,
+                                      std::vector<double> &effectiveFieldYTermsOut,
+                                      std::vector<double> &effectiveFieldZTermsOut, const double &currentTime );
+
+    bool isSiteDriven( const int &site );
 };
 
 

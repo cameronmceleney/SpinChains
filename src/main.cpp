@@ -37,7 +37,7 @@ int main() {
     std::cin >> outputFileID;
     GV.SetFileNameBase("T" + outputFileID);
 
-    GV.SetFilePath("macos");
+    GV.SetFilePath("windows");
 
     GV.SetNumericalMethod("RK2p");
 
