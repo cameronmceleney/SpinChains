@@ -64,7 +64,29 @@ public:
                                       std::vector<double> &effectiveFieldYTermsOut,
                                       std::vector<double> &effectiveFieldZTermsOut, const double &currentTime );
 
+    std::array<double, 3>
+    EffectiveFieldsCombinedTestExOnly( const int &currentSite, const int &layer,
+                                       const std::vector<double> &mxTermsIn,
+                                       const std::vector<double> &myTermsIn,
+                                       const std::vector<double> &mzTermsIn );
+
+    std::array<double, 3> EffectiveFieldsCombinedTestDriveOnly( const int &currentSite, const int &layer,
+                                                                const std::vector<double> &mxTermsIn,
+                                                                const std::vector<double> &myTermsIn,
+                                                                const std::vector<double> &mzTermsIn,
+                                                                const double &currentTime );
+
     bool isSiteDriven( const int &site );
+
+    struct exchangeOut {
+        double x;
+        double y;
+        double z;
+
+        exchangeOut() : x(0.0), y(0.0), z(0.0) {}
+
+        exchangeOut( double updateX, double updateY, double updateZ ) : x(updateX), y(updateY), z(updateZ) {}
+    };
 };
 
 

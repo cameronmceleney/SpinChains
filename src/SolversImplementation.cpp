@@ -561,7 +561,7 @@ void SolversImplementation::RK2Parallel() {
 
     // TODO. As this is all multi-threaded, having such larger vectors is excessive. Change methods to work by element (so that onl mx/my/mz are large in memory)
     // Only create vectors once to reuse memory. Only assign memory if flags are true. Faster to declare loop-wide vectors than define them in each loop iteration.
-    bool useTest = false;
+    bool useTest = true;
     if (useTest)
         _resizeClassContainersTest();
     else
@@ -737,32 +737,45 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
     bool useParallel = true;
     int layer = 0;
 
-
     // Use these to ensure that there's no issues with sharing a member attribute across
     // methods (this is less memory efficient, but for debugging purposes)
     std::vector<double> effectiveFieldXLocal(simParams->systemTotalSpins + 2, 0.0);
     std::vector<double> effectiveFieldYLocal(simParams->systemTotalSpins + 2, 0.0);
     std::vector<double> effectiveFieldZLocal(simParams->systemTotalSpins + 2, 0.0);
 
-    // Test case only - use old H_{eff} calculation to see if issue is within memory management, or new methods
     tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
         for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
-            // effectiveField.EffectiveFieldXTest(i, 0, mxIn, effectiveFieldXLocal, currentTime);
-            // effectiveField.EffectiveFieldYTest(i, 0, myIn, effectiveFieldYLocal);
-            // effectiveField.EffectiveFieldZTest(i, 0, mzIn, effectiveFieldZLocal);
-            effectiveField.EffectiveFieldsCombinedTest(i, 0, mxIn, myIn, mzIn, effectiveFieldXLocal,
-                                                       effectiveFieldYLocal, effectiveFieldZLocal, currentTime);
+            std::array<double, 3> hExTermsTemp{0.0, 0.0, 0.0};
+            std::array<double, 3> hExtTermsTemp{0.0, 0.0, 0.0};
+            hExtTermsTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
+            hExTermsTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
+
+            effectiveFieldXLocal[i] += hExtTermsTemp[0] + hExTermsTemp[0];
+            effectiveFieldYLocal[i] += hExtTermsTemp[1] + hExTermsTemp[1];
+            effectiveFieldZLocal[i] += hExtTermsTemp[2] + hExTermsTemp[2];
         }
     }, tbb::auto_partitioner());
 
+    // tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
+    //     for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
+    //         std::array<double, 3> hExtTermsTemp{0.0, 0.0, 0.0};
+    //         hExtTermsTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
+    //         effectiveFieldXLocal[i] += hExtTermsTemp[0];
+    //         effectiveFieldYLocal[i] += hExtTermsTemp[1];
+    //         effectiveFieldZLocal[i] += hExtTermsTemp[2];
+    //     }
+    // }, tbb::auto_partitioner());
+    // Error region end
+
     //exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXLocal, effectiveFieldYLocal, effectiveFieldZLocal, useParallel);
-    //biasField.calculateOneDimension(layer, currentTime, effectiveFieldXLocal, effectiveFieldYLocal, effectiveFieldZLocal, useParallel);
+    //biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXLocal, effectiveFieldYLocal,
+    //                                effectiveFieldZLocal, useParallel);
 
     dipolarTimer.setName("Dipolar");
 
 
     // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
-    tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
+    //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
     tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
         for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
             /*
@@ -777,10 +790,6 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
             double hkLocalX = effectiveFieldXLocal[site];
             double hkLocalY = effectiveFieldYLocal[site];
             double hkLocalZ = effectiveFieldZLocal[site];
-
-            if ( site == 1 ) {
-                hkLocalX += simParams->oscillatingZeemanStrength * cos(simParams->drivingAngFreq * currentTime);
-            }
 
             // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mkLocalX = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);

@@ -113,8 +113,8 @@ include_directories(${EIGEN_DIR} ${FFTW_DIR}/include ${TBB_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${FFTW_LIB} ${TBB_LIB})
 
 ################################################################
-# Optional: Uncomment for optimisation (-O2 and -03 being most common for me)
-# target_compile_options(SpinChains PRIVATE -O3)
+# Optional: Uncomment for optimisation (-O2 and -O3 being most common for me)
+# target_compile_options(SpinChains PRIVATE -O2)
 
 ################################################################
 

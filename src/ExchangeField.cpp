@@ -42,25 +42,21 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                 [&]( const tbb::blocked_range<int> tbbRange ) {
                     for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
                         // Need local vector to hold results to ensure this is threadsafe
-                        std::array<double, 3> tempResultsExchangeLocal {0.0, 0.0, 0.0};
-                        std::array<double, 3> tempResultsDMILocal {0.0, 0.0, 0.0};
+                        std::array<double, 3> originalSiteLocal = {exchangeXOut[site], exchangeYOut[site],
+                                                                   exchangeZOut[site]};
+                        std::array<double, 3> tempResultsExchangeLocal = {0.0, 0.0, 0.0};
+                        std::array<double, 3> tempResultsDMILocal = {0.0, 0.0, 0.0};
                         tempResultsExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms,
                                                                              shouldUseTBB);
-                        exchangeXOut[site] += tempResultsExchangeLocal[0];
-                        exchangeYOut[site] += tempResultsExchangeLocal[1];
-                        exchangeZOut[site] += tempResultsExchangeLocal[2] + GV.GetStaticBiasField();
-
-                        if (site >= 1 && site <= 200) {
-                            exchangeXOut[site] += _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * _simParams->totalTime);
-                        }
 
                         if ( _simFlags->hasDMI ) {
                             // Only calculate DMI if it is present in the system
-                            //tempResultsDMILocal = _calculateDMI1D(i, mxTerms, myTerms, mzTerms, shouldUseTBB);
-                            exchangeXOut[site] += tempResultsDMILocal[0];
-                            exchangeYOut[site] += tempResultsDMILocal[1];
-                            exchangeZOut[site] += tempResultsDMILocal[2];
+                            tempResultsDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
                         }
+
+                        exchangeXOut[site] = originalSiteLocal[0] + tempResultsExchangeLocal[0] + tempResultsDMILocal[0];
+                        exchangeYOut[site] = originalSiteLocal[1] + tempResultsExchangeLocal[1] + tempResultsDMILocal[1];
+                        exchangeZOut[site] = originalSiteLocal[2] + tempResultsExchangeLocal[2] + tempResultsDMILocal[2];
                     }
         }, tbb::auto_partitioner());
     } else {
@@ -123,12 +119,47 @@ ExchangeField::_calculateExchangeField1D( const int &currentSite, const std::vec
      * the future
      */
 
-    if ( shouldUseTBB && _simFlags->isFerromagnetic ) {
-            return {
-                _simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1],
-                _simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1],
-                _simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1]
-            };
+    if ( shouldUseTBB ) {
+        // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
+        double hxLocal = 0.0, hyLocal = 0.0, hzLocal = 0.0;
+
+        // Structure should be: first line are interactions (Heisenberg Exchange, DMI); second line are other fields
+
+        if ( _simFlags->isFerromagnetic ) {
+            // hx terms
+            hxLocal = _simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1]
+                        + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1];
+
+            // hy terms
+            hyLocal = _simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1]
+                          + _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1];
+
+            // hz terms
+            hzLocal = _simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1]
+                          + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1];
+
+        } else if ( !_simFlags->isFerromagnetic ) {
+            // hx terms
+            hxLocal = -1.0 * (_simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1]
+                        + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1]);
+
+
+            // hy terms
+            hyLocal = -1.0 * (_simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1]
+                                  + _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1]);
+
+            // hz terms
+            if ( mzTerms[currentSite] > 0 )
+                hzLocal = _simParams->anisotropyField -
+                              (_simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1]
+                               + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1]);
+            else if ( mzTerms[currentSite] < 0 )
+                hzLocal =  -1.0 * _simParams->anisotropyField -
+                              (_simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1]
+                               + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1]);
+        }
+
+        return {hxLocal, hyLocal, hzLocal};
     } else
         throw std::invalid_argument("_calculateExchangeField1D hasn't got CUDA implementation yet");
 }

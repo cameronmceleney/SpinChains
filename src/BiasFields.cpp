@@ -27,23 +27,23 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
 }
 
 void BiasFields::calculateOneDimension( const int &currentLayer, const double &currentTime,
-                                        std::vector<double> &biasFieldXOut, std::vector<double> &biasFieldYOut,
-                                        std::vector<double> &biasFieldZOut, const bool &shouldUseTBB ) {
+                                        const std::vector<double> &mzTermsIn, std::vector<double> &biasFieldXOut,
+                                        std::vector<double> &biasFieldYOut, std::vector<double> &biasFieldZOut,
+                                        const bool &shouldUseTBB ) {
     // This function is used for parallel calculations. Useful in large systems or when H_ext is complex
     if ( shouldUseTBB ) {
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
                 [&]( const tbb::blocked_range<int> tbbRange ) {
                     for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
-                        // Need local vector to hold results to ensure this is threadsafe
-                        std::array<double, 3> tempResultsLocal{0.0, 0.0, 0.0};
-                        //tempResultsLocal = _calculateBiasField1D(i, currentLayer, currentTime, shouldUseTBB);
-                        if ( site >= _simParams->drivingRegionLhs && site <= _simParams->drivingRegionRhs ) {
-                            biasFieldXOut[site] += _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
-                        } else {
-                            biasFieldXOut[site] += 0.0;
-                        }
-                        biasFieldYOut[site] += 0.0;
-                        biasFieldZOut[site] += GV.GetStaticBiasField();
+                        // Holds original site value to make threadsafe
+                        std::array<double, 3> originalSiteLocal = {biasFieldXOut[site], biasFieldYOut[site],
+                                           biasFieldZOut[site]};
+                        std::array<double, 3> tempResultsContainer;
+                        tempResultsContainer = _calculateBiasField1D(site, currentLayer, currentTime, mzTermsIn[site],
+                                                                     shouldUseTBB);
+                        biasFieldXOut[site] = originalSiteLocal[0] + tempResultsContainer[0];
+                        biasFieldYOut[site] = originalSiteLocal[1] + tempResultsContainer[1];
+                        biasFieldZOut[site] = originalSiteLocal[2] + tempResultsContainer[2];
                     }
         }, tbb::auto_partitioner());
     } else {
@@ -59,31 +59,32 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
     // Only works when considering nearest-neighbours (NN)
 
     std::array<double, 3> biasFieldTerms{0.0, 0.0, 0.0};
+
     if ( _simFlags->isFerromagnetic ) {
         if ( _hasOscillatingZeeman(currentSite)) {
             // Currently assumes that the oscillating field will only be applied along x-axis
             if ( _simFlags->shouldDriveAllLayers || currentLayer == 0 )
-                biasFieldTerms[0] +=
+                biasFieldTerms[0] =
                         _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
             else if ( _simFlags->isOscillatingZeemanStatic )
-                biasFieldTerms[0] += _simParams->oscillatingZeemanStrength;
+                biasFieldTerms[0] = _simParams->oscillatingZeemanStrength;
         }
         if ( _simFlags->hasStaticZeeman && _simFlags->preferredDirection == 2 ) {
             // Currently assumes that the static field is uniform across z-axis
-            biasFieldTerms[_simFlags->preferredDirection] += _simParams->staticZeemanStrength;
+            biasFieldTerms[_simFlags->preferredDirection] = _simParams->staticZeemanStrength;
         }
     } else if ( !_simFlags->isFerromagnetic ) {
         if ( _hasOscillatingZeeman(currentSite)) {
             // Currently assumes that the oscillating field will only be applied along x-axis
             if ( _simFlags->shouldDriveAllLayers || currentLayer == 0 )
-                biasFieldTerms[0] +=
+                biasFieldTerms[0] =
                         _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
             else if ( _simFlags->isOscillatingZeemanStatic )
-                biasFieldTerms[0] += _simParams->oscillatingZeemanStrength;
+                biasFieldTerms[0] = _simParams->oscillatingZeemanStrength;
         }
         if ( _simFlags->hasStaticZeeman && _simFlags->preferredDirection == 2 ) {
             // Currently assumes that the static field is uniform across z-axis
-            biasFieldTerms[_simFlags->preferredDirection] +=
+            biasFieldTerms[_simFlags->preferredDirection] =
                     _simParams->staticZeemanStrength;
         }
     }
@@ -93,7 +94,7 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
 
 std::array<double, 3>
 BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLayer, const double &currentTime,
-                                   const bool &shouldUseTBB ) {
+                                   const double &mzTermAtSite, const bool &shouldUseTBB ) {
 
     // TODO. This is a temp polymorphic version of _calculateDMIField1D that is threadsafe. Needs refinement
     // Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
@@ -104,38 +105,49 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
      */
 
     if ( shouldUseTBB ) {
-        // Haven't found a more efficient way to do this yet
-        std::array<double, 3> biasFieldTerms{0.0, 0.0, 0.0};
+        // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
+        double hxLocal = 0.0, hyLocal = 0.0, hzLocal = 0.0;
+
+        // Structure should be: first line are interactions (Heisenberg Exchange, DMI); second line are other fields
 
         if ( _simFlags->isFerromagnetic ) {
+            // hx terms
             if ( _hasOscillatingZeeman(currentSite)) {
-                // Currently assumes that the oscillating field will only be applied along x-axis
-                if ( _simFlags->shouldDriveAllLayers || currentLayer == 0 )
-                    biasFieldTerms[0] += _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
-                else if ( _simFlags->isOscillatingZeemanStatic )
-                    biasFieldTerms[0] += _simParams->oscillatingZeemanStrength;
+                // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
+                if ( _simFlags->shouldDriveAllLayers || currentLayer == 0 ) {
+                    hxLocal = _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
+                } else if ( _simFlags->isOscillatingZeemanStatic ) {
+                    hxLocal = _simParams->oscillatingZeemanStrength;
+                }
             }
-            if ( _simFlags->hasStaticZeeman ) {
-                // Currently assumes that the static field is uniform across z-axis
-                biasFieldTerms[2] += _simParams->staticZeemanStrength;
-            }
+
+            // hy terms
+            hyLocal = 0.0;
+
+            // hz terms
+            hzLocal = GV.GetStaticBiasField();
+
         } else if ( !_simFlags->isFerromagnetic ) {
+            // hx terms
             if ( _hasOscillatingZeeman(currentSite)) {
-                // Currently assumes that the oscillating field will only be applied along x-axis
-                if ( _simFlags->shouldDriveAllLayers || currentLayer == 0 )
-                    biasFieldTerms[0] +=
-                            _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
-                else if ( _simFlags->isOscillatingZeemanStatic )
-                    biasFieldTerms[0] += _simParams->oscillatingZeemanStrength;
+                // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
+                if ( _simFlags->isOscillatingZeemanStatic )
+                    hxLocal = _simParams->oscillatingZeemanStrength;
+                else if ( !_simFlags->isOscillatingZeemanStatic )
+                    hxLocal = _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
             }
-            if ( _simFlags->hasStaticZeeman && _simFlags->preferredDirection == 2 ) {
-                // Currently assumes that the static field is uniform across z-axis
-                biasFieldTerms[_simFlags->preferredDirection] +=
-                        _simParams->staticZeemanStrength;
-            }
+
+            // hy terms
+            hyLocal = 0.0;
+
+            // hz terms
+            if ( mzTermAtSite > 0 )
+                hzLocal = GV.GetStaticBiasField();
+            else if ( mzTermAtSite < 0 )
+                hzLocal = GV.GetStaticBiasField();
         }
 
-        return biasFieldTerms;
+        return {hxLocal, hyLocal, hzLocal};
     } else {
         throw std::invalid_argument("_calculateBiasFields1D hasn't got CUDA implementation yet");
     }

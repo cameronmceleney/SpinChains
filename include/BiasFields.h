@@ -63,7 +63,7 @@ private:
 
     std::array<double, 3>
     _calculateBiasField1D( const int &currentSite, const int &currentLayer, const double &currentTime,
-                           const bool &shouldUseTBB );
+                           const double &mzTermAtSite, const bool &shouldUseTBB );
 
     inline bool _hasOscillatingZeeman( const int &site );
 
@@ -80,8 +80,9 @@ public:
                                 std::vector<double> &biasFieldZOut );
 
     void calculateOneDimension( const int &currentLayer, const double &currentTime,
-                                std::vector<double> &biasFieldXOut, std::vector<double> &biasFieldYOut,
-                                std::vector<double> &biasFieldZOut, const bool &shouldUseTBB );
+                                const std::vector<double> &mzTermsIn, std::vector<double> &biasFieldXOut,
+                                std::vector<double> &biasFieldYOut, std::vector<double> &biasFieldZOut,
+                                const bool &shouldUseTBB );
 };
 
 
