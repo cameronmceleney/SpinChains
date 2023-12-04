@@ -327,12 +327,12 @@ std::array<double, 3> EffectiveFields::EffectiveFieldsCombinedTestExOnly( const 
         // hx terms
         hxLocal = _simStates->exchangeVec[currentSite - 1] * mxTermsIn[currentSite - 1]
                     + _simStates->exchangeVec[currentSite] * mxTermsIn[currentSite + 1]
-                    + -1.0 * _simParams->dmiConstant * (myTermsIn[currentSite + 1] - myTermsIn[currentSite + 1]);
+                    -1.0 * _simParams->dmiConstant * (myTermsIn[currentSite + 1] - myTermsIn[currentSite - 1]);
 
         // hy terms
         hyLocal = _simStates->exchangeVec[currentSite - 1] * myTermsIn[currentSite - 1]
                       + _simStates->exchangeVec[currentSite] * myTermsIn[currentSite + 1]
-                      + _simParams->dmiConstant * (mxTermsIn[currentSite + 1] - mxTermsIn[currentSite + 1]);
+                      + _simParams->dmiConstant * (mxTermsIn[currentSite + 1] - mxTermsIn[currentSite - 1]);
 
         // hz terms
         hzLocal = _simStates->exchangeVec[currentSite - 1] * mzTermsIn[currentSite - 1]

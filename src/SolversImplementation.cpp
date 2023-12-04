@@ -745,14 +745,12 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
 
     tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
         for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
-            std::array<double, 3> hExTermsTemp{0.0, 0.0, 0.0};
-            std::array<double, 3> hExtTermsTemp{0.0, 0.0, 0.0};
-            hExtTermsTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
-            hExTermsTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
 
-            effectiveFieldXLocal[i] += hExtTermsTemp[0] + hExTermsTemp[0];
-            effectiveFieldYLocal[i] += hExtTermsTemp[1] + hExTermsTemp[1];
-            effectiveFieldZLocal[i] += hExtTermsTemp[2] + hExTermsTemp[2];
+            std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
+            std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
+            effectiveFieldXLocal[i] = driveTemp[0] + exchangeTemp[0];  // these lines
+            effectiveFieldYLocal[i] = driveTemp[1] + exchangeTemp[1];  // these lines
+            effectiveFieldZLocal[i] = driveTemp[2] + exchangeTemp[2];  // these lines
         }
     }, tbb::auto_partitioner());
 
