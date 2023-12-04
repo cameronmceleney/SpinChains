@@ -39,24 +39,30 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
     // This function is used for parallel calculations. Useful in large systems or when H_ex is complex
     if ( shouldUseTBB ) {
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
-                          [&]( const tbb::blocked_range<int> tbbRange ) {
-                              for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
-                                  // Need local vector to hold results to ensure this is threadsafe
-                                  std::array<double, 3> tempResultsLocal = _calculateExchangeField1D(i, mxTerms,
-                                                                                                     myTerms,
-                                                                                                     mzTerms,
-                                                                                                     shouldUseTBB);
-                                  exchangeXOut[i] = tempResultsLocal[0];
-                                  exchangeYOut[i] = tempResultsLocal[1];
-                                  exchangeZOut[i] = tempResultsLocal[2];
+                [&]( const tbb::blocked_range<int> tbbRange ) {
+                    for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
+                        // Need local vector to hold results to ensure this is threadsafe
+                        std::array<double, 3> tempResultsExchangeLocal {0.0, 0.0, 0.0};
+                        std::array<double, 3> tempResultsDMILocal {0.0, 0.0, 0.0};
+                        tempResultsExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms,
+                                                                             shouldUseTBB);
+                        exchangeXOut[site] += tempResultsExchangeLocal[0];
+                        exchangeYOut[site] += tempResultsExchangeLocal[1];
+                        exchangeZOut[site] += tempResultsExchangeLocal[2] + GV.GetStaticBiasField();
 
-                                  // Overwrite tempResultsLocal with DMI results to save memory
-                                  tempResultsLocal = _calculateDMI1D(i, mxTerms, myTerms, mzTerms, shouldUseTBB);
-                                  exchangeXOut[i] += tempResultsLocal[0];
-                                  exchangeYOut[i] += tempResultsLocal[1];
-                                  exchangeZOut[i] += tempResultsLocal[2];
-                              }
-                          });
+                        if (site >= 1 && site <= 200) {
+                            exchangeXOut[site] += _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * _simParams->totalTime);
+                        }
+
+                        if ( _simFlags->hasDMI ) {
+                            // Only calculate DMI if it is present in the system
+                            //tempResultsDMILocal = _calculateDMI1D(i, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                            exchangeXOut[site] += tempResultsDMILocal[0];
+                            exchangeYOut[site] += tempResultsDMILocal[1];
+                            exchangeZOut[site] += tempResultsDMILocal[2];
+                        }
+                    }
+        }, tbb::auto_partitioner());
     } else {
         throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");
     }
@@ -119,12 +125,9 @@ ExchangeField::_calculateExchangeField1D( const int &currentSite, const std::vec
 
     if ( shouldUseTBB && _simFlags->isFerromagnetic ) {
             return {
-                    _simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1] +
-                    _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1],
-                    _simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1] +
-                    _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1],
-                    _simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1] +
-                    _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1],
+                _simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1],
+                _simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1],
+                _simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1]
             };
     } else
         throw std::invalid_argument("_calculateExchangeField1D hasn't got CUDA implementation yet");

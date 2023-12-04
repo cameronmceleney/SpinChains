@@ -49,8 +49,8 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
     simFlags->shouldDriveCentre = false;
-    simFlags->shouldDriveLHS = false;
-    simFlags->shouldDriveRHS = true;
+    simFlags->shouldDriveLHS = true;
+    simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
     simFlags->isOscillatingZeemanStatic = false;
@@ -150,7 +150,7 @@ void SolversInitialisation::_setMaterialParameters() {
         simParams->anisotropyField = GV.GetAnisotropyField();
 
     if (!simFlags->hasStaticZeeman)
-        GV.SetStaticBiasField(0);
+        simParams->staticZeemanStrength = 0.0;
 }
 
 void SolversInitialisation::_guardClauses() {

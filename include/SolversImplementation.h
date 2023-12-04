@@ -34,6 +34,8 @@
 #include "MagnetisationDynamics.h"
 #include "DipolarFields.h"
 #include "SpinTransferTorque.h"
+#include "ExchangeField.h"
+#include "BiasFields.h"
 
 class SolversImplementation :
         public SolversSuperClass, public iSolversImplementation {
@@ -44,9 +46,12 @@ private:
     MagnetisationDynamics llg;
     DipolarFields dipolarField;
     SpinTransferTorque stt;
+    ExchangeField exchangeField;
+    BiasFields biasField;
 
 private:
     void _resizeClassContainers();
+    void _resizeClassContainersTest();
 
     void _testOutputValues( double& mxTerm, double& myTerm, double& mzTerm, int site, int iteration, const std::string &rkStage );
     /**
@@ -77,6 +82,11 @@ private:
                                 std::vector<double> &myOut, std::vector<double> &mzOut,
                                 double &currentTime, double &stepsize, int &iteration,
                                 std::string rkStage );
+    void RK2StageMultithreadedTest( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                    const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                    std::vector<double> &myOut, std::vector<double> &mzOut,
+                                    const double &currentTime, const double &stepsize,
+                                    const int &iteration, std::string rkStage );
 
 public:
     SolversImplementation( std::shared_ptr<SimulationParameters> paramsData,
@@ -87,6 +97,10 @@ public:
 public:
     // TODO. Temp as public for testing. In future, will be private members (need to sort inheritance first)
     // TODO. Update all methods (currently only Parallel) to use class members as containers
+    std::vector<double> effectiveFieldX;
+    std::vector<double> effectiveFieldY;
+    std::vector<double> effectiveFieldZ;
+
     std::vector<double> demagXp;
     std::vector<double> demagYp;
     std::vector<double> demagZp;

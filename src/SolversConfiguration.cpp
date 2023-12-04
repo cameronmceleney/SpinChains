@@ -124,7 +124,7 @@ void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, 
     LinspaceClass SpinChainExchangeLHS;
     LinspaceClass SpinChainExchangeRHS;
 
-    int customDampedSite = 0; // Lets the damping regions be a single exchange region with the main chain
+    int customDampedSite = -1; // Lets the damping regions be a single exchange region with the main chain
 
     if (numSpinsAbsorbingRegion > 0) {
         if (simParams->numSpinsInABC == customDampedSite) {

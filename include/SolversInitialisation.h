@@ -6,6 +6,8 @@
 #define SPINCHAINS_SOLVERSINITIALISATION_H
 
 // C++ Standard Libraries
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <iostream>
 

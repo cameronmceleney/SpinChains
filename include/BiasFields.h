@@ -76,12 +76,12 @@ public:
 
 public:
     void calculateOneDimension( const int &currentLayer, const double &currentTime,
-                                std::vector<double> &exchangeXOut, std::vector<double> &exchangeYOut,
-                                std::vector<double> &exchangeZOut );
+                                std::vector<double> &biasFieldXOut, std::vector<double> &biasFieldYOut,
+                                std::vector<double> &biasFieldZOut );
 
     void calculateOneDimension( const int &currentLayer, const double &currentTime,
-                                std::vector<double> &exchangeXOut, std::vector<double> &exchangeYOut,
-                                std::vector<double> &exchangeZOut, const bool &shouldUseTBB );
+                                std::vector<double> &biasFieldXOut, std::vector<double> &biasFieldYOut,
+                                std::vector<double> &biasFieldZOut, const bool &shouldUseTBB );
 };
 
 

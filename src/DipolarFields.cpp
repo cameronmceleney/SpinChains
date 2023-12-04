@@ -21,7 +21,6 @@ double DipolarFields::dipolarKernel3D( const int &originSite, const int &influen
     // ################################ Declare initial Values ################################
     double dipoleKernelDirect = 0.0, distanceBetweenSites = 0.0, theta = 0.0, cosTheta = 0.0, sinTheta = 0.0;
     double x1 = 0.0, y1 = 0.0, z1 = 0.0, x2 = 0.0, y2 = 0.0, z2 = 0.0;
-
     // ################################ Calculate distance between sites ################################
     // Calculate the distance between the two sites
     distanceBetweenSites = std::abs(originSite - influencingSite);

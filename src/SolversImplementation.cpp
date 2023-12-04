@@ -15,7 +15,9 @@ SolversImplementation::SolversImplementation( std::shared_ptr<SimulationParamete
           effectiveField(simParams.get(), simStates.get(), simFlags.get()),
           dipolarField(simParams.get(), simStates.get(), simFlags.get()),
           llg(simParams.get(), simStates.get(), simFlags.get()),
-          stt(simParams.get(), simStates.get(), simFlags.get()){}
+          stt(simParams.get(), simStates.get(), simFlags.get()),
+          exchangeField(simParams.get(), simStates.get(), simFlags.get()),
+          biasField(simParams.get(), simStates.get(), simFlags.get()){}
 
 void SolversImplementation::_testShockwaveConditions( double iteration ) {
 
@@ -100,9 +102,6 @@ void SolversImplementation::SolveRK2Classic() {
 
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
-        // EASY FIND
-        // if (simFlags->hasDipolar)
-        //     dipolarField.DipolarInteraction1D(simStates->mx0, dipoleX);
         if ( simFlags->hasDemagIntense ) {
             demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, simStates->mx0, simStates->my0,
                                                    simStates->mz0);
@@ -110,71 +109,15 @@ void SolversImplementation::SolveRK2Classic() {
             std::string rkStageName = "2-1";
             demagField.DemagField1DReal(demagX, demagY, demagZ, simStates->mx0, simStates->my0, simStates->mz0,
                                         iteration, rkStageName);
-
-            //std::cout << "Iteration #" << iteration <<" | RMSE. mx: " << rmse_mx << " | my: " << rmse_my << " | mz:  " << rmse_mz << std::endl;  // Keep for debugging
-
-
-            //if (iteration > 0) {std::cout << "Stage 1" << std::endl; PrintVector(demagZ, false);}
-            /*
-            std::cout << "HERE IN FUNCTION: X" << std::endl;
-            PrintVector(demagX, false);
-            std::cout << "HERE IN FUNCTION: Y" << std::endl;
-            PrintVector(demagY, false);
-            std::cout << "HERE IN FUNCTION: Z" << std::endl;
-            PrintVector(demagZ, false);
-
-            if (demagX == demagX2)
-                std::cout << "HERE IN demagX are the same" << std::endl;
-            else {
-                std::cout << "HERE IN demagX are NOT the same" << std::endl;
-                for (int i = 0; i < demagX.size(); i++) {
-                    if (demagX[i] != demagX2[i])
-                        std::cout << i << " | demagX (real)" << demagX[i] << " demagX2 (copy) " << demagX2[i] << std::endl;
-                }
-            }
-            if (demagY == demagY2)
-                std::cout << "HERE IN demagY are the same" << std::endl;
-            else {
-                std::cout << "HERE IN demagY are NOT the same" << std::endl;
-                for (int i = 0; i < demagY.size(); i++) {
-                    if (demagY[i] != demagY2[i])
-                        std::cout << i << " | demagY (real)" << demagY[i] << " demagY2 (copy) " << demagY2[i] << std::endl;
-                }
-            }
-            if (demagZ == demagZ2)
-                std::cout << "HERE IN demagZ are the same" << std::endl;
-            else {
-                std::cout << "HERE IN demagZ are NOT the same" << std::endl;
-                for (int i = 0; i < demagZ.size(); i++) {
-                    if (demagZ[i] != demagZ2[i])
-                        std::cout << i << " | demagZ (real)" << demagZ[i] << " demagZ2 (copy) " << demagZ2[i] << std::endl;
-                }
-            }
-            std::exit(0);
-             */
         }
 
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
         // RK2 Stage 1. Takes initial conditions as inputs.
-
         for ( int site = 1; site <= GV.GetNumSpins(); site++ ) {
 
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
-            /*
-            if ((simParams->iterationEnd >= 100 && iteration % (simParams->iterationEnd / 1000) == 0) && site == 500) {
-                std::cout << "Iter. #" << iteration << " ";
-                std::cout << "| mx: " << simParams->mx0[200] << " - H_dx: " << demagX[200] << " ";
-                std::cout << "| my: " << simParams->my0[200] << " - H_dy: " << demagY[200] << " ";
-                std::cout << "| mz: " << simParams->mz0[200] << " - H_dz: " << demagZ[200] << " ";
-                std::cout << "| mTot: " << sqrt(pow(simParams->mx0[site], 2) + pow(simParams->my0[site], 2) + pow(simParams->mz0[site], 2)) << " ";
-                std::cout << std::endl;
-                //std::cout << "| mz: " << simParams->mz0[200] << " ";
-                //std::cout << "| H_dz: " << demagZ[200] << " ";
-                //std::cout << "| mTot: " << sqrt(pow(simParams->mx0[site], 2) + pow(simParams->my0[site], 2) + pow(simParams->mz0[site], 2)) << " ";
-                //std::cout << std::endl;
-            }
-            */
+
             double dipoleX = 0, dipoleY = 0, dipoleZ = 0;
             if ( simFlags->hasDipolar ) {
                 std::vector<double> mxTermsForDipole = {simStates->mx0[spinLHS], simStates->mx0[site],
@@ -190,9 +133,7 @@ void SolversImplementation::SolveRK2Classic() {
                                                                                          mzTermsForDipole,
                                                                                          siteTermsForDipole);
 
-                dipoleX = dipoleTerms[0];
-                dipoleY = dipoleTerms[1];
-                dipoleZ = dipoleTerms[2];
+                dipoleX = dipoleTerms[0]; dipoleY = dipoleTerms[1]; dipoleZ = dipoleTerms[2];
             }
 
             double dmiZ = 0;
@@ -452,11 +393,9 @@ void SolversImplementation::SolveRK2() {
 
                 // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
                 double hxK0 = effectiveField.EffectiveFieldXClassic(site, layer, mxLHS, mxMID, mxRHS, dipoleX,
-                                                                    demagX[site],
-                                                                    dmiZ, t0);
+                                                                    demagX[site], dmiZ, t0);
                 double hyK0 = effectiveField.EffectiveFieldYClassic(site, layer, myLHS, myMID, myRHS, dipoleY,
-                                                                    demagY[site],
-                                                                    dmiZ);
+                                                                    demagY[site], dmiZ);
                 double hzK0 = effectiveField.EffectiveFieldZClassic(site, layer, mzLHS, mzMID, mzRHS, dipoleZ,
                                                                     demagZ[site]);
 
@@ -531,11 +470,9 @@ void SolversImplementation::SolveRK2() {
                 }
                 // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
                 double hxK1 = effectiveField.EffectiveFieldXClassic(site, layer, mxLHS, mxMID, mxRHS, dipoleX,
-                                                                    demagX[site],
-                                                                    dmiZ, t0);
+                                                                    demagX[site], dmiZ, t0);
                 double hyK1 = effectiveField.EffectiveFieldYClassic(site, layer, myLHS, myMID, myRHS, dipoleY,
-                                                                    demagY[site],
-                                                                    dmiZ);
+                                                                    demagY[site],dmiZ);
                 double hzK1 = effectiveField.EffectiveFieldZClassic(site, layer, mzLHS, mzMID, mzRHS, dipoleZ,
                                                                     demagZ[site]);
 
@@ -624,9 +561,12 @@ void SolversImplementation::RK2Parallel() {
 
     // TODO. As this is all multi-threaded, having such larger vectors is excessive. Change methods to work by element (so that onl mx/my/mz are large in memory)
     // Only create vectors once to reuse memory. Only assign memory if flags are true. Faster to declare loop-wide vectors than define them in each loop iteration.
-    _resizeClassContainers();
+    bool useTest = false;
+    if (useTest)
+        _resizeClassContainersTest();
+    else
+        _resizeClassContainers();
 
-    double totalTime = 0;
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
         if ( simParams->iterationEnd >= 100 && iteration % (simParams->iterationEnd / 100) == 0 )
@@ -634,15 +574,25 @@ void SolversImplementation::RK2Parallel() {
 
         _testShockwaveConditions(iteration);
 
-        double t0 = totalTime;
+        double t0 = simParams->totalTime;
 
-        // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
-        RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p, t0,
-                              simParams->stepsize, iteration, "1");
+        if (useTest) {
+            // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
+            // Possible mistake here; should it not be 't0+h' and not 't0' for RK-S1?
+            RK2StageMultithreadedTest(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
+                                      simParams->totalTime, simParams->stepsizeHalf, iteration, "1");
 
-        // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
-        RK2StageMultithreaded(mx1p, my1p, mz1p, mx2p, my2p, mz2p, t0, simParams->stepsize, iteration,
-                              "2");
+            // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
+            RK2StageMultithreadedTest(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
+                                      simParams->totalTime, simParams->stepsize, iteration, "2");
+        } else {
+            // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
+            RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
+                                  simParams->totalTime, simParams->stepsizeHalf, iteration, "1");
+            // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
+            RK2StageMultithreaded(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
+                                  simParams->totalTime, simParams->stepsize, iteration, "2");
+        }
 
         // Everything below here is part of the method, but not the RK2 stage loops calculations.
 
@@ -660,7 +610,7 @@ void SolversImplementation::RK2Parallel() {
             exit(0);
         }
 
-        totalTime += simParams->stepsize;
+        simParams->totalTime += simParams->stepsize;
     } // End of RK2 FOR loop; all iterations now complete.
 
     mxOutputFile.close();
@@ -683,7 +633,6 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                                                    double &currentTime, double &stepsize, int &iteration,
                                                    std::string rkStage ) {
     CustomTimer dipolarTimer;
-    bool useParallelInvoke = false;  // Mainly for testing purposes at the moment
     bool useParallel = true;
 
     if ( simFlags->hasDemagIntense )
@@ -714,114 +663,56 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
 
     // Use below line to only use one thread to compare method's results to sequential method
     // tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
-    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins),
-                      [&]( const tbb::blocked_range<int> r ) {
-                          for ( int site = r.begin(); site <= r.end(); site++ ) {
-                              /*
-                               * All declarations of overwritten variables are placed here as 'local' to ensure
-                               * that each thread has its own definition; else variables are not threadsafe
-                               */
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> r ) {
+        for ( int site = r.begin(); site <= r.end(); site++ ) {
+            /*
+            * All declarations of overwritten variables are placed here as 'local' to ensure
+            * that each thread has its own definition; else variables are not threadsafe
+            */
 
-                              // Relative to the current site (site) we have siteLHS and siteRHS
-                              int siteLHSLocal = site - 1, siteRHSLocal = site + 1;
-                              DipoleTerms dipoleLocal;
-                              DemagTerms demagLocal;
-                              DMITerms dmiLocal;
-                              STTTerms sttLocal;
+            // Relative to the current site (site) we have siteLHS and siteRHS
+            int siteLHSLocal = site - 1, siteRHSLocal = site + 1;
+            DipoleTerms dipoleLocal;
+            DemagTerms demagLocal;
+            DMITerms dmiLocal;
+            STTTerms sttLocal;
 
-                              // All need to be defined as default cases in case their flags aren't called to overwrite
-                              if (simFlags->hasDipolar) { dipoleLocal.x = dipoleXp[site]; dipoleLocal.y = dipoleYp[site]; dipoleLocal.z = dipoleZp[site]; }
-                              if (simFlags->hasDemagIntense) { demagLocal.x = demagXp[site]; demagLocal.y = demagYp[site]; demagLocal.z = demagZp[site]; }
-                              if (simFlags->hasDMI) { dmiLocal.z = dmiZp[site]; }
-                              if (simFlags->hasSTT) { sttLocal.x = sttXp[site]; sttLocal.y = sttYp[site]; sttLocal.z = sttZp[site]; }
+            // All need to be defined as default cases in case their flags aren't called to overwrite
+            if (simFlags->hasDipolar) { dipoleLocal.x = dipoleXp[site]; dipoleLocal.y = dipoleYp[site]; dipoleLocal.z = dipoleZp[site]; }
+            if (simFlags->hasDemagIntense) { demagLocal.x = demagXp[site]; demagLocal.y = demagYp[site]; demagLocal.z = demagZp[site]; }
+            if (simFlags->hasDMI) { dmiLocal.z = dmiZp[site]; }
+            if (simFlags->hasSTT) { sttLocal.x = sttXp[site]; sttLocal.y = sttYp[site]; sttLocal.z = sttZp[site]; }
 
-                              // Will always be initialised so only need to declare here
-                              HkTerms hkLocal;
-                              MkTerms mkLocal;
+            // Will always be initialised so only need to declare here
+            HkTerms hkLocal;
+            MkTerms mkLocal;
 
-                              if ( useParallelInvoke ) {
-                                  tbb::parallel_invoke(
-                                          // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-                                          [&] {
-                                              hkLocal.x = effectiveField.EffectiveFieldXClassic(site, 0,
-                                                                                                mxIn[siteLHSLocal],
-                                                                                                mxIn[site],
-                                                                                                mxIn[siteRHSLocal],
-                                                                                                dipoleXp[site],
-                                                                                                demagXp[site],
-                                                                                                dmiZp[site],
-                                                                                                currentTime);
-                                          },
-                                          [&] {
-                                              hkLocal.y = effectiveField.EffectiveFieldYClassic(site, 0,
-                                                                                                myIn[siteLHSLocal],
-                                                                                                myIn[site],
-                                                                                                myIn[siteRHSLocal],
-                                                                                                dipoleYp[site],
-                                                                                                demagYp[site],
-                                                                                                dmiZp[site]);
-                                          },
-                                          [&] {
-                                              hkLocal.z = effectiveField.EffectiveFieldZClassic(site, 0,
-                                                                                                mzIn[siteLHSLocal],
-                                                                                                mzIn[site],
-                                                                                                mzIn[siteRHSLocal],
-                                                                                                dipoleZp[site],
-                                                                                                demagZp[site]);
-                                          }
-                                  );
+            // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
+            hkLocal.x = effectiveField.EffectiveFieldXClassic(site, 0, mxIn[siteLHSLocal], mxIn[site],
+                                                              mxIn[siteRHSLocal], dipoleLocal.x, demagLocal.x,
+                                                              dmiLocal.z, currentTime);
+            hkLocal.y = effectiveField.EffectiveFieldYClassic(site, 0, myIn[siteLHSLocal], myIn[site],
+                                                              myIn[siteRHSLocal], dipoleLocal.y, demagLocal.y,
+                                                              dmiLocal.z);
+            hkLocal.z = effectiveField.EffectiveFieldZClassic(site, 0, mzIn[siteLHSLocal], mzIn[site],
+                                                              mzIn[siteRHSLocal], dipoleLocal.z, demagLocal.z);
 
-                                  tbb::parallel_invoke(
-                                          // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
-                                          [&] {
-                                              mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
-                                                                              hkLocal.x, hkLocal.y,
-                                                                              hkLocal.z);
-                                          },
-                                          [&] {
-                                              mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
-                                                                              hkLocal.x, hkLocal.y,
-                                                                              hkLocal.z);
-                                          },
-                                          [&] {
-                                              mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
-                                                                              hkLocal.x, hkLocal.y,
-                                                                              hkLocal.z);
-                                          }
-                                  );
-                              } else {
+            // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
+                                            hkLocal.x, hkLocal.y, hkLocal.z);
+            mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
+                                            hkLocal.x, hkLocal.y, hkLocal.z);
+            mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
+                                            hkLocal.x, hkLocal.y, hkLocal.z);
 
-                                  // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
-                                  hkLocal.x = effectiveField.EffectiveFieldXClassic(site, 0, mxIn[siteLHSLocal],
-                                                                                    mxIn[site],
-                                                                                    mxIn[siteRHSLocal], dipoleLocal.x,
-                                                                                    demagLocal.x, dmiLocal.z,
-                                                                                    currentTime);
-                                  hkLocal.y = effectiveField.EffectiveFieldYClassic(site, 0, myIn[siteLHSLocal],
-                                                                                    myIn[site],
-                                                                                    myIn[siteRHSLocal], dipoleLocal.y,
-                                                                                    demagLocal.y, dmiLocal.z);
-                                  hkLocal.z = effectiveField.EffectiveFieldZClassic(site, 0, mzIn[siteLHSLocal],
-                                                                                    mzIn[site],
-                                                                                    mzIn[siteRHSLocal], dipoleLocal.z,
-                                                                                    demagLocal.z);
 
-                                  // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
-                                  mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocal.x,
-                                                                  hkLocal.y, hkLocal.z);
-                                  mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hkLocal.x,
-                                                                  hkLocal.y, hkLocal.z);
-                                  mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hkLocal.x,
-                                                                  hkLocal.y, hkLocal.z);
-                              }
+            mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
+            myOut[site] = simStates->my0[site] + stepsize * mkLocal.y;
+            mzOut[site] = simStates->mz0[site] + stepsize * mkLocal.z;
 
-                              mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
-                              myOut[site] = simStates->my0[site] + stepsize * mkLocal.y;
-                              mzOut[site] = simStates->mz0[site] + stepsize * mkLocal.z;
-
-                              _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
-                          }
-                      }, tbb::auto_partitioner());
+            _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
+        }
+    }, tbb::auto_partitioner());
 
     if ( simFlags->shouldTrackMagneticMomentNorm && rkStage == "2" ) {
         for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
@@ -831,6 +722,89 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
             }
         }
     }
+    // if (simParams->largestMNorm > 1.00005) { throw std::runtime_error("mag. moments are no longer below <= 1.00005"); }
+
+    // No need to fill demagX/dipoleX (etc) here they are constantly overwritten; filling to zeroes is just a waste unless debugging
+
+}
+
+void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                                       const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                                       std::vector<double> &myOut, std::vector<double> &mzOut,
+                                                       const double &currentTime, const double &stepsize,
+                                                       const int &iteration, std::string rkStage ) {
+    CustomTimer dipolarTimer;
+    bool useParallel = true;
+    int layer = 0;
+
+
+    // Use these to ensure that there's no issues with sharing a member attribute across
+    // methods (this is less memory efficient, but for debugging purposes)
+    std::vector<double> effectiveFieldXLocal(simParams->systemTotalSpins + 2, 0.0);
+    std::vector<double> effectiveFieldYLocal(simParams->systemTotalSpins + 2, 0.0);
+    std::vector<double> effectiveFieldZLocal(simParams->systemTotalSpins + 2, 0.0);
+
+    // Test case only - use old H_{eff} calculation to see if issue is within memory management, or new methods
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
+        for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
+            effectiveFieldXLocal[i] = effectiveField.EffectiveFieldXTest(i, 0, mxIn[i - 1],
+                                                                            mxIn[i + 1], currentTime);
+            effectiveFieldYLocal[i] = effectiveField.EffectiveFieldYTest(i, 0, myIn[i - 1],
+                                                                            myIn[i + 1]);
+            effectiveFieldZLocal[i] = effectiveField.EffectiveFieldZTest(i, 0, mzIn[i - 1], mzIn[i],
+                                                                            mzIn[i + 1]);
+        }
+    }, tbb::auto_partitioner());
+
+    //exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXLocal, effectiveFieldYLocal, effectiveFieldZLocal, useParallel);
+    //biasField.calculateOneDimension(layer, currentTime, effectiveFieldXLocal, effectiveFieldYLocal, effectiveFieldZLocal, useParallel);
+
+    dipolarTimer.setName("Dipolar");
+
+
+    // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
+    tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
+        for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
+            /*
+             * All declarations of overwritten variables are placed here as 'local' to ensure
+             * that each thread has its own definition; else variables are not threadsafe
+            */
+
+            // Will always be initialised so only need to declare here
+            //HkTerms hkLocal;
+            //MkTerms mkLocal;
+
+            double hkLocalX = effectiveFieldXLocal[site];
+            double hkLocalY = effectiveFieldYLocal[site];
+            double hkLocalZ = effectiveFieldZLocal[site];
+
+            if ( site == 1 ) {
+                hkLocalX += simParams->oscillatingZeemanStrength * cos(simParams->drivingAngFreq * currentTime);
+            }
+
+            // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double mkLocalX = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);
+            double mkLocalY = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);
+            double mkLocalZ = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);
+
+            mxOut[site] = simStates->mx0[site] + stepsize * mkLocalX;
+            myOut[site] = simStates->my0[site] + stepsize * mkLocalY;
+            mzOut[site] = simStates->mz0[site] + stepsize * mkLocalZ;
+
+            _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
+        }
+    }, tbb::auto_partitioner());
+
+    if ( !simFlags->shouldTrackMagneticMomentNorm && rkStage == "2" ) {
+        for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
+            double mIterationNorm = sqrt(pow(mxOut[site], 2) + pow(myOut[site], 2) + pow(mzOut[site], 2));
+            if ((simParams->largestMNorm) > (1.0 - mIterationNorm)) {
+                simParams->largestMNorm = (1.0 - mIterationNorm);
+            }
+        }
+    }
+
     // if (simParams->largestMNorm > 1.00005) { throw std::runtime_error("mag. moments are no longer below <= 1.00005"); }
 
     // No need to fill demagX/dipoleX (etc) here they are constantly overwritten; filling to zeroes is just a waste unless debugging
@@ -849,6 +823,20 @@ void SolversImplementation::runMethod() {
         RK2Parallel();
     else
         throw std::runtime_error("Method not recognised");
+}
+
+void SolversImplementation::_resizeClassContainersTest() {
+    // Should contain all interactions/fields that are calculated
+    effectiveFieldX.resize(simParams->systemTotalSpins + 2);
+    effectiveFieldY.resize(simParams->systemTotalSpins + 2);
+    effectiveFieldZ.resize(simParams->systemTotalSpins + 2);
+
+    mx1p.resize(simParams->systemTotalSpins + 2);
+    my1p.resize(simParams->systemTotalSpins + 2);
+    mz1p.resize(simParams->systemTotalSpins + 2);
+    mx2p.resize(simParams->systemTotalSpins + 2);
+    my2p.resize(simParams->systemTotalSpins + 2);
+    mz2p.resize(simParams->systemTotalSpins + 2);
 }
 
 void SolversImplementation::_resizeClassContainers() {

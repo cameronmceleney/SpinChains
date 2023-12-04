@@ -46,6 +46,17 @@ public:
                                                  const double& mzRHS, const double& dipoleTerm,
                                                  const double& demagTerm);
 
+    double              EffectiveFieldXTest( const int &site, const int &layer, const double &mxLHS,
+                                   const double &mxRHS, const double &current_time );
+
+    // Description missing
+    double              EffectiveFieldYTest( const int &site, const int &layer, const double &myLHS,
+                                             const double &myRHS);
+
+    // Description missing
+    double              EffectiveFieldZTest ( const int& site, const int& layer, const double& mzLHS, const double& mzMID,
+                                              const double& mzRHS);
+
     bool                isSiteDriven(const int& site);
 };
 
