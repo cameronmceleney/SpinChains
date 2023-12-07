@@ -7,7 +7,6 @@
 // #include "../Other/working_on/SpinChainEigenSolverClass.h"
 
 int main() {
-    // GitHub Token: ***REMOVED*** (works as of 04 Jun 23)
     auto sharedSimParams = std::make_shared<SimulationParameters>();
     auto sharedSimStates = std::make_shared<SimulationStates>();
     auto sharedSimFlags = std::make_shared<SimulationFlags>();

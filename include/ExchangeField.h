@@ -12,6 +12,7 @@
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
+#include <tbb/mutex.h>
 
 // C++ User Libraries (General)
 #include "CommonLibs.h"
