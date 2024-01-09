@@ -739,21 +739,22 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
 
     // Use these to ensure that there's no issues with sharing a member attribute across
     // methods (this is less memory efficient, but for debugging purposes)
-    std::vector<double> effectiveFieldXLocal(simParams->systemTotalSpins + 2, 0.0);
-    std::vector<double> effectiveFieldYLocal(simParams->systemTotalSpins + 2, 0.0);
-    std::vector<double> effectiveFieldZLocal(simParams->systemTotalSpins + 2, 0.0);
+    std::vector<std::atomic<double>> effectiveFieldXAtomic(simParams->systemTotalSpins + 2);
+    std::vector<std::atomic<double>> effectiveFieldYAtomic(simParams->systemTotalSpins + 2);
+    std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
 
-    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
-        for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
-
-            std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn,
-                                                                                                  mzIn, currentTime);
-            effectiveFieldXLocal[i] = driveTemp[0];
-            effectiveFieldYLocal[i] = driveTemp[1];
-            effectiveFieldZLocal[i] = driveTemp[2];
-        }
-    }, tbb::auto_partitioner());
-    exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXLocal, effectiveFieldYLocal, effectiveFieldZLocal, useParallel);
+    //tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
+    //    for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
+//
+    //        std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn,
+    //                                                                                              mzIn, currentTime);
+    //        effectiveFieldXLocal[i] = driveTemp[0];
+    //        effectiveFieldYLocal[i] = driveTemp[1];
+    //        effectiveFieldZLocal[i] = driveTemp[2];[image] ([pdf](zotero://open-pdf/library/items/6SHVBE95?page=3&annotation=95Z2LQSE))
+    //([Moon et al., 2013, p. 3](zotero://select/library/items/A7DNR44Z))
+    //    }
+    //}, tbb::auto_partitioner());
+    //exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXLocal, effectiveFieldYLocal, effectiveFieldZLocal, useParallel);
 
 
     /*
@@ -762,22 +763,71 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
 
             std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
             std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
-            effectiveFieldXLocal[i] = driveTemp[0] + exchangeTemp[0];  // these lines
-            effectiveFieldYLocal[i] = driveTemp[1] + exchangeTemp[1];  // these lines
-            effectiveFieldZLocal[i] = driveTemp[2] + exchangeTemp[2];  // these lines
+            effectiveFieldXLocal[i] = driveTemp[0] + exchangeTemp[0];
+            effectiveFieldYLocal[i] = driveTemp[1] + exchangeTemp[1];
+            effectiveFieldZLocal[i] = driveTemp[2] + exchangeTemp[2];
         }
-    }, tbb::auto_partitioner());*/
+    }, tbb::auto_partitioner());
+    */
 
+    /*
+    std::vector<std::atomic<double>> effectiveFieldXLocal(simParams->systemTotalSpins);
+    std::vector<std::atomic<double>> effectiveFieldYLocal(simParams->systemTotalSpins);
+    std::vector<std::atomic<double>> effectiveFieldZLocal(simParams->systemTotalSpins);
 
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&](const tbb::blocked_range<int>& range) {
+        for (int i = range.begin(); i != range.end(); ++i) {
+            // All computations where calculations are site-by-site should be here
+            std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
 
+            effectiveFieldXLocal[i].fetch_add(exchangeTemp[0]);
+            effectiveFieldYLocal[i].fetch_add(exchangeTemp[1]);
+            effectiveFieldZLocal[i].fetch_add(exchangeTemp[2]);
+        }
+    }, tbb::auto_partitioner());
 
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&](const tbb::blocked_range<int>& range) {
+        for (int i = range.begin(); i != range.end(); ++i) {
+            // All computations where calculations are site-by-site should be here
+            std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
 
-    //exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXLocal, effectiveFieldYLocal, effectiveFieldZLocal, useParallel);
-    //biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXLocal, effectiveFieldYLocal,
-    //                                effectiveFieldZLocal, useParallel);
+            effectiveFieldXLocal[i].fetch_add(driveTemp[0]);
+            effectiveFieldYLocal[i].fetch_add(driveTemp[1]);
+            effectiveFieldZLocal[i].fetch_add(driveTemp[2]);
+        }
+    }, tbb::auto_partitioner());
+
+    _transferDataThenReleaseAtomicVector(effectiveFieldXLocal, effectiveFieldX);
+    _transferDataThenReleaseAtomicVector(effectiveFieldYLocal, effectiveFieldY);
+    _transferDataThenReleaseAtomicVector(effectiveFieldZLocal, effectiveFieldZ);
+     */
+
+    /*
+    tbb::parallel_reduce(tbb::blocked_range<int>(1, simParams->systemTotalSpins), 0,
+        [&](const tbb::blocked_range<int>& range, int dummy) -> int {
+            for (int i = range.begin(); i < range.end(); ++i) {
+                std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
+                std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
+
+                effectiveFieldX[i] += exchangeTemp[0] + driveTemp[0];
+                effectiveFieldY[i] += exchangeTemp[1] + driveTemp[1];
+                effectiveFieldZ[i] += exchangeTemp[2] + driveTemp[2];
+            }
+            return 0; // The dummy variable remains unchanged
+        },
+        [](int x, int y) -> int {
+            return 0; // The dummy variable remains unchanged
+        },
+        tbb::auto_partitioner()
+    );
+     */
+
+    exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic, effectiveFieldZAtomic, useParallel);
+    biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
+                                    effectiveFieldZAtomic, useParallel);
+
 
     dipolarTimer.setName("Dipolar");
-
 
     // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
     //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
@@ -792,9 +842,9 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
             //HkTerms hkLocal;
             //MkTerms mkLocal;
 
-            double hkLocalX = effectiveFieldXLocal[site];
-            double hkLocalY = effectiveFieldYLocal[site];
-            double hkLocalZ = effectiveFieldZLocal[site];
+            double hkLocalX = effectiveFieldXAtomic[site];
+            double hkLocalY = effectiveFieldYAtomic[site];
+            double hkLocalZ = effectiveFieldZAtomic[site];
 
             // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mkLocalX = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);
@@ -932,4 +982,26 @@ void SolversImplementation::_testOutputValues( double &mxTerm, double &myTerm, d
         throw std::runtime_error(
                 "mzOut is NaN at site " + std::to_string(site) + " at iteration " +
                 std::to_string(iteration) + " in RK2 stage " + rkStage);
+}
+
+void SolversImplementation::_transferDataThenReleaseAtomicVector( std::vector<std::atomic<double>> &atomicVector,
+                                                                  std::vector<double> &regularVector ) {
+    for (size_t i = 0; i < atomicVector.size(); ++i)
+        regularVector[i] = atomicVector[i].load();
+
+    atomicVector.clear();
+    atomicVector.shrink_to_fit();
+
+    /*
+    for (size_t i = 1; i <= simParams->systemTotalSpins; i++) {
+        effectiveFieldX[i] = effectiveFieldXLocal[i].load();
+        effectiveFieldY[i] = effectiveFieldYLocal[i].load();
+        effectiveFieldZ[i] = effectiveFieldZLocal[i].load();
+    }
+     */
+}
+
+void SolversImplementation::_clearThenReleaseVector( auto &vec ) {
+    vec.clear();
+    vec.shrink_to_fit();
 }

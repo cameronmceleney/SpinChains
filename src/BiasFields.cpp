@@ -12,17 +12,42 @@ BiasFields::BiasFields( SimulationParameters *sharedSimParams,
 
         : _simParams(sharedSimParams), _simStates(sharedSimStates), _simFlags(sharedSimFlags) {}
 
-void BiasFields::calculateOneDimension( const int &currentLayer, const double &currentTime,
+void BiasFields::calculateOneDimension( const int &currentLayer, const double &currentTime, const std::vector<double> &mzTermsIn,
                                         std::vector<double> &biasFieldXOut, std::vector<double> &biasFieldYOut,
                                         std::vector<double> &biasFieldZOut ) {
     // This function is used for sequential calculations. Useful in small systems or when H_ext is complex
     std::array<double, 3> tempResultsContainer{};
+    bool shouldUseTBB = true;
+
     for ( int i = 1; i <= _simParams->systemTotalSpins; i++ ) {
         // Used boundary limits [1, _simParams->systemTotalSpins] (inclusive) is intentional
-        tempResultsContainer = _calculateBiasField1D(i, currentLayer, currentTime);
+        tempResultsContainer = _calculateBiasField1D(i, currentLayer, currentTime, mzTermsIn[i], shouldUseTBB);
         biasFieldXOut[i] = tempResultsContainer[0];
         biasFieldYOut[i] = tempResultsContainer[1];
         biasFieldZOut[i] = tempResultsContainer[2];
+    }
+}
+
+void BiasFields::calculateOneDimension( const int &currentLayer, const double &currentTime,
+                                        const std::vector<double> &mzTermsIn, std::vector<std::atomic<double>> &biasFieldXOut,
+                                        std::vector<std::atomic<double>> &biasFieldYOut, std::vector<std::atomic<double>> &biasFieldZOut,
+                                        const bool &shouldUseTBB ) {
+    // This function is used for parallel calculations. Useful in large systems or when H_ext is complex
+
+    if ( shouldUseTBB ) {
+
+        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
+            [&](const tbb::blocked_range<int>& range) {
+                for (int site = range.begin(); site < range.end(); site++) {
+                    std::array<double, 3> tempResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
+                    biasFieldXOut[site].fetch_add(tempResults[0]);
+                    biasFieldYOut[site].fetch_add(tempResults[1]);
+                    biasFieldZOut[site].fetch_add(tempResults[2]);
+                }
+        }, tbb::auto_partitioner());
+
+    } else {
+        throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");
     }
 }
 
@@ -31,21 +56,49 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
                                         std::vector<double> &biasFieldYOut, std::vector<double> &biasFieldZOut,
                                         const bool &shouldUseTBB ) {
     // This function is used for parallel calculations. Useful in large systems or when H_ext is complex
+
     if ( shouldUseTBB ) {
+
+        /*
+         * // Working version using atomic vectors
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
-                [&]( const tbb::blocked_range<int> tbbRange ) {
-                    for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
-                        // Holds original site value to make threadsafe
-                        std::array<double, 3> originalSiteLocal = {biasFieldXOut[site], biasFieldYOut[site],
-                                           biasFieldZOut[site]};
-                        std::array<double, 3> tempResultsContainer;
-                        tempResultsContainer = _calculateBiasField1D(site, currentLayer, currentTime, mzTermsIn[site],
-                                                                     shouldUseTBB);
-                        biasFieldXOut[site] = originalSiteLocal[0] + tempResultsContainer[0];
-                        biasFieldYOut[site] = originalSiteLocal[1] + tempResultsContainer[1];
-                        biasFieldZOut[site] = originalSiteLocal[2] + tempResultsContainer[2];
-                    }
+            [&](const tbb::blocked_range<int>& range) {
+                for (int site = range.begin(); site < range.end(); site++) {
+                    std::array<double, 3> tempResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
+                    biasFieldXOut[site].fetch_add(tempResults[0]);
+                    biasFieldYOut[site].fetch_add(tempResults[1]);
+                    biasFieldZOut[site].fetch_add(tempResults[2]);
+                }
         }, tbb::auto_partitioner());
+         */
+
+        // Thread-local storage for each component
+        tbb::combinable<std::vector<double>> localFieldX([&]{ return std::vector<double>(_simParams->systemTotalSpins, 0.0); });
+        tbb::combinable<std::vector<double>> localFieldY([&]{ return std::vector<double>(_simParams->systemTotalSpins, 0.0); });
+        tbb::combinable<std::vector<double>> localFieldZ([&]{ return std::vector<double>(_simParams->systemTotalSpins, 0.0); });
+
+        // Parallel computation
+        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
+            [&](const tbb::blocked_range<int>& range) {
+                auto& localX = localFieldX.local();
+                auto& localY = localFieldY.local();
+                auto& localZ = localFieldZ.local();
+
+                for (int i = range.begin(); i < range.end(); i++) {
+                    std::array<double, 3> fieldContribution = _calculateBiasField1D( i, currentLayer, currentTime, mzTermsIn[i], shouldUseTBB);
+                    localX[i] += fieldContribution[0];
+                    localY[i] += fieldContribution[1];
+                    localZ[i] += fieldContribution[2];
+                }
+            }, tbb::auto_partitioner());
+
+        // Combining the results
+        for (int i = 1; i < _simParams->systemTotalSpins; ++i) {
+            biasFieldXOut[i] = localFieldX.combine_each([&](const std::vector<double>& v) { return v[i]; });
+            biasFieldYOut[i] = localFieldY.combine_each([&](const std::vector<double>& v) { return v[i]; });
+            biasFieldZOut[i] = localFieldZ.combine_each([&](const std::vector<double>& v) { return v[i]; });
+        }
+
     } else {
         throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");
     }

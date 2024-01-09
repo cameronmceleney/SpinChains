@@ -33,6 +33,32 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
 }
 
 void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
+                                           const std::vector<double> &mzTerms, std::vector<std::atomic<double>> &exchangeXOut,
+                                           std::vector<std::atomic<double>> &exchangeYOut, std::vector<std::atomic<double>> &exchangeZOut,
+                                           const bool &shouldUseTBB ) {
+    // This function is used for parallel calculations. Useful in large systems or when H_ex is complex
+
+    // std::vector<double> exchangeXOutLocal = exchangeXOut;
+    // std::vector<double> exchangeYOutLocal = exchangeYOut;
+    // std::vector<double> exchangeZOutLocal = exchangeZOut;
+
+    if ( shouldUseTBB ) {
+
+        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
+            [&](const tbb::blocked_range<int>& range) {
+                for (int site = range.begin(); site < range.end(); site++) {
+                    std::array<double, 3> tempResults = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                    exchangeXOut[site].fetch_add(tempResults[0]);
+                    exchangeYOut[site].fetch_add(tempResults[1]);
+                    exchangeZOut[site].fetch_add(tempResults[2]);
+                }
+        }, tbb::auto_partitioner());
+    } else {
+        throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");
+    }
+}
+
+void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
                                            const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,
                                            std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut,
                                            const bool &shouldUseTBB ) {
@@ -43,6 +69,7 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
     // std::vector<double> exchangeZOutLocal = exchangeZOut;
 
     if ( shouldUseTBB ) {
+        /*
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
             [&]( const tbb::blocked_range<int> &tbbRange ) {
                 for ( int site = tbbRange.begin(); site < tbbRange.end(); ++site ) { // for some reason site++ doesn't work
@@ -58,6 +85,8 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                     exchangeZOut[site] += tempResultsExchangeLocal[2] + tempResultsDMILocal[2];
                 }
             }, tbb::auto_partitioner());
+            */
+
     } else {
         throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");
     }

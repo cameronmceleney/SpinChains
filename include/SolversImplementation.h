@@ -60,6 +60,16 @@ private:
     void _testShockwaveConditions( double iteration ) override;
 
     /**
+     * Transfer results to a regular vector outside the parallel region
+     */
+    void _transferDataThenReleaseAtomicVector( std::vector<std::atomic<double>> &atomicVector, std::vector<double> &regularVector );
+
+    /**
+     * Description missing
+     */
+    void _clearThenReleaseVector( auto &vec );
+
+    /**
      * Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method. Original
      * implementation of the RK2 method; used for testing purposes
      */
