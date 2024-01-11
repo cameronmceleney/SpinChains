@@ -38,7 +38,7 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
 
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
             [&](const tbb::blocked_range<int>& range) {
-                for (int site = range.begin(); site < range.end(); site++) {
+                for (int site = range.begin(); site <= range.end(); site++) {
                     std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
 
                     biasFieldXOut[site].fetch_add(tempBiasResults[0]);

@@ -914,10 +914,6 @@ void SolversImplementation::RK2StageMultithreadedCompact( const std::vector<doub
         // placeholder for example. Find STT for each site at all sites before main loop
         stt.calculateOneDimension(mxIn, myIn, mzIn, sttXp, sttYp, sttZp);
 
-
-
-    dipolarTimer.setName("Dipolar");
-
     // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
     //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
     tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
@@ -926,10 +922,7 @@ void SolversImplementation::RK2StageMultithreadedCompact( const std::vector<doub
              * All declarations of overwritten variables are placed here as 'local' to ensure
              * that each thread has its own definition; else variables are not threadsafe
             */
-
-            // Will always be initialised so only need to declare here
-            HkTerms hkLocal;
-            MkTerms mkLocal;
+            HkTerms hkLocal; MkTerms mkLocal;
 
             // Used for clarity; can be safely refactored away for very minor performance gain
             hkLocal.x = effectiveFieldX[site];
@@ -1080,7 +1073,7 @@ void SolversImplementation::_testOutputValues( double &mxTerm, double &myTerm, d
 void SolversImplementation::_transferDataThenReleaseAtomicVector( std::vector<std::atomic<double>> &atomicVector,
                                                                   std::vector<double> &regularVector,
                                                                   bool shouldRelease ) {
-    for (size_t i = 0; i < atomicVector.size(); ++i)
+    for (size_t i = 0; i < atomicVector.size(); i++)
         regularVector[i] = atomicVector[i].load();
 
     if (shouldRelease) {

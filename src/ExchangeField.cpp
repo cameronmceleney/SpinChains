@@ -43,13 +43,13 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
 
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
             [&](const tbb::blocked_range<int>& range) {
-                for (int site = range.begin(); site < range.end(); site++) {
+                for (int site = range.begin(); site <= range.end(); site++) {
                     std::array<double, 3> tempExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
 
                     // Use of 'auto' allows for tertiary operator to be used; equivalent to declaring array and then initialising within an IF/ELSE structure
-                    auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
-                                                                 : std::array<double, 3>{0.0, 0.0, 0.0};
-                    /*
+                    //auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
+                    //                                             : std::array<double, 3>{0.0, 0.0, 0.0};
+
                     if (_simFlags->hasDMI) {
                         // Reduces total operations by only summing when DMI is present
                         std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
@@ -57,10 +57,10 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                         tempExchangeLocal[1] += tempDMILocal[1];
                         tempExchangeLocal[2] += tempDMILocal[2];
                     }
-                     */
-                    exchangeXOut[site].fetch_add(tempExchangeLocal[0] + tempDMILocal[0]);
-                    exchangeYOut[site].fetch_add(tempExchangeLocal[1] + tempDMILocal[1]);
-                    exchangeZOut[site].fetch_add(tempExchangeLocal[2] + tempDMILocal[2]);
+
+                    exchangeXOut[site].fetch_add(tempExchangeLocal[0]);
+                    exchangeYOut[site].fetch_add(tempExchangeLocal[1]);
+                    exchangeZOut[site].fetch_add(tempExchangeLocal[2]);
                 }
         }, tbb::auto_partitioner());
     } else {
@@ -319,8 +319,8 @@ ExchangeField::_calculateDMI1D( const int &currentSite, const std::vector<double
 
 
     if ( shouldUseTBB ) {
-        return {-1.0 * _simParams->dmiConstant * (myTerms[currentSite + 1] - myTerms[currentSite + 1]),
-                _simParams->dmiConstant * (mxTerms[currentSite + 1] - mxTerms[currentSite + 1]),
+        return {-1.0 * _simParams->dmiConstant * (myTerms[currentSite + 1] - myTerms[currentSite - 1]),
+                _simParams->dmiConstant * (mxTerms[currentSite + 1] - mxTerms[currentSite - 1]),
                 0.0};
     } else {
         throw std::invalid_argument("_calculateDMIField1D hasn't got CUDA implementation yet");

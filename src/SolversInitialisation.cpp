@@ -66,11 +66,11 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 273; // Kelvin
-    simParams->drivingFreq = 62.8 * 1e9;
-    simParams->oscillatingZeemanStrength = 3e-3;
+    simParams->drivingFreq = 11 * 1e9;
+    simParams->oscillatingZeemanStrength = 1e-4;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 0.2e-9;
+    simParams->maxSimTime = 5e-9;
     simParams->satMag = 0.010032;
     simParams->stepsize = 1e-15;
 
@@ -79,15 +79,15 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
-    simParams->gilbertDamping = 1e-4;
-    simParams->gilbertABCInner = 1e-4;
-    simParams->gilbertABCOuter = 1e0;
+    simParams->gilbertDamping = 1e-2;
+    simParams->gilbertABCInner = 1e-2;
+    simParams->gilbertABCOuter = 1e1;
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 26;
+    simParams->drivingRegionWidth = 200;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 0;
+    simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)
