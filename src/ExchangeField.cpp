@@ -38,19 +38,29 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                                            const bool &shouldUseTBB ) {
     // This function is used for parallel calculations. Useful in large systems or when H_ex is complex
 
-    // std::vector<double> exchangeXOutLocal = exchangeXOut;
-    // std::vector<double> exchangeYOutLocal = exchangeYOut;
-    // std::vector<double> exchangeZOutLocal = exchangeZOut;
 
     if ( shouldUseTBB ) {
 
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
             [&](const tbb::blocked_range<int>& range) {
                 for (int site = range.begin(); site < range.end(); site++) {
-                    std::array<double, 3> tempResults = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
-                    exchangeXOut[site].fetch_add(tempResults[0]);
-                    exchangeYOut[site].fetch_add(tempResults[1]);
-                    exchangeZOut[site].fetch_add(tempResults[2]);
+                    std::array<double, 3> tempExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+
+                    // Use of 'auto' allows for tertiary operator to be used; equivalent to declaring array and then initialising within an IF/ELSE structure
+                    auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
+                                                                 : std::array<double, 3>{0.0, 0.0, 0.0};
+                    /*
+                    if (_simFlags->hasDMI) {
+                        // Reduces total operations by only summing when DMI is present
+                        std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                        tempExchangeLocal[0] += tempDMILocal[0];
+                        tempExchangeLocal[1] += tempDMILocal[1];
+                        tempExchangeLocal[2] += tempDMILocal[2];
+                    }
+                     */
+                    exchangeXOut[site].fetch_add(tempExchangeLocal[0] + tempDMILocal[0]);
+                    exchangeYOut[site].fetch_add(tempExchangeLocal[1] + tempDMILocal[1]);
+                    exchangeZOut[site].fetch_add(tempExchangeLocal[2] + tempDMILocal[2]);
                 }
         }, tbb::auto_partitioner());
     } else {
@@ -62,11 +72,8 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                                            const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,
                                            std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut,
                                            const bool &shouldUseTBB ) {
-    // This function is used for parallel calculations. Useful in large systems or when H_ex is complex
+    // Doesn't work right now
 
-    // std::vector<double> exchangeXOutLocal = exchangeXOut;
-    // std::vector<double> exchangeYOutLocal = exchangeYOut;
-    // std::vector<double> exchangeZOutLocal = exchangeZOut;
 
     if ( shouldUseTBB ) {
         /*
@@ -85,7 +92,59 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                     exchangeZOut[site] += tempResultsExchangeLocal[2] + tempResultsDMILocal[2];
                 }
             }, tbb::auto_partitioner());
-            */
+        */
+        /*
+        // Thread-local storage for each component
+        tbb::combinable<std::vector<double>> localFieldX([&]{ return std::vector<double>(_simParams->systemTotalSpins + 2, 0.0); });
+        tbb::combinable<std::vector<double>> localFieldY([&]{ return std::vector<double>(_simParams->systemTotalSpins + 2, 0.0); });
+        tbb::combinable<std::vector<double>> localFieldZ([&]{ return std::vector<double>(_simParams->systemTotalSpins + 2, 0.0); });
+
+        // Parallel computation
+        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
+            [&](const tbb::blocked_range<int>& range) {
+                auto& localX = localFieldX.local();
+                auto& localY = localFieldY.local();
+                auto& localZ = localFieldZ.local();
+
+                for (int i = range.begin(); i <= range.end(); i++) {
+                    std::array<double, 3> fieldContribution = _calculateExchangeField1D(i, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                    localX[i] += fieldContribution[0];
+                    localY[i] += fieldContribution[1];
+                    localZ[i] += fieldContribution[2];
+                }
+            }, tbb::auto_partitioner());
+
+        // Combining the results directly into the output fields
+        localFieldX.combine_each([&](const std::vector<double>& v) {
+            for (size_t i = 1; i <= _simParams->systemTotalSpins; i++) exchangeXOut[i] += v[i];
+        });
+        localFieldY.combine_each([&](const std::vector<double>& v) {
+            for (size_t i = 1; i <= _simParams->systemTotalSpins; i++) exchangeYOut[i] += v[i];
+        });
+        localFieldZ.combine_each([&](const std::vector<double>& v) {
+            for (size_t i = 1; i <= _simParams->systemTotalSpins; i++) exchangeZOut[i] += v[i];
+        });
+         */
+        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
+            [&](const tbb::blocked_range<int>& range) {
+                for (int site = range.begin(); site <= range.end(); site++) {
+                    std::array<double, 3> tempExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+
+                    // Use of 'auto' allows for tertiary operator to be used; equivalent to declaring array and then initialising within an IF/ELSE structure
+                    //auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
+                    //                                             : std::array<double, 3>{0.0, 0.0, 0.0};
+                    if (_simFlags->hasDMI) {
+                        // Reduces total operations by only summing when DMI is present
+                        std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                        tempExchangeLocal[0] += tempDMILocal[0];
+                        tempExchangeLocal[1] += tempDMILocal[1];
+                        tempExchangeLocal[2] += tempDMILocal[2];
+                    }
+                    std::atomic_ref<double>(exchangeXOut[site]).fetch_add(tempExchangeLocal[0]);
+                    std::atomic_ref<double>(exchangeYOut[site]).fetch_add(tempExchangeLocal[1]);
+                    std::atomic_ref<double>(exchangeZOut[site]).fetch_add(tempExchangeLocal[2]);
+                }
+        }, tbb::auto_partitioner());
 
     } else {
         throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");

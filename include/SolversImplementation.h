@@ -9,8 +9,10 @@
 #include "InterfaceSolversImplementation.h"
 
 // C++ Standard Libraries
+#include <atomic>
 #include <chrono>
 #include <string>
+#include <vector>
 
 // C++ Third Party Library
 #include <tbb/blocked_range.h>
@@ -53,7 +55,7 @@ private:
     void _resizeClassContainers();
     void _resizeClassContainersTest();
 
-    void _testOutputValues( double& mxTerm, double& myTerm, double& mzTerm, int site, int iteration, const std::string &rkStage );
+    static void _testOutputValues( double& mxTerm, double& myTerm, double& mzTerm, int site, int iteration, const std::string &rkStage );
     /**
      * Description missing
      */
@@ -62,7 +64,9 @@ private:
     /**
      * Transfer results to a regular vector outside the parallel region
      */
-    void _transferDataThenReleaseAtomicVector( std::vector<std::atomic<double>> &atomicVector, std::vector<double> &regularVector );
+    static void _transferDataThenReleaseAtomicVector( std::vector<std::atomic<double>> &atomicVector,
+                                                      std::vector<double> &regularVector,
+                                                      bool shouldRelease = true);
 
     /**
      * Description missing
@@ -93,6 +97,12 @@ private:
                                 double &currentTime, double &stepsize, int &iteration,
                                 std::string rkStage );
     void RK2StageMultithreadedTest( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                    const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                    std::vector<double> &myOut, std::vector<double> &mzOut,
+                                    const double &currentTime, const double &stepsize,
+                                    const int &iteration, std::string rkStage );
+
+    void RK2StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
                                     const std::vector<double> &mzIn, std::vector<double> &mxOut,
                                     std::vector<double> &myOut, std::vector<double> &mzOut,
                                     const double &currentTime, const double &stepsize,

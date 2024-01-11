@@ -11,9 +11,10 @@ DemagnetisationFields::DemagnetisationFields(SimulationParameters* sharedSimPara
 
    : _simParams(sharedSimParams), _simStates(sharedSimStates), _simFlags(sharedSimFlags) {}
 
-void DemagnetisationFields::DemagnetisationFieldIntense(std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
-                                                   const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
-                                                   const std::vector<double>& mzTerms) {
+void DemagnetisationFields::DemagnetisationFieldIntense( const std::vector<double> &mxTerms,
+                                                         const std::vector<double> &myTerms,
+                                                         const std::vector<double> &mzTerms, std::vector<double> &H_dx,
+                                                         std::vector<double> &H_dy, std::vector<double> &H_dz ) {
     // Assuming demag terms (Nx, Ny, and Nz) are constants
     const double Nx = 0.0, Ny = 0.5, Nz = 0.5;
 

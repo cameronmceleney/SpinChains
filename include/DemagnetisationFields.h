@@ -51,9 +51,9 @@ public:
                                                  const std::vector<double>& mzTerms);
                                                  */
 
-    void                DemagnetisationFieldIntense (std::vector<double>& H_dx, std::vector<double>& H_dy, std::vector<double>& H_dz,
-                                              const std::vector<double>&mxTerms, const std::vector<double>& myTerms,
-                                              const std::vector<double>& mzTerms);
+    void DemagnetisationFieldIntense( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
+                                      const std::vector<double> &mzTerms, std::vector<double> &H_dx,
+                                      std::vector<double> &H_dy, std::vector<double> &H_dz );
 
 
     void                    DemagFieldsUsingDipoles(std::vector<double> mxTerms, std::vector<double> myTerms,

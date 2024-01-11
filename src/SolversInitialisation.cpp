@@ -33,7 +33,7 @@ void SolversInitialisation::_setSimulationFlags() {
     // Magnetic Interaction Flags
     simFlags->hasShockwave = false;
     simFlags->hasDipolar = false;
-    simFlags->hasDMI = false;
+    simFlags->hasDMI = true;
     simFlags->hasSTT = false;
     simFlags->hasStaticZeeman = true;
     simFlags->hasDemagIntense = false;
@@ -48,8 +48,8 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = false;
-    simFlags->shouldDriveLHS = true;
+    simFlags->shouldDriveCentre = true;
+    simFlags->shouldDriveLHS = false;
     simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
@@ -66,11 +66,11 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 273; // Kelvin
-    simParams->drivingFreq = 42.5 * 1e9;
+    simParams->drivingFreq = 62.8 * 1e9;
     simParams->oscillatingZeemanStrength = 3e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 0.7e-9;
+    simParams->maxSimTime = 0.2e-9;
     simParams->satMag = 0.010032;
     simParams->stepsize = 1e-15;
 
@@ -85,7 +85,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 200;
+    simParams->drivingRegionWidth = 26;
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 0;
     simParams->numLayers = 1;

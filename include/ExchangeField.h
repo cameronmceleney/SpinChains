@@ -10,6 +10,7 @@
 
 // C++ Third Party Libraries
 #include <tbb/blocked_range.h>
+#include <tbb/combinable.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/mutex.h>

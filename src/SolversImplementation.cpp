@@ -17,7 +17,7 @@ SolversImplementation::SolversImplementation( std::shared_ptr<SimulationParamete
           llg(simParams.get(), simStates.get(), simFlags.get()),
           stt(simParams.get(), simStates.get(), simFlags.get()),
           exchangeField(simParams.get(), simStates.get(), simFlags.get()),
-          biasField(simParams.get(), simStates.get(), simFlags.get()){}
+          biasField(simParams.get(), simStates.get(), simFlags.get()) {}
 
 void SolversImplementation::_testShockwaveConditions( double iteration ) {
 
@@ -103,8 +103,8 @@ void SolversImplementation::SolveRK2Classic() {
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
         if ( simFlags->hasDemagIntense ) {
-            demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, simStates->mx0, simStates->my0,
-                                                   simStates->mz0);
+            demagField.DemagnetisationFieldIntense(simStates->mx0, simStates->my0,
+                                                   simStates->mz0, demagX, demagY, demagZ);
         } else if ( simFlags->hasDemagFFT ) {
             std::string rkStageName = "2-1";
             demagField.DemagField1DReal(demagX, demagY, demagZ, simStates->mx0, simStates->my0, simStates->mz0,
@@ -182,7 +182,7 @@ void SolversImplementation::SolveRK2Classic() {
         //if (simFlags->hasDipolar)
         //    dipolarField.DipolarInteraction1D(mx1, dipoleX);
         if ( simFlags->hasDemagIntense ) {
-            demagField.DemagnetisationFieldIntense(demagX, demagY, demagZ, mx1, my1, mz1);
+            demagField.DemagnetisationFieldIntense(mx1, my1, mz1, demagX, demagY, demagZ);
         } else if ( simFlags->hasDemagFFT ) {
             std::string rkStageName = "2-2";
             demagField.DemagField1DReal(demagX, demagY, demagZ, mx1, my1, mz1, iteration, rkStageName);
@@ -561,8 +561,8 @@ void SolversImplementation::RK2Parallel() {
 
     // TODO. As this is all multi-threaded, having such larger vectors is excessive. Change methods to work by element (so that onl mx/my/mz are large in memory)
     // Only create vectors once to reuse memory. Only assign memory if flags are true. Faster to declare loop-wide vectors than define them in each loop iteration.
-    bool useTest = true;
-    if (useTest)
+    bool useCompact = true;
+    if (useCompact)
         _resizeClassContainersTest();
     else
         _resizeClassContainers();
@@ -576,14 +576,14 @@ void SolversImplementation::RK2Parallel() {
 
         double t0 = simParams->totalTime;
 
-        if (useTest) {
+        if (useCompact) {
             // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
             // Possible mistake here; should it not be 't0+h' and not 't0' for RK-S1?
-            RK2StageMultithreadedTest(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
+            RK2StageMultithreadedCompact(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
                                       simParams->totalTime, simParams->stepsizeHalf, iteration, "1");
 
             // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
-            RK2StageMultithreadedTest(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
+            RK2StageMultithreadedCompact(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
                                       simParams->totalTime, simParams->stepsize, iteration, "2");
         } else {
             // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
@@ -636,7 +636,7 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
     bool useParallel = true;
 
     if ( simFlags->hasDemagIntense )
-        demagField.DemagnetisationFieldIntense(demagXp, demagYp, demagZp, mxIn, myIn, mzIn);
+        demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
     std::vector<double> mxInMu, myInMu, mzInMu;
     if ( simFlags->hasDipolar ) {
         // Required step to convert the magnetic moment components to the magnetic field components
@@ -648,7 +648,7 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
         //    myInMu[i] *= simParams.PERMEABILITY_IRON;//simParams->satMag * simParams->systemTotalSpins;
         //    mzInMu[i] *= simParams.PERMEABILITY_IRON;//simParams->satMag * simParams->systemTotalSpins;
         //}
-        //// Option 1
+        /// Option 1
         dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
     }
 
@@ -826,6 +826,12 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
                                     effectiveFieldZAtomic, useParallel);
 
+    std::vector<double> effectiveFieldX(simParams->systemTotalSpins+2);
+    std::vector<double> effectiveFieldY(simParams->systemTotalSpins+2);
+    std::vector<double> effectiveFieldZ(simParams->systemTotalSpins+2);
+    _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX, true);
+    _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY, true);
+    _transferDataThenReleaseAtomicVector(effectiveFieldZAtomic, effectiveFieldZ, true);
 
     dipolarTimer.setName("Dipolar");
 
@@ -842,9 +848,9 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
             //HkTerms hkLocal;
             //MkTerms mkLocal;
 
-            double hkLocalX = effectiveFieldXAtomic[site];
-            double hkLocalY = effectiveFieldYAtomic[site];
-            double hkLocalZ = effectiveFieldZAtomic[site];
+            double hkLocalX = effectiveFieldX[site];
+            double hkLocalY = effectiveFieldY[site];
+            double hkLocalZ = effectiveFieldZ[site];
 
             // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
             double mkLocalX = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);
@@ -854,6 +860,93 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
             mxOut[site] = simStates->mx0[site] + stepsize * mkLocalX;
             myOut[site] = simStates->my0[site] + stepsize * mkLocalY;
             mzOut[site] = simStates->mz0[site] + stepsize * mkLocalZ;
+
+            _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
+        }
+    }, tbb::auto_partitioner());
+
+    if ( !simFlags->shouldTrackMagneticMomentNorm && rkStage == "2" ) {
+        for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
+            double mIterationNorm = sqrt(pow(mxOut[site], 2) + pow(myOut[site], 2) + pow(mzOut[site], 2));
+            if ((simParams->largestMNorm) > (1.0 - mIterationNorm)) {
+                simParams->largestMNorm = (1.0 - mIterationNorm);
+            }
+        }
+    }
+
+    // if (simParams->largestMNorm > 1.00005) { throw std::runtime_error("mag. moments are no longer below <= 1.00005"); }
+
+    // No need to fill demagX/dipoleX (etc) here they are constantly overwritten; filling to zeroes is just a waste unless debugging
+
+}
+
+void SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                                       const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                                       std::vector<double> &myOut, std::vector<double> &mzOut,
+                                                       const double &currentTime, const double &stepsize,
+                                                       const int &iteration, std::string rkStage ) {
+    CustomTimer dipolarTimer;
+    bool useParallel = true;
+    int layer = 0;
+
+    // Use these to ensure that there's no issues with sharing a member attribute across
+    // methods (this is less memory efficient, but for debugging purposes)
+    std::vector<std::atomic<double>> effectiveFieldXAtomic(simParams->systemTotalSpins + 2);
+    std::vector<std::atomic<double>> effectiveFieldYAtomic(simParams->systemTotalSpins + 2);
+    std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
+
+    exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
+                                        effectiveFieldZAtomic, useParallel);
+    biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
+                                    effectiveFieldZAtomic, useParallel);
+
+    _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
+    _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
+    _transferDataThenReleaseAtomicVector(effectiveFieldZAtomic, effectiveFieldZ);
+
+    if ( simFlags->hasDemagIntense )
+        demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
+
+    if ( simFlags->hasDipolar )
+        dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
+
+    if (simFlags->hasSTT)
+        // placeholder for example. Find STT for each site at all sites before main loop
+        stt.calculateOneDimension(mxIn, myIn, mzIn, sttXp, sttYp, sttZp);
+
+
+
+    dipolarTimer.setName("Dipolar");
+
+    // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
+    //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
+        for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
+            /*
+             * All declarations of overwritten variables are placed here as 'local' to ensure
+             * that each thread has its own definition; else variables are not threadsafe
+            */
+
+            // Will always be initialised so only need to declare here
+            HkTerms hkLocal;
+            MkTerms mkLocal;
+
+            // Used for clarity; can be safely refactored away for very minor performance gain
+            hkLocal.x = effectiveFieldX[site];
+            hkLocal.y = effectiveFieldY[site];
+            hkLocal.z = effectiveFieldZ[site];
+
+            // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
+                                           hkLocal.x, hkLocal.y, hkLocal.z);
+            mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
+                                           hkLocal.x, hkLocal.y, hkLocal.z);
+            mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
+                                                  hkLocal.x, hkLocal.y, hkLocal.z);
+
+            mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
+            myOut[site] = simStates->my0[site] + stepsize * mkLocal.y;
+            mzOut[site] = simStates->mz0[site] + stepsize * mkLocal.z;
 
             _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
         }
@@ -985,12 +1078,15 @@ void SolversImplementation::_testOutputValues( double &mxTerm, double &myTerm, d
 }
 
 void SolversImplementation::_transferDataThenReleaseAtomicVector( std::vector<std::atomic<double>> &atomicVector,
-                                                                  std::vector<double> &regularVector ) {
+                                                                  std::vector<double> &regularVector,
+                                                                  bool shouldRelease ) {
     for (size_t i = 0; i < atomicVector.size(); ++i)
         regularVector[i] = atomicVector[i].load();
 
-    atomicVector.clear();
-    atomicVector.shrink_to_fit();
+    if (shouldRelease) {
+        atomicVector.clear();
+        atomicVector.shrink_to_fit();
+    }
 
     /*
     for (size_t i = 1; i <= simParams->systemTotalSpins; i++) {
