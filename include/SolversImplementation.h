@@ -54,6 +54,7 @@ private:
 private:
     void _resizeClassContainers();
     void _resizeClassContainersTest();
+    void _resizeClassContainersRK4();
 
     static void _testOutputValues( double& mxTerm, double& myTerm, double& mzTerm, int site, int iteration, const std::string &rkStage );
     /**
@@ -89,6 +90,12 @@ private:
     void RK2Parallel() override;
 
     /**
+     * Evaluate the given system using the RK2 method which has been configured to enabled
+     * parallelisation through Intel's oneAPI TBB
+     */
+    void RK4Parallel() override;
+
+    /**
      * Description missing
      */
     void RK2StageMultithreaded( const std::vector<double> &mxIn, const std::vector<double> &myIn,
@@ -103,6 +110,12 @@ private:
                                     const int &iteration, std::string rkStage );
 
     void RK2StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                    const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                    std::vector<double> &myOut, std::vector<double> &mzOut,
+                                    const double &currentTime, const double &stepsize,
+                                    const int &iteration, std::string rkStage );
+
+    void RK4StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
                                     const std::vector<double> &mzIn, std::vector<double> &mxOut,
                                     std::vector<double> &myOut, std::vector<double> &mzOut,
                                     const double &currentTime, const double &stepsize,
@@ -141,6 +154,16 @@ public:
     std::vector<double> mx2p;
     std::vector<double> my2p;
     std::vector<double> mz2p;
+    std::vector<double> mx3p;
+    std::vector<double> my3p;
+    std::vector<double> mz3p;
+    std::vector<double> mx4p;
+    std::vector<double> my4p;
+    std::vector<double> mz4p;
+
+    std::vector<double> mxk;
+    std::vector<double> myk;
+    std::vector<double> mzk;
 public:
     struct DipoleTerms {
         double x;

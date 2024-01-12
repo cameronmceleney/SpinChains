@@ -19,6 +19,8 @@ public:
 
     virtual void                RK2Parallel() = 0;
 
+    virtual void                RK4Parallel() = 0;
+
     ~iSolversImplementation() = default;
 
 };

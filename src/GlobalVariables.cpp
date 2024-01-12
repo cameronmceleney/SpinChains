@@ -126,7 +126,7 @@ void GlobalVariablesClass::SetFilePath(std::string osName) {
 
         if (userInput == 'Y' || userInput == 'y') {
             std::filesystem::create_directories(dirPath);
-            std::cout << "Directories created at: " << dirPath << std::endl;
+            std::cout << "\nDirectories created at: " << dirPath << "\n";
             std::cout << "--------------------------------" << std::endl;
         } else {
             std::cout << "Directory not created. Exiting program.\n";

@@ -48,9 +48,9 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = true;
+    simFlags->shouldDriveCentre = false;
     simFlags->shouldDriveLHS = false;
-    simFlags->shouldDriveRHS = false;
+    simFlags->shouldDriveRHS = true;
 
     // Drive Manipulation Flags
     simFlags->isOscillatingZeemanStatic = false;
@@ -65,27 +65,27 @@ void SolversInitialisation::_setSimulationFlags() {
 void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
-    simParams->ambientTemperature = 273; // Kelvin
-    simParams->drivingFreq = 11 * 1e9;
-    simParams->oscillatingZeemanStrength = 1e-4;
+    simParams->ambientTemperature = 0; // Kelvin
+    simParams->drivingFreq = 42.5 * 1e9;
+    simParams->oscillatingZeemanStrength = 3e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 5e-9;
-    simParams->satMag = 0.010032;
-    simParams->stepsize = 1e-15;
+    simParams->maxSimTime = 0.2e-9;
+    simParams->satMag = -1;
+    simParams->stepsize = 1e-16;
 
     // Data Output Parameters
     simStates->fixedOutputSites = {1300, 2300, 3300, 4300};
     simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
-    simParams->gilbertDamping = 1e-2;
-    simParams->gilbertABCInner = 1e-2;
-    simParams->gilbertABCOuter = 1e1;
+    simParams->gilbertDamping = 1e-4;
+    simParams->gilbertABCInner = 1e-4;
+    simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 200;
+    simParams->drivingRegionWidth = 1;
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
@@ -139,7 +139,7 @@ void SolversInitialisation::_generateRemainingParameters() {
     simParams->numberOfSpinPairs = simParams->numSpinsInChain - 1;
 
     GV.SetNumSpins(simParams->numSpinsInChain + 2 * simParams->numSpinsInABC); // TODO turn this into a simParam
-    simParams->systemTotalSpins = GV.GetNumSpins();
+    simParams->systemTotalSpins = simParams->numSpinsInChain + 2 * simParams->numSpinsInABC;
 }
 
 void SolversInitialisation::_setMaterialParameters() {

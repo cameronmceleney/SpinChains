@@ -41,9 +41,9 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
 
     if ( shouldUseTBB ) {
 
-        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
+        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
             [&](const tbb::blocked_range<int>& range) {
-                for (int site = range.begin(); site <= range.end(); site++) {
+                for (int site = range.begin(); site < range.end(); site++) {
                     std::array<double, 3> tempExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
 
                     // Use of 'auto' allows for tertiary operator to be used; equivalent to declaring array and then initialising within an IF/ELSE structure

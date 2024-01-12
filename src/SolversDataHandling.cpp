@@ -62,30 +62,33 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                        << ",Has Dipolar," << simFlags->hasDipolar << ",Has DMI," << simFlags->hasDMI
                        << ",Has STT," << simFlags->hasSTT << ",Has Zeeman," << simFlags->hasStaticZeeman
                        << ",Has Demag Intense," << simFlags->hasDemagIntense << ",Has Demag FFT," << simFlags->hasDemagFFT
-                       << "\n";
+                       << ",Has Shape Anisotropy," << simFlags->hasShapeAnisotropy << "\n";
 
         outputFileName << "\n";
 
         outputFileName
                 << "Static Bias Field (H0) [T],Dynamic Bias Field (H_D1) [T],Dynamic Bias Field Scale Factor,Second Dynamic Bias Field (H_D2)[T],"
-                   "Driving Frequency (f) [Hz],Driving Region Start Site,Driving Region End Site, Driving Region Width,"
+                   "Driving Frequency (f) [Hz],Driving Region Start Site,Driving Region End Site,Driving Region Width,"
                    "Max. Sim. Time [s],Min. Exchange Val (J)[T],Max. Exchange Val (J)[T],Max. Iterations,No. DataPoints,"
-                   "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, simParams->stepsize (h),Gilbert Damping Factor, Gyromagnetic Ratio (2Pi*Y),"
-                   "Shockwave Gradient Time [s], Shockwave Application Time [s]"
+                   "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, Stepsize (h),Gilbert Damping Factor,Gyromagnetic Ratio (2Pi*Y),"
+                   "Shockwave Gradient Time [s],Shockwave Application Time [s],ABC Damping (lower),ABC Damping (upper),"
+                   "DMI Constant [T],Saturation Magnetisation [kA/m],Exchange Stiffness [J/m],Anisotropy (Shape) Field [T]"
                    "\n";
 
-        outputFileName << GV.GetStaticBiasField() << ", " << simParams->oscillatingZeemanStrength << ", "
+        outputFileName << simParams->staticZeemanStrength << ", " << simParams->oscillatingZeemanStrength << ", "
                        << simParams->shockwaveInitialStrength << ", " << simParams->shockwaveMax << ", "
-                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsInABC
-                       << ", " << simParams->drivingRegionRhs - simParams->numSpinsInABC << ", "
-                       << simParams->drivingRegionWidth << ", "
-                       << simParams->maxSimTime << ", " << simParams->exchangeEnergyMin << ", "
-                       << simParams->exchangeEnergyMax << ", " << simParams->iterationEnd << ", "
-                       << simParams->numberOfDataPoints << ", "
+                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsInABC << ", "
+                       << simParams->drivingRegionRhs - simParams->numSpinsInABC << ", "
+                       << simParams->drivingRegionWidth << ", " << simParams->maxSimTime << ", "
+                       << simParams->exchangeEnergyMin << ", " << simParams->exchangeEnergyMax << ", "
+                       << simParams->iterationEnd << ", " << simParams->numberOfDataPoints << ", "
                        << simParams->numSpinsInChain << ", " << simParams->numSpinsInABC << ", "
                        << simParams->systemTotalSpins << ", " << simParams->stepsize << ", "
                        << simParams->gilbertDamping << ", " << simParams->gyroMagConst << ", "
-                       << simParams->iterStartShock << ", " << simParams->shockwaveGradientTime * simParams->stepsize
+                       << simParams->iterStartShock << ", " << simParams->shockwaveGradientTime * simParams->stepsize << ", "
+                       << simParams->gilbertABCInner << ", " << simParams->gilbertABCOuter << ", "
+                       << simParams->dmiConstant << ", " << simParams->satMag << ", "
+                       << simParams->exchangeStiffness << ", " << simParams->anisotropyField
                        << "\n";
 
         outputFileName << "\n";
@@ -505,7 +508,7 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                        << simStates->layerSpinsInChain[layer] << "\n" <<
                        "No. Damped Spins: " << simParams->numSpinsInABC << "per side\t\t\t" << "No. Total Spins: "
                        << simStates->layerTotalSpins[layer] << " \n" <<
-                       "simParams->stepsize (h): " << simParams->stepsize << "\t\t\t\t" << "Gilbert Damping Factor: "
+                       "Stepsize (h): " << simParams->stepsize << "\t\t\t\t" << "Gilbert Damping Factor (Chain: "
                        << simParams->gilbertDamping << "\n" <<
                        "Gyromagnetic Ratio (2Pi*Y): " << simParams->gyroMagConst << "\t\t""Shockwave Gradient Time: "
                        << simParams->iterStartShock << "s\n" <<

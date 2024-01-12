@@ -86,8 +86,14 @@ void SolversConfiguration::_setupDrivingRegion(int numSpinsInChain, int numSpins
     }
 
     if (simFlags->shouldDriveCentre) {
-        simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
-        simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
+        if (drivingRegionWidth % 2 == 0) {
+            simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
+            simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
+        } else {
+            // Use convention to round down then add additional site (odd number) to the RHS of the centre
+            simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
+            simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (1 + drivingRegionWidth / 2);
+        }
         return;
     }
 
