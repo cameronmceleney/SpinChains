@@ -544,11 +544,14 @@ void SolversImplementation::RK2Parallel() {
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxOutputFile(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
 
+    if (simFlags->resetSimState)
+         _clearDataStorageVariables();
+
     if ( simFlags->isFerromagnetic ) {
-        solverOutputs->InformUserOfCodeType("RK2 Midpoint (Parallel)(FM)");
+        if ( !simFlags->resetSimState ) { solverOutputs->InformUserOfCodeType("RK2 Midpoint (Parallel)(FM)"); }
         solverOutputs->CreateFileHeader(mxOutputFile, "RK2 Midpoint (Parallel)(FM)");
     } else {
-        solverOutputs->InformUserOfCodeType("RK2 Midpoint (AFM)");
+        if ( !simFlags->resetSimState) { solverOutputs->InformUserOfCodeType("RK2 Midpoint (AFM)"); }
         solverOutputs->CreateFileHeader(mxOutputFile, "RK2 Midpoint (AFM)");
     }
 
@@ -569,8 +572,8 @@ void SolversImplementation::RK2Parallel() {
 
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
-        if ( simParams->iterationEnd >= 100 && iteration % (simParams->iterationEnd / 100) == 0 )
-            bar.update(); // Doesn't work for fewer than 100 iterations
+        if ( !simFlags->resetSimState && simParams->iterationEnd >= 100 && iteration % (simParams->iterationEnd / 100) == 0 )
+            bar.update(); // Need to match definition of bar
 
         _testShockwaveConditions(iteration);
 
@@ -619,12 +622,15 @@ void SolversImplementation::RK2Parallel() {
 
     if ( GV.GetEmailWhenCompleted()) { solverOutputs->CreateMetadata(true); }
 
-    if ( simFlags->shouldTrackMagneticMomentNorm ) {
-        std::cout << "\nMax norm. value of M is: " << simParams->largestMNorm << std::endl;
-    }
+    if (!simFlags->resetSimState) {
+        if ( simFlags->shouldTrackMagneticMomentNorm ) {
+            std::cout << "\nMax norm. value of M is: " << simParams->largestMNorm << std::endl;
+        }
 
-    std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
-    parallelTimer.print();
+        std::cout << "\n\nFile can be found at:\n\t" << GV.GetFilePath() << GV.GetFileNameBase() << std::endl;
+
+        parallelTimer.print();
+    }
 }
 
 void SolversImplementation::RK4Parallel() {
@@ -1247,6 +1253,17 @@ void SolversImplementation::_resizeClassContainersRK4() {
     mxk.resize(simParams->systemTotalSpins + 2);
     myk.resize(simParams->systemTotalSpins + 2);
     mzk.resize(simParams->systemTotalSpins + 2);
+}
+
+void SolversImplementation::_clearDataStorageVariables() {
+
+    simParams->totalTime = 0.0;
+    std::fill(mx1p.begin(), mx1p.end(), 0.0);
+    std::fill(my1p.begin(), my1p.end(), 0.0);
+    std::fill(mz1p.begin(), mz1p.end(), 0.0);
+    std::fill(mx2p.begin(), mx2p.end(), 0.0);
+    std::fill(my2p.begin(), my2p.end(), 0.0);
+    std::fill(mz2p.begin(), mz2p.end(), 0.0);
 }
 
 void SolversImplementation::_testOutputValues( double &mxTerm, double &myTerm, double &mzTerm, int site, int iteration,

@@ -5,6 +5,7 @@
 #include "../include/CommonLibs.h"
 #include "../include/SolversSuperClass.h"
 // #include "../Other/working_on/SpinChainEigenSolverClass.h"
+#include "../libs/progressbar.hpp"
 
 int main() {
     auto sharedSimParams = std::make_shared<SimulationParameters>();
@@ -59,9 +60,34 @@ int main() {
 
         initialisationInstance->performInitialisation();
         configurationInstance->performInitialisation();
-        methodsInstance->performInitialisation();
+        sharedSimFlags->resetSimState = true;
 
+        std::string letterString = "a";
+        progressbar mainBar(50);
+        for (int i = 1; i < 50; i++) {
+            mainBar.update();
+            sharedSimParams->drivingRegionWidth = i;
 
+            GV.SetFileNameBase(outputFileID + letterString);
+
+            // Increment LETTER
+            int j = letterString.size() - 1;
+            while (j >= 0) {
+                if (letterString[j] == 'z') {
+                    letterString[j] = 'a';
+                    j--;
+                } else {
+                    letterString[j]++;
+                    break;
+                }
+            }
+            if (j < 0) {
+                letterString = 'a' + letterString; // Prepend 'a' when all characters were 'z'
+            }
+
+            methodsInstance->performInitialisation();
+            configurationInstance->performInitialisation();
+        }
     }
     return 0;
 }

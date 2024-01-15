@@ -77,6 +77,8 @@ public:
                                                             int layer, double mxInit, double myInit, double mzInit);
 
     void                performInitialisation() override { Configure(); };
+
+    void                resetInitMagneticMoments(double mxInit, double myInit, double mzInit);
 };
 
 

@@ -23,24 +23,28 @@ void SolversConfiguration::Configure() {
     // Order is intentional, and must be maintained!
     _testShockwaveInitConditions();
 
-    if (simFlags->hasMultipleLayers) {
-        _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
-                                            simParams->gilbertABCInner, simParams->gilbertABCOuter);
-    } else {
-        _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-                                  simParams->gilbertABCInner, simParams->gilbertABCOuter);
-    }
+    if (simFlags->resetSimState)
+        resetInitMagneticMoments(_mxInit, _myInit, _mzInit);
+    else {
+        if ( simFlags->hasMultipleLayers ) {
+            _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
+                                                simParams->gilbertABCInner, simParams->gilbertABCOuter);
+        } else {
+            _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
+                                      simParams->gilbertABCInner, simParams->gilbertABCOuter);
+        }
 
-    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
-    _generateExchangeVector(simParams->numSpinsInABC, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
-                            simParams->exchangeEnergyMax);
+        _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
+        _generateExchangeVector(simParams->numSpinsInABC, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
+                                simParams->exchangeEnergyMax);
 
-    if (simFlags->hasMultipleLayers) {
-        simStates->m0Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _mzInit);
-        simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
-        simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
-    } else if (!simFlags->hasMultipleLayers) {
-        _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
+        if ( simFlags->hasMultipleLayers ) {
+            simStates->m0Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _mzInit);
+            simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
+            simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
+        } else if ( !simFlags->hasMultipleLayers ) {
+            _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
+        }
     }
 }
 
@@ -86,13 +90,15 @@ void SolversConfiguration::_setupDrivingRegion(int numSpinsInChain, int numSpins
     }
 
     if (simFlags->shouldDriveCentre) {
+        // Use same midpoint for even and odd lengthened chains (numSpinsInChain)
         if (drivingRegionWidth % 2 == 0) {
-            simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
+            // By convention even case shortens the LHS
+            simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2 - 1);
             simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
         } else {
             // Use convention to round down then add additional site (odd number) to the RHS of the centre
             simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
-            simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (1 + drivingRegionWidth / 2);
+            simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
         }
         return;
     }
@@ -190,6 +196,44 @@ void SolversConfiguration::_setupInitMagneticMoments(double mxInit, double myIni
     simStates->mx0.push_back(0);
     simStates->my0.push_back(0);
     simStates->mz0.push_back(0);
+}
+void SolversConfiguration::resetInitMagneticMoments(double mxInit, double myInit, double mzInit) {
+
+    //Temporary vectors to hold the initial conditions (InitCond) of the chain along each axis. Declared separately to allow for non-isotropic conditions
+
+    std::fill(simStates->mx0.begin(), simStates->mx0.end(), mxInit);
+    std::fill(simStates->my0.begin(), simStates->my0.end(), myInit);
+    std::fill(simStates->mz0.begin(), simStates->mz0.end(), mzInit);
+
+    if (!simStates->mx0.empty()) {
+        int vecLength = simStates->mx0.size() - 1;
+        simStates->mx0[0] = 0;
+        simStates->mx0[vecLength] = 0;
+
+        simStates->my0[0] = 0;
+        simStates->my0[vecLength] = 0;
+
+        simStates->mz0[0] = 0;
+        simStates->mz0[vecLength] = 0;
+    }
+
+    // mxInitCond[0] = mxInit; // Only perturb initial spin
+
+    /*
+    for (int i = 0; i < systemTotalSpins; i++) {
+        InitCond[i] = 0.003162277;
+        // myInitCond[i] = 0.0;
+        mzInitCond[i] = 0.999994999;
+    }
+    */
+
+    if (!simFlags->isFerromagnetic) {
+        for (int i = 0; i < simParams->systemTotalSpins; i++) {
+            if (i % 2 == 1)
+                simStates->mz0[i] *= -1.0;
+        }
+    }
+
 }
 void SolversConfiguration::_testShockwaveInitConditions() {
 

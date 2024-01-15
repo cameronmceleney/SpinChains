@@ -62,6 +62,8 @@ private:
      */
     void _testShockwaveConditions( double iteration ) override;
 
+    void    _clearDataStorageVariables();
+
     /**
      * Transfer results to a regular vector outside the parallel region
      */

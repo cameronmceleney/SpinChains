@@ -48,9 +48,9 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = false;
+    simFlags->shouldDriveCentre = true;
     simFlags->shouldDriveLHS = false;
-    simFlags->shouldDriveRHS = true;
+    simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
     simFlags->isOscillatingZeemanStatic = false;
@@ -66,13 +66,13 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 42.5 * 1e9;
+    simParams->drivingFreq = 62.8 * 1e9;
     simParams->oscillatingZeemanStrength = 3e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 0.2e-9;
+    simParams->maxSimTime = 0.03e-9;
     simParams->satMag = -1;
-    simParams->stepsize = 1e-16;
+    simParams->stepsize = 1e-15;
 
     // Data Output Parameters
     simStates->fixedOutputSites = {1300, 2300, 3300, 4300};
@@ -87,7 +87,7 @@ void SolversInitialisation::_setSimulationParameters() {
     simStates->discreteDrivenSites = {1};
     simParams->drivingRegionWidth = 1;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 300;
+    simParams->numSpinsInABC = 0;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)
