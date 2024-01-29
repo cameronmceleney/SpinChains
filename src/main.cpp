@@ -21,11 +21,11 @@ int main() {
     // Global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(4000);
-    GV.SetExchangeMinVal(150);
-    GV.SetExchangeMaxVal(150);
-    GV.SetGyromagneticConstant(28);
-    GV.SetDMIConstant(15);
+    GV.SetNumSpins(1000);
+    GV.SetExchangeMinVal(4.16);
+    GV.SetExchangeMaxVal(4.16);
+    GV.SetGyromagneticConstant(28.01);
+    GV.SetDMIConstant(1.94);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -60,33 +60,37 @@ int main() {
 
         initialisationInstance->performInitialisation();
         configurationInstance->performInitialisation();
-        sharedSimFlags->resetSimState = true;
 
-        std::string letterString = "a";
-        progressbar mainBar(50);
-        for (int i = 1; i < 50; i++) {
-            mainBar.update();
-            sharedSimParams->drivingRegionWidth = i;
+        sharedSimFlags->resetSimState = false;
 
-            GV.SetFileNameBase(outputFileID + letterString);
+        if ( sharedSimFlags->resetSimState ) {
+            std::string letterString = "a";
+            progressbar mainBar(140, true);
+            for ( int i = 10; i < 151; i++ ) {
+                mainBar.update();
+                sharedSimParams->drivingRegionWidth = i;
 
-            // Increment LETTER
-            int j = letterString.size() - 1;
-            while (j >= 0) {
-                if (letterString[j] == 'z') {
-                    letterString[j] = 'a';
-                    j--;
-                } else {
-                    letterString[j]++;
-                    break;
+                GV.SetFileNameBase("T" + outputFileID + letterString);
+
+                // Increment LETTER
+                int j = letterString.size() - 1;
+                while ( j >= 0 ) {
+                    if ( letterString[j] == 'z' ) {
+                        letterString[j] = 'a';
+                        j--;
+                    } else {
+                        letterString[j]++;
+                        break;
+                    }
                 }
+                if ( j < 0 ) {
+                    letterString = 'a' + letterString; // Prepend 'a' when all characters were 'z'
+                }
+                configurationInstance->performInitialisation();
+                methodsInstance->performInitialisation();
             }
-            if (j < 0) {
-                letterString = 'a' + letterString; // Prepend 'a' when all characters were 'z'
-            }
-
+        } else {
             methodsInstance->performInitialisation();
-            configurationInstance->performInitialisation();
         }
     }
     return 0;

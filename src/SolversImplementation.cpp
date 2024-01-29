@@ -577,17 +577,17 @@ void SolversImplementation::RK2Parallel() {
 
         _testShockwaveConditions(iteration);
 
-        double t0 = simParams->totalTime;
+        double t0 = simParams->totalTime, t0Half = simParams->totalTime + simParams->stepsizeHalf;
 
         if (useCompact) {
             // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
             // Possible mistake here; should it not be 't0+h' and not 't0' for RK-S1?
             RK2StageMultithreadedCompact(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
-                                      simParams->totalTime, simParams->stepsizeHalf, iteration, "1");
+                                         t0, simParams->stepsizeHalf, iteration, "1");
 
             // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
             RK2StageMultithreadedCompact(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
-                                      simParams->totalTime, simParams->stepsize, iteration, "2");
+                                      t0Half, simParams->stepsize, iteration, "2");
         } else {
             // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
             RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
@@ -670,22 +670,24 @@ void SolversImplementation::RK4Parallel() {
 
         double stepsizeZero = 0;
 
+        double t0 = simParams->totalTime, t0Half = simParams->totalTime + simParams->stepsizeHalf, t0Full = simParams->totalTime + simParams->stepsize;
+
         // RK4 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
         // Possible mistake here; should it not be 't0+h' and not 't0' for RK-S1?
         RK4StageMultithreadedCompact(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
-                                  simParams->totalTime, simParams->stepsize, iteration, "1");
+                                  t0, simParams->stepsize, iteration, "1");
 
         // RK2 Stage 4. Takes (m0 + k2/2) as inputs. This estimates the values of the m-components for the next iteration.
         RK4StageMultithreadedCompact(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
-                                  simParams->totalTime, simParams->stepsizeHalf, iteration, "2");
+                                  t0Half, simParams->stepsize, iteration, "2");
 
         // RK2 Stage 3. Takes (m0 + k3/2) as inputs
         RK4StageMultithreadedCompact(mx2p, my2p, mz2p, mx3p, my3p, mz3p,
-                                     simParams->totalTime, simParams->stepsizeHalf, iteration, "3");
+                                     t0Half, simParams->stepsize, iteration, "3");
 
         // RK2 Stage 4. Takes (m0 + k3) as inputs
         RK4StageMultithreadedCompact(mx3p, my3p, mz3p, mx4p, my4p, mz4p,
-                                     simParams->totalTime, simParams->stepsize, iteration, "4");
+                                     t0Full, simParams->stepsize, iteration, "4");
 
         // Everything below here is part of the method, but not the RK4 stage loops calculations.
 

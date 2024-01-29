@@ -51,6 +51,7 @@ double MagnetisationDynamics::MagneticMomentZ(const int& site, const double& mxM
     if ( _simFlags->shouldUseLLG ) {
         // The magnetic moment components' coupled equations (obtained from magDynamics equation) with the parameters for the first stage of RK2.
         mz = _simParams->gyroMagConst * (hxMID * myMID + _simStates->gilbertVector[site] * hzMID * (pow(mxMID,2) + pow(myMID,2)) - _simStates->gilbertVector[site]*hxMID*mxMID*mzMID - hyMID * (mxMID + _simStates->gilbertVector[site] * myMID * mzMID));
+
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
         mz = -1.0 * _simParams->gyroMagConst * (mxMID * hyMID - myMID * hxMID);

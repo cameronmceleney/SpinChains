@@ -23,9 +23,10 @@ void SolversConfiguration::Configure() {
     // Order is intentional, and must be maintained!
     _testShockwaveInitConditions();
 
-    if (simFlags->resetSimState)
+    if ( simFlags->resetSimState ) {
         resetInitMagneticMoments(_mxInit, _myInit, _mzInit);
-    else {
+        _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
+    } else {
         if ( simFlags->hasMultipleLayers ) {
             _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
                                                 simParams->gilbertABCInner, simParams->gilbertABCOuter);
@@ -149,11 +150,13 @@ void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, 
             SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, false);
             std::vector<double> tempExchangeChain = SpinChainExchange.generate_array();
 
-            SpinChainExchangeLHS.set_values(exchangeMin, exchangeMax, numSpinsAbsorbingRegion, true, false);
-            std::vector<double> tempExchangeLHS = SpinChainExchangeLHS.generate_array();
+            // SpinChainExchangeLHS.set_values(exchangeMin, exchangeMax, numSpinsAbsorbingRegion, true, false);
+            // std::vector<double> tempExchangeLHS = SpinChainExchangeLHS.generate_array();
+            std::vector<double> tempExchangeLHS(numSpinsAbsorbingRegion, exchangeMin);
 
-            SpinChainExchangeRHS.set_values(exchangeMax, exchangeMin, numSpinsAbsorbingRegion, true, false);
-            std::vector<double> tempExchangeRHS = SpinChainExchangeRHS.generate_array();
+            // SpinChainExchangeRHS.set_values(exchangeMax, exchangeMin, numSpinsAbsorbingRegion, true, false);
+            // std::vector<double> tempExchangeRHS = SpinChainExchangeRHS.generate_array();
+            std::vector<double> tempExchangeRHS(numSpinsAbsorbingRegion, exchangeMax);
 
             simStates->exchangeVec.insert(simStates->exchangeVec.end(), tempExchangeLHS.begin(), tempExchangeLHS.end());
             simStates->exchangeVec.insert(simStates->exchangeVec.end(), tempExchangeChain.begin(), tempExchangeChain.end());

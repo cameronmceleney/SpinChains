@@ -97,7 +97,7 @@ inline progressbar::progressbar() :
 
 inline progressbar::progressbar(int n, bool showbar) :
         progress(0),
-        n_cycles(n),
+        n_cycles(n+1),
         last_perc(0),
         do_show_bar(showbar),
         update_is_called(false),

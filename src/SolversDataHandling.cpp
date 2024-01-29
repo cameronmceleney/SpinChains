@@ -94,12 +94,21 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         outputFileName << "\n";
     }
 
-    std::string notesComments = "";
-    //std::cout << "Enter any notes for this simulation: ";
-    //std::cin.ignore();
-    //std::getline(std::cin, notesComments);
-    outputFileName << "Note(s):," << notesComments
-                   << "\n"; // Adding comma ensures the note itself is in a different csv cell to the term 'Note(s):'
+    if (simFlags->resetSimState) {
+        std::string notesComments = "";
+        //std::cout << "Enter any notes for this simulation: ";
+        //std::cin.ignore();
+        //std::getline(std::cin, notesComments);
+        outputFileName << "Note(s):," << notesComments
+                       << "\n"; // Adding comma ensures the note itself is in a different csv cell to the term 'Note(s):'
+    } else {
+        std::string notesComments;
+        std::cout << "Enter any notes for this simulation: ";
+        std::cin.ignore();
+        std::getline(std::cin, notesComments);
+        outputFileName << "Note(s):," << notesComments
+                       << "\n"; // Adding comma ensures the note itself is in a different csv cell to the term 'Note(s):'
+    }
 
     outputFileName << "[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n";
 
