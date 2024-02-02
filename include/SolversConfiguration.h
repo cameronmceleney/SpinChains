@@ -63,7 +63,8 @@ protected:
     void                _testShockwaveInitConditions();
 
 public:
-    SolversConfiguration(std::shared_ptr<SimulationParameters> paramsData,
+    SolversConfiguration(std::shared_ptr<SimulationManager> sharedSimManager,
+                         std::shared_ptr<SimulationParameters> paramsData,
                                    std::shared_ptr<SimulationStates> sharedSimStates,
                                    std::shared_ptr<SimulationFlags> sharedSimFlags);
 

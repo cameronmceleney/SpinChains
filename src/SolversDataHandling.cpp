@@ -5,11 +5,12 @@
 // C++ Standard Library
 #include "../include/SolversDataHandling.h"
 
-SolversDataHandling::SolversDataHandling( std::shared_ptr<SimulationParameters> sharedSimParams,
+SolversDataHandling::SolversDataHandling( std::shared_ptr<SimulationManager> sharedSimManager,
+                                          std::shared_ptr<SimulationParameters> sharedSimParams,
                                           std::shared_ptr<SimulationStates> sharedSimStates,
                                           std::shared_ptr<SimulationFlags> sharedSimFlags )
 
-        : SolversSuperClass(std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {}
+        : SolversSuperClass(std::move(sharedSimManager), std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {}
 
 void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::string methodUsed, bool is_metadata ) {
 
@@ -94,8 +95,8 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         outputFileName << "\n";
     }
 
-    if (simFlags->resetSimState) {
-        std::string notesComments = "";
+    if (simManager->massProduce) {
+        std::string notesComments = "Mass produced file";
         //std::cout << "Enter any notes for this simulation: ";
         //std::cin.ignore();
         //std::getline(std::cin, notesComments);

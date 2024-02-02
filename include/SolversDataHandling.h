@@ -24,7 +24,8 @@ class SolversImplementation;
 class SolversDataHandling :  public SolversSuperClass {
     friend class SolversImplementation;
 public:
-    SolversDataHandling(std::shared_ptr<SimulationParameters> paramsData,
+    SolversDataHandling(std::shared_ptr<SimulationManager> sharedSimManager,
+                        std::shared_ptr<SimulationParameters> paramsData,
                    std::shared_ptr<SimulationStates> sharedSimStates,
                    std::shared_ptr<SimulationFlags> sharedSimFlags);
     ~SolversDataHandling() = default;

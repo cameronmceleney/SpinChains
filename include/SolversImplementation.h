@@ -124,7 +124,8 @@ private:
                                     const int &iteration, std::string rkStage );
 
 public:
-    SolversImplementation( std::shared_ptr<SimulationParameters> paramsData,
+    SolversImplementation( std::shared_ptr<SimulationManager> sharedSimManager,
+                           std::shared_ptr<SimulationParameters> paramsData,
                            std::shared_ptr<SimulationStates> sharedSimStates,
                            std::shared_ptr<SimulationFlags> sharedSimFlags );
 

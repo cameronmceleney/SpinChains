@@ -5,11 +5,12 @@
 // Corresponding header
 #include "../include/SolversInitialisation.h"
 
-SolversInitialisation::SolversInitialisation(std::shared_ptr<SimulationParameters> sharedSimParams,
+SolversInitialisation::SolversInitialisation(std::shared_ptr<SimulationManager> sharedSimManager,
+                                             std::shared_ptr<SimulationParameters> sharedSimParams,
                                    std::shared_ptr<SimulationStates> sharedSimStates,
                                    std::shared_ptr<SimulationFlags> sharedSimFlags)
 
-    : SolversSuperClass(std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {
+    : SolversSuperClass(std::move(sharedSimManager), std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {
 }
 
 void SolversInitialisation::Initialise() {
@@ -36,6 +37,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasDMI = true;
     simFlags->hasSTT = false;
     simFlags->hasStaticZeeman = true;
+    simFlags->hasDemag1DThinFilm = false;
     simFlags->hasDemagIntense = false;
     simFlags->hasDemagFFT = false;
     simFlags->hasShapeAnisotropy = false;
@@ -66,16 +68,16 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 9.841 * 1e9;
+    simParams->drivingFreq = 8.62 * 1e9;
     simParams->oscillatingZeemanStrength = 1e-4;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 2e-9;
+    simParams->maxSimTime = 1.2e-9;
     simParams->satMag = -1;
-    simParams->stepsize = 1e-16;
+    simParams->stepsize = 1e-15;
 
     // Data Output Parameters
-    simStates->fixedOutputSites = {1300, 2300, 3300, 4300};
+    simStates->fixedOutputSites = {1250, 1900, 2200, 2800, 3100, 3750};
     simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
@@ -85,9 +87,9 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 94;
+    simParams->drivingRegionWidth = 125;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 200;
+    simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)

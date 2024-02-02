@@ -5,11 +5,12 @@
 // Corresponding header
 #include "../include/SolversConfiguration.h"
 
-SolversConfiguration::SolversConfiguration(std::shared_ptr<SimulationParameters> sharedSimParams,
+SolversConfiguration::SolversConfiguration(std::shared_ptr<SimulationManager> sharedSimManager,
+                                           std::shared_ptr<SimulationParameters> sharedSimParams,
                                    std::shared_ptr<SimulationStates> sharedSimStates,
                                    std::shared_ptr<SimulationFlags> sharedSimFlags)
 
-    : SolversSuperClass(std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {
+    : SolversSuperClass(std::move(sharedSimManager), std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {
     _mxInit = 0.0;
     _myInit = 0.0;
     _mzInit = 1.0;
@@ -137,7 +138,7 @@ void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, 
     LinspaceClass SpinChainExchangeLHS;
     LinspaceClass SpinChainExchangeRHS;
 
-    int customDampedSite = -1; // Lets the damping regions be a single exchange region with the main chain
+    int customDampedSite = 300; // Lets the damping regions be a single exchange region with the main chain
 
     if (numSpinsAbsorbingRegion > 0) {
         if (simParams->numSpinsInABC == customDampedSite) {

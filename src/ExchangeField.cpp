@@ -58,6 +58,14 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                         tempExchangeLocal[2] += tempDMILocal[2];
                     }
 
+                    if (_simFlags->hasDemag1DThinFilm) {
+                        // Reduces total operations by only summing when DMI is present
+                        std::array<double, 3> tempDemagLocal = _calculateDemagSimple(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                        tempExchangeLocal[0] += tempDemagLocal[0];
+                        tempExchangeLocal[1] += tempDemagLocal[1];
+                        tempExchangeLocal[2] += tempDemagLocal[2];
+                    }
+
                     exchangeXOut[site].fetch_add(tempExchangeLocal[0]);
                     exchangeYOut[site].fetch_add(tempExchangeLocal[1]);
                     exchangeZOut[site].fetch_add(tempExchangeLocal[2]);
@@ -322,6 +330,31 @@ ExchangeField::_calculateDMI1D( const int &currentSite, const std::vector<double
         return {-1.0 * _simParams->dmiConstant * (myTerms[currentSite + 1] - myTerms[currentSite - 1]),
                 _simParams->dmiConstant * (mxTerms[currentSite + 1] - mxTerms[currentSite - 1]),
                 0.0};
+    } else {
+        throw std::invalid_argument("_calculateDMIField1D hasn't got CUDA implementation yet");
+    }
+}
+
+std::array<double, 3>
+ExchangeField::_calculateDemagSimple( const int &currentSite, const std::vector<double> &mxTerms,
+                                const std::vector<double> &myTerms,
+                                const std::vector<double> &mzTerms, const bool &shouldUseTBB ) {
+
+    /* TODO. This is a temp polymorphic version of _calculateDMIField1D that is threadsafe. Needs refinement
+     * Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
+     *
+     * Quickly finds solution to H_DMI = D_{i-1, i} \cdot (m_{i-1} \times m_{i}) + D_{i, i+1} \cdot (m_{i} \times m_{i+1}
+     * by exploiting how only D_z is non-zero in this 1D system
+     *
+     * Uses Eq. 3 from https://doi.org/10.1103/PhysRevB.107.224421 to explicitly write the return statements for the case
+     * where DMI only involves two nearest neighbours (NN).
+     */
+
+
+    if ( shouldUseTBB ) {
+        return {-1.005096 * myTerms[currentSite] * mzTerms[currentSite],
+                0,
+                -1.005096 * myTerms[currentSite] * mxTerms[currentSite]};
     } else {
         throw std::invalid_argument("_calculateDMIField1D hasn't got CUDA implementation yet");
     }

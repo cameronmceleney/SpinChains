@@ -5,11 +5,12 @@
 // Corresponding header
 #include "../include/SolversImplementation.h"
 
-SolversImplementation::SolversImplementation( std::shared_ptr<SimulationParameters> sharedSimParams,
+SolversImplementation::SolversImplementation( std::shared_ptr<SimulationManager> sharedSimManager,
+                                              std::shared_ptr<SimulationParameters> sharedSimParams,
                                               std::shared_ptr<SimulationStates> sharedSimStates,
                                               std::shared_ptr<SimulationFlags> sharedSimFlags )
 
-        : SolversSuperClass(std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)),
+        : SolversSuperClass(std::move(sharedSimManager), std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)),
           demagField(simParams.get(), simStates.get(), simFlags.get()),
           dmInteraction(simParams.get(), simStates.get(), simFlags.get()),
           effectiveField(simParams.get(), simStates.get(), simFlags.get()),
@@ -62,7 +63,7 @@ void SolversImplementation::_testShockwaveConditions( double iteration ) {
 }
 
 void SolversImplementation::SolveRK2Classic() {
-    std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simParams, simStates,
+    std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simManager, simParams, simStates,
                                                                                              simFlags);
     // Only uses a single spin chain to solve the RK2 midpoint method.
     CustomTimer methodTimer;
@@ -133,7 +134,9 @@ void SolversImplementation::SolveRK2Classic() {
                                                                                          mzTermsForDipole,
                                                                                          siteTermsForDipole);
 
-                dipoleX = dipoleTerms[0]; dipoleY = dipoleTerms[1]; dipoleZ = dipoleTerms[2];
+                dipoleX = dipoleTerms[0];
+                dipoleY = dipoleTerms[1];
+                dipoleZ = dipoleTerms[2];
             }
 
             double dmiZ = 0;
@@ -292,7 +295,7 @@ void SolversImplementation::SolveRK2Classic() {
 }
 
 void SolversImplementation::SolveRK2() {
-    std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simParams, simStates,
+    std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simManager, simParams, simStates,
                                                                                              simFlags);
     // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
     CustomTimer rk2Timer;
@@ -472,7 +475,7 @@ void SolversImplementation::SolveRK2() {
                 double hxK1 = effectiveField.EffectiveFieldXClassic(site, layer, mxLHS, mxMID, mxRHS, dipoleX,
                                                                     demagX[site], dmiZ, t0);
                 double hyK1 = effectiveField.EffectiveFieldYClassic(site, layer, myLHS, myMID, myRHS, dipoleY,
-                                                                    demagY[site],dmiZ);
+                                                                    demagY[site], dmiZ);
                 double hzK1 = effectiveField.EffectiveFieldZClassic(site, layer, mzLHS, mzMID, mzRHS, dipoleZ,
                                                                     demagZ[site]);
 
@@ -538,20 +541,20 @@ void SolversImplementation::SolveRK2() {
 void SolversImplementation::RK2Parallel() {
     CustomTimer parallelTimer;
     // Only works for a 1D spin chain
-    std::shared_ptr<SolversDataHandling> solverOutputs = std::make_shared<SolversDataHandling>(simParams, simStates,
+    std::shared_ptr<SolversDataHandling> solverOutputs = std::make_shared<SolversDataHandling>(simManager, simParams, simStates,
                                                                                                simFlags);
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxOutputFile(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
 
-    if (simFlags->resetSimState)
-         _clearDataStorageVariables();
+    if ( simFlags->resetSimState )
+        _clearDataStorageVariables();
 
     if ( simFlags->isFerromagnetic ) {
-        if ( !simFlags->resetSimState ) { solverOutputs->InformUserOfCodeType("RK2 Midpoint (Parallel)(FM)"); }
+        if ( !simManager->massProduce ) { solverOutputs->InformUserOfCodeType("RK2 Midpoint (Parallel)(FM)"); }
         solverOutputs->CreateFileHeader(mxOutputFile, "RK2 Midpoint (Parallel)(FM)");
     } else {
-        if ( !simFlags->resetSimState) { solverOutputs->InformUserOfCodeType("RK2 Midpoint (AFM)"); }
+        if ( !simManager->massProduce ) { solverOutputs->InformUserOfCodeType("RK2 Midpoint (AFM)"); }
         solverOutputs->CreateFileHeader(mxOutputFile, "RK2 Midpoint (AFM)");
     }
 
@@ -565,21 +568,22 @@ void SolversImplementation::RK2Parallel() {
     // TODO. As this is all multi-threaded, having such larger vectors is excessive. Change methods to work by element (so that onl mx/my/mz are large in memory)
     // Only create vectors once to reuse memory. Only assign memory if flags are true. Faster to declare loop-wide vectors than define them in each loop iteration.
     bool useCompact = true;
-    if (useCompact)
+    if ( useCompact )
         _resizeClassContainersTest();
     else
         _resizeClassContainers();
 
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
-        if ( !simFlags->resetSimState && simParams->iterationEnd >= 100 && iteration % (simParams->iterationEnd / 100) == 0 )
+        if ( !simFlags->resetSimState && simParams->iterationEnd >= 100 &&
+             iteration % (simParams->iterationEnd / 100) == 0 )
             bar.update(); // Need to match definition of bar
 
         _testShockwaveConditions(iteration);
 
         double t0 = simParams->totalTime, t0Half = simParams->totalTime + simParams->stepsizeHalf;
 
-        if (useCompact) {
+        if ( useCompact ) {
             // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
             // Possible mistake here; should it not be 't0+h' and not 't0' for RK-S1?
             RK2StageMultithreadedCompact(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
@@ -587,7 +591,7 @@ void SolversImplementation::RK2Parallel() {
 
             // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
             RK2StageMultithreadedCompact(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
-                                      t0Half, simParams->stepsize, iteration, "2");
+                                         t0Half, simParams->stepsize, iteration, "2");
         } else {
             // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
             RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
@@ -622,7 +626,7 @@ void SolversImplementation::RK2Parallel() {
 
     if ( GV.GetEmailWhenCompleted()) { solverOutputs->CreateMetadata(true); }
 
-    if (!simFlags->resetSimState) {
+    if ( !simFlags->resetSimState ) {
         if ( simFlags->shouldTrackMagneticMomentNorm ) {
             std::cout << "\nMax norm. value of M is: " << simParams->largestMNorm << std::endl;
         }
@@ -636,7 +640,7 @@ void SolversImplementation::RK2Parallel() {
 void SolversImplementation::RK4Parallel() {
     CustomTimer parallelTimer;
     // Only works for a 1D spin chain
-    std::shared_ptr<SolversDataHandling> solverOutputs = std::make_shared<SolversDataHandling>(simParams, simStates,
+    std::shared_ptr<SolversDataHandling> solverOutputs = std::make_shared<SolversDataHandling>(simManager, simParams, simStates,
                                                                                                simFlags);
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
@@ -670,16 +674,17 @@ void SolversImplementation::RK4Parallel() {
 
         double stepsizeZero = 0;
 
-        double t0 = simParams->totalTime, t0Half = simParams->totalTime + simParams->stepsizeHalf, t0Full = simParams->totalTime + simParams->stepsize;
+        double t0 = simParams->totalTime, t0Half = simParams->totalTime + simParams->stepsizeHalf, t0Full =
+                simParams->totalTime + simParams->stepsize;
 
         // RK4 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
         // Possible mistake here; should it not be 't0+h' and not 't0' for RK-S1?
         RK4StageMultithreadedCompact(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
-                                  t0, simParams->stepsize, iteration, "1");
+                                     t0, simParams->stepsize, iteration, "1");
 
         // RK2 Stage 4. Takes (m0 + k2/2) as inputs. This estimates the values of the m-components for the next iteration.
         RK4StageMultithreadedCompact(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
-                                  t0Half, simParams->stepsize, iteration, "2");
+                                     t0Half, simParams->stepsize, iteration, "2");
 
         // RK2 Stage 3. Takes (m0 + k3/2) as inputs
         RK4StageMultithreadedCompact(mx2p, my2p, mz2p, mx3p, my3p, mz3p,
@@ -750,7 +755,7 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
     if ( simFlags->hasDMI )
         dmInteraction.calculateOneDimension(mxIn, myIn, mzIn, dmiXp, dmiYp, dmiZp, useParallel);
 
-    if (simFlags->hasSTT)
+    if ( simFlags->hasSTT )
         // placeholder for example. Find STT for each site at all sites before main loop
         stt.calculateOneDimension(mxIn, myIn, mzIn, sttXp, sttYp, sttZp);
 
@@ -773,10 +778,22 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
             STTTerms sttLocal;
 
             // All need to be defined as default cases in case their flags aren't called to overwrite
-            if (simFlags->hasDipolar) { dipoleLocal.x = dipoleXp[site]; dipoleLocal.y = dipoleYp[site]; dipoleLocal.z = dipoleZp[site]; }
-            if (simFlags->hasDemagIntense) { demagLocal.x = demagXp[site]; demagLocal.y = demagYp[site]; demagLocal.z = demagZp[site]; }
-            if (simFlags->hasDMI) { dmiLocal.z = dmiZp[site]; }
-            if (simFlags->hasSTT) { sttLocal.x = sttXp[site]; sttLocal.y = sttYp[site]; sttLocal.z = sttZp[site]; }
+            if ( simFlags->hasDipolar ) {
+                dipoleLocal.x = dipoleXp[site];
+                dipoleLocal.y = dipoleYp[site];
+                dipoleLocal.z = dipoleZp[site];
+            }
+            if ( simFlags->hasDemagIntense ) {
+                demagLocal.x = demagXp[site];
+                demagLocal.y = demagYp[site];
+                demagLocal.z = demagZp[site];
+            }
+            if ( simFlags->hasDMI ) { dmiLocal.z = dmiZp[site]; }
+            if ( simFlags->hasSTT ) {
+                sttLocal.x = sttXp[site];
+                sttLocal.y = sttYp[site];
+                sttLocal.z = sttZp[site];
+            }
 
             // Will always be initialised so only need to declare here
             HkTerms hkLocal;
@@ -853,16 +870,26 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
 
 
 
-    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
-        for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins),
+                      [&]( const tbb::blocked_range<int> tbbRange ) {
+                          for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
 
-            std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
-            std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
-            effectiveFieldX[i] = driveTemp[0] + exchangeTemp[0];
-            effectiveFieldY[i] = driveTemp[1] + exchangeTemp[1];
-            effectiveFieldZ[i] = driveTemp[2] + exchangeTemp[2];
-        }
-    }, tbb::auto_partitioner());
+                              std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i,
+                                                                                                                    0,
+                                                                                                                    mxIn,
+                                                                                                                    myIn,
+                                                                                                                    mzIn,
+                                                                                                                    currentTime);
+                              std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i,
+                                                                                                                    0,
+                                                                                                                    mxIn,
+                                                                                                                    myIn,
+                                                                                                                    mzIn);
+                              effectiveFieldX[i] = driveTemp[0] + exchangeTemp[0];
+                              effectiveFieldY[i] = driveTemp[1] + exchangeTemp[1];
+                              effectiveFieldZ[i] = driveTemp[2] + exchangeTemp[2];
+                          }
+                      }, tbb::auto_partitioner());
 
 
     /*
@@ -933,33 +960,37 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
 
     // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
     //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
-    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
-        for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
-            /*
-             * All declarations of overwritten variables are placed here as 'local' to ensure
-             * that each thread has its own definition; else variables are not threadsafe
-            */
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins),
+                      [&]( const tbb::blocked_range<int> tbbRange ) {
+                          for ( int site = tbbRange.begin(); site <= tbbRange.end(); site++ ) {
+                              /*
+                               * All declarations of overwritten variables are placed here as 'local' to ensure
+                               * that each thread has its own definition; else variables are not threadsafe
+                              */
 
-            // Will always be initialised so only need to declare here
-            //HkTerms hkLocal;
-            //MkTerms mkLocal;
+                              // Will always be initialised so only need to declare here
+                              //HkTerms hkLocal;
+                              //MkTerms mkLocal;
 
-            double hkLocalX = effectiveFieldX[site];
-            double hkLocalY = effectiveFieldY[site];
-            double hkLocalZ = effectiveFieldZ[site];
+                              double hkLocalX = effectiveFieldX[site];
+                              double hkLocalY = effectiveFieldY[site];
+                              double hkLocalZ = effectiveFieldZ[site];
 
-            // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mkLocalX = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);
-            double mkLocalY = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);
-            double mkLocalZ = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hkLocalX, hkLocalY, hkLocalZ);
+                              // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                              double mkLocalX = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocalX,
+                                                                    hkLocalY, hkLocalZ);
+                              double mkLocalY = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hkLocalX,
+                                                                    hkLocalY, hkLocalZ);
+                              double mkLocalZ = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hkLocalX,
+                                                                    hkLocalY, hkLocalZ);
 
-            mxOut[site] = simStates->mx0[site] + stepsize * mkLocalX;
-            myOut[site] = simStates->my0[site] + stepsize * mkLocalY;
-            mzOut[site] = simStates->mz0[site] + stepsize * mkLocalZ;
+                              mxOut[site] = simStates->mx0[site] + stepsize * mkLocalX;
+                              myOut[site] = simStates->my0[site] + stepsize * mkLocalY;
+                              mzOut[site] = simStates->mz0[site] + stepsize * mkLocalZ;
 
-            _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
-        }
-    }, tbb::auto_partitioner());
+                              _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
+                          }
+                      }, tbb::auto_partitioner());
 
     if ( !simFlags->shouldTrackMagneticMomentNorm && rkStage == "2" ) {
         for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
@@ -976,11 +1007,12 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
 
 }
 
-void SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
-                                                       const std::vector<double> &mzIn, std::vector<double> &mxOut,
-                                                       std::vector<double> &myOut, std::vector<double> &mzOut,
-                                                       const double &currentTime, const double &stepsize,
-                                                       const int &iteration, std::string rkStage ) {
+void
+SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                                     const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                                     std::vector<double> &myOut, std::vector<double> &mzOut,
+                                                     const double &currentTime, const double &stepsize,
+                                                     const int &iteration, std::string rkStage ) {
     CustomTimer dipolarTimer;
     bool useParallel = true;
     int layer = 0;
@@ -1000,9 +1032,12 @@ void SolversImplementation::RK2StageMultithreadedCompact( const std::vector<doub
     _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
     _transferDataThenReleaseAtomicVector(effectiveFieldZAtomic, effectiveFieldZ);
 
-    effectiveFieldX[0] = 0; effectiveFieldX.back() = 0;
-    effectiveFieldY[0] = 0; effectiveFieldY.back() = 0;
-    effectiveFieldZ[0] = 0; effectiveFieldZ.back() = 0;
+    effectiveFieldX[0] = 0;
+    effectiveFieldX.back() = 0;
+    effectiveFieldY[0] = 0;
+    effectiveFieldY.back() = 0;
+    effectiveFieldZ[0] = 0;
+    effectiveFieldZ.back() = 0;
 
 
     if ( simFlags->hasDemagIntense )
@@ -1011,40 +1046,42 @@ void SolversImplementation::RK2StageMultithreadedCompact( const std::vector<doub
     if ( simFlags->hasDipolar )
         dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
 
-    if (simFlags->hasSTT)
+    if ( simFlags->hasSTT )
         // placeholder for example. Find STT for each site at all sites before main loop
         stt.calculateOneDimension(mxIn, myIn, mzIn, sttXp, sttYp, sttZp);
 
     // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
     //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
-    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins + 1), [&]( const tbb::blocked_range<int> tbbRange ) {
-        for ( int site = tbbRange.begin(); site < tbbRange.end(); site++ ) {
-            /*
-             * All declarations of overwritten variables are placed here as 'local' to ensure
-             * that each thread has its own definition; else variables are not threadsafe
-            */
-            HkTerms hkLocal; MkTerms mkLocal;
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins + 1),
+                      [&]( const tbb::blocked_range<int> tbbRange ) {
+                          for ( int site = tbbRange.begin(); site < tbbRange.end(); site++ ) {
+                              /*
+                               * All declarations of overwritten variables are placed here as 'local' to ensure
+                               * that each thread has its own definition; else variables are not threadsafe
+                              */
+                              HkTerms hkLocal;
+                              MkTerms mkLocal;
 
-            // Used for clarity; can be safely refactored away for very minor performance gain
-            hkLocal.x = effectiveFieldX[site];
-            hkLocal.y = effectiveFieldY[site];
-            hkLocal.z = effectiveFieldZ[site];
+                              // Used for clarity; can be safely refactored away for very minor performance gain
+                              hkLocal.x = effectiveFieldX[site];
+                              hkLocal.y = effectiveFieldY[site];
+                              hkLocal.z = effectiveFieldZ[site];
 
-            // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
-                                           hkLocal.x, hkLocal.y, hkLocal.z);
-            mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
-                                           hkLocal.x, hkLocal.y, hkLocal.z);
-            mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
-                                                  hkLocal.x, hkLocal.y, hkLocal.z);
+                              // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                              mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
+                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                              mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
+                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                              mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
+                                                              hkLocal.x, hkLocal.y, hkLocal.z);
 
-            mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
-            myOut[site] = simStates->my0[site] + stepsize * mkLocal.y;
-            mzOut[site] = simStates->mz0[site] + stepsize * mkLocal.z;
+                              mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
+                              myOut[site] = simStates->my0[site] + stepsize * mkLocal.y;
+                              mzOut[site] = simStates->mz0[site] + stepsize * mkLocal.z;
 
-            _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
-        }
-    }, tbb::auto_partitioner());
+                              _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
+                          }
+                      }, tbb::auto_partitioner());
 
     if ( !simFlags->shouldTrackMagneticMomentNorm && rkStage == "2" ) {
         for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
@@ -1061,11 +1098,12 @@ void SolversImplementation::RK2StageMultithreadedCompact( const std::vector<doub
 
 }
 
-void SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
-                                                       const std::vector<double> &mzIn, std::vector<double> &mxOut,
-                                                       std::vector<double> &myOut, std::vector<double> &mzOut,
-                                                       const double &currentTime, const double &stepsize,
-                                                       const int &iteration, std::string rkStage ) {
+void
+SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                                     const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                                     std::vector<double> &myOut, std::vector<double> &mzOut,
+                                                     const double &currentTime, const double &stepsize,
+                                                     const int &iteration, std::string rkStage ) {
     CustomTimer dipolarTimer;
     bool useParallel = true;
     int layer = 0;
@@ -1091,50 +1129,52 @@ void SolversImplementation::RK4StageMultithreadedCompact( const std::vector<doub
     if ( simFlags->hasDipolar )
         dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
 
-    if (simFlags->hasSTT)
+    if ( simFlags->hasSTT )
         // placeholder for example. Find STT for each site at all sites before main loop
         stt.calculateOneDimension(mxIn, myIn, mzIn, sttXp, sttYp, sttZp);
 
     // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
     //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
-    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins + 1), [&]( const tbb::blocked_range<int> tbbRange ) {
-        for ( int site = tbbRange.begin(); site < tbbRange.end(); site++ ) {
-            /*
-             * All declarations of overwritten variables are placed here as 'local' to ensure
-             * that each thread has its own definition; else variables are not threadsafe
-            */
-            HkTerms hkLocal; MkTerms mkLocal;
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins + 1),
+                      [&]( const tbb::blocked_range<int> tbbRange ) {
+                          for ( int site = tbbRange.begin(); site < tbbRange.end(); site++ ) {
+                              /*
+                               * All declarations of overwritten variables are placed here as 'local' to ensure
+                               * that each thread has its own definition; else variables are not threadsafe
+                              */
+                              HkTerms hkLocal;
+                              MkTerms mkLocal;
 
-            // Used for clarity; can be safely refactored away for very minor performance gain
-            hkLocal.x = effectiveFieldX[site];
-            hkLocal.y = effectiveFieldY[site];
-            hkLocal.z = effectiveFieldZ[site];
+                              // Used for clarity; can be safely refactored away for very minor performance gain
+                              hkLocal.x = effectiveFieldX[site];
+                              hkLocal.y = effectiveFieldY[site];
+                              hkLocal.z = effectiveFieldZ[site];
 
-            // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
-                                           hkLocal.x, hkLocal.y, hkLocal.z);
-            mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
-                                           hkLocal.x, hkLocal.y, hkLocal.z);
-            mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
-                                                  hkLocal.x, hkLocal.y, hkLocal.z);
+                              // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                              mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
+                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                              mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
+                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                              mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
+                                                              hkLocal.x, hkLocal.y, hkLocal.z);
 
-            if (rkStage == "2" or rkStage == "3") {
-                mxk[site] += 2 * mkLocal.x;
-                myk[site] += 2 * mkLocal.y;
-                mzk[site] += 2 * mkLocal.z;
-            } else {
-                mxk[site] += mkLocal.x;
-                myk[site] += mkLocal.y;
-                mzk[site] += mkLocal.z;
-            }
+                              if ( rkStage == "2" or rkStage == "3" ) {
+                                  mxk[site] += 2 * mkLocal.x;
+                                  myk[site] += 2 * mkLocal.y;
+                                  mzk[site] += 2 * mkLocal.z;
+                              } else {
+                                  mxk[site] += mkLocal.x;
+                                  myk[site] += mkLocal.y;
+                                  mzk[site] += mkLocal.z;
+                              }
 
-            mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
-            myOut[site] = simStates->my0[site] + stepsize * mkLocal.y;
-            mzOut[site] = simStates->mz0[site] + stepsize * mkLocal.z;
+                              mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
+                              myOut[site] = simStates->my0[site] + stepsize * mkLocal.y;
+                              mzOut[site] = simStates->mz0[site] + stepsize * mkLocal.z;
 
-            _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
-        }
-    }, tbb::auto_partitioner());
+                              _testOutputValues(mxOut[site], myOut[site], mzOut[site], site, iteration, rkStage);
+                          }
+                      }, tbb::auto_partitioner());
 
     if ( !simFlags->shouldTrackMagneticMomentNorm && rkStage == "2" ) {
         for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
@@ -1301,10 +1341,10 @@ void SolversImplementation::_testOutputValues( double &mxTerm, double &myTerm, d
 void SolversImplementation::_transferDataThenReleaseAtomicVector( std::vector<std::atomic<double>> &atomicVector,
                                                                   std::vector<double> &regularVector,
                                                                   bool shouldRelease ) {
-    for (size_t i = 0; i < atomicVector.size(); i++)
+    for ( size_t i = 0; i < atomicVector.size(); i++ )
         regularVector[i] = atomicVector[i].load();
 
-    if (shouldRelease) {
+    if ( shouldRelease ) {
         atomicVector.clear();
         atomicVector.shrink_to_fit();
     }

@@ -30,7 +30,8 @@ private:
     void                Initialise();
 
 public:
-    SolversInitialisation(std::shared_ptr<SimulationParameters> sharedSimParams,
+    SolversInitialisation(std::shared_ptr<SimulationManager> sharedSimManager,
+                          std::shared_ptr<SimulationParameters> sharedSimParams,
                      std::shared_ptr<SimulationStates> sharedSimStates,
                      std::shared_ptr<SimulationFlags> sharedSimFlags);
     ~SolversInitialisation() = default;

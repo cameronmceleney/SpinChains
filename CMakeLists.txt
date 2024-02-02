@@ -55,6 +55,7 @@ set(USER_GENERAL_LIBRARIES
         include/CommonLibs.h
         libs/progressbar.hpp
         libs/linspace.cpp libs/linspace.h
+        libs/revised_progressbar.hpp
 )
 
 set(USER_OTHER_FILES
@@ -68,6 +69,7 @@ set(CONTAINER_LIBRARIES
         include/SimulationParameters.h
         include/SimulationStates.h
         src/GlobalVariables.cpp include/GlobalVariables.h
+        include/SimulationManager.h
 )
 
 set(SOLVERS_CLASS
@@ -91,6 +93,8 @@ set(SOLVER_CLASS_COMPONENTS
         include/ExchangeField.h
         src/BiasFields.cpp
         include/BiasFields.h
+        src/SolversManager.cpp
+        include/SolversManager.h
 )
 
 # Must be before add_executable()

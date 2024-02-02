@@ -5,12 +5,9 @@
 #include "../include/CommonLibs.h"
 #include "../include/SolversSuperClass.h"
 // #include "../Other/working_on/SpinChainEigenSolverClass.h"
-#include "../libs/progressbar.hpp"
 
 int main() {
-    auto sharedSimParams = std::make_shared<SimulationParameters>();
-    auto sharedSimStates = std::make_shared<SimulationStates>();
-    auto sharedSimFlags = std::make_shared<SimulationFlags>();
+    auto sharedSimManager = std::make_shared<SimulationManager>();
 
     //SpinChainEigenSolverClass SolverClass{}; Needs to be turned into a separate class structure
 
@@ -21,11 +18,11 @@ int main() {
     // Global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(1000);
-    GV.SetExchangeMinVal(4.16);
-    GV.SetExchangeMaxVal(4.16);
-    GV.SetGyromagneticConstant(28.01);
-    GV.SetDMIConstant(1.94);
+    GV.SetNumSpins(3400);
+    GV.SetExchangeMinVal(32.5);
+    GV.SetExchangeMaxVal(32.5);
+    GV.SetGyromagneticConstant(28.0);
+    GV.SetDMIConstant(2.5);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -36,6 +33,7 @@ int main() {
     std::cout << "Enter the unique identifier for the file: ";
     std::cin >> outputFileID;
     GV.SetFileNameBase("T" + outputFileID);
+    sharedSimManager->outputFileID = outputFileID;
 
     GV.SetFilePath("windows");
 
@@ -51,47 +49,16 @@ int main() {
     if ( GV.GetShouldFindEigenvalues()) {
         std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
     } else {
-        auto initialisationInstance = SolversSuperClass::createSimulationInstance(sharedSimParams, sharedSimStates,
-                                                                                  sharedSimFlags);
-        auto configurationInstance = SolversSuperClass::createConfigurationInstance(sharedSimParams, sharedSimStates,
-                                                                                    sharedSimFlags);
-        auto methodsInstance = SolversSuperClass::createMethodsInstance(sharedSimParams, sharedSimStates,
-                                                                        sharedSimFlags);
+        auto sharedSimParams = std::make_shared<SimulationParameters>();
+        auto sharedSimStates = std::make_shared<SimulationStates>();
+        auto sharedSimFlags = std::make_shared<SimulationFlags>();
 
-        initialisationInstance->performInitialisation();
-        configurationInstance->performInitialisation();
+        sharedSimManager->massProduce = true;
+        sharedSimManager->hasNumericSuffix = false;
 
-        sharedSimFlags->resetSimState = false;
-
-        if ( sharedSimFlags->resetSimState ) {
-            std::string letterString = "a";
-            progressbar mainBar(140, true);
-            for ( int i = 10; i < 151; i++ ) {
-                mainBar.update();
-                sharedSimParams->drivingRegionWidth = i;
-
-                GV.SetFileNameBase("T" + outputFileID + letterString);
-
-                // Increment LETTER
-                int j = letterString.size() - 1;
-                while ( j >= 0 ) {
-                    if ( letterString[j] == 'z' ) {
-                        letterString[j] = 'a';
-                        j--;
-                    } else {
-                        letterString[j]++;
-                        break;
-                    }
-                }
-                if ( j < 0 ) {
-                    letterString = 'a' + letterString; // Prepend 'a' when all characters were 'z'
-                }
-                configurationInstance->performInitialisation();
-                methodsInstance->performInitialisation();
-            }
-        } else {
-            methodsInstance->performInitialisation();
-        }
+        auto managerInstance = SolversSuperClass::createSimulationManager(sharedSimManager, sharedSimParams, sharedSimStates,
+                                                                          sharedSimFlags);
+        managerInstance->performInitialisation();
     }
     return 0;
 }
