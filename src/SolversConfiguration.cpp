@@ -24,17 +24,16 @@ void SolversConfiguration::Configure() {
     // Order is intentional, and must be maintained!
     _testShockwaveInitConditions();
 
-    if ( simFlags->resetSimState ) {
+    if ( simFlags->resetSimState  && simManager->hasFirstRunOccurred) {
         resetInitMagneticMoments(_mxInit, _myInit, _mzInit);
         _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
     } else {
-        if ( simFlags->hasMultipleLayers ) {
+        if ( simFlags->hasMultipleLayers )
             _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
                                                 simParams->gilbertABCInner, simParams->gilbertABCOuter);
-        } else {
+        else
             _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
                                       simParams->gilbertABCInner, simParams->gilbertABCOuter);
-        }
 
         _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
         _generateExchangeVector(simParams->numSpinsInABC, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
@@ -44,9 +43,10 @@ void SolversConfiguration::Configure() {
             simStates->m0Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _mzInit);
             simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
             simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
-        } else if ( !simFlags->hasMultipleLayers ) {
+        } else
             _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
-        }
+
+        simManager->hasFirstRunOccurred = true;
     }
 }
 
@@ -141,7 +141,7 @@ void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, 
     int customDampedSite = 300; // Lets the damping regions be a single exchange region with the main chain
 
     if (numSpinsAbsorbingRegion > 0) {
-        if (simParams->numSpinsInABC == customDampedSite) {
+        if (simFlags->hasSingleExchangeRegion) {
             numSpinPairs += (2 * simParams->numSpinsInABC);
             SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, true);
             simStates->exchangeVec = SpinChainExchange.generate_array();

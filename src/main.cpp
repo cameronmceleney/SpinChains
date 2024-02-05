@@ -53,8 +53,8 @@ int main() {
         auto sharedSimStates = std::make_shared<SimulationStates>();
         auto sharedSimFlags = std::make_shared<SimulationFlags>();
 
-        sharedSimManager->massProduce = true;
-        sharedSimManager->hasNumericSuffix = false;
+        sharedSimManager->massProduce = false;
+        sharedSimManager->hasNumericSuffix = true;
 
         auto managerInstance = SolversSuperClass::createSimulationManager(sharedSimManager, sharedSimParams, sharedSimStates,
                                                                           sharedSimFlags);

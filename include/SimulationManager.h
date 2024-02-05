@@ -13,7 +13,7 @@ public:
     bool                    hasNumericSuffix = true;
     bool                    resetSimState = false;
     bool                    massProduce = false;
-
+    bool                    hasFirstRunOccurred = false;
 };
 
 #endif //SPINCHAINS_SIMULATIONMANAGER_H

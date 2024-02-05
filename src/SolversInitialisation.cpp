@@ -44,6 +44,7 @@ void SolversInitialisation::_setSimulationFlags() {
 
     // Material Flags
     simFlags->hasMultipleLayers = false;
+    simFlags->hasSingleExchangeRegion = true;
 
     // Drive Position Flags
     simFlags->shouldDriveDiscreteSites = false;
@@ -68,7 +69,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 8.62 * 1e9;
+    simParams->drivingFreq = 2.63 * 1e9;
     simParams->oscillatingZeemanStrength = 1e-4;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
@@ -77,8 +78,8 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->stepsize = 1e-15;
 
     // Data Output Parameters
-    simStates->fixedOutputSites = {1250, 1900, 2200, 2800, 3100, 3750};
-    simParams->numberOfDataPoints = 100; //static_cast<int>(maxSimTime / recordingInterval);
+    simStates->fixedOutputSites = {600, 1000, 1400, 1800, 2200, 2600, 3000, 3400};
+    simParams->numberOfDataPoints = 1e2; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
     simParams->gilbertDamping = 1e-2;
@@ -87,7 +88,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 125;
+    simParams->drivingRegionWidth = 85;
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;

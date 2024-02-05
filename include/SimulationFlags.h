@@ -42,8 +42,9 @@ public:
     bool                hasShapeAnisotropy;
     int                 preferredDirection;                         // Establish preferred magnetic field direction; set static external field and DMI along this in 1D. [0] = x, [1] = y, [2] = z
 
-    bool isFerromagnetic;
-    bool resetSimState = false;
+    bool                isFerromagnetic;
+    bool                resetSimState = false;
+    bool                hasSingleExchangeRegion = false;
 };
 
 #endif //SPINCHAINS_SIMULATIONFLAGS_H

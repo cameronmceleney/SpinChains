@@ -18,6 +18,7 @@ void SolversManager::Manager() {
     // Keep this set order to avoid errors
 
     if (simManager->massProduce) {
+        simFlags->resetSimState = true;
         massRunSimulations();
     } else
         singleSimulation();
@@ -30,7 +31,7 @@ void SolversManager::massRunSimulations() {
     auto methodsInstance = SolversSuperClass::createMethodsInstance(simManager, simParams, simStates, simFlags);
 
 
-    progressbar mainBar(2, true);
+    progressbar mainBar(68, true);
     std::string baseFileName = "T" + simManager->outputFileID;
     int numString = 1;
     std::string letterString = "a";
@@ -38,11 +39,9 @@ void SolversManager::massRunSimulations() {
     initialisationInstance->performInitialisation();
     configurationInstance->performInitialisation();
 
-    simFlags->resetSimState = true;  // TODO must have this after initial configuration to ensure driving region etc is created
-
-
-    for (int i = 2; i < 4; i++) {
+    for (int i = 132; i < 201; i++) {
         mainBar.update();
+        // Add parameters to be changed here
         simParams->drivingRegionWidth = i;
 
         if (simManager->hasNumericSuffix) {
@@ -68,8 +67,6 @@ void SolversManager::massRunSimulations() {
 
         configurationInstance->performInitialisation();
         methodsInstance->performInitialisation();
-
-        // Assuming configurationInstance has a similar static function to create an instance and call performInitialisation
     }
 }
 
