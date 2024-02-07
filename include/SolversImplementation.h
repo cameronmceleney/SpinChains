@@ -52,6 +52,7 @@ private:
     BiasFields biasField;
 
 private:
+    int progressBarSubdivisions = 100;
     void _resizeClassContainers();
     void _resizeClassContainersTest();
     void _resizeClassContainersRK4();
@@ -223,6 +224,7 @@ public:
     };
 public:
     void performInitialisation() override { runMethod(); };
+    void reinitialise() override { runMethod(); };
 
     void runMethod() override;
 };

@@ -17,6 +17,33 @@
 #include "../libs/linspace.h"
 
 class SolversConfiguration:  public SolversSuperClass {
+protected:
+    void                _testShockwaveInitConditions();
+
+public:
+    SolversConfiguration(std::shared_ptr<SimulationManager> sharedSimManager,
+                         std::shared_ptr<SimulationParameters> paramsData,
+                                   std::shared_ptr<SimulationStates> sharedSimStates,
+                                   std::shared_ptr<SimulationFlags> sharedSimFlags);
+
+    ~SolversConfiguration() = default;
+
+public:
+    void                performInitialisation() override { configure(); };
+    void                reinitialise() override { _reconfigureSystem(); };
+
+private:
+    void                configure();
+    void                _reconfigureSystem();
+
+
+    void                _setupInitMultilayerMagneticMoments(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
+                                                            int layer, double mxInit, double myInit, double mzInit);
+
+
+
+    void                resetInitMagneticMoments(double mxInit, double myInit, double mzInit);
+
 private:
     // ####################################            Define Private Variables            ###################################
 
@@ -59,27 +86,6 @@ private:
                                                                           double& myInit, double& mzInit);
 
 
-protected:
-    void                _testShockwaveInitConditions();
-
-public:
-    SolversConfiguration(std::shared_ptr<SimulationManager> sharedSimManager,
-                         std::shared_ptr<SimulationParameters> paramsData,
-                                   std::shared_ptr<SimulationStates> sharedSimStates,
-                                   std::shared_ptr<SimulationFlags> sharedSimFlags);
-
-    ~SolversConfiguration() = default;
-
-public:
-    // Assignment of all values required for the simulation
-    void                Configure();
-
-    void                _setupInitMultilayerMagneticMoments(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
-                                                            int layer, double mxInit, double myInit, double mzInit);
-
-    void                performInitialisation() override { Configure(); };
-
-    void                resetInitMagneticMoments(double mxInit, double myInit, double mzInit);
 };
 
 

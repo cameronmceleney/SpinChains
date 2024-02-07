@@ -28,6 +28,7 @@ private:
     void                _guardClauses();
 
     void                Initialise();
+    void                _recalculateParameters();
 
 public:
     SolversInitialisation(std::shared_ptr<SimulationManager> sharedSimManager,
@@ -38,6 +39,7 @@ public:
 public:
     void                testModifyingDouble(double  newValue);
     void                performInitialisation() override { Initialise(); };
+    void                reinitialise() override { _recalculateParameters(); };
 };
 
 

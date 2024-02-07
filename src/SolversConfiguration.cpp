@@ -17,37 +17,49 @@ SolversConfiguration::SolversConfiguration(std::shared_ptr<SimulationManager> sh
     _zeroValue = 0.0;
 }
 
-void SolversConfiguration::Configure() {
-
+void SolversConfiguration::configure() {
 
     // ###################### Core Method Invocations ######################
     // Order is intentional, and must be maintained!
+
+    if ( simManager->hasFirstRunOccurred ) {
+        // Idiot-proofing from myself
+        _reconfigureSystem();
+    }
+
     _testShockwaveInitConditions();
 
-    if ( simFlags->resetSimState  && simManager->hasFirstRunOccurred) {
-        resetInitMagneticMoments(_mxInit, _myInit, _mzInit);
-        _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
+    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
+    _generateExchangeVector(simParams->numSpinsInABC, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
+                            simParams->exchangeEnergyMax);
+
+    if ( simFlags->hasMultipleLayers ) {
+        _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
+                                            simParams->gilbertABCInner, simParams->gilbertABCOuter);
+
+        simStates->m0Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _mzInit);
+        simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
+        simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
     } else {
-        if ( simFlags->hasMultipleLayers )
-            _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
-                                                simParams->gilbertABCInner, simParams->gilbertABCOuter);
-        else
-            _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-                                      simParams->gilbertABCInner, simParams->gilbertABCOuter);
+        _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
+                                simParams->gilbertABCInner, simParams->gilbertABCOuter);
 
-        _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
-        _generateExchangeVector(simParams->numSpinsInABC, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
-                                simParams->exchangeEnergyMax);
-
-        if ( simFlags->hasMultipleLayers ) {
-            simStates->m0Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _mzInit);
-            simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
-            simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
-        } else
-            _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
-
-        simManager->hasFirstRunOccurred = true;
+        _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
     }
+
+    simManager->hasFirstRunOccurred = true;
+}
+
+void SolversConfiguration::_reconfigureSystem() {
+    // ###################### Core Method Invocations ######################
+
+    if ( !simManager->hasFirstRunOccurred or simFlags->resetSimState) {
+        // Idiot-proofing from myself
+        configure();
+    }
+
+    resetInitMagneticMoments(_mxInit, _myInit, _mzInit);
+    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
 }
 
 void SolversConfiguration::_generateAbsorbingRegions(int numSpinsInChain, int numSpinsAbsorbingRegion, double gilbertSpinChain,

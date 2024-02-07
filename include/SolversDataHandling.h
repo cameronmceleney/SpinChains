@@ -30,6 +30,7 @@ public:
                    std::shared_ptr<SimulationFlags> sharedSimFlags);
     ~SolversDataHandling() = default;
     void                performInitialisation() override {};
+    void                reinitialise() override {};
 
 public:
     // ####################################            Define Private Variables            ###################################

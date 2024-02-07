@@ -22,6 +22,13 @@ void SolversInitialisation::Initialise() {
     _setMaterialParameters();
     _guardClauses();
 }
+void SolversInitialisation::_recalculateParameters() {
+    // Keep this set order to avoid errors
+    _generateRemainingParameters();
+    _setMaterialParameters();
+    _guardClauses();
+}
+
 void SolversInitialisation::_setSimulationFlags() {
 
     // Debugging Flags
@@ -69,11 +76,11 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 2.63 * 1e9;
+    simParams->drivingFreq = 16 * 1e9;
     simParams->oscillatingZeemanStrength = 1e-4;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 1.2e-9;
+    simParams->maxSimTime = 2e-9;
     simParams->satMag = -1;
     simParams->stepsize = 1e-15;
 
@@ -88,7 +95,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 85;
+    simParams->drivingRegionWidth = 200;
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
@@ -104,24 +111,30 @@ void SolversInitialisation::_setSimulationParameters() {
     // Currently unused parameters
     simParams->recordingInterval = 2.5e-15;
     simParams->layerOfInterest = 1;
-}
 
-void SolversInitialisation::_generateRemainingParameters() {
+    // TODO Transferred from _generateRemainingParameters for now
     // Set flags from global variables
     simFlags->isFerromagnetic = GV.GetIsFerromagnetic();
     simParams->exchangeEnergyMin = GV.GetExchangeMinVal();
     simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
     simParams->dmiConstant = GV.GetDMIConstant();
     simParams->staticZeemanStrength = GV.GetStaticBiasField();
+    simParams->anisotropyField = GV.GetAnisotropyField();
+    simParams->numSpinsInChain = GV.GetNumSpins();
     simParams->exchangeStiffness = 5.3e-17;
     simParams->spinPolarisation = 0.5;
     simParams->spinTransferEfficiency = 0.4;
     simFlags->preferredDirection = 2;
+    simParams->PERMEABILITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
+    simParams->dipoleConstant = SimulationParameters::PERM_FREESPACE / (4.0 * M_PI);
+
+    simParams->layerOfInterest -= 1;  // To correct for 0-indexing
+}
+
+void SolversInitialisation::_generateRemainingParameters() {
 
     // Computations based upon other inputs
     simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;
-    simParams->PERMEABILITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
-    simParams->dipoleConstant = SimulationParameters::PERM_FREESPACE / (4.0 * M_PI);
 
     simParams->iterationEnd = static_cast<int>(simParams->maxSimTime / simParams->stepsize);
     simParams->stepsizeHalf = simParams->stepsize / 2.0;
@@ -135,13 +148,9 @@ void SolversInitialisation::_generateRemainingParameters() {
     }
 
     simStates->gilbertVectorMulti.resize(simParams->numLayers, {0});
-    simParams->layerOfInterest -= 1;  // To correct for 0-indexing
-
-
-    simParams->numSpinsInChain = GV.GetNumSpins();
     simParams->numberOfSpinPairs = simParams->numSpinsInChain - 1;
 
-    GV.SetNumSpins(simParams->numSpinsInChain + 2 * simParams->numSpinsInABC); // TODO turn this into a simParam
+    //GV.SetNumSpins(simParams->numSpinsInChain + 2 * simParams->numSpinsInABC); // TODO turn this into a simParam
     simParams->systemTotalSpins = simParams->numSpinsInChain + 2 * simParams->numSpinsInABC;
 }
 
@@ -149,8 +158,6 @@ void SolversInitialisation::_setMaterialParameters() {
 
     if (simFlags->isFerromagnetic)
         simParams->anisotropyField = 0;
-    else if (!simFlags->isFerromagnetic)
-        simParams->anisotropyField = GV.GetAnisotropyField();
 
     if (!simFlags->hasStaticZeeman)
         simParams->staticZeemanStrength = 0.0;

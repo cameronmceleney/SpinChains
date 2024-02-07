@@ -10,7 +10,6 @@
 
 // C++ User Libraries (General)
 #include "GlobalVariables.h"
-#include "../libs/progressbar.hpp"
 
 // C++ User Libraries (Class' Parent)
 #include "SolversSuperClass.h"
@@ -20,6 +19,7 @@ private:
     void                Manager();
     void                massRunSimulations();
     void                singleSimulation();
+    void                _generateNextFilename(const std::string& baseName, std::string& letterSuffix, int& numSuffix);
 
 public:
     SolversManager( std::shared_ptr<SimulationManager> sharedSimManager,
@@ -29,6 +29,7 @@ public:
     ~SolversManager() = default;
 public:
     void                performInitialisation() override { Manager(); };
+    void                reinitialise() override { Manager(); };
 };
 
 

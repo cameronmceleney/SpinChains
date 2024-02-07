@@ -12,6 +12,7 @@
 
 // C++ User Libraries (General)
 #include "CommonLibs.h"
+#include "../libs/progressbar.hpp"
 
 // C++ User Libraries (Containers)
 #include "SimulationManager.h"
@@ -66,7 +67,7 @@ protected:
     std::shared_ptr<SimulationStates> simStates;
     std::shared_ptr<SimulationFlags> simFlags;
     CustomTimer methodTimer;
-
+    progressbar simProgressBar;
 
 public:
     //SolversSuperClass(std::shared_ptr<SimulationParameters> simParams);
@@ -79,6 +80,7 @@ public:
 
 public:
     virtual void performInitialisation() = 0;
+    virtual void reinitialise() = 0;
 
     static std::shared_ptr<SolversSuperClass>
     createSimulationManager( std::shared_ptr<SimulationManager> sharedSimManager,

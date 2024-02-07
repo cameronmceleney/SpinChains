@@ -97,7 +97,7 @@ inline progressbar::progressbar() :
 
 inline progressbar::progressbar(int n, bool showbar) :
         progress(0),
-        n_cycles(n+1),
+        n_cycles(n),
         last_perc(0),
         do_show_bar(showbar),
         update_is_called(false),
@@ -108,14 +108,14 @@ inline progressbar::progressbar(int n, bool showbar) :
 
 inline void progressbar::reset() {
     progress = 0,
-            update_is_called = false;
+    update_is_called = false;
     last_perc = 0;
 }
 
 inline void progressbar::set_niter(int niter) {
     if (niter <= 0) throw std::invalid_argument(
                 "progressbar::set_niter: number of iterations null or negative");
-    n_cycles = niter;
+    n_cycles = niter + 1;
 }
 
 inline void progressbar::update() {

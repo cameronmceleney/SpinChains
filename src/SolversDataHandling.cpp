@@ -109,6 +109,7 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         std::getline(std::cin, notesComments);
         outputFileName << "Note(s):," << notesComments
                        << "\n"; // Adding comma ensures the note itself is in a different csv cell to the term 'Note(s):'
+        std::cout << "\n";
     }
 
     outputFileName << "[Column heading indicates the spin site (#) being recorded. Data is for the (mx) component]\n";
@@ -117,7 +118,6 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
 
     CreateColumnHeaders(outputFileName);
 
-    std::cout << "\n";
 }
 
 void SolversDataHandling::CreateColumnHeaders( std::ofstream &outputFileName ) {
@@ -222,7 +222,7 @@ void SolversDataHandling::SaveDataToFile( std::ofstream &outputFileName, std::ve
                     // Print current time
                     outputFileName << (iteration * simParams->stepsize) << ",";
 
-                else if ( i == GV.GetNumSpins())
+                else if ( i == simParams->systemTotalSpins)
                     // Ensures that the final line doesn't contain a comma.
                     outputFileName << arrayToWrite[i] << std::flush;
 
@@ -255,7 +255,7 @@ void SolversDataHandling::SaveDataToFile( std::ofstream &outputFileName, std::ve
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if ( i == 0 )
                 outputFileName << (iteration * simParams->stepsize) << ","; // Print current time
-            else if ( i == GV.GetNumSpins())
+            else if ( i == simParams->systemTotalSpins)
                 outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
             else
                 outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
@@ -276,7 +276,7 @@ void SolversDataHandling::SaveDataToFile( std::ofstream &outputFileName, std::ve
                     // Print current time
                     outputFileName << (iteration * simParams->stepsize) << ",";
 
-                else if (i == GV.GetNumSpins())
+                else if (i == simParams->systemTotalSpins)
                     // Ensures that the final line doesn't contain a comma.
                     outputFileName << arrayToWrite[i] << std::flush;
 
@@ -293,7 +293,7 @@ void SolversDataHandling::SaveDataToFile( std::ofstream &outputFileName, std::ve
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
                     outputFileName << (iteration * simParams->stepsize) << ","; // Print current time
-                else if (i == GV.GetNumSpins())
+                else if (i == simParams->systemTotalSpins)
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
                     outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
@@ -355,7 +355,7 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                     // Print current time
                     outputFileName << (iteration * simParams->stepsize) << ",";
 
-                else if ( i == GV.GetNumSpins())
+                else if ( i == simParams->systemTotalSpins)
                     // Ensures that the final line doesn't contain a comma.
                     outputFileName << arrayToWrite[i] << std::flush;
 
@@ -388,7 +388,7 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
             // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
             if ( i == 0 )
                 outputFileName << (iteration * simParams->stepsize) << ","; // Print current time
-            else if ( i == GV.GetNumSpins())
+            else if ( i == simParams->systemTotalSpins)
                 outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
             else
                 outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
@@ -409,7 +409,7 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                     // Print current time
                     outputFileName << (iteration * simParams->stepsize) << ",";
 
-                else if (i == GV.GetNumSpins())
+                else if (i == simParams->systemTotalSpins)
                     // Ensures that the final line doesn't contain a comma.
                     outputFileName << arrayToWrite[i] << std::flush;
 
@@ -426,7 +426,7 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
                     outputFileName << (iteration * simParams->stepsize) << ","; // Print current time
-                else if (i == GV.GetNumSpins())
+                else if (i == simParams->systemTotalSpins)
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
                     outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.
@@ -696,7 +696,7 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                     // Print current time
                     outputFileName << (iteration * simParams->stepsize) << ",";
 
-                else if (i == GV.GetNumSpins())
+                else if (i == simParams->systemTotalSpins)
                     // Ensures that the final line doesn't contain a comma.
                     outputFileName << arrayToWrite[i] << std::flush;
 
@@ -713,7 +713,7 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                 // Steps through vectors containing all mag. moment components found at the end of RK2-Stage 2, and saves to files
                 if (i == 0)
                     outputFileName << (iteration * simParams->stepsize) << ","; // Print current time
-                else if (i == GV.GetNumSpins())
+                else if (i == simParams->systemTotalSpins)
                     outputFileName << arrayToWrite[i] << std::flush; // Ensures that the final line doesn't contain a comma.
                 else
                     outputFileName << arrayToWrite[i] << ","; // For non-special values, write the data.

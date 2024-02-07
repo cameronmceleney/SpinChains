@@ -18,7 +18,6 @@ void SolversManager::Manager() {
     // Keep this set order to avoid errors
 
     if (simManager->massProduce) {
-        simFlags->resetSimState = true;
         massRunSimulations();
     } else
         singleSimulation();
@@ -31,7 +30,6 @@ void SolversManager::massRunSimulations() {
     auto methodsInstance = SolversSuperClass::createMethodsInstance(simManager, simParams, simStates, simFlags);
 
 
-    progressbar mainBar(68, true);
     std::string baseFileName = "T" + simManager->outputFileID;
     int numString = 1;
     std::string letterString = "a";
@@ -39,33 +37,20 @@ void SolversManager::massRunSimulations() {
     initialisationInstance->performInitialisation();
     configurationInstance->performInitialisation();
 
-    for (int i = 132; i < 201; i++) {
-        mainBar.update();
+    simProgressBar.set_niter(16);
+    simProgressBar.show_bar(true);
+
+    for (double i = 4; i < 20; i++) {
+        simProgressBar.update();
         // Add parameters to be changed here
-        simParams->drivingRegionWidth = i;
+        simParams->drivingFreq = i * 1e9;
 
-        if (simManager->hasNumericSuffix) {
-            GV.SetFileNameBase(baseFileName + "_" + std::to_string(numString++));
-        } else {
-            GV.SetFileNameBase(baseFileName + "_" + letterString);
+        // For each new parameters set generate a new filename
+        _generateNextFilename(baseFileName, letterString, numString);
 
-            // Logic for incrementing letterString.
-            int j = letterString.size() - 1;
-            while (j >= 0) {
-                if (letterString[j] == 'z') {
-                    letterString[j] = 'a';
-                    j--;
-                } else {
-                    letterString[j]++;
-                    break;
-                }
-            }
-            if (j < 0) {
-                letterString = 'a' + letterString;
-            }
-        }
-
-        configurationInstance->performInitialisation();
+        // Perform the simulation with new parameters
+        initialisationInstance->reinitialise();
+        configurationInstance->reinitialise();
         methodsInstance->performInitialisation();
     }
 }
@@ -78,4 +63,28 @@ void SolversManager::singleSimulation() {
     initialisationInstance->performInitialisation();
     configurationInstance->performInitialisation();
     methodsInstance->performInitialisation();
+}
+
+void SolversManager::_generateNextFilename(const std::string& baseName, std::string& letterSuffix, int& numSuffix) {
+    if (simManager->hasNumericSuffix) {
+        GV.SetFileNameBase(baseName + "_" + std::to_string(numSuffix++));
+        return;
+    } else {
+        GV.SetFileNameBase(baseName + "_" + letterSuffix);
+
+        // Logic for incrementing letterString.
+        int j = letterSuffix.size() - 1;
+        while ( j >= 0 ) {
+            if ( letterSuffix[j] == 'z' ) {
+                letterSuffix[j] = 'a';
+                j--;
+            } else {
+                letterSuffix[j]++;
+                break;
+            }
+        }
+
+        if ( j < 0 )
+            letterSuffix = 'a' + letterSuffix;
+    }
 }

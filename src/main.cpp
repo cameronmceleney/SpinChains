@@ -19,10 +19,10 @@ int main() {
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(3400);
-    GV.SetExchangeMinVal(32.5);
-    GV.SetExchangeMaxVal(32.5);
+    GV.SetExchangeMinVal(8.125);
+    GV.SetExchangeMaxVal(8.125);
     GV.SetGyromagneticConstant(28.0);
-    GV.SetDMIConstant(2.5);
+    GV.SetDMIConstant(1.2);
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -53,7 +53,7 @@ int main() {
         auto sharedSimStates = std::make_shared<SimulationStates>();
         auto sharedSimFlags = std::make_shared<SimulationFlags>();
 
-        sharedSimManager->massProduce = false;
+        sharedSimManager->massProduce = true;
         sharedSimManager->hasNumericSuffix = true;
 
         auto managerInstance = SolversSuperClass::createSimulationManager(sharedSimManager, sharedSimParams, sharedSimStates,

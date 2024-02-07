@@ -88,9 +88,9 @@ void SolversImplementation::SolveRK2Classic() {
     methodTimer.setName("RK2 Sequential (Classic)");
     methodTimer.start();
 
-    std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(
-            GV.GetNumSpins() + 2, 0.0);
-    //std::vector<double> dipoleX(GV.GetNumSpins() + 2, 0.0), dipoleY(GV.GetNumSpins() + 2, 0.0), dipoleZ(GV.GetNumSpins() + 2, 0.0);
+    std::vector<double> demagX(simParams->systemTotalSpins + 2, 0.0), demagY(simParams->systemTotalSpins + 2, 0.0), demagZ(
+            simParams->systemTotalSpins + 2, 0.0);
+    //std::vector<double> dipoleX(simParams->systemTotalSpins + 2, 0.0), dipoleY(simParams->systemTotalSpins + 2, 0.0), dipoleZ(simParams->systemTotalSpins + 2, 0.0);
 
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
@@ -102,7 +102,7 @@ void SolversImplementation::SolveRK2Classic() {
         double t0 = simParams->totalTime;
 
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
-        std::vector<double> mx1(GV.GetNumSpins() + 2, 0), my1(GV.GetNumSpins() + 2, 0), mz1(GV.GetNumSpins() + 2, 0);
+        std::vector<double> mx1(simParams->systemTotalSpins + 2, 0), my1(simParams->systemTotalSpins + 2, 0), mz1(simParams->systemTotalSpins + 2, 0);
         if ( simFlags->hasDemagIntense ) {
             demagField.DemagnetisationFieldIntense(simStates->mx0, simStates->my0,
                                                    simStates->mz0, demagX, demagY, demagZ);
@@ -114,7 +114,7 @@ void SolversImplementation::SolveRK2Classic() {
 
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
         // RK2 Stage 1. Takes initial conditions as inputs.
-        for ( int site = 1; site <= GV.GetNumSpins(); site++ ) {
+        for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
 
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
@@ -176,7 +176,7 @@ void SolversImplementation::SolveRK2Classic() {
         }
         // The estimations of the m-components values for the next iteration.
         // EASY FIND
-        std::vector<double> mx2(GV.GetNumSpins() + 2, 0), my2(GV.GetNumSpins() + 2, 0), mz2(GV.GetNumSpins() + 2, 0);
+        std::vector<double> mx2(simParams->systemTotalSpins + 2, 0), my2(simParams->systemTotalSpins + 2, 0), mz2(simParams->systemTotalSpins + 2, 0);
         std::fill(demagX.begin(), demagX.end(), 0.0);
         std::fill(demagY.begin(), demagY.end(), 0.0);
         std::fill(demagZ.begin(), demagZ.end(), 0.0);
@@ -193,7 +193,7 @@ void SolversImplementation::SolveRK2Classic() {
         }
 
         // RK2 Stage 2. Takes (m0 + k1/2) as inputs.
-        for ( int site = 1; site <= GV.GetNumSpins(); site++ ) {
+        for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
 
             // Relative to the current site (site); site to the left (LHS); site to the right (RHS)
             int spinLHS = site - 1, spinRHS = site + 1;
@@ -324,8 +324,8 @@ void SolversImplementation::SolveRK2() {
     rk2Timer.setName("RK2 Sequential (Layers)");
     rk2Timer.start();
 
-    std::vector<double> demagX(GV.GetNumSpins() + 2, 0.0), demagY(GV.GetNumSpins() + 2, 0.0), demagZ(
-            GV.GetNumSpins() + 2, 0.0);
+    std::vector<double> demagX(simParams->systemTotalSpins, 0.0), demagY(simParams->systemTotalSpins, 0.0), demagZ(
+            simParams->systemTotalSpins + 2, 0.0);
 
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
@@ -547,7 +547,7 @@ void SolversImplementation::RK2Parallel() {
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxOutputFile(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
 
-    if ( simFlags->resetSimState )
+    if ( simManager->massProduce || simFlags->resetSimState )
         _clearDataStorageVariables();
 
     if ( simFlags->isFerromagnetic ) {
@@ -560,7 +560,11 @@ void SolversImplementation::RK2Parallel() {
 
     if ( GV.GetEmailWhenCompleted()) { solverOutputs->CreateMetadata(); }
 
-    progressbar bar(100);
+    if ( !simManager->massProduce ) {
+        simProgressBar.reset();
+        simProgressBar.set_niter(progressBarSubdivisions);
+        simProgressBar.show_bar();
+    }
 
     parallelTimer.setName("RK2 Midpoint (Parallel)");
     parallelTimer.start();
@@ -575,9 +579,9 @@ void SolversImplementation::RK2Parallel() {
 
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
-        if ( !simFlags->resetSimState && simParams->iterationEnd >= 100 &&
-             iteration % (simParams->iterationEnd / 100) == 0 )
-            bar.update(); // Need to match definition of bar
+        if ( !simManager->massProduce && simParams->iterationEnd >= progressBarSubdivisions &&
+             iteration % (simParams->iterationEnd / progressBarSubdivisions) == 0 )
+            simProgressBar.update(); // Need to match definition of bar
 
         _testShockwaveConditions(iteration);
 
@@ -626,7 +630,7 @@ void SolversImplementation::RK2Parallel() {
 
     if ( GV.GetEmailWhenCompleted()) { solverOutputs->CreateMetadata(true); }
 
-    if ( !simFlags->resetSimState ) {
+    if ( !simManager->massProduce ) {
         if ( simFlags->shouldTrackMagneticMomentNorm ) {
             std::cout << "\nMax norm. value of M is: " << simParams->largestMNorm << std::endl;
         }
@@ -656,7 +660,11 @@ void SolversImplementation::RK4Parallel() {
 
     if ( GV.GetEmailWhenCompleted()) { solverOutputs->CreateMetadata(); }
 
-    progressbar bar(100);
+    if ( !simManager->massProduce ) {
+        simProgressBar.reset();
+        simProgressBar.set_niter(progressBarSubdivisions);
+        simProgressBar.show_bar();
+    };
 
     parallelTimer.setName("RK4 Midpoint (Parallel)");
     parallelTimer.start();
@@ -667,8 +675,8 @@ void SolversImplementation::RK4Parallel() {
 
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
-        if ( simParams->iterationEnd >= 100 && iteration % (simParams->iterationEnd / 100) == 0 )
-            bar.update(); // Doesn't work for fewer than 100 iterations
+        if ( !simManager->massProduce && simParams->iterationEnd >= progressBarSubdivisions && iteration % (simParams->iterationEnd / progressBarSubdivisions) == 0 )
+            simProgressBar.update(); // Doesn't work for fewer than 100 iterations
 
         _testShockwaveConditions(iteration);
 
