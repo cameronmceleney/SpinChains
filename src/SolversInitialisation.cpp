@@ -76,7 +76,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 16 * 1e9;
+    simParams->drivingFreq = 21.053960 * 1e9;
     simParams->oscillatingZeemanStrength = 1e-4;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
@@ -117,7 +117,7 @@ void SolversInitialisation::_setSimulationParameters() {
     simFlags->isFerromagnetic = GV.GetIsFerromagnetic();
     simParams->exchangeEnergyMin = GV.GetExchangeMinVal();
     simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
-    simParams->dmiConstant = GV.GetDMIConstant();
+    simParams->dmiConstant = GV.GetDMIConstant();// * 2;
     simParams->staticZeemanStrength = GV.GetStaticBiasField();
     simParams->anisotropyField = GV.GetAnisotropyField();
     simParams->numSpinsInChain = GV.GetNumSpins();

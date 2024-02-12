@@ -40,7 +40,7 @@ void SolversManager::massRunSimulations() {
     simProgressBar.set_niter(16);
     simProgressBar.show_bar(true);
 
-    for (double i = 4; i < 20; i++) {
+    for (double i = 4; i < 20; i+=2) {
         simProgressBar.update();
         // Add parameters to be changed here
         simParams->drivingFreq = i * 1e9;

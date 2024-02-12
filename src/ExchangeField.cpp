@@ -327,9 +327,9 @@ ExchangeField::_calculateDMI1D( const int &currentSite, const std::vector<double
 
 
     if ( shouldUseTBB ) {
-        return {-1.0 * _simParams->dmiConstant * (myTerms[currentSite + 1] - myTerms[currentSite - 1]),
-                _simParams->dmiConstant * (mxTerms[currentSite + 1] - mxTerms[currentSite - 1]),
-                0.0};
+        return {_simParams->dmiConstant * (myTerms[currentSite + 1] - myTerms[currentSite - 1]),
+                 -1.0 * _simParams->dmiConstant * (mxTerms[currentSite + 1] - mxTerms[currentSite - 1]),
+                 0.0};
     } else {
         throw std::invalid_argument("_calculateDMIField1D hasn't got CUDA implementation yet");
     }
