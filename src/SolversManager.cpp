@@ -37,10 +37,10 @@ void SolversManager::massRunSimulations() {
     initialisationInstance->performInitialisation();
     configurationInstance->performInitialisation();
 
-    simProgressBar.set_niter(16);
+    simProgressBar.set_niter(168);
     simProgressBar.show_bar(true);
 
-    for (double i = 4; i < 20; i+=2) {
+    for (double i = 11; i < 60; i+=0.2) {
         simProgressBar.update();
         // Add parameters to be changed here
         simParams->drivingFreq = i * 1e9;
@@ -52,6 +52,8 @@ void SolversManager::massRunSimulations() {
         initialisationInstance->reinitialise();
         configurationInstance->reinitialise();
         methodsInstance->performInitialisation();
+
+        if ( i > 30) { i += 0.3; }
     }
 }
 

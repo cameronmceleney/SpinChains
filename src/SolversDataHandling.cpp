@@ -73,13 +73,13 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                    "Max. Sim. Time [s],Min. Exchange Val (J)[T],Max. Exchange Val (J)[T],Max. Iterations,No. DataPoints,"
                    "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, Stepsize (h),Gilbert Damping Factor,Gyromagnetic Ratio (2Pi*Y),"
                    "Shockwave Gradient Time [s],Shockwave Application Time [s],ABC Damping (lower),ABC Damping (upper),"
-                   "DMI Constant [T],Saturation Magnetisation [kA/m],Exchange Stiffness [J/m],Anisotropy (Shape) Field [T]"
+                   "DMI Constant [T],Saturation Magnetisation [kA/m],Exchange Stiffness [J/m],Anisotropy (Shape) Field [T],Lattice Constant [m]"
                    "\n";
 
         outputFileName << simParams->staticZeemanStrength << ", " << simParams->oscillatingZeemanStrength << ", "
                        << simParams->shockwaveInitialStrength << ", " << simParams->shockwaveMax << ", "
-                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsInABC << ", "
-                       << simParams->drivingRegionRhs - simParams->numSpinsInABC << ", "
+                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs << ", "
+                       << simParams->drivingRegionRhs << ", "
                        << simParams->drivingRegionWidth << ", " << simParams->maxSimTime << ", "
                        << simParams->exchangeEnergyMin << ", " << simParams->exchangeEnergyMax << ", "
                        << simParams->iterationEnd << ", " << simParams->numberOfDataPoints << ", "
@@ -89,7 +89,8 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                        << simParams->iterStartShock << ", " << simParams->shockwaveGradientTime * simParams->stepsize << ", "
                        << simParams->gilbertABCInner << ", " << simParams->gilbertABCOuter << ", "
                        << simParams->dmiConstant << ", " << simParams->satMag << ", "
-                       << simParams->exchangeStiffness << ", " << simParams->anisotropyField
+                       << simParams->exchangeStiffness << ", " << simParams->anisotropyField << ", "
+                       << simParams->latticeConstant
                        << "\n";
 
         outputFileName << "\n";

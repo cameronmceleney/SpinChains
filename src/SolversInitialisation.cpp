@@ -50,7 +50,8 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasShapeAnisotropy = false;
 
     // Material Flags
-    simFlags->hasMultipleLayers = false;
+    simFlags->hasMultipleAppendedLayers = false;
+    simFlags->hasMultipleStackedLayers = false;
     simFlags->hasSingleExchangeRegion = true;
 
     // Drive Position Flags
@@ -74,10 +75,11 @@ void SolversInitialisation::_setSimulationFlags() {
 
 void SolversInitialisation::_setSimulationParameters() {
 
+    simParams->latticeConstant = -1;  // THIS MUST BE MANUALLY SET FOR NOW
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 21.053960 * 1e9;
-    simParams->oscillatingZeemanStrength = 1e-4;
+    simParams->drivingFreq = 32.25 * 1e9;
+    simParams->oscillatingZeemanStrength = 1e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
     simParams->maxSimTime = 2e-9;
@@ -90,12 +92,12 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Damping Factors
     simParams->gilbertDamping = 1e-2;
-    simParams->gilbertABCInner = 1e-2;
+    simParams->gilbertABCInner = 1e-4;
     simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 200;
+    simParams->drivingRegionWidth = 57;
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
@@ -117,7 +119,7 @@ void SolversInitialisation::_setSimulationParameters() {
     simFlags->isFerromagnetic = GV.GetIsFerromagnetic();
     simParams->exchangeEnergyMin = GV.GetExchangeMinVal();
     simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
-    simParams->dmiConstant = GV.GetDMIConstant();// * 2;
+    simParams->dmiConstant = GV.GetDMIConstant() / 2; // Needed to match my Python and C++ code
     simParams->staticZeemanStrength = GV.GetStaticBiasField();
     simParams->anisotropyField = GV.GetAnisotropyField();
     simParams->numSpinsInChain = GV.GetNumSpins();
@@ -211,7 +213,7 @@ void SolversInitialisation::_guardClauses() {
         exit(1);
     }
 
-    if (simFlags->hasMultipleLayers and simParams->numLayers < 2) {
+    if ( simFlags->hasMultipleStackedLayers and simParams->numLayers < 2) {
         std::cout << "Warning: You cannot use the multilayer solver with less than 2 layers.";
         exit(1);
     }

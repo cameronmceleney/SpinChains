@@ -37,6 +37,7 @@ public:
     double              gilbertABCInner;                          // The lower Gilbert damping factor for the Absorbing boundary conditions (ABCs) at the point where the chain meets the ABC.
     double              gilbertABCOuter;                          // The upper Gilbert damping factor for the Absorbing boundary conditions (ABCs) at the point where the ABC meets the pinned sites.
     double              gyroMagConst;                             // Gyromagnetic ratio of an electron [GHz/T].
+    double              latticeConstant;
 
     double              spinPolarisation;                         // Spin polarisation of the spin current.
     double              spinTransferEfficiency;                   // Spin transfer efficiency of the spin current.

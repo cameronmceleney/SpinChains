@@ -33,7 +33,7 @@ void SolversConfiguration::configure() {
     _generateExchangeVector(simParams->numSpinsInABC, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
                             simParams->exchangeEnergyMax);
 
-    if ( simFlags->hasMultipleLayers ) {
+    if ( simFlags->hasMultipleStackedLayers ) {
         _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
                                             simParams->gilbertABCInner, simParams->gilbertABCOuter);
 
@@ -149,8 +149,6 @@ void SolversConfiguration::_generateExchangeVector(int numSpinsAbsorbingRegion, 
     LinspaceClass SpinChainExchange;
     LinspaceClass SpinChainExchangeLHS;
     LinspaceClass SpinChainExchangeRHS;
-
-    int customDampedSite = 300; // Lets the damping regions be a single exchange region with the main chain
 
     if (numSpinsAbsorbingRegion > 0) {
         if (simFlags->hasSingleExchangeRegion) {
