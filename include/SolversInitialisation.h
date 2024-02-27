@@ -13,12 +13,12 @@
 
 // C++ User Libraries (General)
 #include "GlobalVariables.h"
-
 // C++ User Libraries (Class' Parent)
 #include "SolversSuperClass.h"
 
 class SolversInitialisation: public SolversSuperClass {
 private:
+    void                testMappingSpeeds();
     const double        _BOHR_MAGNETON = 9.274e-24;
 
     void                _setSimulationFlags();

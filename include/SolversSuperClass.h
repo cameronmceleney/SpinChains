@@ -11,7 +11,8 @@
 // C++ Third Party Libraries
 
 // C++ User Libraries (General)
-#include "CommonLibs.h"
+#include "../libs/CommonDefinitions.h"
+#include "../libs/CommonStructures.h"
 #include "../libs/progressbar.hpp"
 
 // C++ User Libraries (Containers)
@@ -21,52 +22,13 @@
 #include "SimulationStates.h"
 
 class SolversSuperClass {
-public:
-    struct CustomTimer {
-        std::string timerName;
-        std::chrono::time_point<std::chrono::system_clock> startSolver;
-        std::chrono::time_point<std::chrono::system_clock> endSolver;
-        long long solverElapsedTime = 0;
-
-        void start() {
-            startSolver = std::chrono::system_clock::now();
-        }
-
-        void stop() {
-            endSolver = std::chrono::system_clock::now();
-            solverElapsedTime = std::chrono::duration_cast<std::chrono::seconds>(endSolver - startSolver).count();
-        }
-
-        void setName( const std::string &name ) {
-            timerName = name;
-        }
-
-        void print() const {
-            auto printTimePoint = []( auto &timePoint) {
-                                        std::time_t printTime = std::chrono::system_clock::to_time_t(timePoint);
-                                        return std::ctime(&printTime);
-            };
-
-            std::cout << "----------------------------------------------------------------\n";
-            if ( !timerName.empty())
-                std::cout << "Timing Information - " << timerName << "\n";
-            else
-                std::cout << "\nTiming Information. \n";
-
-            std::cout << "\tStart: " << printTimePoint(startSolver);
-            std::cout << "\tEnd: " << printTimePoint(endSolver);
-            std::cout << "\tElapsed: " << solverElapsedTime << " [seconds]" << std::endl;
-            std::cout << "----------------------------------------------------------------\n";
-        }
-    };
-
 protected:
     // Getter for child classes to access sharedVariables
     std::shared_ptr<SimulationManager> simManager;
     std::shared_ptr<SimulationParameters> simParams;
     std::shared_ptr<SimulationStates> simStates;
     std::shared_ptr<SimulationFlags> simFlags;
-    CustomTimer methodTimer;
+    CommonStructures::Timer methodTimer;
     progressbar simProgressBar;
 
 public:

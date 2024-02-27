@@ -66,7 +66,7 @@ void SolversImplementation::SolveRK2Classic() {
     std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simManager, simParams, simStates,
                                                                                              simFlags);
     // Only uses a single spin chain to solve the RK2 midpoint method.
-    CustomTimer methodTimer;
+    CommonStructures::Timer methodTimer;
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -298,7 +298,7 @@ void SolversImplementation::SolveRK2() {
     std::shared_ptr<SolversDataHandling> childNMData = std::make_shared<SolversDataHandling>(simManager, simParams, simStates,
                                                                                              simFlags);
     // Uses multiple layers to solve the RK2 midpoint method. See the documentation for more details.
-    CustomTimer rk2Timer;
+    CommonStructures::Timer rk2Timer;
 
     // Create files to save the data. All files will have (GV.GetFileNameBase()) in them to make them clearly identifiable.
     std::ofstream mxRK2File(GV.GetFilePath() + "rk2_mx_" + GV.GetFileNameBase() + ".csv");
@@ -539,7 +539,7 @@ void SolversImplementation::SolveRK2() {
 }
 
 void SolversImplementation::RK2Parallel() {
-    CustomTimer parallelTimer;
+    CommonStructures::Timer parallelTimer;
     // Only works for a 1D spin chain
     std::shared_ptr<SolversDataHandling> solverOutputs = std::make_shared<SolversDataHandling>(simManager, simParams, simStates,
                                                                                                simFlags);
@@ -642,7 +642,7 @@ void SolversImplementation::RK2Parallel() {
 }
 
 void SolversImplementation::RK4Parallel() {
-    CustomTimer parallelTimer;
+    CommonStructures::Timer parallelTimer;
     // Only works for a 1D spin chain
     std::shared_ptr<SolversDataHandling> solverOutputs = std::make_shared<SolversDataHandling>(simManager, simParams, simStates,
                                                                                                simFlags);
@@ -740,7 +740,7 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                                                    std::vector<double> &myOut, std::vector<double> &mzOut,
                                                    double &currentTime, double &stepsize, int &iteration,
                                                    std::string rkStage ) {
-    CustomTimer dipolarTimer;
+    CommonStructures::Timer dipolarTimer;
     bool useParallel = true;
 
     if ( simFlags->hasDemagIntense )
@@ -853,7 +853,7 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
                                                        std::vector<double> &myOut, std::vector<double> &mzOut,
                                                        const double &currentTime, const double &stepsize,
                                                        const int &iteration, std::string rkStage ) {
-    CustomTimer dipolarTimer;
+    CommonStructures::Timer dipolarTimer;
     bool useParallel = true;
     int layer = 0;
 
@@ -1021,7 +1021,7 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
                                                      std::vector<double> &myOut, std::vector<double> &mzOut,
                                                      const double &currentTime, const double &stepsize,
                                                      const int &iteration, std::string rkStage ) {
-    CustomTimer dipolarTimer;
+    CommonStructures::Timer dipolarTimer;
     bool useParallel = true;
     int layer = 0;
 
@@ -1112,7 +1112,7 @@ SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &
                                                      std::vector<double> &myOut, std::vector<double> &mzOut,
                                                      const double &currentTime, const double &stepsize,
                                                      const int &iteration, std::string rkStage ) {
-    CustomTimer dipolarTimer;
+    CommonStructures::Timer dipolarTimer;
     bool useParallel = true;
     int layer = 0;
 

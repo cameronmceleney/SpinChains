@@ -11,7 +11,7 @@
 #include "Eigen/Eigenvalues" // header for only Eigen is needed. Path taken from CMakeLists.txt
 
 // C++ User Libraries (General)
-#include "../../include/CommonLibs.h"
+#include "../../libs/CommonDefinitions.h"
 #include "../../include/GlobalVariables.h"
 #include "../../libs/linspace.h"
 

@@ -18,7 +18,7 @@ extern "C" {
 #include <tbb/parallel_reduce.h>
 
 // C++ User Libraries (General)
-#include "CommonLibs.h"
+#include "../libs/CommonDefinitions.h"
 #include "GlobalVariables.h"
 
 // C++ User Libraries (Containers)

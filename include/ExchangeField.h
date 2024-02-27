@@ -16,7 +16,7 @@
 #include <tbb/mutex.h>
 
 // C++ User Libraries (General)
-#include "CommonLibs.h"
+#include "../libs/CommonDefinitions.h"
 #include "GlobalVariables.h"
 
 // C++ User Libraries (Containers)

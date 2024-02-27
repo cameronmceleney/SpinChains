@@ -2,11 +2,15 @@
 #include <iostream>
 
 // C++ User Libraries (General)
-#include "../include/CommonLibs.h"
+#include "../test/mappingSpeedTests.hpp"
+#include "../libs/CommonDefinitions.h"
 #include "../include/SolversSuperClass.h"
 // #include "../Other/working_on/SpinChainEigenSolverClass.h"
 
 int main() {
+    //randomAccessTest(20, 3);
+    computeOnContainers(200, 20, true, false);
+
     auto sharedSimManager = std::make_shared<SimulationManager>();
 
     //SpinChainEigenSolverClass SolverClass{}; Needs to be turned into a separate class structure
@@ -17,11 +21,11 @@ int main() {
 
     // Global simulation parameters
     GV.SetAnisotropyField(0);
-    GV.SetStaticBiasField(0.3);
+    GV.SetStaticBiasField(0.1);
     GV.SetNumSpins(4000);
-    GV.SetExchangeMinVal(6.5);
-    GV.SetExchangeMaxVal(6.5);
-    GV.SetGyromagneticConstant(28.0);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(132.0);
+    GV.SetGyromagneticConstant(29.2);
     GV.SetDMIConstant(1.25);  // use negative to flip to match python for now
 
     // Additional parameters and flags

@@ -10,7 +10,6 @@
 
 // C++ Standard Libraries
 #include <atomic>
-#include <chrono>
 #include <string>
 #include <vector>
 
@@ -22,6 +21,7 @@
 
 // C++ User Libraries (General)
 #include "GlobalVariables.h"
+#include "../libs/CommonStructures.h"
 #include "../libs/progressbar.hpp"
 
 // C++ User Libraries (Parent Class)

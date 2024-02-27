@@ -28,15 +28,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ################################################################
 # Operating system specific settings
 if(WIN32 OR WIN64)
+    set(MINGW64_BASE "C:/msys64/mingw64")
     # Windows requires manual installation, or use of UNIX-based Homebrew
-    set(EIGEN_DIR "C:/Program Files/Homebrew/eigen/3.4.0")
-    set(FFTW_DIR "C:/Program Files/Homebrew/fftw/3.3.5")
-    set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3-3.a")
+    set(EIGEN_DIR "${MINGW64_BASE}/include/eigen3")
+    set(FFTW_DIR "${MINGW64_BASE}/fftw3.h")
+    set(FFTW_LIB "${MINGW64_BASE}/lib/libfftw3.a")
 
     # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI version
-    set(TBB_BASE "C:/msys64/mingw64")
-    set(TBB_DIR "${TBB_BASE}/include/oneapi")
-    set(TBB_LIB "${TBB_BASE}/lib/libtbb12.dll.a" "${TBB_BASE}/lib/libtbbmalloc.dll.a")
+    set(TBB_DIR "${MINGW64_BASE}/include/oneapi")
+    set(TBB_LIB "${MINGW64_BASE}/lib/libtbb12.dll.a" "${MINGW64_BASE}/lib/libtbbmalloc.dll.a")
 elseif(APPLE)
     # Default Homebrew installation directories on MacOS
     set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
@@ -52,16 +52,19 @@ endif()
 ################################################################
 # Create lists of all user sources
 set(USER_GENERAL_LIBRARIES
-        include/CommonLibs.h
+        libs/CommonDefinitions.h
         libs/progressbar.hpp
         libs/linspace.cpp libs/linspace.h
         libs/revised_progressbar.hpp
+        libs/CommonStructures.h
+        libs/HashSpecialisation.h
 )
 
 set(USER_OTHER_FILES
         Other/working_on/SpinChainEigenSolverClass.cpp Other/working_on/SpinChainEigenSolverClass.h
         Other/Legacy_Files/NewSolver.cpp Other/Legacy_Files/NewSolver.h
         test/IntelTBBTestIfWorking.cpp test/IntelTBBTestIfWorking.h
+        test/mappingSpeedTests.hpp
 )
 
 set(CONTAINER_LIBRARIES
@@ -95,6 +98,7 @@ set(SOLVER_CLASS_COMPONENTS
         include/BiasFields.h
         src/SolversManager.cpp
         include/SolversManager.h
+        libs/CommonStructures.h
 )
 
 # Must be before add_executable()
@@ -113,8 +117,13 @@ add_executable(${PROJECT_NAME} src/main.cpp
 # Include and link directories for third-party libraries
 # Both FFTW and TBB require linking to static libraries; Eigen does not.
 
-include_directories(${EIGEN_DIR} ${FFTW_DIR}/include ${TBB_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${FFTW_LIB} ${TBB_LIB})
+if(WIN32 OR WIN64)
+    include_directories(${EIGEN_DIR} ${FFTW_DIR} ${TBB_DIR})
+elseif(APPLE)
+    include_directories(${EIGEN_DIR} ${FFTW_DIR}/include ${TBB_DIR})
+endif()
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${FFTW_LIB} ${TBB_LIB})
+
 
 ################################################################
 # Optional: Uncomment for optimisation (-O2 and -O3 being most common for me)

@@ -3,7 +3,7 @@
 
 #include "../../libs/linspace.h"
 #include "../working_on/SpinChainEigenSolverClass.h"
-#include "../../include/CommonLibs.h"
+#include "../../libs/CommonDefinitions.h"
 #include "../../libs/progressbar.hpp"
 #include <chrono>
 #include <algorithm>

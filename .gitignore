@@ -4,6 +4,7 @@
 # Windows specific
 /cmake-build-debug-mingw64/
 /cmake-build-release-mingw64/
+/cmake-build-release-mingw/
 /BaseVEnv/
 
 # MacOS specific

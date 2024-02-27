@@ -41,7 +41,7 @@ void SolversInitialisation::_setSimulationFlags() {
     // Magnetic Interaction Flags
     simFlags->hasShockwave = false;
     simFlags->hasDipolar = false;
-    simFlags->hasDMI = true;
+    simFlags->hasDMI = false;
     simFlags->hasSTT = false;
     simFlags->hasStaticZeeman = true;
     simFlags->hasDemag1DThinFilm = false;
@@ -59,9 +59,9 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = true;
+    simFlags->shouldDriveCentre = false;
     simFlags->shouldDriveLHS = false;
-    simFlags->shouldDriveRHS = false;
+    simFlags->shouldDriveRHS = true;
 
     // Drive Manipulation Flags
     simFlags->isOscillatingZeemanStatic = false;
@@ -78,11 +78,11 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->latticeConstant = -1;  // THIS MUST BE MANUALLY SET FOR NOW
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 32.25 * 1e9;
+    simParams->drivingFreq = 42.5 * 1e9;
     simParams->oscillatingZeemanStrength = 1e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 2e-9;
+    simParams->maxSimTime = 0.7e-9;
     simParams->satMag = -1;
     simParams->stepsize = 1e-15;
 
@@ -91,15 +91,15 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->numberOfDataPoints = 1e2; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
-    simParams->gilbertDamping = 1e-2;
+    simParams->gilbertDamping = 1e-4;
     simParams->gilbertABCInner = 1e-4;
     simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 57;
+    simParams->drivingRegionWidth = 200;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 300;
+    simParams->numSpinsInABC = 0;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)
