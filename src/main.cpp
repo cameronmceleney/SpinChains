@@ -2,14 +2,12 @@
 #include <iostream>
 
 // C++ User Libraries (General)
-#include "../test/mappingSpeedTests.hpp"
+//#include "../test/mappingSpeedTests.hpp"
 #include "../libs/CommonDefinitions.h"
 #include "../include/SolversSuperClass.h"
 // #include "../Other/working_on/SpinChainEigenSolverClass.h"
 
 int main() {
-    //randomAccessTest(20, 3);
-    computeOnContainers(200, 20, true, false);
 
     auto sharedSimManager = std::make_shared<SimulationManager>();
 

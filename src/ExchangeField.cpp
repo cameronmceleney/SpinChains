@@ -33,9 +33,11 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
 }
 
 void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
-                                           const std::vector<double> &mzTerms, std::vector<std::atomic<double>> &exchangeXOut,
-                                           std::vector<std::atomic<double>> &exchangeYOut, std::vector<std::atomic<double>> &exchangeZOut,
-                                           const bool &shouldUseTBB ) {
+                                           const std::vector<double> &mzTerms,
+                                           std::vector<std::atomic<double>> &exchangeXOut,
+                                           std::vector<std::atomic<double>> &exchangeYOut,
+                                           std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB,
+                                           const bool &dmiOnlyUnderDrive ) {
     // This function is used for parallel calculations. Useful in large systems or when H_ex is complex
 
 
@@ -50,9 +52,14 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                     //auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
                     //                                             : std::array<double, 3>{0.0, 0.0, 0.0};
 
-                    if (_simFlags->hasDMI) {
-                        // Reduces total operations by only summing when DMI is present
-                        std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                    if (_simFlags->hasDMI && (!dmiOnlyUnderDrive || (dmiOnlyUnderDrive && _hasOscillatingZeeman(site)))) {
+                       /*
+                        * Reduces total computer operations. DMI is only calculated for: the whole system
+                        * (_simFlags->hasDMI && !dmiOnlyUnderDrive); only sites at the driving region (_simFlags->hasDMI
+                        * && dmiOnlyUnderDrive && _hasOscillatingZeeman(site)) else zero DMI for that site.
+                        */
+                        std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms,
+                                                                                     shouldUseTBB);
                         tempExchangeLocal[0] += tempDMILocal[0];
                         tempExchangeLocal[1] += tempDMILocal[1];
                         tempExchangeLocal[2] += tempDMILocal[2];
@@ -387,4 +394,16 @@ std::array<double, 3> ExchangeField::_crossProduct( const std::array<double, 3> 
         };
     else
         throw std::invalid_argument("_crossProduct hasn't got CUDA implementation yet");
+}
+
+bool ExchangeField::_hasOscillatingZeeman( const int &site ) {
+    if ( _simFlags->shouldDriveDiscreteSites ) {
+        for ( const int &discreteSite: _simStates->discreteDrivenSites )
+            if ( site == discreteSite ) { return true; }
+    }
+
+    if ( site >= _simParams->drivingRegionLhs && site <= _simParams->drivingRegionRhs ) { return true; }
+
+    // If no condition is met, then the site is not driven
+    return false;
 }

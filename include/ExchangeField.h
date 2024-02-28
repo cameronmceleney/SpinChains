@@ -32,6 +32,8 @@ private:
 
 private:
 
+    bool _hasOscillatingZeeman( const int &site );
+
     std::array<double, 3> _calculateExchangeField1D( const int &currentSite, const std::vector<double> &mxTerms,
                                                      const std::vector<double> &myTerms,
                                                      const std::vector<double> &mzTerms );
@@ -89,9 +91,11 @@ public:
                                 std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut );
 
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
-                                const std::vector<double> &mzTerms, std::vector<std::atomic<double>> &exchangeXOut,
-                                std::vector<std::atomic<double>> &exchangeYOut, std::vector<std::atomic<double>> &exchangeZOut,
-                                const bool &shouldUseTBB );
+                                const std::vector<double> &mzTerms,
+                                std::vector<std::atomic<double>> &exchangeXOut,
+                                std::vector<std::atomic<double>> &exchangeYOut,
+                                std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB,
+                                const bool &dmiOnlyUnderDrive );
 
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
                                 const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,

@@ -77,6 +77,10 @@ public:
 
     double totalTime = 0;
 
+    int numSpinsDrivingRegionCentre;
+    int numSpinsDrivingRegionGradient;
+    double gilbertDampingDrivingRegionCentre;
+
 };
 
 #endif //SPINCHAINS_SIMULATIONPARAMETERS_H

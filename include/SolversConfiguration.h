@@ -16,33 +16,35 @@
 // C++ User Library (General)
 #include "../libs/linspace.h"
 
-class SolversConfiguration:  public SolversSuperClass {
+class SolversConfiguration :
+        public SolversSuperClass {
 protected:
-    void                _testShockwaveInitConditions();
+    void _testShockwaveInitConditions();
 
 public:
-    SolversConfiguration(std::shared_ptr<SimulationManager> sharedSimManager,
-                         std::shared_ptr<SimulationParameters> paramsData,
-                                   std::shared_ptr<SimulationStates> sharedSimStates,
-                                   std::shared_ptr<SimulationFlags> sharedSimFlags);
+    SolversConfiguration( std::shared_ptr<SimulationManager> sharedSimManager,
+                          std::shared_ptr<SimulationParameters> paramsData,
+                          std::shared_ptr<SimulationStates> sharedSimStates,
+                          std::shared_ptr<SimulationFlags> sharedSimFlags );
 
     ~SolversConfiguration() = default;
 
 public:
-    void                performInitialisation() override { configure(); };
-    void                reinitialise() override { _reconfigureSystem(); };
+    void performInitialisation() override { configure(); };
+
+    void reinitialise() override { _reconfigureSystem(); };
 
 private:
-    void                configure();
-    void                _reconfigureSystem();
+    void configure();
+
+    void _reconfigureSystem();
 
 
-    void                _setupInitMultilayerMagneticMoments(std::vector<std::vector<std::vector<double>>>& nestedNestedVector,
-                                                            int layer, double mxInit, double myInit, double mzInit);
+    void _setupInitMultilayerMagneticMoments( std::vector<std::vector<std::vector<double>>> &nestedNestedVector,
+                                              int layer, double mxInit, double myInit, double mzInit );
 
 
-
-    void                resetInitMagneticMoments(double mxInit, double myInit, double mzInit);
+    void resetInitMagneticMoments( double mxInit, double myInit, double mzInit );
 
 private:
     // ####################################            Define Private Variables            ###################################
@@ -59,33 +61,47 @@ private:
      * Set up driving regions for the system. The LHS option is solely for drives from the left of the system. The RHS options contains the
      * drive from the right, as well as an option to drive from the centre.
      **/
-    void                _setupDrivingRegion(int numSpinsInChain, int numSpinsAbsorbingRegion, int drivingRegionWidth);
+    void _setupDrivingRegion( int numSpinsInChain, int numSpinsAbsorbingRegion, int drivingRegionWidth );
 
     // Description missing
-    void                _generateExchangeVector(int numSpinsAbsorbingRegion, int numSpinPairs, double exchangeMin, double exchangeMax);
+    void
+    _generateExchangeVector( int numSpinsAbsorbingRegion, int numSpinPairs, double exchangeMin, double exchangeMax );
 
     // ##############################      single systems    #############################
     // Description missing
-    void                _generateAbsorbingRegions(int numSpinsInChain, int numSpinsAbsorbingRegion, double gilbertSpinChain,
-                                                  double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter);
+    void _generateAbsorbingRegions( int numSpinsInChain, int numSpinsAbsorbingRegion, double gilbertSpinChain,
+                                    double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter );
 
     // Description missing
-    void                _setupInitMagneticMoments(double mxInit, double myInit, double mzInit);
+    void _setupInitMagneticMoments( double mxInit, double myInit, double mzInit );
 
     // ###########################     multilayered systems    ##########################
 
     // Generate the damping regions (part of the Absorbing Boundary Conditions (ABCs)) that are appended to both ends of the spin chain.
-    void                _generateMultilayerAbsorbingRegions(int numSpinsAbsorbingRegion, double gilbertSpinChain,
-                                                            double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter);
+    void _generateMultilayerAbsorbingRegions( int numSpinsAbsorbingRegion, double gilbertSpinChain,
+                                              double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter );
 
     // Description missing
-    std::vector<std::vector<std::vector<double>>> initializeNestedNestedVector(int numSites, bool includeEnd);
+    std::vector<std::vector<std::vector<double>>> initializeNestedNestedVector( int numSites, bool includeEnd );
 
     // Description missing
-    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors(int& totalLayer, double& mxInit,
-                                                                          double& myInit, double& mzInit);
+    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors( int &totalLayer, double &mxInit,
+                                                                           double &myInit, double &mzInit );
 
 
+    std::vector<double>
+    _generateDampingForSubset( int numSitesInSubset, int numSitesInSubsetCentre,
+                               int numSpinsInSubsetLHS, int numSpinsInSubsetRHS,
+                               double gilbertSubsetCentre,
+                               double gilbertSubsetLHS, double gilbertSubsetRHS,
+                               bool includeLeftEndpointZero,
+                               bool includeRightEndpointZero );
+
+    void _generateAbsorbingRegions(int numSpinsInChain, int numSpinsAbsorbingRegion,
+                                   int numSpinsDRPeak, int numSpinsDRWidth,
+                                   double gilbertSpinChain, double gilbertDRPeak,
+                                   double gilbertAbsorbingRegionInner,
+                                   double gilbertAbsorbingRegionOuter );
 };
 
 

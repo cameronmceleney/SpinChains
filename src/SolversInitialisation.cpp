@@ -71,6 +71,9 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintAllData = false;
     simFlags->shouldPrintDiscreteTimes = true;
     simFlags->shouldPrintDiscreteSites = false;
+
+    // TESTING ONLY
+    simFlags->hasGradientedDrive = false;
 }
 
 void SolversInitialisation::_setSimulationParameters() {
@@ -131,6 +134,11 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->dipoleConstant = SimulationParameters::PERM_FREESPACE / (4.0 * M_PI);
 
     simParams->layerOfInterest -= 1;  // To correct for 0-indexing
+
+    // Testing ONLY!
+    simParams->numSpinsDrivingRegionCentre = simParams->drivingRegionWidth;
+    simParams->numSpinsDrivingRegionGradient = 0;
+    simParams->gilbertDampingDrivingRegionCentre = simParams->gilbertDamping;
 }
 
 void SolversInitialisation::_generateRemainingParameters() {

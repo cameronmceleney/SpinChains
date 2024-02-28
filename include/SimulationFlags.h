@@ -46,6 +46,8 @@ public:
     bool                isFerromagnetic;
     bool                resetSimState = false;
     bool                hasSingleExchangeRegion = false;
+
+    bool                hasGradientedDrive;
 };
 
 #endif //SPINCHAINS_SIMULATIONFLAGS_H

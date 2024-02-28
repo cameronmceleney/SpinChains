@@ -1032,7 +1032,7 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
     std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
 
     exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                        effectiveFieldZAtomic, useParallel);
+                                        effectiveFieldZAtomic, useParallel, false);
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
                                     effectiveFieldZAtomic, useParallel);
 
@@ -1123,7 +1123,7 @@ SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &
     std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
 
     exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                        effectiveFieldZAtomic, useParallel);
+                                        effectiveFieldZAtomic, useParallel, false);
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
                                     effectiveFieldZAtomic, useParallel);
 
