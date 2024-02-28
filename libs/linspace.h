@@ -16,6 +16,7 @@ private:
     int                 _numberOfSamples;                       // Number (N) of evenly spaced samples to be returned over the given interval. Length of outputted linspace array is thus (N-1)
     bool                _shouldBuildSpinChain;
     bool                _shouldIncludeEndpoint;                 // If true, _intervalEnd is appended to be the last sample. Otherwise, stop is not included.
+    bool                _hasExclusiveBounds;                         // If true, the linspace array is stretched by 2 samples. This means the range is now over (_intervalStart, _intervalEnd) instead of [_intervalStart, _intervalEnd].
 
     std::vector<double> _spinchainArray;                        // Custom vector that appends zeros to the start and end of _linspaceArray.
 
@@ -25,7 +26,8 @@ public:
     void                    build_spinchain();
     std::vector<double>     build_spinchain_explicit(std::vector<double> linspaceArrayIn);
     std::vector<double>     generate_array();
-    void                    set_values (double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool shouldBuildSpinChain);
+    void set_values( double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint,
+                     bool shouldBuildSpinChain, bool hasExclusiveBounds = false );
 
 };
 

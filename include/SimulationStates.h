@@ -7,6 +7,7 @@
 
 // C++ Standard Libraries
 #include <list>
+#include <map>
 #include <vector>
 
 class SimulationStates {
@@ -74,6 +75,8 @@ public:
      * Description missing
      */
      std::vector<int> discreteDrivenSites;
+
+     std::map<int, double> dRGradientMap;
 };
 
 #endif //SPINCHAINS_SIMULATIONSTATES_H

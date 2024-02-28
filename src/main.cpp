@@ -19,11 +19,11 @@ int main() {
 
     // Global simulation parameters
     GV.SetAnisotropyField(0);
-    GV.SetStaticBiasField(0.1);
-    GV.SetNumSpins(4000);
-    GV.SetExchangeMinVal(43.5);
-    GV.SetExchangeMaxVal(132.0);
-    GV.SetGyromagneticConstant(29.2);
+    GV.SetStaticBiasField(0.3);
+    GV.SetNumSpins(3400);
+    GV.SetExchangeMinVal(6.5);
+    GV.SetExchangeMaxVal(6.5);
+    GV.SetGyromagneticConstant(28.0);
     GV.SetDMIConstant(1.25);  // use negative to flip to match python for now
 
     // Additional parameters and flags

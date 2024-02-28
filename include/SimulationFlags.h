@@ -47,7 +47,7 @@ public:
     bool                resetSimState = false;
     bool                hasSingleExchangeRegion = false;
 
-    bool                hasGradientedDrive;
+    bool                hasGradientWithinDrivingRegion;
 };
 
 #endif //SPINCHAINS_SIMULATIONFLAGS_H

@@ -97,11 +97,15 @@ private:
                                bool includeLeftEndpointZero,
                                bool includeRightEndpointZero );
 
-    void _generateAbsorbingRegions(int numSpinsInChain, int numSpinsAbsorbingRegion,
-                                   int numSpinsDRPeak, int numSpinsDRWidth,
-                                   double gilbertSpinChain, double gilbertDRPeak,
-                                   double gilbertAbsorbingRegionInner,
-                                   double gilbertAbsorbingRegionOuter );
+    void _generateAbsorbingRegions( int numSpinsInChain, int numSpinsAbsorbingRegion, int numSpinsDRPeak,
+                                    int numSpinsDRGradient, double gilbertSpinChain, double gilbertDRPeak,
+                                    double gilbertAbsorbingRegionInner,
+                                    double gilbertAbsorbingRegionOuter );
+
+    void PrintVector( std::vector<double> &vectorToPrint, bool shouldExitAfterPrint );
+    void PrintVector( std::vector<int> &vectorToPrint, bool shouldExitAfterPrint );
+    void PrintVector( std::map<int, double> &mapToPrint, bool shouldExitAfterPrint );
+
 };
 
 

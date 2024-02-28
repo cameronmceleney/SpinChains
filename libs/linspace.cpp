@@ -1,7 +1,9 @@
 #include "linspace.h"
 
 // Setter function for linspace class
-void LinspaceClass::set_values(double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint, bool shouldBuildSpinChain){
+void
+LinspaceClass::set_values( double intervalStart, double intervalEnd, int numberOfSamples, bool shouldIncludeEndpoint,
+                           bool shouldBuildSpinChain, bool hasExclusiveBounds ) {
 
     _intervalStart = intervalStart;
 
@@ -12,21 +14,31 @@ void LinspaceClass::set_values(double intervalStart, double intervalEnd, int num
     _shouldIncludeEndpoint = shouldIncludeEndpoint;
 
     _shouldBuildSpinChain = shouldBuildSpinChain;
+
+    _hasExclusiveBounds = hasExclusiveBounds;
+
+    if (_hasExclusiveBounds) {
+        _shouldIncludeEndpoint = false; // To ensure that the range is over (_intervalStart, _intervalEnd) instead of (_intervalStart, _intervalEnd]
+        _numberOfSamples += 2;
+    }
 }
 
 // Getter function for linspace class
 std::vector<double> LinspaceClass::generate_array() {
     _linspaceArray.clear(); // Required when using multi-layers as otherwise previous damping regions are retained
 
-    if (_numberOfSamples == 0) {
+    if ( _numberOfSamples == 0 ) {
         // If no range in inputted then empty vector is returned
-        if (_shouldBuildSpinChain) { _linspaceArray.push_back(0); _linspaceArray.push_back(0); }
+        if ( _shouldBuildSpinChain ) {
+            _linspaceArray.push_back(0);
+            _linspaceArray.push_back(0);
+        }
         return _linspaceArray;
     }
 
-    if (_numberOfSamples == 1) {
+    if ( _numberOfSamples == 1 ) {
         // If range is one then start value is the only element of the array returned
-        if (_shouldBuildSpinChain) {
+        if ( _shouldBuildSpinChain ) {
             _linspaceArray.push_back(0);
             _linspaceArray.push_back(_intervalStart);
             _linspaceArray.push_back(0);
@@ -40,15 +52,16 @@ std::vector<double> LinspaceClass::generate_array() {
 
     // 'delta' finds the stepsize between values
     double delta = (_intervalEnd - _intervalStart) / (_numberOfSamples - 1);
-
-    for(int i = 0; i < _numberOfSamples - 1; ++i) {
+    int iStart = 0;
+    if ( _hasExclusiveBounds ) { iStart = 1; }
+    for ( int i = iStart; i < _numberOfSamples - 1; ++i ) {
         // Adds elements to list. Method is very similar to Euler's numerical method
         _linspaceArray.push_back(_intervalStart + delta * i);
     }
 
-    if (_shouldIncludeEndpoint) { _linspaceArray.push_back(_intervalEnd); }
+    if ( _shouldIncludeEndpoint ) { _linspaceArray.push_back(_intervalEnd); }
 
-    if (_shouldBuildSpinChain) { build_spinchain(); }
+    if ( _shouldBuildSpinChain ) { build_spinchain(); }
 
     return _linspaceArray;
 }
@@ -70,16 +83,16 @@ void LinspaceClass::build_spinchain() {
     _linspaceArray = spinChainArray;
 }
 
-std::vector<double> LinspaceClass::build_spinchain_explicit(std::vector<double> linspaceArrayIn) {
+std::vector<double> LinspaceClass::build_spinchain_explicit( std::vector<double> linspaceArrayIn ) {
 
-        // Initialised with a zero to account for the (P-1)th spin
-        std::vector<double> spinChainArray = {0};
+    // Initialised with a zero to account for the (P-1)th spin
+    std::vector<double> spinChainArray = {0};
 
-        // Insert is faster for large values of numbers compared to push_back()
-        spinChainArray.insert(spinChainArray.end(), linspaceArrayIn.begin(), linspaceArrayIn.end());
+    // Insert is faster for large values of numbers compared to push_back()
+    spinChainArray.insert(spinChainArray.end(), linspaceArrayIn.begin(), linspaceArrayIn.end());
 
-        // Appends a zero to the end to account for the exchange from the (N+1)th RHS spin
-        spinChainArray.push_back(0);
+    // Appends a zero to the end to account for the exchange from the (N+1)th RHS spin
+    spinChainArray.push_back(0);
 
-        return spinChainArray;
+    return spinChainArray;
 }

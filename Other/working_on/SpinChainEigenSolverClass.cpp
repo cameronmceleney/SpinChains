@@ -123,7 +123,7 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixAntiferromagnets()
     LinspaceClass exchangeValues{};
     std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
 
-    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, true);
+    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins() - 1, true, true, false);
     _chainJValues = exchangeValues.generate_array();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
@@ -261,7 +261,7 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixFerromagnets()
     LinspaceClass exchangeValues{};
     std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
 
-    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins()-1, true, true);
+    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins() - 1, true, true, false);
     _chainJValues = exchangeValues.generate_array();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster

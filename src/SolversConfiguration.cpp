@@ -42,14 +42,11 @@ void SolversConfiguration::configure() {
         simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
         simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
     } else {
-        _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-                                  simParams->gilbertABCInner, simParams->gilbertABCOuter);
-        if (simFlags->hasGradientedDrive) {
+        if (simFlags->hasGradientWithinDrivingRegion) {
             _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC,
-                                      simParams->numSpinsDrivingRegionCentre,
-                                      simParams->numSpinsDrivingRegionGradient, simParams->gilbertDamping,
-                                      simParams->gilbertDampingDrivingRegionCentre,
-                                      simParams->gilbertDamping, simParams->gilbertABCInner);
+                                      simParams->numSpinsDRPeak, simParams->numSpinsDRGradient, simParams->gilbertDamping,
+                                      simParams->gilbertDRPeak,
+                                      simParams->gilbertABCInner, simParams->gilbertABCOuter);
         } else {
             _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
                                       simParams->gilbertABCInner, simParams->gilbertABCOuter);
@@ -59,6 +56,55 @@ void SolversConfiguration::configure() {
     }
 
     simManager->hasFirstRunOccurred = true;
+}
+
+void SolversConfiguration::PrintVector( std::vector<double> &vectorToPrint, bool shouldExitAfterPrint ) {
+
+    std::cout << "\n";
+
+    int count = 0;
+    for ( double i: vectorToPrint ) {
+        if ( ++count % 10 == 0 )
+            std::cout << std::setw(8) << i << std::endl;
+        else
+            std::cout << std::setw(8) << i << ", ";
+    }
+    std::cout << "\n\n";
+
+    if ( shouldExitAfterPrint )
+        exit(0);
+}
+void SolversConfiguration::PrintVector( std::vector<int> &vectorToPrint, bool shouldExitAfterPrint ) {
+
+    std::cout << "\n";
+
+    int count = 0;
+    for ( double i: vectorToPrint ) {
+        if ( ++count % 10 == 0 )
+            std::cout << std::setw(8) << i << std::endl;
+        else
+            std::cout << std::setw(8) << i << ", ";
+    }
+    std::cout << "\n\n";
+
+    if ( shouldExitAfterPrint )
+        exit(0);
+}
+void SolversConfiguration::PrintVector( std::map<int, double> &mapToPrint, bool shouldExitAfterPrint ) {
+
+    std::cout << "\n";
+
+    int count = 0;
+    for ( auto const& [key, val] : mapToPrint ) {
+        if ( ++count % 10 == 0 )
+            std::cout << std::setw(4) << key << ": " << std::setw(8) << val << std::endl;
+        else
+            std::cout << std::setw(4) << key << ": " << std::setw(4) << val << ", ";
+    }
+    std::cout << "\n\n";
+
+    if ( shouldExitAfterPrint )
+        exit(0);
 }
 
 void SolversConfiguration::_reconfigureSystem() {
@@ -73,11 +119,11 @@ void SolversConfiguration::_reconfigureSystem() {
     _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
 }
 
-void SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpinsAbsorbingRegion,
-                                                      int numSpinsDRPeak, int numSpinsDRWidth,
-                                                      double gilbertSpinChain, double gilbertDRPeak,
-                                                      double gilbertAbsorbingRegionInner,
-                                                      double gilbertAbsorbingRegionOuter ) {
+void
+SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpinsAbsorbingRegion, int numSpinsDRPeak,
+                                                 int numSpinsDRGradient, double gilbertSpinChain, double gilbertDRPeak,
+                                                 double gilbertAbsorbingRegionInner,
+                                                 double gilbertAbsorbingRegionOuter ) {
 
     // Check for invalid input.
     if ( numSpinsAbsorbingRegion < 0 ) {
@@ -85,24 +131,40 @@ void SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int n
         exit(1);
     }
 
-    int numSpinsDRGradient =  (numSpinsDRWidth - numSpinsDRPeak) / 2;
+    if (numSpinsDRPeak < 0 || numSpinsDRGradient < 0) {
+        std::cout << "numSpinsDRPeak or numSpinsDRGradient are less than zero!";
+        exit(1);
+    }
     int numSpinsChainLhsOfDR = simParams->drivingRegionLhs - numSpinsAbsorbingRegion;
-    int numSpinsChainRhsOfDR = numSpinsInChain - simParams->drivingRegionRhs - numSpinsAbsorbingRegion;
+    int numSpinsChainRhsOfDR = numSpinsInChain - simParams->drivingRegionRhs + numSpinsAbsorbingRegion;
+
+    if (simFlags->shouldDriveLHS || simFlags->shouldDriveCentre)
+        numSpinsChainLhsOfDR--;
+    else if (simFlags->shouldDriveRHS) {
+        numSpinsChainRhsOfDR--;
+    }
+    // std::cout << "numSpinsTotal: " << simParams->systemTotalSpins << " | numSpinsInChain: " << numSpinsInChain << " | numSpinsABC (each): " << simParams->numSpinsInABC << "\n";
+    // std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
+    // std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
 
     std::vector<double> gilbertMainChain;
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Finds the damping regions that are in the main chain, but not part of the driving region width
-    LinspaceClass RegionLhsOfDr;
-    LinspaceClass RegionRhsOfDr;
+    LinspaceClass OutsideDrLeft;
+    LinspaceClass OutsideDrRight;
 
-    RegionLhsOfDr.set_values(gilbertSpinChain, gilbertSpinChain, numSpinsChainLhsOfDR,
-                             true, false);
-    RegionRhsOfDr.set_values(gilbertSpinChain, gilbertSpinChain, numSpinsChainRhsOfDR,
-                             true, false);
+    OutsideDrLeft.set_values(gilbertSpinChain, gilbertSpinChain, numSpinsChainLhsOfDR,
+                             true, false, false);
+    OutsideDrRight.set_values(gilbertSpinChain, gilbertSpinChain, numSpinsChainRhsOfDR,
+                              true, false, false);
 
-    std::vector<double> regionLhsOfDr = RegionLhsOfDr.generate_array();
-    std::vector<double> regionRhsOfDr = RegionRhsOfDr.generate_array();
+    std::vector<double> outsideDrLeft = OutsideDrLeft.generate_array();
+    std::vector<double> outsideDrRight = OutsideDrRight.generate_array();
+
+    // std::cout << "outsideDrLeft.size(): " << outsideDrLeft.size() << " | outsideDrRight.size(): " << outsideDrRight.size() << "\n";
+    // PrintVector(outsideDrLeft, false);
+    // PrintVector(outsideDrRight, false);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Finds the damping regions that are in the main chain, and are in the driving region
@@ -114,25 +176,83 @@ void SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int n
     LinspaceClass RightDRGradient;
 
     LeftDRGradient.set_values(gilbertSpinChain, gilbertDRPeak, numSpinsDRGradient,
-                                true, false);
+                              true, false, true);
     CentreDRPeak.set_values(gilbertDRPeak, gilbertDRPeak, numSpinsDRPeak,
-                                  true, false);
+                            true, false, false);
     RightDRGradient.set_values(gilbertDRPeak, gilbertSpinChain, numSpinsDRGradient,
-                                 true, false);
+                               true, false, true);
 
     std::vector<double> leftDRGradient = LeftDRGradient.generate_array();
     std::vector<double> centreDRPeak = CentreDRPeak.generate_array();
     std::vector<double> rightDRGradient = RightDRGradient.generate_array();
 
+    // std::cout << "leftDRGradient.size(): " << leftDRGradient.size() << " | centreDRPeak.size(): " << centreDRPeak.size() << " | rightDRGradient.size(): " << rightDRGradient.size() << "\n";
+
     gilbertDROnly.insert(gilbertDROnly.end(), leftDRGradient.begin(), leftDRGradient.end());
     gilbertDROnly.insert(gilbertDROnly.end(), centreDRPeak.begin(), centreDRPeak.end());
     gilbertDROnly.insert(gilbertDROnly.end(), rightDRGradient.begin(), rightDRGradient.end());
 
+    // std::cout << "gilbertDROnly.size(): " << gilbertDROnly.size() << "\n";
+    // PrintVector(gilbertDROnly, false);
+
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Combine the main chain all together
-    gilbertMainChain.insert(gilbertMainChain.end(), regionLhsOfDr.begin(), regionLhsOfDr.end());
+    gilbertMainChain.insert(gilbertMainChain.end(), outsideDrLeft.begin(), outsideDrLeft.end());
     gilbertMainChain.insert(gilbertMainChain.end(), gilbertDROnly.begin(), gilbertDROnly.end());
-    gilbertMainChain.insert(gilbertMainChain.end(), regionRhsOfDr.begin(), regionRhsOfDr.end());
+    gilbertMainChain.insert(gilbertMainChain.end(), outsideDrRight.begin(), outsideDrRight.end());
+
+    // std::cout << "gilbertMainChain.size(): " << gilbertMainChain.size() << "\n";
+    // PrintVector(gilbertMainChain, false);
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Obtain the gradient of the DR region so I can scale other properties (like DMI)
+    LinspaceClass LeftDRGradientScaled;
+    LinspaceClass CentreDRPeakScaled;
+    LinspaceClass RightDRGradientScaled;
+    LeftDRGradientScaled.set_values(0.0, 1.0, numSpinsDRGradient, false, false, true);
+    CentreDRPeakScaled.set_values(1.0, 1.0, numSpinsDRPeak, true, false, false);
+    RightDRGradientScaled.set_values(1.0, 0.0, numSpinsDRGradient, false, false, true);
+
+    std::vector<double> leftDRGradientScaled = LeftDRGradientScaled.generate_array();
+    std::vector<double> centreDRPeakScaled = CentreDRPeakScaled.generate_array();
+    std::vector<double> rightDRGradientScaled = RightDRGradientScaled.generate_array();
+    std::vector<int> leftDRGradientSites;
+    std::vector<int> centreDRPeakSites;
+    std::vector<int> rightDRGradientSites;
+
+    // std::cout << "leftDRGradientScaled.size(): " << leftDRGradientScaled.size() << " | centreDRPeakScaled: " << centreDRPeakScaled.size() << " | rightDRGradientScaled.size(): " << rightDRGradientScaled.size() << "\n";
+    // PrintVector(leftDRGradientScaled, false);
+    // PrintVector(centreDRPeakScaled, false);
+    // PrintVector(rightDRGradientScaled, false);
+
+    for ( int i = simParams->drivingRegionLhs; i < simParams->drivingRegionLhs + numSpinsDRGradient; i++ ) {
+        leftDRGradientSites.push_back(i);
+    }
+    for ( int i = simParams->drivingRegionLhs + numSpinsDRGradient; i <= simParams->drivingRegionRhs - numSpinsDRGradient; i++ ) {
+        centreDRPeakSites.push_back(i);
+    }
+    for ( int i = simParams->drivingRegionRhs - numSpinsDRGradient + 1; i <= simParams->drivingRegionRhs; i++ ) {
+        rightDRGradientSites.push_back(i);
+    }
+
+    // std::cout << "leftDRGradientSites.size(): " << leftDRGradientSites.size() << " | centreDRPeakSites: " << centreDRPeakSites.size() << " | rightDRGradientSites.size(): " << rightDRGradientSites.size() << "\n";
+    // PrintVector(leftDRGradientSites, false);
+    // PrintVector(centreDRPeakSites, false);
+    // PrintVector(rightDRGradientSites, false);
+
+    // Populate the maps
+    for (size_t i = 0; i < leftDRGradientSites.size(); ++i) {
+        simStates->dRGradientMap[leftDRGradientSites[i]] = leftDRGradientScaled[i];
+    }
+    for (size_t i = 0; i < centreDRPeakSites.size(); ++i) {
+        simStates->dRGradientMap[centreDRPeakSites[i]] = centreDRPeakScaled[i];
+    }
+    for (size_t i = 0; i < rightDRGradientSites.size(); ++i) {
+        simStates->dRGradientMap[rightDRGradientSites[i]] = rightDRGradientScaled[i];
+    }
+
+    // std::cout << "simStates->dRGradientMap.size(): " << simStates->dRGradientMap.size() << "\n";
+    // PrintVector(simStates->dRGradientMap, false);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // These damping regions are part of my Periodic Boundary Conditions (PBCs) as Absorbing Boundary Conditions (ABCs).
@@ -140,11 +260,15 @@ void SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int n
     LinspaceClass DampingRegionRight;
 
     DampingRegionLeft.set_values(gilbertAbsorbingRegionOuter, gilbertAbsorbingRegionInner, numSpinsAbsorbingRegion,
-                                 true, false);
+                                 true, false, false);
     DampingRegionRight.set_values(gilbertAbsorbingRegionInner, gilbertAbsorbingRegionOuter, numSpinsAbsorbingRegion,
-                                  true, false);
+                                  true, false, false);
     std::vector<double> dampingRegionLHS = DampingRegionLeft.generate_array();
     std::vector<double> dampingRegionRHS = DampingRegionRight.generate_array();
+
+    // std::cout << "dampingRegionLHS.size(): " << dampingRegionLHS.size() << " | dampingRegionRHS.size(): " << dampingRegionRHS.size() << "\n";
+    // PrintVector(dampingRegionLHS, false);
+    // PrintVector(dampingRegionRHS, false);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Combine all damped regions to form vector which describes the entire spinchain.
@@ -152,6 +276,9 @@ void SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int n
     simStates->gilbertVector.insert(simStates->gilbertVector.end(), gilbertMainChain.begin(), gilbertMainChain.end());
     simStates->gilbertVector.insert(simStates->gilbertVector.end(), dampingRegionRHS.begin(), dampingRegionRHS.end());
     simStates->gilbertVector.push_back(0);
+
+    // std::cout << "simStates->gilbertVector.size(): " << simStates->gilbertVector.size() << "\n";
+    // PrintVector(simStates->gilbertVector, true);
 }
 
 std::vector<double> SolversConfiguration::_generateDampingForSubset( int numSitesInSubset, int numSitesInSubsetCentre,
@@ -178,11 +305,11 @@ std::vector<double> SolversConfiguration::_generateDampingForSubset( int numSite
     LinspaceClass CentreRegionRight;
 
     CentreRegionLeft.set_values(gilbertSubsetLHS, gilbertSubsetCentre, numSpinsInSubsetLHS,
-                                true, false);
+                                true, false, false);
     CentreRegionCentre.set_values(gilbertSubsetCentre, gilbertSubsetCentre, numSitesInSubsetCentre,
-                                  true, false);
+                                  true, false, false);
     CentreRegionRight.set_values(gilbertSubsetCentre, gilbertSubsetRHS, numSpinsInSubsetRHS,
-                                 true, false);
+                                 true, false, false);
 
     std::vector<double> centreRegionLeft = CentreRegionLeft.generate_array();
     std::vector<double> centreRegionCentre = CentreRegionCentre.generate_array();
@@ -221,9 +348,9 @@ void SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int n
     std::vector<double> gilbertChain(numSpinsInChain, gilbertSpinChain);
 
     DampingRegionLeft.set_values(gilbertAbsorbingRegionOuter, gilbertAbsorbingRegionInner, numSpinsAbsorbingRegion,
-                                 true, false);
+                                 true, false, false);
     DampingRegionRight.set_values(gilbertAbsorbingRegionInner, gilbertAbsorbingRegionOuter, numSpinsAbsorbingRegion,
-                                  true, false);
+                                  true, false, false);
     std::vector<double> dampingRegionLHS = DampingRegionLeft.generate_array();
     std::vector<double> dampingRegionRHS = DampingRegionRight.generate_array();
 
@@ -304,12 +431,12 @@ void SolversConfiguration::_generateExchangeVector( int numSpinsAbsorbingRegion,
     if ( numSpinsAbsorbingRegion > 0 ) {
         if ( simFlags->hasSingleExchangeRegion ) {
             numSpinPairs += (2 * simParams->numSpinsInABC);
-            SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, true);
+            SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, true, false);
             simStates->exchangeVec = SpinChainExchange.generate_array();
         } else {
             simStates->exchangeVec.push_back(0.0);
 
-            SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, false);
+            SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, false, false);
             std::vector<double> tempExchangeChain = SpinChainExchange.generate_array();
 
             // SpinChainExchangeLHS.set_values(exchangeMin, exchangeMax, numSpinsAbsorbingRegion, true, false);
@@ -328,7 +455,7 @@ void SolversConfiguration::_generateExchangeVector( int numSpinsAbsorbingRegion,
         }
     } else {
         // The linearly spaced vector is saved as the class member 'exchangeVec' simply to increase code readability
-        SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, true);
+        SpinChainExchange.set_values(exchangeMin, exchangeMax, numSpinPairs, true, true, false);
         simStates->exchangeVec = SpinChainExchange.generate_array();
     }
 }
@@ -439,9 +566,9 @@ void SolversConfiguration::_generateMultilayerAbsorbingRegions( int numSpinsAbso
         std::vector<double> gilbertChain(layer, gilbertSpinChain);
 
         AbsorbingRegionLHS.set_values(gilbertAbsorbingRegionOuter, gilbertAbsorbingRegionInner, numSpinsAbsorbingRegion,
-                                      true, false);
+                                      true, false, false);
         AbsorbingRegionRHS.set_values(gilbertAbsorbingRegionInner, gilbertAbsorbingRegionOuter, numSpinsAbsorbingRegion,
-                                      true, false);
+                                      true, false, false);
 
         // Change of name to be specific that this is only the damping region
         std::vector<double> dampingRegionLHS = AbsorbingRegionLHS.generate_array();

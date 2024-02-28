@@ -77,9 +77,9 @@ public:
 
     double totalTime = 0;
 
-    int numSpinsDrivingRegionCentre;
-    int numSpinsDrivingRegionGradient;
-    double gilbertDampingDrivingRegionCentre;
+    int numSpinsDRPeak;
+    int numSpinsDRGradient;
+    double gilbertDRPeak;
 
 };
 

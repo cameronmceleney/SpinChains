@@ -52,17 +52,33 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                     //auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
                     //                                             : std::array<double, 3>{0.0, 0.0, 0.0};
 
-                    if (_simFlags->hasDMI && (!dmiOnlyUnderDrive || (dmiOnlyUnderDrive && _hasOscillatingZeeman(site)))) {
-                       /*
-                        * Reduces total computer operations. DMI is only calculated for: the whole system
-                        * (_simFlags->hasDMI && !dmiOnlyUnderDrive); only sites at the driving region (_simFlags->hasDMI
-                        * && dmiOnlyUnderDrive && _hasOscillatingZeeman(site)) else zero DMI for that site.
-                        */
-                        std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms,
-                                                                                     shouldUseTBB);
-                        tempExchangeLocal[0] += tempDMILocal[0];
-                        tempExchangeLocal[1] += tempDMILocal[1];
-                        tempExchangeLocal[2] += tempDMILocal[2];
+                    if (_simFlags->hasDMI) {
+                        double multiplier = 1.0; // Default multiplier
+
+                        if (!dmiOnlyUnderDrive) {
+                            // When DMI applies to the whole system, multiplier remains 1.0
+                            multiplier = 1.0;
+                        } else if (dmiOnlyUnderDrive) {
+                            // DMI only applies under the drive
+                            if (_hasOscillatingZeeman(site)) {
+                                // This site is under the drive
+                                auto it = _simStates->dRGradientMap.find(site);
+                                if (it != _simStates->dRGradientMap.end()) {
+                                    // If the site is in the map, then use the associated value as multiplier
+                                    multiplier = it->second;
+                                }
+                            } else {
+                                // DMI is only under the drive, but this current site is not, so skip calculation
+                                multiplier = 0.0;
+                            }
+                        }
+
+                        if (multiplier != 0.0) { // Ensures we don't calculate if multiplier is 0
+                            std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                            tempExchangeLocal[0] += tempDMILocal[0] * multiplier;
+                            tempExchangeLocal[1] += tempDMILocal[1] * multiplier;
+                            tempExchangeLocal[2] += tempDMILocal[2] * multiplier;
+                        }
                     }
 
                     if (_simFlags->hasDemag1DThinFilm) {

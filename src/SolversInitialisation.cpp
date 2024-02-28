@@ -7,8 +7,8 @@
 
 SolversInitialisation::SolversInitialisation(std::shared_ptr<SimulationManager> sharedSimManager,
                                              std::shared_ptr<SimulationParameters> sharedSimParams,
-                                   std::shared_ptr<SimulationStates> sharedSimStates,
-                                   std::shared_ptr<SimulationFlags> sharedSimFlags)
+                                             std::shared_ptr<SimulationStates> sharedSimStates,
+                                             std::shared_ptr<SimulationFlags> sharedSimFlags)
 
     : SolversSuperClass(std::move(sharedSimManager), std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {
 }
@@ -41,7 +41,7 @@ void SolversInitialisation::_setSimulationFlags() {
     // Magnetic Interaction Flags
     simFlags->hasShockwave = false;
     simFlags->hasDipolar = false;
-    simFlags->hasDMI = false;
+    simFlags->hasDMI = true;
     simFlags->hasSTT = false;
     simFlags->hasStaticZeeman = true;
     simFlags->hasDemag1DThinFilm = false;
@@ -59,9 +59,9 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = false;
+    simFlags->shouldDriveCentre = true;
     simFlags->shouldDriveLHS = false;
-    simFlags->shouldDriveRHS = true;
+    simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
     simFlags->isOscillatingZeemanStatic = false;
@@ -73,19 +73,19 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintDiscreteSites = false;
 
     // TESTING ONLY
-    simFlags->hasGradientedDrive = false;
+    simFlags->hasGradientWithinDrivingRegion = true;
 }
 
 void SolversInitialisation::_setSimulationParameters() {
 
-    simParams->latticeConstant = -1;  // THIS MUST BE MANUALLY SET FOR NOW
+    simParams->latticeConstant = 1e-9;  // THIS MUST BE MANUALLY SET FOR NOW
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 42.5 * 1e9;
+    simParams->drivingFreq = 32.25 * 1e9;
     simParams->oscillatingZeemanStrength = 1e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 0.7e-9;
+    simParams->maxSimTime = 2e-9;
     simParams->satMag = -1;
     simParams->stepsize = 1e-15;
 
@@ -94,15 +94,15 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->numberOfDataPoints = 1e2; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
-    simParams->gilbertDamping = 1e-4;
-    simParams->gilbertABCInner = 1e-4;
+    simParams->gilbertDamping = 1e-2;
+    simParams->gilbertABCInner = 1e-2;
     simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 200;
+    simParams->drivingRegionWidth = 57;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 0;
+    simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)
@@ -136,9 +136,9 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->layerOfInterest -= 1;  // To correct for 0-indexing
 
     // Testing ONLY!
-    simParams->numSpinsDrivingRegionCentre = simParams->drivingRegionWidth;
-    simParams->numSpinsDrivingRegionGradient = 0;
-    simParams->gilbertDampingDrivingRegionCentre = simParams->gilbertDamping;
+    simParams->numSpinsDRPeak = simParams->drivingRegionWidth;
+    simParams->numSpinsDRGradient =  (simParams->drivingRegionWidth - simParams->numSpinsDRPeak) / 2;
+    simParams->gilbertDRPeak = 1e-2;
 }
 
 void SolversInitialisation::_generateRemainingParameters() {
@@ -243,6 +243,11 @@ void SolversInitialisation::_guardClauses() {
 
     if (simFlags->hasShapeAnisotropy && simFlags->isFerromagnetic) {
         std::cout << "Warning: You cannot use shape anisotropy with ferromagnetic materials.";
+        exit(1);
+    }
+
+    if ( (simParams->numSpinsDRPeak + simParams->numSpinsDRGradient) > simParams->drivingRegionWidth) {
+        std::cout << "Warning: Attempted DR gradient setup exceeds the drivingRegionWidth!";
         exit(1);
     }
 
