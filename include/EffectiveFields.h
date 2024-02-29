@@ -7,6 +7,7 @@
 #define SPINCHAINS_EFFECTIVEFIELDS_H
 
 // C++ Standard Library
+#include <array>
 #include <vector>
 
 // C++ User Libraries (General)

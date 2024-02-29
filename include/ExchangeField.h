@@ -6,6 +6,7 @@
 #define SPINCHAINS_EXCHANGEFIELD_H
 
 // C++ Standard Library
+#include <array>
 #include <vector>
 
 // C++ Third Party Libraries

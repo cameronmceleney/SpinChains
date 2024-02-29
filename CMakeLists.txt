@@ -9,6 +9,8 @@ project(SpinChains)  # This project's name is not to be confused with (ChainSpin
 
 set(CMAKE_CXX_STANDARD 23)  # No attempt has been made to ensure backwards compatibility from C23
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
 
 ################################################################
 # if(CMAKE_BUILD_TYPE STREQUAL "Release (MinGW64)")
@@ -35,18 +37,21 @@ if(WIN32 OR WIN64)
     set(FFTW_LIB "${MINGW64_BASE}/lib/libfftw3.a")
 
     # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI version
-    set(TBB_DIR "${MINGW64_BASE}/include/oneapi")
+    set(TBB_DIR "${MINGW64_BASE}/include")  # Removed appended "/oneapi" from the end of the path
     set(TBB_LIB "${MINGW64_BASE}/lib/libtbb12.dll.a" "${MINGW64_BASE}/lib/libtbbmalloc.dll.a")
 elseif(APPLE)
     # Default Homebrew installation directories on MacOS
     set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
-    set(FFTW_DIR "/usr/local/Cellar/fftw/3.3.10_1")
-    set(FFTW_LIB "${FFTW_DIR}/lib/libfftw3.a")
+    set(FFTW_BASE "/usr/local/Cellar/fftw/3.3.10_1")
+    set(FFTW_DIR "${FFTW_BASE}/include")
+    set(FFTW_LIB "${FFTW_BASE}/lib/libfftw3.a")
 
-    # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI version
-    set(TBB_BASE "/usr/local/Cellar/tbb/2021.10.0")
-    set(TBB_DIR "${TBB_BASE}/include/oneapi")
-    set(TBB_LIB "${TBB_BASE}/lib/libtbb.a" "${TBB_BASE}/lib/libtbbmalloc.a")
+    # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI.
+    set(TBB_BASE "/usr/local/Cellar/tbb/2021.11.0")
+    set(TBB_DIR "${TBB_BASE}/include")
+    # Must use dynamic libraries on MacOS (Xcode 15.2), use G++-13, and compile TBB via Homebrew with GCC/G++
+    # with "HOMEBREW_CC=gcc-13 HOMEBREW_CXX=g++-13 brew install tbb"
+    set(TBB_LIB "${TBB_BASE}/lib/libtbb.dylib" "${TBB_BASE}/lib/libtbbmalloc.dylib")
 endif()
 
 ################################################################
@@ -119,10 +124,11 @@ add_executable(${PROJECT_NAME} src/main.cpp
 
 if(WIN32 OR WIN64)
     include_directories(${EIGEN_DIR} ${FFTW_DIR} ${TBB_DIR})
-elseif(APPLE)
-    include_directories(${EIGEN_DIR} ${FFTW_DIR}/include ${TBB_DIR})
-endif()
     target_link_libraries(${PROJECT_NAME} PRIVATE ${FFTW_LIB} ${TBB_LIB})
+elseif(APPLE)
+    include_directories(${EIGEN_DIR} ${FFTW_DIR} ${TBB_DIR})
+    target_link_libraries(${PROJECT_NAME} PRIVATE stdc++ ${FFTW_LIB} ${TBB_LIB})
+endif()
 
 
 ################################################################
