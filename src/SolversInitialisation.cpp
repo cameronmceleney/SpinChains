@@ -138,7 +138,7 @@ void SolversInitialisation::_setSimulationParameters() {
     // Testing ONLY!
     simParams->numSpinsDRPeak = simParams->drivingRegionWidth;
     simParams->numSpinsDRGradient =  (simParams->drivingRegionWidth - simParams->numSpinsDRPeak) / 2;
-    simParams->gilbertDRPeak = 1e-2;
+    simParams->gilbertDRPeak = simParams->gilbertDamping;
 }
 
 void SolversInitialisation::_generateRemainingParameters() {

@@ -43,7 +43,7 @@ public:
     double              spinTransferEfficiency;                   // Spin transfer efficiency of the spin current.
 
     int                 iterationEnd;                             // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
-    int                 iterationStart= 0;                        // The iteration step that the program will begin at (Default: 0.0)
+    int                 iterationStart = 0;                        // The iteration step that the program will begin at (Default: 0.0)
     double              iterStartShock;                           // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the maxSimTime.
 
     double              iterEndShock;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the maxSimTime.

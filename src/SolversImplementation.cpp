@@ -1032,9 +1032,9 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
     std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
 
     exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                        effectiveFieldZAtomic, useParallel, false);
+                                        effectiveFieldZAtomic, useParallel, simFlags->hasGradientWithinDrivingRegion);
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                    effectiveFieldZAtomic, useParallel);
+                                    effectiveFieldZAtomic, useParallel, simFlags->hasGradientWithinDrivingRegion);
 
     _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
     _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
@@ -1125,7 +1125,7 @@ SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &
     exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
                                         effectiveFieldZAtomic, useParallel, false);
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                    effectiveFieldZAtomic, useParallel);
+                                    effectiveFieldZAtomic, useParallel, false);
 
     _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
     _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);

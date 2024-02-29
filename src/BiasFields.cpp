@@ -29,9 +29,11 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
 }
 
 void BiasFields::calculateOneDimension( const int &currentLayer, const double &currentTime,
-                                        const std::vector<double> &mzTermsIn, std::vector<std::atomic<double>> &biasFieldXOut,
-                                        std::vector<std::atomic<double>> &biasFieldYOut, std::vector<std::atomic<double>> &biasFieldZOut,
-                                        const bool &shouldUseTBB ) {
+                                        const std::vector<double> &mzTermsIn,
+                                        std::vector<std::atomic<double>> &biasFieldXOut,
+                                        std::vector<std::atomic<double>> &biasFieldYOut,
+                                        std::vector<std::atomic<double>> &biasFieldZOut, const bool &shouldUseTBB,
+                                        bool dmiOnlyUnderDrive ) {
     // This function is used for parallel calculations. Useful in large systems or when H_ext is complex
 
     if ( shouldUseTBB ) {
@@ -39,11 +41,37 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
             [&](const tbb::blocked_range<int>& range) {
                 for (int site = range.begin(); site < range.end(); site++) {
-                    std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
 
-                    biasFieldXOut[site].fetch_add(tempBiasResults[0]);
-                    biasFieldYOut[site].fetch_add(tempBiasResults[1]);
-                    biasFieldZOut[site].fetch_add(tempBiasResults[2]);
+                    double multiplier = 1.0; // Default multiplier
+
+                    if (!dmiOnlyUnderDrive) {
+                        // When DMI applies to the whole system, multiplier remains 1.0
+                        multiplier = 1.0;
+                    } else if (dmiOnlyUnderDrive) {
+                        // DMI only applies under the drive
+                        if (_hasOscillatingZeeman(site)) {
+                            // This site is under the drive
+                            auto it = _simStates->dRGradientMap.find(site);
+                            if (it != _simStates->dRGradientMap.end()) {
+                                // If the site is in the map, then use the associated value as multiplier
+                                multiplier = it->second;
+                            }
+                        } else {
+                            // DMI is only under the drive, but this current site is not, so skip calculation
+                            multiplier = 0.0;
+                        }
+                    }
+
+                    if (multiplier != 0.0) { // Ensures we don't calculate if multiplier is 0
+                        std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
+
+                        tempBiasResults[0] *= tempBiasResults[0];
+
+                        biasFieldXOut[site].fetch_add(tempBiasResults[0]);
+                        biasFieldYOut[site].fetch_add(tempBiasResults[1]);
+                        biasFieldZOut[site].fetch_add(tempBiasResults[2]);
+                    }
+
                 }
         }, tbb::auto_partitioner());
 
@@ -220,4 +248,28 @@ bool BiasFields::_hasOscillatingZeeman( const int &site ) {
     // If no condition is met, then the site is not driven
     return false;
 }
+
+/*
+ * bool BiasFields::_hasOscillatingZeeman( const int &site ) {
+    if ( _simFlags->shouldDriveDiscreteSites ) {
+        for ( const int &discreteSite: _simStates->discreteDrivenSites )
+            if ( site == discreteSite ) { return true; }
+    }
+
+    if (_simFlags->hasGradientWithinDrivingRegion) {
+        auto it = _simStates->dRGradientMap.find(site);
+        if (it != _simStates->dRGradientMap.end()) {
+            // If the site is driven, then the gradient is 1.0
+            if (it->second == 1.0) { return true; }
+            else { return false; }
+        }
+    } else {
+        if ( site >= _simParams->drivingRegionLhs && site <= _simParams->drivingRegionRhs ) { return true; }
+    }
+
+
+    // If no condition is met, then the site is not driven
+    return false;
+}
+ */
 

@@ -138,10 +138,19 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
     int numSpinsChainLhsOfDR = simParams->drivingRegionLhs - numSpinsAbsorbingRegion;
     int numSpinsChainRhsOfDR = numSpinsInChain - simParams->drivingRegionRhs + numSpinsAbsorbingRegion;
 
-    if (simFlags->shouldDriveLHS || simFlags->shouldDriveCentre)
-        numSpinsChainLhsOfDR--;
-    else if (simFlags->shouldDriveRHS) {
-        numSpinsChainRhsOfDR--;
+    // Adjust for the convention used in determining the driving region boundaries
+    if (simFlags->shouldDriveCentre) {
+        if (simParams->drivingRegionWidth % 2 == 0) {
+            // Even driving region width
+            numSpinsChainLhsOfDR += 1; // Correct for the LHS shortening in the even case
+        }
+        // No adjustment needed for the RHS in the even case, or any case for the odd driving region width
+    } else if (simFlags->shouldDriveLHS) {
+        // The LHS driving case initially adds 1 to drivingRegionLhs to avoid the zeroth spin
+        numSpinsChainLhsOfDR -= 1; // Undo the +1 adjustment made for the LHS driving
+    } else if (simFlags->shouldDriveRHS) {
+        // The RHS driving case subtracts 1 from drivingRegionRhs for the zeroth spin addition correction
+        numSpinsChainRhsOfDR += 1; // Undo the -1 adjustment made for the RHS driving
     }
     // std::cout << "numSpinsTotal: " << simParams->systemTotalSpins << " | numSpinsInChain: " << numSpinsInChain << " | numSpinsABC (each): " << simParams->numSpinsInABC << "\n";
     // std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
@@ -187,6 +196,9 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
     std::vector<double> rightDRGradient = RightDRGradient.generate_array();
 
     // std::cout << "leftDRGradient.size(): " << leftDRGradient.size() << " | centreDRPeak.size(): " << centreDRPeak.size() << " | rightDRGradient.size(): " << rightDRGradient.size() << "\n";
+    // PrintVector(leftDRGradient, false);
+    // PrintVector(centreDRPeak, false);
+    // PrintVector(rightDRGradient, false);
 
     gilbertDROnly.insert(gilbertDROnly.end(), leftDRGradient.begin(), leftDRGradient.end());
     gilbertDROnly.insert(gilbertDROnly.end(), centreDRPeak.begin(), centreDRPeak.end());

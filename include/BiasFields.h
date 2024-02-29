@@ -11,6 +11,7 @@
 // C++ Third Party Libraries
 #include <tbb/blocked_range.h>
 #include <tbb/combinable.h>
+#include <tbb/global_control.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
@@ -80,10 +81,12 @@ public:
                                 std::vector<double> &biasFieldXOut, std::vector<double> &biasFieldYOut,
                                 std::vector<double> &biasFieldZOut );
 
-    void calculateOneDimension( const int &currentLayer, const double &currentTime,
-                                const std::vector<double> &mzTermsIn, std::vector<std::atomic<double>> &biasFieldXOut,
-                                std::vector<std::atomic<double>> &biasFieldYOut, std::vector<std::atomic<double>> &biasFieldZOut,
-                                const bool &shouldUseTBB );
+    void
+    calculateOneDimension( const int &currentLayer, const double &currentTime, const std::vector<double> &mzTermsIn,
+                           std::vector<std::atomic<double>> &biasFieldXOut,
+                           std::vector<std::atomic<double>> &biasFieldYOut,
+                           std::vector<std::atomic<double>> &biasFieldZOut, const bool &shouldUseTBB,
+                           bool dmiOnlyUnderDrive );
 
     void calculateOneDimension( const int &currentLayer, const double &currentTime,
                                 const std::vector<double> &mzTermsIn, std::vector<double> &biasFieldXOut,
