@@ -59,8 +59,8 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = true;
-    simFlags->shouldDriveLHS = false;
+    simFlags->shouldDriveCentre = false;
+    simFlags->shouldDriveLHS = true;
     simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
@@ -73,7 +73,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintDiscreteSites = false;
 
     // TESTING ONLY
-    simFlags->hasGradientWithinDrivingRegion = false;
+    simFlags->hasGradientWithinDrivingRegion = true;
 }
 
 void SolversInitialisation::_setSimulationParameters() {
@@ -137,6 +137,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Testing ONLY!
     simParams->numSpinsDRPeak = simParams->drivingRegionWidth;
+    std::cout << simParams->drivingRegionWidth << " | " << simParams->numSpinsDRPeak << " | " << simParams->gilbertDamping << std::endl;
     simParams->numSpinsDRGradient =  (simParams->drivingRegionWidth - simParams->numSpinsDRPeak) / 2;
     simParams->gilbertDRPeak = simParams->gilbertDamping;
 }

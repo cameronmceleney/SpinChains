@@ -628,6 +628,15 @@ void SolversImplementation::RK2Parallel() {
 
     parallelTimer.stop();
 
+    for (int i = 1; i <= simParams->systemTotalSpins; i++) {
+        auto it = simStates->dRGradientMap.find(i);
+        if (it != simStates->dRGradientMap.end()) {
+            // We found this site in the map and in the driving region
+            std::cout << "Site " << i << " has a gradient of " << it->second.first
+                      << " and was accessed " << it->second.second << " times." << std::endl;
+        }
+    }
+
     if ( GV.GetEmailWhenCompleted()) { solverOutputs->CreateMetadata(true); }
 
     if ( !simManager->massProduce ) {

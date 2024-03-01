@@ -137,6 +137,12 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
     int numSpinsChainLhsOfDR = simParams->drivingRegionLhs - numSpinsAbsorbingRegion;
     int numSpinsChainRhsOfDR = numSpinsInChain - simParams->drivingRegionRhs + numSpinsAbsorbingRegion;
 
+    std::cout << "Before adjustment" << std::endl;
+    // std::cout << "numSpinsTotal: " << simParams->systemTotalSpins << " | numSpinsInChain: " << numSpinsInChain << " | numSpinsABC (each): " << simParams->numSpinsInABC << "\n";
+    std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
+    std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
+    std::cout << "Spins in chain: " << simParams->numSpinsInChain << " | total sites: " << simParams->systemTotalSpins << " | abc sites: " << simParams->numSpinsInABC  <<std::endl;
+
     // Adjust for the convention used in determining the driving region boundaries
     if (simFlags->shouldDriveCentre) {
         if (simParams->drivingRegionWidth % 2 == 0) {
@@ -149,13 +155,25 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
         numSpinsChainLhsOfDR -= 1; // Undo the +1 adjustment made for the LHS driving
     } else if (simFlags->shouldDriveRHS) {
         // The RHS driving case subtracts 1 from drivingRegionRhs for the zeroth spin addition correction
-        numSpinsChainRhsOfDR += 1; // Undo the -1 adjustment made for the RHS driving
+        numSpinsChainRhsOfDR -= 1; // Undo the -1 adjustment made for the RHS driving
     }
+    std::cout << "after adjustment" << std::endl;
     // std::cout << "numSpinsTotal: " << simParams->systemTotalSpins << " | numSpinsInChain: " << numSpinsInChain << " | numSpinsABC (each): " << simParams->numSpinsInABC << "\n";
-    // std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
-    // std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
+    std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
+    std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
+    std::cout << "Spins in chain: " << simParams->numSpinsInChain << " | total sites" << simParams->systemTotalSpins << std::endl;
 
     std::vector<double> gilbertMainChain;
+    // Calculate the total number of sites in the driving region
+    int totalDRWidth = simParams->drivingRegionRhs - simParams->drivingRegionLhs + 1;
+    // Calculate expected sizes based on simulation parameters
+    int expectedNumGradientSites = 2 * numSpinsDRGradient; // Times two for both left and right gradients
+    int expectedNumPeakSites = totalDRWidth - expectedNumGradientSites;
+
+    // Check if the sum of gradient (times 2) and peak sites matches the total driving region width
+    if (expectedNumGradientSites + expectedNumPeakSites != totalDRWidth || totalDRWidth != simParams->drivingRegionWidth) {
+        throw std::runtime_error("The number of sites in gradients (times 2) and peak does not sum to the total driving region width.");
+    }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Finds the damping regions that are in the main chain, but not part of the driving region width
@@ -206,6 +224,16 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
     // std::cout << "gilbertDROnly.size(): " << gilbertDROnly.size() << "\n";
     // PrintVector(gilbertDROnly, false);
 
+    // Check if the lengths of the vectors match the expected gradient/peak widths
+    if (leftDRGradient.size() != numSpinsDRGradient || rightDRGradient.size() != numSpinsDRGradient) {
+        throw std::runtime_error("The size of gradient alpha vectors does not match the expected gradient width.");
+    }
+
+    if (centreDRPeak.size() != expectedNumPeakSites) {
+        throw std::runtime_error("The size of the centre peak alpha vector does not match the expected peak width.");
+    }
+
+
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Combine the main chain all together
     gilbertMainChain.insert(gilbertMainChain.end(), outsideDrLeft.begin(), outsideDrLeft.end());
@@ -246,20 +274,58 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
         rightDRGradientSites.push_back(i);
     }
 
+    // Check if the lengths of the vectors match the expected gradient/peak widths
+    if (leftDRGradientSites.size() != numSpinsDRGradient || rightDRGradientSites.size() != numSpinsDRGradient) {
+        throw std::runtime_error("The size of gradient sites vectors does not match the expected gradient width.");
+    }
+
+    if (centreDRPeakSites.size() != expectedNumPeakSites) {
+        throw std::runtime_error("The size of the centre peak sites vector does not match the expected peak width.");
+    }
+
+    // Check if the lengths of the vectors match the expected gradient/peak widths
+    if (leftDRGradientScaled.size() != numSpinsDRGradient || rightDRGradientScaled.size() != numSpinsDRGradient) {
+        throw std::runtime_error("The size of lhs/rhs gradient scaled vectors does not match the expected gradient width.");
+    }
+
+    if (centreDRPeakScaled.size() != expectedNumPeakSites) {
+        throw std::runtime_error("The size of the centre peak scaled vector does not match the expected peak width.");
+    }
+
+
+
     // std::cout << "leftDRGradientSites.size(): " << leftDRGradientSites.size() << " | centreDRPeakSites: " << centreDRPeakSites.size() << " | rightDRGradientSites.size(): " << rightDRGradientSites.size() << "\n";
     // PrintVector(leftDRGradientSites, false);
     // PrintVector(centreDRPeakSites, false);
     // PrintVector(rightDRGradientSites, false);
 
+    // Before populating the map, check if sizes match
+    if (leftDRGradientSites.size() != leftDRGradientScaled.size()) {
+        throw std::runtime_error("Size of leftDRGradientScaled does not match size of leftDRGradientSites");
+    }
+
+    for (int i = simParams->drivingRegionLhs - 4; i < simParams->drivingRegionLhs; i++) {
+        simStates->dRGradientMap[i].first = 0;
+        simStates->dRGradientMap[i].second = 0;
+    }
+
     // Populate the maps
     for (size_t i = 0; i < leftDRGradientSites.size(); ++i) {
-        simStates->dRGradientMap[leftDRGradientSites[i]] = leftDRGradientScaled[i];
+        simStates->dRGradientMap[leftDRGradientSites[i]].first = leftDRGradientScaled[i];
+        simStates->dRGradientMap[leftDRGradientSites[i]].second = 0;
     }
     for (size_t i = 0; i < centreDRPeakSites.size(); ++i) {
-        simStates->dRGradientMap[centreDRPeakSites[i]] = centreDRPeakScaled[i];
+        simStates->dRGradientMap[centreDRPeakSites[i]].first = centreDRPeakScaled[i];
+        simStates->dRGradientMap[centreDRPeakSites[i]].second = 0;
     }
     for (size_t i = 0; i < rightDRGradientSites.size(); ++i) {
-        simStates->dRGradientMap[rightDRGradientSites[i]] = rightDRGradientScaled[i];
+        simStates->dRGradientMap[rightDRGradientSites[i]].first = rightDRGradientScaled[i];
+        simStates->dRGradientMap[rightDRGradientSites[i]].second = 0;
+    }
+
+    for (int i = simParams->drivingRegionRhs + 1; i < simParams->drivingRegionRhs + 5; i++) {
+        simStates->dRGradientMap[i].first = 0;
+        simStates->dRGradientMap[i].second = 0;
     }
 
     // std::cout << "simStates->dRGradientMap.size(): " << simStates->dRGradientMap.size() << "\n";

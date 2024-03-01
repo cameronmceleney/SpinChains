@@ -76,7 +76,7 @@ public:
      */
      std::vector<int> discreteDrivenSites;
 
-     std::map<int, double> dRGradientMap;
+     std::map<int, std::pair<double, int>> dRGradientMap;
 };
 
 #endif //SPINCHAINS_SIMULATIONSTATES_H

@@ -41,11 +41,47 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
             [&](const tbb::blocked_range<int>& range) {
                 for (int site = range.begin(); site < range.end(); site++) {
-                    std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
 
-                    biasFieldXOut[site].fetch_add(tempBiasResults[0]);
-                    biasFieldYOut[site].fetch_add(tempBiasResults[1]);
-                    biasFieldZOut[site].fetch_add(tempBiasResults[2]);
+                    if (!dmiOnlyUnderDrive) {
+                        // Make the NOT condition first as it's likely to be the most common
+                        // Keep this entirely separate from the other conditions while debugging
+                        std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
+
+                        biasFieldXOut[site].fetch_add(tempBiasResults[0]);
+                        biasFieldYOut[site].fetch_add(tempBiasResults[1]);
+                        biasFieldZOut[site].fetch_add(tempBiasResults[2]);
+                    } else if (dmiOnlyUnderDrive) {
+                        double scale_factor = 1.0; // Default scale factor incase undefined later
+                        if (_hasOscillatingZeeman(site)) {
+                            // This site is in the driving region. Every site in the driving region has a value in the map
+                            auto it = _simStates->dRGradientMap.find(site);
+                            if (it != _simStates->dRGradientMap.end()) {
+                                if (it->first < _simParams->drivingRegionLhs || it->first > _simParams->drivingRegionRhs) {
+                                    // These sites should be accessed according to _hasOscillatingZeeman, but they are not (originally) in the map
+                                    it->second.second += 1;
+                                    scale_factor = 1.0;
+                                } else {
+                                    // We found this site in the map and in the driving region
+                                    it->second.second += 1;
+                                    scale_factor = 1.0;
+                                }
+                            } else {
+                                // We didn't find this site in the map, but it's in the driving region. This is an error!
+                                std::cout << "Error: Site " << site << " is in the driving region, but did not have a value in the map." << std::endl;
+                                std::exit(1);
+                            }
+                        } else {
+                            // This site is not in the driving region
+                            scale_factor = 1.0;  // Should be 0.0, but for debugging reasons leave as 1.0 for now
+                        }
+                        std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
+                        biasFieldXOut[site].fetch_add(tempBiasResults[0] * scale_factor);  // Only want to rescale the dynamic drive, which is only along the x-axis
+                        biasFieldYOut[site].fetch_add(tempBiasResults[1]);
+                        biasFieldZOut[site].fetch_add(tempBiasResults[2]);
+                    } else {
+                        std::cout << "Unknown condition: likely missing implementation of new code" << std::endl;
+                        std::exit(0);
+                    }
                 }
         }, tbb::auto_partitioner());
 

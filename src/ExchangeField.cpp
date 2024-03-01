@@ -51,36 +51,48 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                     // Use of 'auto' allows for tertiary operator to be used; equivalent to declaring array and then initialising within an IF/ELSE structure
                     //auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
                     //                                             : std::array<double, 3>{0.0, 0.0, 0.0};
-
                     if (_simFlags->hasDMI) {
-                        double multiplier = 1.0; // Default multiplier
-
+                        // Find the DMI values for the current site
                         if (!dmiOnlyUnderDrive) {
-                            // When DMI applies to the whole system, multiplier remains 1.0
-                            multiplier = 1.0;
+                            // Make the NOT condition first as it's likely to be the most common
+                            // Keep this entirely separate from the other conditions while debugging
+                            std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+
+                            tempExchangeLocal[0] += tempDMILocal[0];
+                            tempExchangeLocal[1] += tempDMILocal[1];
+                            tempExchangeLocal[2] += tempDMILocal[2];
                         } else if (dmiOnlyUnderDrive) {
-                            // DMI only applies under the drive
+                            double scale_factor = 1.0; // Default scale factor incase undefined later
                             if (_hasOscillatingZeeman(site)) {
-                                // This site is under the drive
+                                // This site is in the driving region. Every site in the driving region has a value in the map
                                 auto it = _simStates->dRGradientMap.find(site);
                                 if (it != _simStates->dRGradientMap.end()) {
-                                    // If the site is in the map, then use the associated value as multiplier
-                                    multiplier = it->second;
+                                    if (it->first < _simParams->drivingRegionLhs || it->first > _simParams->drivingRegionRhs) {
+                                        // These sites should be accessed according to _hasOscillatingZeeman, but they are not (originally) in the map
+                                        it->second.second += 1;
+                                        scale_factor = 0.0;
+                                    } else {
+                                        // We found this site in the map and in the driving region
+                                        it->second.second += 1;
+                                        scale_factor = it->second.first;
+                                    }
                                 } else {
-                                    // Site is not in the map but is in the drive, so it must be a peak-drive site
-                                    multiplier = 1.0;
+                                    // We didn't find this site in the map, but it's in the driving region. This is an error!
+                                    std::cout << "Error: Site " << site << " is in the driving region, but did not have a value in the map." << std::endl;
+                                    std::exit(1);
                                 }
                             } else {
-                                // DMI is only under the drive, but this current site is not, so skip calculation
-                                multiplier = 0.0;
+                                // This site is not in the driving region
+                                scale_factor = 0.0;  // Should be 0.0, but for debugging reasons can set as 1.0
                             }
-                        }
-
-                        if (multiplier != 0.0) { // Ensures we don't calculate if multiplier is 0
                             std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
-                            tempExchangeLocal[0] += tempDMILocal[0] * multiplier;
-                            tempExchangeLocal[1] += tempDMILocal[1] * multiplier;
-                            tempExchangeLocal[2] += tempDMILocal[2] * multiplier;
+                            // Rescale all DMI components by the scale factor (even though z component is always zero due to configuration of setup)
+                            tempExchangeLocal[0] += tempDMILocal[0] * scale_factor;
+                            tempExchangeLocal[1] += tempDMILocal[1] * scale_factor;
+                            tempExchangeLocal[2] += tempDMILocal[2] * scale_factor;
+                        } else {
+                            std::cout << "Unknown condition: likely missing implementation of new code" << std::endl;
+                            std::exit(0);
                         }
                     }
 
