@@ -37,7 +37,16 @@ int main() {
     GV.SetFileNameBase("T" + outputFileID);
     sharedSimManager->outputFileID = outputFileID;
 
-    GV.SetFilePath("windows");
+    // OS Detection and setting the file path accordingly
+    #if defined(_WIN32) || defined(_WIN64)
+        GV.SetFilePath("windows");
+    #elif defined(__linux__)
+        GV.SetFilePath("linux");
+    #elif defined(__APPLE__) && defined(__MACH__)
+        GV.SetFilePath("macos");
+    #else
+        GV.SetFilePath("other");
+    #endif
 
     GV.SetNumericalMethod("RK2p");
 

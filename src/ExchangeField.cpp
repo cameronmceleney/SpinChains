@@ -66,6 +66,9 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                                 if (it != _simStates->dRGradientMap.end()) {
                                     // If the site is in the map, then use the associated value as multiplier
                                     multiplier = it->second;
+                                } else {
+                                    // Site is not in the map but is in the drive, so it must be a peak-drive site
+                                    multiplier = 1.0;
                                 }
                             } else {
                                 // DMI is only under the drive, but this current site is not, so skip calculation

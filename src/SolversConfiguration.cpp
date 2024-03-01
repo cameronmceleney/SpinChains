@@ -43,10 +43,9 @@ void SolversConfiguration::configure() {
         simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
     } else {
         if (simFlags->hasGradientWithinDrivingRegion) {
-            _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC,
-                                      simParams->numSpinsDRPeak, simParams->numSpinsDRGradient, simParams->gilbertDamping,
-                                      simParams->gilbertDRPeak,
-                                      simParams->gilbertABCInner, simParams->gilbertABCOuter);
+            _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->numSpinsDRPeak,
+                                      simParams->numSpinsDRGradient, simParams->gilbertDamping,
+                                      simParams->gilbertDRPeak, simParams->gilbertABCInner, simParams->gilbertABCOuter);
         } else {
             _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
                                       simParams->gilbertABCInner, simParams->gilbertABCOuter);

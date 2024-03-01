@@ -207,3 +207,24 @@ double GlobalVariablesClass::GetDMIConstant() {
 void GlobalVariablesClass::SetDMIConstant(double dmiConstant) {
     _dmiConstant = dmiConstant;
 }
+
+std::string GlobalVariablesClass::getUserName() {
+    std::string userName;
+    #if defined(_WIN32) || defined(_WIN64)
+    // On Windows, USERNAME environment variable contains the user's name.
+    char* user = std::getenv("USERNAME");
+    #else
+    // On Unix-like systems including macOS and Linux, USER environment variable contains the user's name.
+    char* user = std::getenv("USER");
+    #endif
+
+    if (user) { // Check if the environment variable was found
+        userName = std::string(user);
+    } else {
+        userName = "Unknown User";
+    }
+
+    std::cout << "Current User: " << userName << std::endl;
+
+    return userName;
+}

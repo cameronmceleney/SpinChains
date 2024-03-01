@@ -9,8 +9,11 @@ project(SpinChains)  # This project's name is not to be confused with (ChainSpin
 
 set(CMAKE_CXX_STANDARD 23)  # No attempt has been made to ensure backwards compatibility from C23
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
+
+if (APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
+endif()
 
 ################################################################
 # if(CMAKE_BUILD_TYPE STREQUAL "Release (MinGW64)")
@@ -37,7 +40,7 @@ if(WIN32 OR WIN64)
     set(FFTW_LIB "${MINGW64_BASE}/lib/libfftw3.a")
 
     # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI version
-    set(TBB_DIR "${MINGW64_BASE}/include")  # Removed appended "/oneapi" from the end of the path
+    set(TBB_DIR "${MINGW64_BASE}/include/oneapi")  # Removed appended "/oneapi" from the end of the path
     set(TBB_LIB "${MINGW64_BASE}/lib/libtbb12.dll.a" "${MINGW64_BASE}/lib/libtbbmalloc.dll.a")
 elseif(APPLE)
     # Default Homebrew installation directories on MacOS

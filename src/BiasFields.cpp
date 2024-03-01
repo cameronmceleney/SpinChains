@@ -41,37 +41,11 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
             [&](const tbb::blocked_range<int>& range) {
                 for (int site = range.begin(); site < range.end(); site++) {
+                    std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
 
-                    double multiplier = 1.0; // Default multiplier
-
-                    if (!dmiOnlyUnderDrive) {
-                        // When DMI applies to the whole system, multiplier remains 1.0
-                        multiplier = 1.0;
-                    } else if (dmiOnlyUnderDrive) {
-                        // DMI only applies under the drive
-                        if (_hasOscillatingZeeman(site)) {
-                            // This site is under the drive
-                            auto it = _simStates->dRGradientMap.find(site);
-                            if (it != _simStates->dRGradientMap.end()) {
-                                // If the site is in the map, then use the associated value as multiplier
-                                multiplier = it->second;
-                            }
-                        } else {
-                            // DMI is only under the drive, but this current site is not, so skip calculation
-                            multiplier = 0.0;
-                        }
-                    }
-
-                    if (multiplier != 0.0) { // Ensures we don't calculate if multiplier is 0
-                        std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
-
-                        tempBiasResults[0] *= tempBiasResults[0];
-
-                        biasFieldXOut[site].fetch_add(tempBiasResults[0]);
-                        biasFieldYOut[site].fetch_add(tempBiasResults[1]);
-                        biasFieldZOut[site].fetch_add(tempBiasResults[2]);
-                    }
-
+                    biasFieldXOut[site].fetch_add(tempBiasResults[0]);
+                    biasFieldYOut[site].fetch_add(tempBiasResults[1]);
+                    biasFieldZOut[site].fetch_add(tempBiasResults[2]);
                 }
         }, tbb::auto_partitioner());
 

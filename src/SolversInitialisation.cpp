@@ -73,7 +73,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintDiscreteSites = false;
 
     // TESTING ONLY
-    simFlags->hasGradientWithinDrivingRegion = true;
+    simFlags->hasGradientWithinDrivingRegion = false;
 }
 
 void SolversInitialisation::_setSimulationParameters() {

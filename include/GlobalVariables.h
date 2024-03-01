@@ -4,6 +4,7 @@
 // C++ Standard Libraries
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <optional>  // Use to create sentinels for booleans
@@ -93,8 +94,9 @@ public:
     void                SetNumericalMethod(std::string chosenNumericalMethod);
 
     double GetDMIConstant();
-
     void SetDMIConstant( double dmiConstant );
+
+    std::string getUserName();
 
 };
 
