@@ -42,16 +42,21 @@ void SolversConfiguration::configure() {
         simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
         simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
     } else {
-        if (simFlags->hasGradientWithinDrivingRegion) {
+        if (simFlags->hasGradientRegionForOscillatingZeeman) {
             _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->numSpinsDRPeak,
                                       simParams->numSpinsDRGradient, simParams->gilbertDamping,
-                                      simParams->gilbertDRPeak, simParams->gilbertABCInner, simParams->gilbertABCOuter);
+                                      simParams->dampingGradientPeak, simParams->gilbertABCInner, simParams->gilbertABCOuter);
         } else {
-            _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-                                      simParams->gilbertABCInner, simParams->gilbertABCOuter);
+            if (simFlags->useGenerateABCUpdated)
+                _generateAbsorbingRegionsUpdated(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
+                                                 simParams->gilbertABCInner, simParams->gilbertABCOuter);
+            else
+                _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
+                                          simParams->gilbertABCInner, simParams->gilbertABCOuter);
         }
 
         _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
+        _generateMaps();
     }
 
     simManager->hasFirstRunOccurred = true;
@@ -116,6 +121,86 @@ void SolversConfiguration::_reconfigureSystem() {
 
     resetInitMagneticMoments(_mxInit, _myInit, _mzInit);
     _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
+}
+
+void SolversConfiguration::_generateMaps() {
+    if (simFlags->hasGradientRegionForOscillatingZeeman) {
+        _generateMapOfScaling("Driving Region", simStates->dRGradientMap, simParams->drivingRegionLhs,
+                              simParams->drivingRegionRhs, simParams->drivingRegionWidth,
+                              simParams->numSpinsDRGradient, simParams->numSpinsDRPeak);
+    }
+    if ((simFlags->shouldDmiGradientMirrorOscillatingZeeman || simFlags->shouldDampingGradientMirrorOscillatingZeeman)
+    && simStates->dRGradientMap.empty()) {
+        throw std::runtime_error("The gradient map is empty, but other simulation flags indicate that it should not be.");
+    }
+
+    if (simFlags->shouldDmiGradientMirrorOscillatingZeeman) {
+        simParams->dmiRegionLhs = simParams->drivingRegionLhs;
+        simParams->dmiRegionRhs = simParams->drivingRegionRhs;
+        simParams->numSpinsDmiPeak = simParams->numSpinsDRPeak;
+        simParams->numSpinsDmiGradient = simParams->numSpinsDRGradient;
+        simParams->numSpinsDmiWidth = simParams->drivingRegionWidth;
+        simStates->dmiGradientMap = simStates->dRGradientMap;
+    }
+    else if ( simFlags->hasGradientRegionForDmi ) {
+        _generateMapOfScaling("DMI Region", simStates->dmiGradientMap, simParams->dmiRegionLhs,
+                              simParams->dmiRegionRhs, simParams->numSpinsDmiWidth,
+                              simParams->numSpinsDmiGradient, simParams->numSpinsDmiPeak);
+    }
+
+    if (simFlags->shouldDampingGradientMirrorOscillatingZeeman) {
+        simParams->dampingRegionLhs = simParams->drivingRegionLhs;
+        simParams->dampingRegionRhs = simParams->drivingRegionRhs;
+        simParams->numSpinsDampingPeak = simParams->numSpinsDRPeak;
+        simParams->numSpinsDampingGradient = simParams->numSpinsDRGradient;
+        simParams->numSpinsDampingWidth = simParams->drivingRegionWidth;
+        simStates->dampingGradientMap = simStates->dRGradientMap;
+    }
+    else if ( simFlags->hasGradientRegionForDamping ) {
+        _generateMapOfScaling("Damping Region", simStates->dampingGradientMap, simParams->dampingRegionLhs,
+                              simParams->dampingRegionRhs, simParams->numSpinsDampingWidth, simParams->numSpinsDampingGradient,
+                              simParams->numSpinsDampingPeak, simParams->gilbertDamping, simParams->dampingGradientPeak);
+    }
+}
+
+void
+SolversConfiguration::_generateAbsorbingRegionsUpdated( int numSpinsInChain, int numSpinsAbsorbingRegion,
+                                                        double gilbertSpinChain,
+                                                        double gilbertAbsorbingRegionInner,
+                                                        double gilbertAbsorbingRegionOuter ) {
+
+    // Check for invalid input.
+    if ( numSpinsAbsorbingRegion < 0 ) {
+        std::cout << "numSpinsAbsorbingRegion is less than zero!";
+        exit(1);
+    }
+
+    std::vector<double> gilbertMainChain(numSpinsInChain, gilbertSpinChain);
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // These damping regions are part of my Periodic Boundary Conditions (PBCs) as Absorbing Boundary Conditions (ABCs).
+    LinspaceClass DampingRegionLeft;
+    LinspaceClass DampingRegionRight;
+
+    DampingRegionLeft.set_values(gilbertAbsorbingRegionOuter, gilbertAbsorbingRegionInner, numSpinsAbsorbingRegion,
+                                 true, false, false);
+    DampingRegionRight.set_values(gilbertAbsorbingRegionInner, gilbertAbsorbingRegionOuter, numSpinsAbsorbingRegion,
+                                  true, false, false);
+    std::vector<double> dampingRegionLHS = DampingRegionLeft.generate_array();
+    std::vector<double> dampingRegionRHS = DampingRegionRight.generate_array();
+
+    // std::cout << "dampingRegionLHS.size(): " << dampingRegionLHS.size() << " | dampingRegionRHS.size(): " << dampingRegionRHS.size() << "\n";
+    // PrintVector(dampingRegionLHS, false);
+    // PrintVector(dampingRegionRHS, false);
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Combine all damped regions to form vector which describes the entire spinchain.
+    simStates->gilbertVector.insert(simStates->gilbertVector.end(), dampingRegionLHS.begin(), dampingRegionLHS.end());
+    simStates->gilbertVector.insert(simStates->gilbertVector.end(), gilbertMainChain.begin(), gilbertMainChain.end());
+    simStates->gilbertVector.insert(simStates->gilbertVector.end(), dampingRegionRHS.begin(), dampingRegionRHS.end());
+    simStates->gilbertVector.push_back(0);
+
+    // std::cout << "simStates->gilbertVector.size(): " << simStates->gilbertVector.size() << "\n";
+    // PrintVector(simStates->gilbertVector, true);
 }
 
 void
@@ -350,6 +435,96 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
     // PrintVector(simStates->gilbertVector, true);
 }
 
+void SolversConfiguration::_generateMapOfScaling( const std::string &regionName,
+                                                  std::map<int, std::pair<double, int>> &assignedMap,
+                                                  const int &regionLhsSite, const int &regionRhsSite,
+                                                  const int &regionNumSites, const int &numSitesGradientPartition,
+                                                  const int &numSitesPeakPartition, const double &scalingOuter,
+                                                  const double &scalingInner ) {
+
+    if (regionLhsSite < 0 || regionRhsSite < 0 || regionNumSites < 0 || numSitesGradientPartition < 0 || numSitesPeakPartition < 0) {
+        throw std::runtime_error("One of the input parameters is less than zero while generating a map for " + regionName);
+    }
+
+    if (numSitesGradientPartition * 2 + numSitesPeakPartition != regionNumSites) {
+        throw std::runtime_error("The sum of the gradient and peak sites does not match the total region width of " + regionName);
+    }
+
+    // Generates the map of the DMI vector
+    LinspaceClass LeftGradientScaled;
+    LinspaceClass CentreScaled;
+    LinspaceClass RightGradientScaled;
+
+    LeftGradientScaled.set_values(scalingOuter, scalingInner, numSitesGradientPartition, true, false, true);
+    CentreScaled.set_values(scalingInner, scalingInner, numSitesPeakPartition, true, false, false);
+    RightGradientScaled.set_values(scalingInner, scalingOuter, numSitesGradientPartition, true, false, true);
+
+    std::vector<double> leftGradientScaled = LeftGradientScaled.generate_array();
+    std::vector<double> centreScaled = CentreScaled.generate_array();
+    std::vector<double> rightGradientScaled = RightGradientScaled.generate_array();
+    std::vector<int> leftGradientSiteIndexes;
+    std::vector<int> centreSiteIndexes;
+    std::vector<int> rightGradientSiteIndexes;
+
+    // std::cout << "leftDRGradientScaled.size(): " << leftGradientScaled.size() << " | centreDRPeakScaled: " << centreScaled.size() << " | rightDRGradientScaled.size(): " << rightGradientScaled.size() << "\n";
+    // PrintVector(leftGradientScaled, false);
+    // PrintVector(centreScaled, false);
+    // PrintVector(rightGradientScaled, false);
+
+    int leftGradientLhs = regionLhsSite, leftGradientRhs = regionLhsSite + numSitesGradientPartition;
+    int centreLhs = leftGradientRhs, centreRhs = regionRhsSite - numSitesGradientPartition;
+    int rightGradientLhs = centreRhs + 1, rightGradientRhs = regionRhsSite;
+
+    for ( int i = leftGradientLhs; i < leftGradientRhs; i++ ) {
+        leftGradientSiteIndexes.push_back(i);
+    }
+    for ( int i = centreLhs; i <= centreRhs; i++ ) {
+        centreSiteIndexes.push_back(i);
+    }
+    for ( int i = rightGradientLhs; i <= rightGradientRhs; i++ ) {
+        rightGradientSiteIndexes.push_back(i);
+    }
+
+    // Check if the lengths of the vectors match the expected gradient/peak widths
+    if (leftGradientSiteIndexes.size() != numSitesGradientPartition || rightGradientSiteIndexes.size() != numSitesGradientPartition) {
+        throw std::runtime_error("The size of gradient sites vectors does not match the expected gradient width.");
+    }
+
+    if ( centreSiteIndexes.size() != numSitesPeakPartition) {
+        throw std::runtime_error("The size of the centre peak sites vector does not match the expected peak width.");
+    }
+
+    // std::cout << "leftGradientSiteIndexes: " << leftGradientSiteIndexes.size() << " | centreDRPeakSites: " << centreSiteIndexes.size() << " | rightGradientSiteIndexes: " << rightGradientSiteIndexes.size() << "\n";
+    // PrintVector(leftGradientSiteIndexes, false);
+    // PrintVector(centreSiteIndexes, false);
+    // PrintVector(rightGradientSiteIndexes, false);
+
+    // Before populating the map, check if sizes match
+    if (leftGradientSiteIndexes.size() != leftGradientScaled.size())
+        throw std::runtime_error("Size of leftGradientSiteIndexes does not match size of leftGradientScaled");
+    if (centreSiteIndexes.size() != centreScaled.size())
+        throw std::runtime_error("Size of centreSiteIndexes does not match size of centreScaled");
+    if (rightGradientSiteIndexes.size() != rightGradientScaled.size())
+        throw std::runtime_error("Size of rightGradientSiteIndexes does not match size of rightGradientScaled");
+
+
+    // Populate the maps
+    for (size_t i = 0; i < leftGradientSiteIndexes.size(); i++) {
+        assignedMap[leftGradientSiteIndexes[i]].first = leftGradientScaled[i];
+        assignedMap[leftGradientSiteIndexes[i]].second = 0;
+    }
+    for (size_t i = 0; i < centreSiteIndexes.size(); i++) {
+        assignedMap[centreSiteIndexes[i]].first = centreScaled[i];
+        assignedMap[centreSiteIndexes[i]].second = 0;
+    }
+    for (size_t i = 0; i < rightGradientSiteIndexes.size(); i++) {
+        assignedMap[rightGradientSiteIndexes[i]].first = rightGradientScaled[i];
+        assignedMap[rightGradientSiteIndexes[i]].second = 0;
+    }
+
+    // std::cout << "assignedMap.size(): " << assignedMap.size() << "\n";
+    // PrintVector(assignedMap, false);
+}
 std::vector<double> SolversConfiguration::_generateDampingForSubset( int numSitesInSubset, int numSitesInSubsetCentre,
                                                                      int numSpinsInSubsetLHS, int numSpinsInSubsetRHS,
                                                                      double gilbertSubsetCentre,

@@ -10,7 +10,7 @@ SolversInitialisation::SolversInitialisation(std::shared_ptr<SimulationManager> 
                                              std::shared_ptr<SimulationStates> sharedSimStates,
                                              std::shared_ptr<SimulationFlags> sharedSimFlags)
 
-    : SolversSuperClass(std::move(sharedSimManager), std::move(sharedSimParams), std::move(sharedSimStates), std::move(sharedSimFlags)) {
+    : SolversSuperClass(std::move(sharedSimManager), std::move(sharedSimParams), std::move(sharedSimStates),  std::move(sharedSimFlags)) {
 }
 
 void SolversInitialisation::Initialise() {
@@ -73,7 +73,16 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintDiscreteSites = false;
 
     // TESTING ONLY
-    simFlags->hasGradientWithinDrivingRegion = false;
+    simFlags->hasGradientRegionForOscillatingZeeman = false;
+    simFlags->hasGradientRegionForDmi = false;
+    simFlags->hasGradientRegionForDamping = false;
+
+    simFlags->shouldDmiGradientMirrorOscillatingZeeman = false;
+    simFlags->shouldDampingGradientMirrorOscillatingZeeman = false;
+
+    simFlags->shouldRestrictDmiToWithinGradientRegion = false;
+
+    simFlags->useGenerateABCUpdated = true;
 }
 
 void SolversInitialisation::_setSimulationParameters() {
@@ -95,7 +104,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Damping Factors
     simParams->gilbertDamping = 1e-2;
-    simParams->gilbertABCInner = simParams->gilbertDamping;
+    simParams->gilbertABCInner = 1e-2;
     simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
@@ -137,9 +146,21 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Testing ONLY!
     simParams->numSpinsDRPeak = simParams->drivingRegionWidth;
-    //std::cout << simParams->drivingRegionWidth << " | " << simParams->numSpinsDRPeak << " | " << simParams->gilbertDamping << std::endl;
     simParams->numSpinsDRGradient =  (simParams->drivingRegionWidth - simParams->numSpinsDRPeak) / 2;
-    simParams->gilbertDRPeak = simParams->gilbertDamping;
+
+    simParams->dmiRegionLhs = simParams->drivingRegionLhs - 200;
+    simParams->dmiRegionRhs = simParams->drivingRegionRhs + 200;
+    simParams->numSpinsDmiPeak = simParams->numSpinsDRPeak;
+    simParams->numSpinsDmiWidth = simParams->drivingRegionWidth + 400; // This should be automatically calculated
+    simParams->numSpinsDmiGradient = (simParams->numSpinsDmiWidth - simParams->numSpinsDRPeak) / 2;
+
+    simParams->dampingRegionLhs = simParams->dmiRegionLhs;
+    simParams->dampingRegionRhs = simParams->dmiRegionRhs;
+    simParams->dampingGradientPeak = 1e-2;
+    simParams->numSpinsDampingPeak = simParams->numSpinsDmiPeak;
+    simParams->numSpinsDampingWidth = simParams->numSpinsDmiWidth; // This should be automatically calculated
+    simParams->numSpinsDampingGradient = simParams->numSpinsDmiGradient;
+
 }
 
 void SolversInitialisation::_generateRemainingParameters() {

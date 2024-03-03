@@ -162,12 +162,13 @@ void SolversImplementation::SolveRK2Classic() {
                                                                 simStates->mz0[spinRHS], dipoleZ, demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double localGilbertFactor = llg._checkIfDampingMapExists(site);
             double mxK1 = llg.MagneticMomentX(site, simStates->mx0[site], simStates->my0[site], simStates->mz0[site],
-                                              hxK0, hyK0, hzK0);
+                                              hxK0, hyK0, hzK0, localGilbertFactor);
             double myK1 = llg.MagneticMomentY(site, simStates->mx0[site], simStates->my0[site], simStates->mz0[site],
-                                              hxK0, hyK0, hzK0);
+                                              hxK0, hyK0, hzK0, localGilbertFactor);
             double mzK1 = llg.MagneticMomentZ(site, simStates->mx0[site], simStates->my0[site], simStates->mz0[site],
-                                              hxK0, hyK0, hzK0);
+                                              hxK0, hyK0, hzK0, localGilbertFactor);
 
             // Find (m0 + k1/2) for each site, which is used in the next stage.
             mx1[site] = simStates->mx0[site] + simParams->stepsizeHalf * mxK1;
@@ -236,9 +237,10 @@ void SolversImplementation::SolveRK2Classic() {
                                                                 demagZ[site]);
 
             // RK2 K-value calculations for the magnetic moment, coded as symbol 'm', components of the target site
-            double mxK2 = llg.MagneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
-            double myK2 = llg.MagneticMomentY(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
-            double mzK2 = llg.MagneticMomentZ(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1);
+            double localGilbertFactor = llg._checkIfDampingMapExists(site);
+            double mxK2 = llg.MagneticMomentX(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1, localGilbertFactor);
+            double myK2 = llg.MagneticMomentY(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1, localGilbertFactor);
+            double mzK2 = llg.MagneticMomentZ(site, mx1[site], my1[site], mz1[site], hxK1, hyK1, hzK1, localGilbertFactor);
 
             mx2[site] = simStates->mx0[site] + simParams->stepsize * mxK2;
             my2[site] = simStates->my0[site] + simParams->stepsize * myK2;
@@ -827,12 +829,13 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                                                               mzIn[siteRHSLocal], dipoleLocal.z, demagLocal.z);
 
             // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+            double localGilbertFactor = llg._checkIfDampingMapExists(site);
             mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
-                                            hkLocal.x, hkLocal.y, hkLocal.z);
+                                            hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
             mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
-                                            hkLocal.x, hkLocal.y, hkLocal.z);
+                                            hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
             mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
-                                            hkLocal.x, hkLocal.y, hkLocal.z);
+                                            hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
 
 
             mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
@@ -994,12 +997,13 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
                               double hkLocalZ = effectiveFieldZ[site];
 
                               // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                              double localGilbertFactor = llg._checkIfDampingMapExists(site);
                               double mkLocalX = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site], hkLocalX,
-                                                                    hkLocalY, hkLocalZ);
+                                                                    hkLocalY, hkLocalZ, localGilbertFactor);
                               double mkLocalY = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site], hkLocalX,
-                                                                    hkLocalY, hkLocalZ);
+                                                                    hkLocalY, hkLocalZ, localGilbertFactor);
                               double mkLocalZ = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site], hkLocalX,
-                                                                    hkLocalY, hkLocalZ);
+                                                                    hkLocalY, hkLocalZ, localGilbertFactor);
 
                               mxOut[site] = simStates->mx0[site] + stepsize * mkLocalX;
                               myOut[site] = simStates->my0[site] + stepsize * mkLocalY;
@@ -1041,9 +1045,9 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
     std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
 
     exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                        effectiveFieldZAtomic, useParallel, simFlags->hasGradientWithinDrivingRegion);
+                                        effectiveFieldZAtomic, useParallel, simFlags->hasGradientRegionForOscillatingZeeman);
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                    effectiveFieldZAtomic, useParallel, simFlags->hasGradientWithinDrivingRegion);
+                                    effectiveFieldZAtomic, useParallel, simFlags->hasGradientRegionForOscillatingZeeman);
 
     _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
     _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
@@ -1085,12 +1089,13 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
                               hkLocal.z = effectiveFieldZ[site];
 
                               // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                              double localGilbertFactor = llg._checkIfDampingMapExists(site);
                               mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
-                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                                                              hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
                               mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
-                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                                                              hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
                               mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
-                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                                                              hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
 
                               mxOut[site] = simStates->mx0[site] + stepsize * mkLocal.x;
                               myOut[site] = simStates->my0[site] + stepsize * mkLocal.y;
@@ -1169,12 +1174,13 @@ SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &
                               hkLocal.z = effectiveFieldZ[site];
 
                               // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
+                              double localGilbertFactor = llg._checkIfDampingMapExists(site);
                               mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
-                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                                                              hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
                               mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
-                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                                                              hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
                               mkLocal.z = llg.MagneticMomentZ(site, mxIn[site], myIn[site], mzIn[site],
-                                                              hkLocal.x, hkLocal.y, hkLocal.z);
+                                                              hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
 
                               if ( rkStage == "2" or rkStage == "3" ) {
                                   mxk[site] += 2 * mkLocal.x;

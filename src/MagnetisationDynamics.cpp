@@ -11,16 +11,35 @@ MagnetisationDynamics::MagnetisationDynamics(SimulationParameters* sharedSimPara
                                    
    : _simParams(sharedSimParams), _simStates(sharedSimStates), _simFlags(sharedSimFlags) {}
 
+double MagnetisationDynamics::_checkIfDampingMapExists(const int& site) {
+    // Function to check if the damping map exists
 
-double MagnetisationDynamics::MagneticMomentX(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
-                                                const double& hxMID, const double& hyMID, const double& hzMID) {
+    if ( !_simFlags->hasGradientRegionForDamping ) {
+        return _simStates->gilbertVector[site];
+    }
+    else {
+        // Has a gradient map requested
+        auto it = _simStates->dRGradientMap.find(site);
+        if (it != _simStates->dRGradientMap.end()) {
+            return it->second.first;  // Found the site in the map
+        }
+        else {
+            return _simStates->gilbertVector[site];  // Site not found in the map
+        }
+    }
+}
+
+double
+MagnetisationDynamics::MagneticMomentX( const int &site, const double &mxMID, const double &myMID, const double &mzMID,
+                                        const double &hxMID, const double &hyMID, const double &hzMID,
+                                        const double &gilbertFactor ) {
 
     double mx;
 
     if ( _simFlags->shouldUseLLG ) {
         // The magnetic moment components' coupled equations (obtained from magDynamics equation) with the parameters for the first stage of RK2.
-        mx = _simParams->gyroMagConst * (- (_simStates->gilbertVector[site] * hyMID * mxMID * myMID) + hyMID * mzMID - hzMID * (myMID
-                + _simStates->gilbertVector[site] * mxMID * mzMID) + _simStates->gilbertVector[site] * hxMID * (pow(myMID,2) + pow(mzMID,2)));
+        mx = _simParams->gyroMagConst * (- (gilbertFactor * hyMID * mxMID * myMID) + hyMID * mzMID - hzMID * (myMID
+                + gilbertFactor * mxMID * mzMID) + gilbertFactor * hxMID * (pow(myMID,2) + pow(mzMID,2)));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
         mx = -1.0 * _simParams->gyroMagConst * (myMID * hzMID - mzMID * hyMID);
@@ -28,14 +47,16 @@ double MagnetisationDynamics::MagneticMomentX(const int& site, const double& mxM
 
     return mx;
 }
-double MagnetisationDynamics::MagneticMomentY(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
-                                                const double& hxMID, const double& hyMID, const double& hzMID) {
+double
+MagnetisationDynamics::MagneticMomentY( const int &site, const double &mxMID, const double &myMID, const double &mzMID,
+                                        const double &hxMID, const double &hyMID, const double &hzMID,
+                                        const double &gilbertFactor ) {
 
     double my;
 
     if ( _simFlags->shouldUseLLG ) {
         // The magnetic moment components' coupled equations (obtained from magDynamics equation) with the parameters for the first stage of RK2.
-        my = _simParams->gyroMagConst * (-(hxMID * mzMID) + hzMID * (mxMID - _simStates->gilbertVector[site] * myMID * mzMID) + _simStates->gilbertVector[site] * (hyMID * pow(mxMID,2) - hxMID * mxMID * myMID + hyMID * pow(mzMID,2)));
+        my = _simParams->gyroMagConst * (-(hxMID * mzMID) + hzMID * (mxMID - gilbertFactor * myMID * mzMID) + gilbertFactor * (hyMID * pow(mxMID,2) - hxMID * mxMID * myMID + hyMID * pow(mzMID,2)));
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
         my = _simParams->gyroMagConst * (mxMID * hzMID - mzMID * hxMID);
@@ -43,14 +64,16 @@ double MagnetisationDynamics::MagneticMomentY(const int& site, const double& mxM
 
     return my;
 }
-double MagnetisationDynamics::MagneticMomentZ(const int& site, const double& mxMID, const double& myMID, const double& mzMID,
-                                                const double& hxMID, const double& hyMID, const double& hzMID) {
+double
+MagnetisationDynamics::MagneticMomentZ( const int &site, const double &mxMID, const double &myMID, const double &mzMID,
+                                        const double &hxMID, const double &hyMID, const double &hzMID,
+                                        const double &gilbertFactor ) {
 
     double mz;
 
     if ( _simFlags->shouldUseLLG ) {
         // The magnetic moment components' coupled equations (obtained from magDynamics equation) with the parameters for the first stage of RK2.
-        mz = _simParams->gyroMagConst * (hxMID * myMID + _simStates->gilbertVector[site] * hzMID * (pow(mxMID,2) + pow(myMID,2)) - _simStates->gilbertVector[site]*hxMID*mxMID*mzMID - hyMID * (mxMID + _simStates->gilbertVector[site] * myMID * mzMID));
+        mz = _simParams->gyroMagConst * (hxMID * myMID + gilbertFactor * hzMID * (pow(mxMID,2) + pow(myMID,2)) - gilbertFactor*hxMID*mxMID*mzMID - hyMID * (mxMID + gilbertFactor * myMID * mzMID));
 
     } else {
         // The magnetic moment components' coupled equations (obtained from the torque equation) with the parameters for the first stage of RK2.
@@ -112,11 +135,12 @@ double MagnetisationDynamics::GenerateGaussianNoise(const double &mean, const do
     std::normal_distribution<double> distribution(mean, stddev);
     return distribution(generator);
 }
-std::vector<double> MagnetisationDynamics::StochasticTerm(const int& site, const double &timeStep) {
+std::vector<double>
+MagnetisationDynamics::StochasticTerm( const int &site, const double &timeStep, const double &gilbertFactor ) {
     // Function to compute the stochastic term
 
     // Compute the standard deviation for the Gaussian noise
-    double stddev = std::sqrt(2.0 * _simStates->gilbertVector[site] * SimulationParameters::BOLTZMANN_CONSTANT * _simParams->ambientTemperature / (_simParams->gyroMagConst * _simParams->satMag * timeStep));
+    double stddev = std::sqrt(2.0 * gilbertFactor * SimulationParameters::BOLTZMANN_CONSTANT * _simParams->ambientTemperature / (_simParams->gyroMagConst * _simParams->satMag * timeStep));
 
     // Generate Gaussian noise for each direction
     double xi_x = GenerateGaussianNoise(0.0, stddev);
@@ -125,9 +149,10 @@ std::vector<double> MagnetisationDynamics::StochasticTerm(const int& site, const
 
     return {xi_x, xi_y, xi_z};
 }
-std::vector<double> MagnetisationDynamics::ComputeStochasticTerm(const int& site, const double &timeStep) {
+std::vector<double>
+MagnetisationDynamics::ComputeStochasticTerm( const int &site, const double &timeStep, const double &gilbertFactor ) {
     // Function to compute the stochastic term
-    std::vector<double> noise = StochasticTerm(site, timeStep);
+    std::vector<double> noise = StochasticTerm(site, timeStep, gilbertFactor);
     std::vector<double> stochasticField = {noise[0], noise[1], noise[2]};
     return stochasticField;
 }

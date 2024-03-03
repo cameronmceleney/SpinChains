@@ -47,7 +47,13 @@ public:
     bool                resetSimState = false;
     bool                hasSingleExchangeRegion = false;
 
-    bool                hasGradientWithinDrivingRegion;
+    bool                hasGradientRegionForOscillatingZeeman;
+    bool                hasGradientRegionForDmi;
+    bool                hasGradientRegionForDamping;
+    bool                shouldDmiGradientMirrorOscillatingZeeman;
+    bool                shouldDampingGradientMirrorOscillatingZeeman;
+    bool                shouldRestrictDmiToWithinGradientRegion;
+    bool                useGenerateABCUpdated;
 };
 
 #endif //SPINCHAINS_SIMULATIONFLAGS_H

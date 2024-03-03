@@ -41,50 +41,30 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
             [&](const tbb::blocked_range<int>& range) {
                 for (int site = range.begin(); site < range.end(); site++) {
+                    std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
+                    double scalingFactor;
 
-                    if (!dmiOnlyUnderDrive) {
-                        // Make the NOT condition first as it's likely to be the most common
-                        // Keep this entirely separate from the other conditions while debugging
-                        std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
-
-                        biasFieldXOut[site].fetch_add(tempBiasResults[0]);
-                        biasFieldYOut[site].fetch_add(tempBiasResults[1]);
-                        biasFieldZOut[site].fetch_add(tempBiasResults[2]);
-                    } else if (dmiOnlyUnderDrive) {
-                        double scale_factor = 1.0; // Default scale factor incase undefined later
-                        if (_hasOscillatingZeeman(site)) {
-                            // This site is in the driving region. Every site in the driving region has a value in the map
-                            auto it = _simStates->dRGradientMap.find(site);
-                            if (it != _simStates->dRGradientMap.end()) {
-                                it->second.second++;
-                                if (it->first < _simParams->drivingRegionLhs || it->first > _simParams->drivingRegionRhs) {
-                                    // These sites should be accessed according to _hasOscillatingZeeman, but they are not (originally) in the map
-                                    scale_factor = 0.0;
-                                    std::exit(1);
-                                } else {
-                                    // We found this site in the map and in the driving region
-                                    if (it->second.first < 1)
-                                        scale_factor = 0.0;  // A gradient site; should not be driven
-                                    else
-                                        scale_factor = it->second.first;  // A peak site; should be driven
-                                }
-                            } else {
-                                // We didn't find this site in the map, but it's in the driving region. This is an error!
-                                std::cout << "Error: Site " << site << " is in the driving region, but did not have a value in the map." << std::endl;
-                                std::exit(1);
-                            }
+                    if (_simFlags->hasGradientRegionForOscillatingZeeman) {
+                        // Use gradient map for bias fields within the driving region (gradient and peak sites)
+                        auto it = _simStates->dRGradientMap.find(site);
+                        if ( it != _simStates->dRGradientMap.end()) {
+                            it->second.second++;
+                            scalingFactor = it->second.first;
                         } else {
-                            // This site is not in the driving region
-                            scale_factor = 0.0;  // Should be 0.0, but for debugging reasons leave as 1.0 for now
+                            // We didn't find this site in the map, but it's in the driving region. This is an error!
+                            std::cout << "Error: Site " << site
+                                      << " is in the driving region, but did not have a value in the map." << std::endl;
+                            std::exit(1);
                         }
-                        std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
-                        biasFieldXOut[site].fetch_add(tempBiasResults[0] * scale_factor);  // Only want to rescale the dynamic drive, which is only along the x-axis
-                        biasFieldYOut[site].fetch_add(tempBiasResults[1]);
-                        biasFieldZOut[site].fetch_add(tempBiasResults[2]);
                     } else {
-                        std::cout << "Unknown condition: likely missing implementation of new code" << std::endl;
-                        std::exit(0);
+                        // Use the default scaling factor; no changes made.
+                        scalingFactor = 1.0;
                     }
+                    // Only change the x-component of the bias field as this is the only component that will be driven dynamically
+                    biasFieldXOut[site].fetch_add(tempBiasResults[0] * scalingFactor);
+                    biasFieldYOut[site].fetch_add(tempBiasResults[1]);
+                    biasFieldZOut[site].fetch_add(tempBiasResults[2]);
+
                 }
         }, tbb::auto_partitioner());
 
@@ -170,7 +150,8 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
             // Currently assumes that the static field is uniform across z-axis
             biasFieldTerms[_simFlags->preferredDirection] = _simParams->staticZeemanStrength;
         }
-    } else if ( !_simFlags->isFerromagnetic ) {
+    }
+    else {
         if ( _hasOscillatingZeeman(currentSite)) {
             // Currently assumes that the oscillating field will only be applied along x-axis
             if ( _simFlags->shouldDriveAllLayers || currentLayer == 0 )
@@ -182,7 +163,7 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
         if ( _simFlags->hasStaticZeeman && _simFlags->preferredDirection == 2 ) {
             // Currently assumes that the static field is uniform across z-axis
             biasFieldTerms[_simFlags->preferredDirection] =
-                    _simParams->staticZeemanStrength;
+                    _simParams->staticZeemanStrength - 1 + 1;
         }
     }
 
@@ -224,13 +205,14 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
             // hz terms
             hzLocal = GV.GetStaticBiasField();
 
-        } else if ( !_simFlags->isFerromagnetic ) {
+        }
+        else  {
             // hx terms
             if ( _hasOscillatingZeeman(currentSite)) {
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
                 if ( _simFlags->isOscillatingZeemanStatic )
                     hxLocal = _simParams->oscillatingZeemanStrength;
-                else if ( !_simFlags->isOscillatingZeemanStatic )
+                else
                     hxLocal = _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
             }
 
@@ -241,7 +223,7 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
             if ( mzTermAtSite > 0 )
                 hzLocal = GV.GetStaticBiasField();
             else if ( mzTermAtSite < 0 )
-                hzLocal = GV.GetStaticBiasField();
+                hzLocal = GV.GetStaticBiasField() -1 + 1;
         }
 
         return {hxLocal, hyLocal, hzLocal};
@@ -269,7 +251,7 @@ bool BiasFields::_hasOscillatingZeeman( const int &site ) {
             if ( site == discreteSite ) { return true; }
     }
 
-    if (_simFlags->hasGradientWithinDrivingRegion) {
+    if (_simFlags->hasGradientRegionForOscillatingZeeman) {
         auto it = _simStates->dRGradientMap.find(site);
         if (it != _simStates->dRGradientMap.end()) {
             // If the site is driven, then the gradient is 1.0

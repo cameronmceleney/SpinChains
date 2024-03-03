@@ -37,7 +37,7 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                                            std::vector<std::atomic<double>> &exchangeXOut,
                                            std::vector<std::atomic<double>> &exchangeYOut,
                                            std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB,
-                                           const bool &dmiOnlyUnderDrive ) {
+                                           const bool &gradientWithinDrivingRegion ) {
     // This function is used for parallel calculations. Useful in large systems or when H_ex is complex
 
 
@@ -52,48 +52,25 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                     //auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
                     //                                             : std::array<double, 3>{0.0, 0.0, 0.0};
                     if (_simFlags->hasDMI) {
-                        // Find the DMI values for the current site
-                        if (!dmiOnlyUnderDrive) {
-                            // Make the NOT condition first as it's likely to be the most common
-                            // Keep this entirely separate from the other conditions while debugging
-                            std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                        double scalingFactor;
+                        std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
 
-                            tempExchangeLocal[0] += tempDMILocal[0];
-                            tempExchangeLocal[1] += tempDMILocal[1];
-                            tempExchangeLocal[2] += tempDMILocal[2];
-                        } else if (dmiOnlyUnderDrive) {
-                            double scale_factor = 0.0; // Default scale factor incase undefined later
-                            if (_hasOscillatingZeeman(site)) {
-                                // This site is in the driving region. Every site in the driving region has a value in the map
-                                auto it = _simStates->dRGradientMap.find(site);
-                                if (it != _simStates->dRGradientMap.end()) {
-                                    it->second.second++;
-
-                                    if (it->first < _simParams->drivingRegionLhs || it->first > _simParams->drivingRegionRhs) {
-                                        // These sites should be accessed according to _hasOscillatingZeeman, but they are not (originally) in the map
-                                        scale_factor = 0.0;
-                                    } else {
-                                        // We found this site in the map and in the driving region
-                                        scale_factor = it->second.first;
-                                    }
-                                } else {
-                                    // We didn't find this site in the map, but it's in the driving region. This is an error!
-                                    std::cout << "Error: Site " << site << " is in the driving region, but did not have a value in the map." << std::endl;
-                                    std::exit(1);
-                                }
+                        if ( _simFlags->hasGradientRegionForDmi ) {
+                            auto it = _simStates->dmiGradientMap.find(site);
+                            if ( it != _simStates->dmiGradientMap.end()) {
+                                it->second.second++;
+                                scalingFactor = it->second.first;
                             } else {
-                                // This site is not in the driving region
-                                scale_factor = 0.0;  // Should be 0.0, but for debugging reasons can set as 1.0
+                                // We didn't find this site in the map, so it's not in the DMI region.
+                                if ( _simFlags->shouldRestrictDmiToWithinGradientRegion ) { scalingFactor = 0.0; }
+                                else { scalingFactor = 1.0; }
                             }
-                            std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
-                            // Rescale all DMI components by the scale factor (even though z component is always zero due to configuration of setup)
-                            tempExchangeLocal[0] += (tempDMILocal[0] * scale_factor);
-                            tempExchangeLocal[1] += (tempDMILocal[1] * scale_factor);
-                            tempExchangeLocal[2] += (tempDMILocal[2] * scale_factor);
                         } else {
-                            std::cout << "Unknown condition: likely missing implementation of new code" << std::endl;
-                            std::exit(0);
+                            scalingFactor = 1.0;  // Don't make any changes; linear DMI scaling throughout system
                         }
+                        tempExchangeLocal[0] += (tempDMILocal[0] * scalingFactor);
+                        tempExchangeLocal[1] += (tempDMILocal[1] * scalingFactor);
+                        tempExchangeLocal[2] += (tempDMILocal[2] * scalingFactor);
                     }
 
                     if (_simFlags->hasDemag1DThinFilm) {
@@ -219,7 +196,7 @@ ExchangeField::_calculateExchangeField1D( const int &currentSite, const std::vec
 
         heisenbergExchangeTerms[2] = exchangeLhs * mzTerms[currentSite - 1] +
                                      exchangeRhs * mzTerms[currentSite + 1];
-    } else if ( !_simFlags->isFerromagnetic ) {
+    } else {
         heisenbergExchangeTerms[0] = -1.0 * (exchangeLhs * mxTerms[currentSite - 1] +
                                              exchangeRhs * mxTerms[currentSite + 1]);
         heisenbergExchangeTerms[1] = -1.0 * (exchangeLhs * myTerms[currentSite - 1] +
@@ -296,7 +273,7 @@ ExchangeField::_calculateExchangeField1D( const int &currentSite, const std::vec
             directExchangeZLocal = _simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1]
                           + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1];
 
-        } else if ( !_simFlags->isFerromagnetic ) {
+        } else {
             // hx terms
             directExchangeXLocal = -1.0 * (_simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1]
                         + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1]);

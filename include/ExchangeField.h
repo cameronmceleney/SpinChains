@@ -97,7 +97,7 @@ public:
                                 std::vector<std::atomic<double>> &exchangeXOut,
                                 std::vector<std::atomic<double>> &exchangeYOut,
                                 std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB,
-                                const bool &dmiOnlyUnderDrive );
+                                const bool &gradientWithinDrivingRegion );
 
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
                                 const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,

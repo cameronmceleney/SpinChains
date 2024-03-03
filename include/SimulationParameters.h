@@ -77,9 +77,11 @@ public:
 
     double totalTime = 0;
 
-    int numSpinsDRPeak;
-    int numSpinsDRGradient;
-    double gilbertDRPeak;
+    int numSpinsDRPeak, numSpinsDRGradient;
+    int dmiRegionLhs, dmiRegionRhs, numSpinsDmiPeak, numSpinsDmiGradient, numSpinsDmiWidth;
+    int dampingRegionLhs, dampingRegionRhs, numSpinsDampingPeak, numSpinsDampingGradient, numSpinsDampingWidth;
+
+    double dampingGradientPeak;
 
 };
 

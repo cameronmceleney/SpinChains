@@ -99,13 +99,25 @@ private:
 
     void _generateAbsorbingRegions( int numSpinsInChain, int numSpinsAbsorbingRegion, int numSpinsDRPeak,
                                     int numSpinsDRGradient, double gilbertSpinChain, double gilbertDRPeak,
-                                    double gilbertAbsorbingRegionInner,
-                                    double gilbertAbsorbingRegionOuter );
+                                    double gilbertAbsorbingRegionInner, double gilbertAbsorbingRegionOuter );
 
     void PrintVector( std::vector<double> &vectorToPrint, bool shouldExitAfterPrint );
     void PrintVector( std::vector<int> &vectorToPrint, bool shouldExitAfterPrint );
     void PrintVector( std::map<int, double> &mapToPrint, bool shouldExitAfterPrint );
 
+    void _generateMapOfScaling( const std::string &regionName,
+                                std::map<int, std::pair<double, int>> &assignedMap,
+                                const int &regionLhsSite, const int &regionRhsSite,
+                                const int &regionNumSites, const int &numSitesGradientPartition,
+                                const int &numSitesPeakPartition, const double &scalingOuter = 0.0,
+                                const double &scalingInner = 1.0 );
+
+    void _generateMaps();
+
+    void _generateAbsorbingRegionsUpdated( int numSpinsInChain, int numSpinsAbsorbingRegion,
+                                           double gilbertSpinChain,
+                                           double gilbertAbsorbingRegionInner,
+                                           double gilbertAbsorbingRegionOuter );
 };
 
 
