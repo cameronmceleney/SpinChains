@@ -19,13 +19,9 @@ double MagnetisationDynamics::_checkIfDampingMapExists(const int& site) {
     }
     else {
         // Has a gradient map requested
-        auto it = _simStates->dRGradientMap.find(site);
-        if (it != _simStates->dRGradientMap.end()) {
-            return it->second.first;  // Found the site in the map
-        }
-        else {
-            return _simStates->gilbertVector[site];  // Site not found in the map
-        }
+        auto it = _simStates->dampingGradientMap.find(site);
+        if (it != _simStates->dampingGradientMap.end()) { return it->second;}  // Found the site in the map
+        else { return _simStates->gilbertVector[site]; }  // Site not found in the map
     }
 }
 

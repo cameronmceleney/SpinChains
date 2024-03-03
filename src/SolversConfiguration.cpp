@@ -43,21 +43,24 @@ void SolversConfiguration::configure() {
         simStates->m2Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
     } else {
         if (simFlags->hasGradientRegionForOscillatingZeeman) {
-            _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->numSpinsDRPeak,
-                                      simParams->numSpinsDRGradient, simParams->gilbertDamping,
-                                      simParams->dampingGradientPeak, simParams->gilbertABCInner, simParams->gilbertABCOuter);
-        } else {
             if (simFlags->useGenerateABCUpdated)
                 _generateAbsorbingRegionsUpdated(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
                                                  simParams->gilbertABCInner, simParams->gilbertABCOuter);
             else
-                _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-                                          simParams->gilbertABCInner, simParams->gilbertABCOuter);
+                _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->numSpinsDRPeak,
+                                          simParams->numSpinsDRGradient, simParams->gilbertDamping,
+                                          simParams->dampingGradientPeak, simParams->gilbertABCInner, simParams->gilbertABCOuter);
+        }
+        else {
+            _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
+                                      simParams->gilbertABCInner, simParams->gilbertABCOuter);
         }
 
         _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
         _generateMaps();
     }
+
+    PrintVector(simStates->dRGradientMap, false);
 
     simManager->hasFirstRunOccurred = true;
 }
@@ -129,6 +132,7 @@ void SolversConfiguration::_generateMaps() {
                               simParams->drivingRegionRhs, simParams->drivingRegionWidth,
                               simParams->numSpinsDRGradient, simParams->numSpinsDRPeak);
     }
+
     if ((simFlags->shouldDmiGradientMirrorOscillatingZeeman || simFlags->shouldDampingGradientMirrorOscillatingZeeman)
     && simStates->dRGradientMap.empty()) {
         throw std::runtime_error("The gradient map is empty, but other simulation flags indicate that it should not be.");
@@ -143,6 +147,14 @@ void SolversConfiguration::_generateMaps() {
         simStates->dmiGradientMap = simStates->dRGradientMap;
     }
     else if ( simFlags->hasGradientRegionForDmi ) {
+        if (simParams->dmiRegionLhs < 0 && simParams->dmiRegionRhs < 0) {
+            simParams->dmiRegionLhs = simParams->drivingRegionLhs - simParams->dmiRegionOffset;
+            simParams->dmiRegionRhs = simParams->drivingRegionRhs + simParams->dmiRegionOffset;
+        }
+        if ( simParams->numSpinsDmiWidth < 0 ) { simParams->dmiRegionRhs - simParams->dmiRegionLhs + 1; }
+        simParams->numSpinsDmiGradient = (simParams->numSpinsDmiWidth - simParams->numSpinsDmiPeak) / 2;
+
+
         _generateMapOfScaling("DMI Region", simStates->dmiGradientMap, simParams->dmiRegionLhs,
                               simParams->dmiRegionRhs, simParams->numSpinsDmiWidth,
                               simParams->numSpinsDmiGradient, simParams->numSpinsDmiPeak);
@@ -157,6 +169,13 @@ void SolversConfiguration::_generateMaps() {
         simStates->dampingGradientMap = simStates->dRGradientMap;
     }
     else if ( simFlags->hasGradientRegionForDamping ) {
+        if (simParams->dampingRegionLhs < 0 && simParams->dampingRegionRhs < 0) {
+            simParams->dampingRegionLhs = simParams->drivingRegionLhs - simParams->dampingRegionOffset;
+            simParams->dampingRegionRhs = simParams->drivingRegionRhs + simParams->dampingRegionOffset;
+        }
+        if ( simParams->numSpinsDampingWidth < 0 ) { simParams->dampingRegionRhs - simParams->dampingRegionLhs + 1; }
+        simParams->numSpinsDampingGradient = (simParams->numSpinsDampingWidth - simParams->numSpinsDampingPeak) / 2;
+
         _generateMapOfScaling("Damping Region", simStates->dampingGradientMap, simParams->dampingRegionLhs,
                               simParams->dampingRegionRhs, simParams->numSpinsDampingWidth, simParams->numSpinsDampingGradient,
                               simParams->numSpinsDampingPeak, simParams->gilbertDamping, simParams->dampingGradientPeak);
@@ -394,16 +413,13 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
 
     // Populate the maps
     for (size_t i = 0; i < leftDRGradientSites.size(); ++i) {
-        simStates->dRGradientMap[leftDRGradientSites[i]].first = leftDRGradientScaled[i];
-        simStates->dRGradientMap[leftDRGradientSites[i]].second = 0;
+        simStates->dRGradientMap[leftDRGradientSites[i]] = leftDRGradientScaled[i];
     }
     for (size_t i = 0; i < centreDRPeakSites.size(); ++i) {
-        simStates->dRGradientMap[centreDRPeakSites[i]].first = centreDRPeakScaled[i];
-        simStates->dRGradientMap[centreDRPeakSites[i]].second = 0;
+        simStates->dRGradientMap[centreDRPeakSites[i]] = centreDRPeakScaled[i];
     }
     for (size_t i = 0; i < rightDRGradientSites.size(); ++i) {
-        simStates->dRGradientMap[rightDRGradientSites[i]].first = rightDRGradientScaled[i];
-        simStates->dRGradientMap[rightDRGradientSites[i]].second = 0;
+        simStates->dRGradientMap[rightDRGradientSites[i]] = rightDRGradientScaled[i];
     }
     // std::cout << "simStates->dRGradientMap.size(): " << simStates->dRGradientMap.size() << "\n";
     // PrintVector(simStates->dRGradientMap, false);
@@ -436,7 +452,7 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
 }
 
 void SolversConfiguration::_generateMapOfScaling( const std::string &regionName,
-                                                  std::map<int, std::pair<double, int>> &assignedMap,
+                                                  std::map<int, double> &assignedMap,
                                                   const int &regionLhsSite, const int &regionRhsSite,
                                                   const int &regionNumSites, const int &numSitesGradientPartition,
                                                   const int &numSitesPeakPartition, const double &scalingOuter,
@@ -510,16 +526,13 @@ void SolversConfiguration::_generateMapOfScaling( const std::string &regionName,
 
     // Populate the maps
     for (size_t i = 0; i < leftGradientSiteIndexes.size(); i++) {
-        assignedMap[leftGradientSiteIndexes[i]].first = leftGradientScaled[i];
-        assignedMap[leftGradientSiteIndexes[i]].second = 0;
+        assignedMap[leftGradientSiteIndexes[i]] = leftGradientScaled[i];
     }
     for (size_t i = 0; i < centreSiteIndexes.size(); i++) {
-        assignedMap[centreSiteIndexes[i]].first = centreScaled[i];
-        assignedMap[centreSiteIndexes[i]].second = 0;
+        assignedMap[centreSiteIndexes[i]] = centreScaled[i];
     }
     for (size_t i = 0; i < rightGradientSiteIndexes.size(); i++) {
-        assignedMap[rightGradientSiteIndexes[i]].first = rightGradientScaled[i];
-        assignedMap[rightGradientSiteIndexes[i]].second = 0;
+        assignedMap[rightGradientSiteIndexes[i]] = rightGradientScaled[i];
     }
 
     // std::cout << "assignedMap.size(): " << assignedMap.size() << "\n";

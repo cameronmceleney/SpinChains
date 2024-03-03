@@ -42,23 +42,18 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
             [&](const tbb::blocked_range<int>& range) {
                 for (int site = range.begin(); site < range.end(); site++) {
                     std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
-                    double scalingFactor;
+                    double scalingFactor = 1.0; // Implies no scaling changes are made to the bias field
 
                     if (_simFlags->hasGradientRegionForOscillatingZeeman) {
-                        // Use gradient map for bias fields within the driving region (gradient and peak sites)
+                        // Check driving region map to see if current site has a scaling factor
                         auto it = _simStates->dRGradientMap.find(site);
-                        if ( it != _simStates->dRGradientMap.end()) {
-                            it->second.second++;
-                            scalingFactor = it->second.first;
-                        } else {
-                            // We didn't find this site in the map, but it's in the driving region. This is an error!
-                            std::cout << "Error: Site " << site
-                                      << " is in the driving region, but did not have a value in the map." << std::endl;
-                            std::exit(1);
+
+                        if ( it != _simStates->dRGradientMap.end()) { scalingFactor = it->second; } // Found the site in map
+
+                        if (_simFlags->hasOscillatingZeemanSharpInterface) {
+                            if (it->second < 1.0) { scalingFactor = 0.0; }
+                            else { scalingFactor *= 1.0; }
                         }
-                    } else {
-                        // Use the default scaling factor; no changes made.
-                        scalingFactor = 1.0;
                     }
                     // Only change the x-component of the bias field as this is the only component that will be driven dynamically
                     biasFieldXOut[site].fetch_add(tempBiasResults[0] * scalingFactor);
@@ -194,7 +189,8 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
                 // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
                 if ( _simFlags->shouldDriveAllLayers || currentLayer == 0 ) {
                     hxLocal = _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
-                } else if ( _simFlags->isOscillatingZeemanStatic ) {
+                }
+                else if ( _simFlags->isOscillatingZeemanStatic ) {
                     hxLocal = _simParams->oscillatingZeemanStrength;
                 }
             }
@@ -204,7 +200,6 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
 
             // hz terms
             hzLocal = GV.GetStaticBiasField();
-
         }
         else  {
             // hx terms

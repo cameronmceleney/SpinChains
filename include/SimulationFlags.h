@@ -53,6 +53,7 @@ public:
     bool                shouldDmiGradientMirrorOscillatingZeeman;
     bool                shouldDampingGradientMirrorOscillatingZeeman;
     bool                shouldRestrictDmiToWithinGradientRegion;
+    bool                hasOscillatingZeemanSharpInterface;
     bool                useGenerateABCUpdated;
 };
 

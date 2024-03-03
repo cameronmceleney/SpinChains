@@ -57,7 +57,7 @@ void SolversInitialisation::_setSimulationFlags() {
     // Drive Position Flags
     simFlags->shouldDriveDiscreteSites = false;
     simFlags->hasCustomDrivePosition = false;
-    simFlags->shouldDriveAllLayers = false;
+    simFlags->shouldDriveAllLayers = true;
     simFlags->shouldDriveBothSides = false;
     simFlags->shouldDriveCentre = true;
     simFlags->shouldDriveLHS = false;
@@ -73,7 +73,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintDiscreteSites = false;
 
     // TESTING ONLY
-    simFlags->hasGradientRegionForOscillatingZeeman = false;
+    simFlags->hasGradientRegionForOscillatingZeeman = true;
     simFlags->hasGradientRegionForDmi = false;
     simFlags->hasGradientRegionForDamping = false;
 
@@ -81,6 +81,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldDampingGradientMirrorOscillatingZeeman = false;
 
     simFlags->shouldRestrictDmiToWithinGradientRegion = false;
+    simFlags->hasOscillatingZeemanSharpInterface = true;
 
     simFlags->useGenerateABCUpdated = true;
 }
@@ -109,7 +110,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 57;
+    simParams->drivingRegionWidth = 61;
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
@@ -145,21 +146,23 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->layerOfInterest -= 1;  // To correct for 0-indexing
 
     // Testing ONLY!
-    simParams->numSpinsDRPeak = simParams->drivingRegionWidth;
+    simParams->numSpinsDRPeak = 57;
     simParams->numSpinsDRGradient =  (simParams->drivingRegionWidth - simParams->numSpinsDRPeak) / 2;
 
-    simParams->dmiRegionLhs = simParams->drivingRegionLhs - 200;
-    simParams->dmiRegionRhs = simParams->drivingRegionRhs + 200;
+    // TODO. Turn into a struct
+    simParams->dmiRegionLhs = -1;
+    simParams->dmiRegionRhs = -1;
+    simParams->dmiRegionOffset = 0;
     simParams->numSpinsDmiPeak = simParams->numSpinsDRPeak;
-    simParams->numSpinsDmiWidth = simParams->drivingRegionWidth + 400; // This should be automatically calculated
-    simParams->numSpinsDmiGradient = (simParams->numSpinsDmiWidth - simParams->numSpinsDRPeak) / 2;
+    simParams->numSpinsDmiWidth = -1; // This should be automatically calculated
 
-    simParams->dampingRegionLhs = simParams->dmiRegionLhs;
-    simParams->dampingRegionRhs = simParams->dmiRegionRhs;
+    // TODO. Turn into a struct
+    simParams->dampingRegionLhs = -1;
+    simParams->dampingRegionRhs = -1;
+    simParams->dampingRegionOffset = simParams->dmiRegionOffset;
     simParams->dampingGradientPeak = 1e-2;
     simParams->numSpinsDampingPeak = simParams->numSpinsDmiPeak;
-    simParams->numSpinsDampingWidth = simParams->numSpinsDmiWidth; // This should be automatically calculated
-    simParams->numSpinsDampingGradient = simParams->numSpinsDmiGradient;
+    simParams->numSpinsDampingWidth = -1; // This should be automatically calculated
 
 }
 

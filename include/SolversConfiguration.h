@@ -106,7 +106,7 @@ private:
     void PrintVector( std::map<int, double> &mapToPrint, bool shouldExitAfterPrint );
 
     void _generateMapOfScaling( const std::string &regionName,
-                                std::map<int, std::pair<double, int>> &assignedMap,
+                                std::map<int, double> &assignedMap,
                                 const int &regionLhsSite, const int &regionRhsSite,
                                 const int &regionNumSites, const int &numSitesGradientPartition,
                                 const int &numSitesPeakPartition, const double &scalingOuter = 0.0,

@@ -57,17 +57,16 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
 
                         if ( _simFlags->hasGradientRegionForDmi ) {
                             auto it = _simStates->dmiGradientMap.find(site);
-                            if ( it != _simStates->dmiGradientMap.end()) {
-                                it->second.second++;
-                                scalingFactor = it->second.first;
-                            } else {
-                                // We didn't find this site in the map, so it's not in the DMI region.
+
+                            if ( it != _simStates->dmiGradientMap.end()) { scalingFactor = it->second; }  // Found the site in the map;
+                            else {
+                                // Site not in the map
                                 if ( _simFlags->shouldRestrictDmiToWithinGradientRegion ) { scalingFactor = 0.0; }
                                 else { scalingFactor = 1.0; }
                             }
-                        } else {
-                            scalingFactor = 1.0;  // Don't make any changes; linear DMI scaling throughout system
                         }
+                        else { scalingFactor = 1.0; } // No gradient for DMI; linear DMI scaling throughout system
+
                         tempExchangeLocal[0] += (tempDMILocal[0] * scalingFactor);
                         tempExchangeLocal[1] += (tempDMILocal[1] * scalingFactor);
                         tempExchangeLocal[2] += (tempDMILocal[2] * scalingFactor);
