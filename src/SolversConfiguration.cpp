@@ -137,31 +137,34 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
     int numSpinsChainLhsOfDR = simParams->drivingRegionLhs - numSpinsAbsorbingRegion;
     int numSpinsChainRhsOfDR = numSpinsInChain - simParams->drivingRegionRhs + numSpinsAbsorbingRegion;
 
-    std::cout << "Before adjustment" << std::endl;
+    //std::cout << "Before adjustment" << std::endl;
     // std::cout << "numSpinsTotal: " << simParams->systemTotalSpins << " | numSpinsInChain: " << numSpinsInChain << " | numSpinsABC (each): " << simParams->numSpinsInABC << "\n";
-    std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
-    std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
-    std::cout << "Spins in chain: " << simParams->numSpinsInChain << " | total sites: " << simParams->systemTotalSpins << " | abc sites: " << simParams->numSpinsInABC  <<std::endl;
+    //std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
+    //std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
+    //std::cout << "Spins in chain: " << simParams->numSpinsInChain << " | total sites: " << simParams->systemTotalSpins << " | abc sites: " << simParams->numSpinsInABC  <<std::endl;
 
-    // Adjust for the convention used in determining the driving region boundaries
-    if (simFlags->shouldDriveCentre) {
-        if (simParams->drivingRegionWidth % 2 == 0) {
-            // Even driving region width
-            numSpinsChainLhsOfDR += 1; // Correct for the LHS shortening in the even case
-        }
-        // No adjustment needed for the RHS in the even case, or any case for the odd driving region width
-    } else if (simFlags->shouldDriveLHS) {
-        // The LHS driving case initially adds 1 to drivingRegionLhs to avoid the zeroth spin
-        numSpinsChainLhsOfDR -= 1; // Undo the +1 adjustment made for the LHS driving
+
+    if (simFlags->shouldDriveLHS) {
+        // The LHS driving case subtracts 1 from drivingRegionLhs for the zeroth spin addition correction
+        numSpinsChainLhsOfDR--; // Just correct for zero-indexing
     } else if (simFlags->shouldDriveRHS) {
         // The RHS driving case subtracts 1 from drivingRegionRhs for the zeroth spin addition correction
-        numSpinsChainRhsOfDR -= 1; // Undo the -1 adjustment made for the RHS driving
+        numSpinsChainRhsOfDR--;
+    } else if (simFlags->shouldDriveCentre) {
+        if ( simParams->drivingRegionWidth % 2 == 0 ) {
+            // Even driving region width
+            numSpinsChainLhsOfDR--; // Just correct for zero-indexing
+        } else {
+            // Odd driving region width
+            numSpinsChainLhsOfDR--; // We require numRHS > numLHS to maintain some first driven site (Obsidian: 2024-03-01)
+        }
     }
-    std::cout << "after adjustment" << std::endl;
+        // No adjustment needed for the RHS in the even case, or any case for the odd driving region width
+    //std::cout << "after adjustment" << std::endl;
     // std::cout << "numSpinsTotal: " << simParams->systemTotalSpins << " | numSpinsInChain: " << numSpinsInChain << " | numSpinsABC (each): " << simParams->numSpinsInABC << "\n";
-    std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
-    std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
-    std::cout << "Spins in chain: " << simParams->numSpinsInChain << " | total sites" << simParams->systemTotalSpins << std::endl;
+    //std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
+    //std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
+    //std::cout << "Spins in chain: " << simParams->numSpinsInChain << " | total sites: " << simParams->systemTotalSpins << std::endl;
 
     std::vector<double> gilbertMainChain;
     // Calculate the total number of sites in the driving region
@@ -248,9 +251,9 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
     LinspaceClass LeftDRGradientScaled;
     LinspaceClass CentreDRPeakScaled;
     LinspaceClass RightDRGradientScaled;
-    LeftDRGradientScaled.set_values(0.0, 1.0, numSpinsDRGradient, false, false, true);
+    LeftDRGradientScaled.set_values(0.0, 1.0, numSpinsDRGradient, true, false, true);
     CentreDRPeakScaled.set_values(1.0, 1.0, numSpinsDRPeak, true, false, false);
-    RightDRGradientScaled.set_values(1.0, 0.0, numSpinsDRGradient, false, false, true);
+    RightDRGradientScaled.set_values(1.0, 0.0, numSpinsDRGradient, true, false, true);
 
     std::vector<double> leftDRGradientScaled = LeftDRGradientScaled.generate_array();
     std::vector<double> centreDRPeakScaled = CentreDRPeakScaled.generate_array();
@@ -304,11 +307,6 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
         throw std::runtime_error("Size of leftDRGradientScaled does not match size of leftDRGradientSites");
     }
 
-    for (int i = simParams->drivingRegionLhs - 4; i < simParams->drivingRegionLhs; i++) {
-        simStates->dRGradientMap[i].first = 0;
-        simStates->dRGradientMap[i].second = 0;
-    }
-
     // Populate the maps
     for (size_t i = 0; i < leftDRGradientSites.size(); ++i) {
         simStates->dRGradientMap[leftDRGradientSites[i]].first = leftDRGradientScaled[i];
@@ -322,12 +320,6 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
         simStates->dRGradientMap[rightDRGradientSites[i]].first = rightDRGradientScaled[i];
         simStates->dRGradientMap[rightDRGradientSites[i]].second = 0;
     }
-
-    for (int i = simParams->drivingRegionRhs + 1; i < simParams->drivingRegionRhs + 5; i++) {
-        simStates->dRGradientMap[i].first = 0;
-        simStates->dRGradientMap[i].second = 0;
-    }
-
     // std::cout << "simStates->dRGradientMap.size(): " << simStates->dRGradientMap.size() << "\n";
     // PrintVector(simStates->dRGradientMap, false);
 
@@ -454,15 +446,44 @@ SolversConfiguration::_setupDrivingRegion( int numSpinsInChain, int numSpinsAbso
 
     if ( simFlags->shouldDriveCentre ) {
         // Use same midpoint for even and odd lengthened chains (numSpinsInChain)
+        /*
+         * CONVENTION:
+         *      - The driving region is centred around the midpoint of `floor(numSpinsInChain / 2).
+         *      - We want (N) and (N+1) cases to have the same left-hand site in the driving region for consistency,
+         *        where N is the number of spins in the chain (numSpinsInChain), and N >= 1.
+         *
+         *      WHEN numSpinsInChain is EVEN:
+         *      - If the driving region width is even, then there are an EQUAL number of sites on the LHS and RHS
+         *        of the driving region itself. We ADD 1 to the LHS to ensure that the driving region is centred and
+         *        indexed correctly.
+         *      - If the driving region width is odd, then there are an UNEQUAL number of sites on the LHS and RHS; one
+         *        more site on the RHS than the LHS. We therefore do not need to add 1 to the LHS to adjust for indexing,
+         *        as the midpoint is already centred.
+         *
+         *      WHEN numSpinsInChain is ODD:
+         *      - First, to ensure that the first driven site is consistent with the even case, we ADD 1 to the LHS and
+         *        to the RHS. This will ensure that indexing adjustments are consistent with the other changes.
+         *      - If the driving region width is even, then there are an UNEQUAL number of sites on the LHS and RHS; one
+         *        more site on the LHS than the RHS. We therefore ADD 1 to the LHS to ensure that the LHS has more sites
+         *        than the RHS, and that the driving region is centred and indexed correctly.
+         *      - If the driving region width is odd, then there are an EQUAL number of sites on the LHS and RHS of the
+         *        driving region itself. We do not need to add 1 to the LHS to adjust for indexing, as the midpoint is
+         *        already centred.
+         */
         if ( drivingRegionWidth % 2 == 0 ) {
             // By convention even case shortens the LHS
             simParams->drivingRegionLhs =
-                    (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2 - 1);
+                    (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2) + 1;
             simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
         } else {
             // Use convention to round down then add additional site (odd number) to the RHS of the centre
             simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
             simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
+        }
+
+        if ( simParams->numSpinsInChain % 2 == 1) {
+            simParams->drivingRegionLhs++;
+            simParams->drivingRegionRhs++;
         }
         return;
     }

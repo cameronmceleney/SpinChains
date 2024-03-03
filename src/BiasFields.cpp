@@ -56,14 +56,17 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
                             // This site is in the driving region. Every site in the driving region has a value in the map
                             auto it = _simStates->dRGradientMap.find(site);
                             if (it != _simStates->dRGradientMap.end()) {
+                                it->second.second++;
                                 if (it->first < _simParams->drivingRegionLhs || it->first > _simParams->drivingRegionRhs) {
                                     // These sites should be accessed according to _hasOscillatingZeeman, but they are not (originally) in the map
-                                    it->second.second += 1;
-                                    scale_factor = 1.0;
+                                    scale_factor = 0.0;
+                                    std::exit(1);
                                 } else {
                                     // We found this site in the map and in the driving region
-                                    it->second.second += 1;
-                                    scale_factor = 1.0;
+                                    if (it->second.first < 1)
+                                        scale_factor = 0.0;  // A gradient site; should not be driven
+                                    else
+                                        scale_factor = it->second.first;  // A peak site; should be driven
                                 }
                             } else {
                                 // We didn't find this site in the map, but it's in the driving region. This is an error!
@@ -72,7 +75,7 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
                             }
                         } else {
                             // This site is not in the driving region
-                            scale_factor = 1.0;  // Should be 0.0, but for debugging reasons leave as 1.0 for now
+                            scale_factor = 0.0;  // Should be 0.0, but for debugging reasons leave as 1.0 for now
                         }
                         std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
                         biasFieldXOut[site].fetch_add(tempBiasResults[0] * scale_factor);  // Only want to rescale the dynamic drive, which is only along the x-axis

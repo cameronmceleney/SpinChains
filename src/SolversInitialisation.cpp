@@ -59,8 +59,8 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = false;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = false;
-    simFlags->shouldDriveLHS = true;
+    simFlags->shouldDriveCentre = true;
+    simFlags->shouldDriveLHS = false;
     simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
@@ -73,7 +73,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintDiscreteSites = false;
 
     // TESTING ONLY
-    simFlags->hasGradientWithinDrivingRegion = true;
+    simFlags->hasGradientWithinDrivingRegion = false;
 }
 
 void SolversInitialisation::_setSimulationParameters() {
@@ -95,7 +95,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Damping Factors
     simParams->gilbertDamping = 1e-2;
-    simParams->gilbertABCInner = 1e-2;
+    simParams->gilbertABCInner = simParams->gilbertDamping;
     simParams->gilbertABCOuter = 1e0;
 
     // Spin chain and multi-layer Parameters
@@ -137,7 +137,7 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Testing ONLY!
     simParams->numSpinsDRPeak = simParams->drivingRegionWidth;
-    std::cout << simParams->drivingRegionWidth << " | " << simParams->numSpinsDRPeak << " | " << simParams->gilbertDamping << std::endl;
+    //std::cout << simParams->drivingRegionWidth << " | " << simParams->numSpinsDRPeak << " | " << simParams->gilbertDamping << std::endl;
     simParams->numSpinsDRGradient =  (simParams->drivingRegionWidth - simParams->numSpinsDRPeak) / 2;
     simParams->gilbertDRPeak = simParams->gilbertDamping;
 }
@@ -197,7 +197,8 @@ void SolversInitialisation::_guardClauses() {
     }
 
     if ((simFlags->shouldDriveLHS && simFlags->shouldDriveCentre) || (simFlags->shouldDriveLHS && simFlags->shouldDriveBothSides)
-        || (simFlags->shouldDriveCentre && simFlags->shouldDriveBothSides) || (simFlags->shouldDriveLHS && simFlags->shouldDriveRHS)) {
+        || (simFlags->shouldDriveCentre && simFlags->shouldDriveBothSides) || (simFlags->shouldDriveLHS && simFlags->shouldDriveRHS)
+        || (simFlags->shouldDriveCentre && simFlags->shouldDriveRHS) || (simFlags->shouldDriveRHS && simFlags->shouldDriveBothSides)) {
         std::cout << "Warning: two (or more) conflicting driving region booleans were TRUE"
                   << "\n_lhsDrive: " << simFlags->shouldDriveLHS << "\n_centralDrive: " << simFlags->shouldDriveCentre
                   << "\n_dualDrive: " << simFlags->shouldDriveBothSides << "\n _rhsDrive: " << simFlags->shouldDriveRHS << "\n\nExiting...";

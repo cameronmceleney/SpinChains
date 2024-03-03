@@ -42,7 +42,7 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
 
 
     if ( shouldUseTBB ) {
-
+        //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
             [&](const tbb::blocked_range<int>& range) {
                 for (int site = range.begin(); site < range.end(); site++) {
@@ -62,18 +62,18 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                             tempExchangeLocal[1] += tempDMILocal[1];
                             tempExchangeLocal[2] += tempDMILocal[2];
                         } else if (dmiOnlyUnderDrive) {
-                            double scale_factor = 1.0; // Default scale factor incase undefined later
+                            double scale_factor = 0.0; // Default scale factor incase undefined later
                             if (_hasOscillatingZeeman(site)) {
                                 // This site is in the driving region. Every site in the driving region has a value in the map
                                 auto it = _simStates->dRGradientMap.find(site);
                                 if (it != _simStates->dRGradientMap.end()) {
+                                    it->second.second++;
+
                                     if (it->first < _simParams->drivingRegionLhs || it->first > _simParams->drivingRegionRhs) {
                                         // These sites should be accessed according to _hasOscillatingZeeman, but they are not (originally) in the map
-                                        it->second.second += 1;
                                         scale_factor = 0.0;
                                     } else {
                                         // We found this site in the map and in the driving region
-                                        it->second.second += 1;
                                         scale_factor = it->second.first;
                                     }
                                 } else {
@@ -87,9 +87,9 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                             }
                             std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
                             // Rescale all DMI components by the scale factor (even though z component is always zero due to configuration of setup)
-                            tempExchangeLocal[0] += tempDMILocal[0] * scale_factor;
-                            tempExchangeLocal[1] += tempDMILocal[1] * scale_factor;
-                            tempExchangeLocal[2] += tempDMILocal[2] * scale_factor;
+                            tempExchangeLocal[0] += (tempDMILocal[0] * scale_factor);
+                            tempExchangeLocal[1] += (tempDMILocal[1] * scale_factor);
+                            tempExchangeLocal[2] += (tempDMILocal[2] * scale_factor);
                         } else {
                             std::cout << "Unknown condition: likely missing implementation of new code" << std::endl;
                             std::exit(0);

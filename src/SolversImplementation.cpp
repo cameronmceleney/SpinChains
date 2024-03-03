@@ -1194,11 +1194,12 @@ SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &
                           }
                       }, tbb::auto_partitioner());
 
-    if ( !simFlags->shouldTrackMagneticMomentNorm && rkStage == "2" ) {
-        for ( int site = 1; site <= simParams->systemTotalSpins; site++ ) {
+    if (!simFlags->shouldTrackMagneticMomentNorm && rkStage == "2") {
+        for (int site = 0; site < simParams->systemTotalSpins; site++) { // Assuming 0-based indexing
             double mIterationNorm = sqrt(pow(mxOut[site], 2) + pow(myOut[site], 2) + pow(mzOut[site], 2));
-            if ((simParams->largestMNorm) > (1.0 - mIterationNorm)) {
-                simParams->largestMNorm = (1.0 - mIterationNorm);
+            double deviation = fabs(1.0 - mIterationNorm); // Absolute deviation from 1.0
+            if (deviation > simParams->largestMNorm) {
+                simParams->largestMNorm = deviation;
             }
         }
     }
