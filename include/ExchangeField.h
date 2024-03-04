@@ -93,11 +93,9 @@ public:
                                 std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut );
 
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
-                                const std::vector<double> &mzTerms,
-                                std::vector<std::atomic<double>> &exchangeXOut,
+                                const std::vector<double> &mzTerms, std::vector<std::atomic<double>> &exchangeXOut,
                                 std::vector<std::atomic<double>> &exchangeYOut,
-                                std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB,
-                                const bool &gradientWithinDrivingRegion );
+                                std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB );
 
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
                                 const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,

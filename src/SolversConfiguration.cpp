@@ -52,15 +52,17 @@ void SolversConfiguration::configure() {
                                           simParams->dampingGradientPeak, simParams->gilbertABCInner, simParams->gilbertABCOuter);
         }
         else {
-            _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-                                      simParams->gilbertABCInner, simParams->gilbertABCOuter);
+            //_generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
+             //                         simParams->gilbertABCInner, simParams->gilbertABCOuter);
+            _generateAbsorbingRegionsUpdated(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
+                                                 simParams->gilbertABCInner, simParams->gilbertABCOuter);
         }
 
         _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
         _generateMaps();
     }
 
-    PrintVector(simStates->dRGradientMap, false);
+    PrintVector(simStates->dampingGradientMap, true);
 
     simManager->hasFirstRunOccurred = true;
 }
@@ -157,7 +159,7 @@ void SolversConfiguration::_generateMaps() {
 
         _generateMapOfScaling("DMI Region", simStates->dmiGradientMap, simParams->dmiRegionLhs,
                               simParams->dmiRegionRhs, simParams->numSpinsDmiWidth,
-                              simParams->numSpinsDmiGradient, simParams->numSpinsDmiPeak);
+                              simParams->numSpinsDmiGradient, simParams->numSpinsDmiPeak, 1.0, 1.0);
     }
 
     if (simFlags->shouldDampingGradientMirrorOscillatingZeeman) {
@@ -178,7 +180,7 @@ void SolversConfiguration::_generateMaps() {
 
         _generateMapOfScaling("Damping Region", simStates->dampingGradientMap, simParams->dampingRegionLhs,
                               simParams->dampingRegionRhs, simParams->numSpinsDampingWidth, simParams->numSpinsDampingGradient,
-                              simParams->numSpinsDampingPeak, simParams->gilbertDamping, simParams->dampingGradientPeak);
+                              simParams->numSpinsDampingPeak, simParams->dampingGradientPeak, simParams->dampingGradientPeak);
     }
 }
 

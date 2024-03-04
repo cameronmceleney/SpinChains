@@ -55,6 +55,8 @@ public:
     bool                shouldRestrictDmiToWithinGradientRegion;
     bool                hasOscillatingZeemanSharpInterface;
     bool                useGenerateABCUpdated;
+
+    bool                forceSequentialOperation = false;
 };
 
 #endif //SPINCHAINS_SIMULATIONFLAGS_H

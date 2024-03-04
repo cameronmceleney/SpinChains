@@ -36,8 +36,7 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                                            const std::vector<double> &mzTerms,
                                            std::vector<std::atomic<double>> &exchangeXOut,
                                            std::vector<std::atomic<double>> &exchangeYOut,
-                                           std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB,
-                                           const bool &gradientWithinDrivingRegion ) {
+                                           std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB ) {
     // This function is used for parallel calculations. Useful in large systems or when H_ex is complex
 
 

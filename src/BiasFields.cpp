@@ -32,12 +32,11 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
                                         const std::vector<double> &mzTermsIn,
                                         std::vector<std::atomic<double>> &biasFieldXOut,
                                         std::vector<std::atomic<double>> &biasFieldYOut,
-                                        std::vector<std::atomic<double>> &biasFieldZOut, const bool &shouldUseTBB,
-                                        bool dmiOnlyUnderDrive ) {
+                                        std::vector<std::atomic<double>> &biasFieldZOut, const bool &shouldUseTBB ) {
     // This function is used for parallel calculations. Useful in large systems or when H_ext is complex
 
     if ( shouldUseTBB ) {
-
+        //if ( _simFlags->forceSequentialOperation ) { tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 ); }
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
             [&](const tbb::blocked_range<int>& range) {
                 for (int site = range.begin(); site < range.end(); site++) {
@@ -52,7 +51,7 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
 
                         if (_simFlags->hasOscillatingZeemanSharpInterface) {
                             if (it->second < 1.0) { scalingFactor = 0.0; }
-                            else { scalingFactor *= 1.0; }
+                            else { scalingFactor *= 1.0; } // This line should be redundant
                         }
                     }
                     // Only change the x-component of the bias field as this is the only component that will be driven dynamically

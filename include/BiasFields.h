@@ -85,8 +85,7 @@ public:
     calculateOneDimension( const int &currentLayer, const double &currentTime, const std::vector<double> &mzTermsIn,
                            std::vector<std::atomic<double>> &biasFieldXOut,
                            std::vector<std::atomic<double>> &biasFieldYOut,
-                           std::vector<std::atomic<double>> &biasFieldZOut, const bool &shouldUseTBB,
-                           bool dmiOnlyUnderDrive );
+                           std::vector<std::atomic<double>> &biasFieldZOut, const bool &shouldUseTBB );
 
     void calculateOneDimension( const int &currentLayer, const double &currentTime,
                                 const std::vector<double> &mzTermsIn, std::vector<double> &biasFieldXOut,
