@@ -50,12 +50,16 @@ public:
     bool                hasGradientRegionForOscillatingZeeman;
     bool                hasGradientRegionForDmi;
     bool                hasGradientRegionForDamping;
+
     bool                shouldDmiGradientMirrorOscillatingZeeman;
     bool                shouldDampingGradientMirrorOscillatingZeeman;
-    bool                shouldRestrictDmiToWithinGradientRegion;
-    bool                hasOscillatingZeemanSharpInterface;
-    bool                useGenerateABCUpdated;
 
+    bool                shouldRestrictDmiToWithinGradientRegion;
+    bool                isOscillatingZeemanLinearAcrossMap;
+    bool                isDmiLinearAcrossMap;
+    bool                isDampingLinearAcrossMap;
+
+    bool                useGenerateABCUpdated;
     bool                forceSequentialOperation = false;
 };
 

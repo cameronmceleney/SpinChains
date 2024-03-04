@@ -81,7 +81,7 @@ public:
     int dmiRegionLhs, dmiRegionRhs, numSpinsDmiPeak, numSpinsDmiGradient, numSpinsDmiWidth, dmiRegionOffset;
     int dampingRegionLhs, dampingRegionRhs, numSpinsDampingPeak, numSpinsDampingGradient, numSpinsDampingWidth, dampingRegionOffset;
 
-    double dampingGradientPeak;
+    double dampingGradientPeak, dampingGradientGradient;
 
 };
 

@@ -630,6 +630,7 @@ void SolversImplementation::RK2Parallel() {
 
     parallelTimer.stop();
 
+    /* Should turn this code into a debug method
     for (int i = 1; i <= simParams->systemTotalSpins; i++) {
         auto it = simStates->dRGradientMap.find(i);
         if (it != simStates->dRGradientMap.end()) {
@@ -637,6 +638,7 @@ void SolversImplementation::RK2Parallel() {
             std::cout << "Site " << i << " has a gradient of " << it->second << std::endl;
         }
     }
+     */
 
     if ( GV.GetEmailWhenCompleted()) { solverOutputs->CreateMetadata(true); }
 

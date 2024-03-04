@@ -46,13 +46,7 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
                     if (_simFlags->hasGradientRegionForOscillatingZeeman) {
                         // Check driving region map to see if current site has a scaling factor
                         auto it = _simStates->dRGradientMap.find(site);
-
                         if ( it != _simStates->dRGradientMap.end()) { scalingFactor = it->second; } // Found the site in map
-
-                        if (_simFlags->hasOscillatingZeemanSharpInterface) {
-                            if (it->second < 1.0) { scalingFactor = 0.0; }
-                            else { scalingFactor *= 1.0; } // This line should be redundant
-                        }
                     }
                     // Only change the x-component of the bias field as this is the only component that will be driven dynamically
                     biasFieldXOut[site].fetch_add(tempBiasResults[0] * scalingFactor);

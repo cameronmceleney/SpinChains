@@ -63,7 +63,19 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                        << ",Has Dipolar," << simFlags->hasDipolar << ",Has DMI," << simFlags->hasDMI
                        << ",Has STT," << simFlags->hasSTT << ",Has Zeeman," << simFlags->hasStaticZeeman
                        << ",Has Demag Intense," << simFlags->hasDemagIntense << ",Has Demag FFT," << simFlags->hasDemagFFT
-                       << ",Has Shape Anisotropy," << simFlags->hasShapeAnisotropy << "\n";
+                       << ",Has Shape Anisotropy," << simFlags->hasShapeAnisotropy
+                       << ",Has Oscillating Zeeman Gradient Map," << simFlags->hasGradientRegionForOscillatingZeeman
+                       << ",Has DMI Gradient Map," << simFlags->hasGradientRegionForDmi
+                       << ",Has Damping Gradient Map," << simFlags->hasGradientRegionForDamping
+                       << ",Should DMI Gradient Mirror Oscillating Zeeman," << simFlags->shouldDmiGradientMirrorOscillatingZeeman
+                       << ",Should Damping Gradient Mirror Oscillating Zeeman," << simFlags->shouldDampingGradientMirrorOscillatingZeeman
+                       << ",Should Restrict DMI To Within Gradient Region," << simFlags->shouldRestrictDmiToWithinGradientRegion
+                       << ",Is Oscillating Zeeman Linear Across Map," << simFlags->isOscillatingZeemanLinearAcrossMap
+                       << ",Is DMI Linear Across Map," << simFlags->isDmiLinearAcrossMap
+                       << ",Is Damping Linear Across Map," << simFlags->isDampingLinearAcrossMap
+                       << ",Use Generate ABC Updated," << simFlags->useGenerateABCUpdated
+                       << ",Use Force Sequential Operation," << simFlags->forceSequentialOperation
+                       << "\n";
 
         outputFileName << "\n";
 
@@ -73,7 +85,10 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                    "Max. Sim. Time [s],Min. Exchange Val (J)[T],Max. Exchange Val (J)[T],Max. Iterations,No. DataPoints,"
                    "No. Spins in Chain (N),No. Damped Spins (per side),No. Total Spins, Stepsize (h),Gilbert Damping Factor,Gyromagnetic Ratio (2Pi*Y),"
                    "Shockwave Gradient Time [s],Shockwave Application Time [s],ABC Damping (lower),ABC Damping (upper),"
-                   "DMI Constant [T],Saturation Magnetisation [kA/m],Exchange Stiffness [J/m],Anisotropy (Shape) Field [T],Lattice Constant [m]"
+                   "DMI Constant [T],Saturation Magnetisation [kA/m],Exchange Stiffness [J/m],Anisotropy (Shape) Field [T],Lattice Constant [m],"
+                   "No. Spins in DR Peak,No. Spins in DR Gradient,DMI Region LHS,DMI Region RHS,No. Spins in DMI Peak,No. Spins in DMI Gradient,"
+                   "No. Spins in DMI Width,DMI Region Offset,Damping Region LHS,Damping Region RHS,No. Spins in Damping Peak,No. Spins in Damping Gradient,"
+                   "No. Spins in Damping Width,Damping Region Offset,Damping Gradient Peak,Damping Gradient Gradient"
                    "\n";
 
         outputFileName << simParams->staticZeemanStrength << ", " << simParams->oscillatingZeemanStrength << ", "
@@ -88,9 +103,17 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                        << simParams->gilbertDamping << ", " << simParams->gyroMagConst << ", "
                        << simParams->iterStartShock << ", " << simParams->shockwaveGradientTime * simParams->stepsize << ", "
                        << simParams->gilbertABCInner << ", " << simParams->gilbertABCOuter << ", "
-                       << simParams->dmiConstant << ", " << simParams->satMag << ", "
+                       << simParams->dmiConstant * 2 << ", " << simParams->satMag << ", "
                        << simParams->exchangeStiffness << ", " << simParams->anisotropyField << ", "
-                       << simParams->latticeConstant
+                       << simParams->latticeConstant << ", " << simParams->numSpinsDRPeak << ", "
+                       << simParams->numSpinsDRGradient << ", " << simParams->dmiRegionLhs << ", "
+                       << simParams->dmiRegionRhs << ", " << simParams->numSpinsDmiPeak << ", "
+                       << simParams->numSpinsDmiGradient << ", " << simParams->numSpinsDmiWidth << ", "
+                       << simParams->dmiRegionOffset << ", " << simParams->dampingRegionLhs << ", "
+                       << simParams->dampingRegionRhs << ", " << simParams->numSpinsDampingPeak << ", "
+                       << simParams->numSpinsDampingGradient << ", " << simParams->numSpinsDampingWidth << ", "
+                       << simParams->dampingRegionOffset << ", " << simParams->dampingGradientPeak << ", "
+                       << simParams->dampingGradientGradient
                        << "\n";
 
         outputFileName << "\n";

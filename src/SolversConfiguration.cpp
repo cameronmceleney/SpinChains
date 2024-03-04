@@ -62,7 +62,7 @@ void SolversConfiguration::configure() {
         _generateMaps();
     }
 
-    PrintVector(simStates->dampingGradientMap, true);
+    //PrintVector(simStates->dampingGradientMap, true);
 
     simManager->hasFirstRunOccurred = true;
 }
@@ -130,9 +130,19 @@ void SolversConfiguration::_reconfigureSystem() {
 
 void SolversConfiguration::_generateMaps() {
     if (simFlags->hasGradientRegionForOscillatingZeeman) {
+
+        // TODO. This sort of implementation is temporary until I convert over to using STRUCTS
+        double bias_min, bias_max;
+        if (simFlags->isOscillatingZeemanLinearAcrossMap) {
+            bias_min = 1.0;
+            bias_max = 1.0;
+        } else {
+            bias_min = 0.0;
+            bias_max = 1.0;
+        }
         _generateMapOfScaling("Driving Region", simStates->dRGradientMap, simParams->drivingRegionLhs,
                               simParams->drivingRegionRhs, simParams->drivingRegionWidth,
-                              simParams->numSpinsDRGradient, simParams->numSpinsDRPeak);
+                              simParams->numSpinsDRGradient, simParams->numSpinsDRPeak, bias_min, bias_max);
     }
 
     if ((simFlags->shouldDmiGradientMirrorOscillatingZeeman || simFlags->shouldDampingGradientMirrorOscillatingZeeman)
@@ -153,13 +163,23 @@ void SolversConfiguration::_generateMaps() {
             simParams->dmiRegionLhs = simParams->drivingRegionLhs - simParams->dmiRegionOffset;
             simParams->dmiRegionRhs = simParams->drivingRegionRhs + simParams->dmiRegionOffset;
         }
-        if ( simParams->numSpinsDmiWidth < 0 ) { simParams->dmiRegionRhs - simParams->dmiRegionLhs + 1; }
+        if ( simParams->numSpinsDmiWidth < 0 ) {
+            simParams->numSpinsDmiWidth = simParams->dmiRegionRhs - simParams->dmiRegionLhs + 1;
+        }
         simParams->numSpinsDmiGradient = (simParams->numSpinsDmiWidth - simParams->numSpinsDmiPeak) / 2;
 
+        double dmi_min, dmi_max;
+        if (simFlags->isDmiLinearAcrossMap) {
+            dmi_min = 1.0;
+            dmi_max = 1.0;
+        } else {
+            dmi_min = 0.0;
+            dmi_max = 1.0;
+        }
 
         _generateMapOfScaling("DMI Region", simStates->dmiGradientMap, simParams->dmiRegionLhs,
                               simParams->dmiRegionRhs, simParams->numSpinsDmiWidth,
-                              simParams->numSpinsDmiGradient, simParams->numSpinsDmiPeak, 1.0, 1.0);
+                              simParams->numSpinsDmiGradient, simParams->numSpinsDmiPeak, dmi_min, dmi_max);
     }
 
     if (simFlags->shouldDampingGradientMirrorOscillatingZeeman) {
@@ -169,18 +189,35 @@ void SolversConfiguration::_generateMaps() {
         simParams->numSpinsDampingGradient = simParams->numSpinsDRGradient;
         simParams->numSpinsDampingWidth = simParams->drivingRegionWidth;
         simStates->dampingGradientMap = simStates->dRGradientMap;
+
+        if ( !simFlags->isOscillatingZeemanLinearAcrossMap ) {
+            throw("SolverConfiguration::_generateMaps: Oscillating Zeeman is not linear across map, but damping gradient "
+                  "is mirrored, so this creates a logic error.");
+        }
+
+        for (auto const& [key, val] : simStates->dRGradientMap) {
+            simStates->dampingGradientMap[key] *= simParams->gilbertDamping;
+        }
     }
     else if ( simFlags->hasGradientRegionForDamping ) {
         if (simParams->dampingRegionLhs < 0 && simParams->dampingRegionRhs < 0) {
             simParams->dampingRegionLhs = simParams->drivingRegionLhs - simParams->dampingRegionOffset;
             simParams->dampingRegionRhs = simParams->drivingRegionRhs + simParams->dampingRegionOffset;
         }
-        if ( simParams->numSpinsDampingWidth < 0 ) { simParams->dampingRegionRhs - simParams->dampingRegionLhs + 1; }
+        if ( simParams->numSpinsDampingWidth < 0 ) {
+            simParams->numSpinsDampingWidth = simParams->dampingRegionRhs - simParams->dampingRegionLhs + 1;
+        }
         simParams->numSpinsDampingGradient = (simParams->numSpinsDampingWidth - simParams->numSpinsDampingPeak) / 2;
+
+        if (simFlags->isDampingLinearAcrossMap) {
+            simParams->dampingGradientGradient = simParams->dampingGradientPeak;
+        } else {
+            simParams->dampingGradientGradient = simParams->gilbertDamping;
+        }
 
         _generateMapOfScaling("Damping Region", simStates->dampingGradientMap, simParams->dampingRegionLhs,
                               simParams->dampingRegionRhs, simParams->numSpinsDampingWidth, simParams->numSpinsDampingGradient,
-                              simParams->numSpinsDampingPeak, simParams->dampingGradientPeak, simParams->dampingGradientPeak);
+                              simParams->numSpinsDampingPeak, simParams->dampingGradientGradient, simParams->dampingGradientPeak);
     }
 }
 
@@ -461,11 +498,16 @@ void SolversConfiguration::_generateMapOfScaling( const std::string &regionName,
                                                   const double &scalingInner ) {
 
     if (regionLhsSite < 0 || regionRhsSite < 0 || regionNumSites < 0 || numSitesGradientPartition < 0 || numSitesPeakPartition < 0) {
-        throw std::runtime_error("One of the input parameters is less than zero while generating a map for " + regionName);
+        throw std::runtime_error("[SolversConfiguration>_generateMapOfScaling]: One of the input parameters is less than "
+                                 "zero while generating a map for " + regionName);
     }
 
     if (numSitesGradientPartition * 2 + numSitesPeakPartition != regionNumSites) {
-        throw std::runtime_error("The sum of the gradient and peak sites does not match the total region width of " + regionName);
+        throw std::runtime_error("[SolversConfiguration>_generateMapOfScaling]: The sum of the gradient and peak sites "
+                                 "does not match the total region width of " + regionName + " | "
+                                 + std::to_string(numSitesGradientPartition) + " | "
+                                 + std::to_string(numSitesPeakPartition) + " | "
+                                 + std::to_string(regionNumSites));
     }
 
     // Generates the map of the DMI vector
