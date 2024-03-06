@@ -43,18 +43,35 @@ if(WIN32 OR WIN64)
     set(TBB_DIR "${MINGW64_BASE}/include/oneapi")  # Removed appended "/oneapi" from the end of the path
     set(TBB_LIB "${MINGW64_BASE}/lib/libtbb12.dll.a" "${MINGW64_BASE}/lib/libtbbmalloc.dll.a")
 elseif(APPLE)
-    # Default Homebrew installation directories on MacOS
-    set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
-    set(FFTW_BASE "/usr/local/Cellar/fftw/3.3.10_1")
-    set(FFTW_DIR "${FFTW_BASE}/include")
-    set(FFTW_LIB "${FFTW_BASE}/lib/libfftw3.a")
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+        # Link to Mac-ARM version
+        # Default Homebrew installation directories on MacOS
+        set(EIGEN_DIR "/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3")
+        set(FFTW_BASE "/opt/homebrew/Cellar/fftw/3.3.10_1")
+        set(FFTW_DIR "${FFTW_BASE}/include")
+        set(FFTW_LIB "${FFTW_BASE}/lib/libfftw3.a")
 
-    # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI.
-    set(TBB_BASE "/usr/local/Cellar/tbb/2021.11.0")
-    set(TBB_DIR "${TBB_BASE}/include")
-    # Must use dynamic libraries on MacOS (Xcode 15.2), use G++-13, and compile TBB via Homebrew with GCC/G++
-    # with "HOMEBREW_CC=gcc-13 HOMEBREW_CXX=g++-13 brew install tbb"
-    set(TBB_LIB "${TBB_BASE}/lib/libtbb.dylib" "${TBB_BASE}/lib/libtbbmalloc.dylib")
+        # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI.
+        set(TBB_BASE "/opt/homebrew/Cellar/tbb/2021.11.0")
+        set(TBB_DIR "${TBB_BASE}/include")
+        # Must use dynamic libraries on MacOS (Xcode 15.2), use G++-13, and compile TBB via Homebrew with GCC/G++
+        # with "HOMEBREW_CC=gcc-13 HOMEBREW_CXX=g++-13 brew install tbb"
+        set(TBB_LIB "${TBB_BASE}/lib/libtbb.dylib" "${TBB_BASE}/lib/libtbbmalloc.dylib")
+    else()
+        # Link to MacOSX version
+        # Default Homebrew installation directories on MacOS
+        set(EIGEN_DIR "/usr/local/Cellar/eigen/3.4.0_1/include/eigen3")
+        set(FFTW_BASE "/usr/local/Cellar/fftw/3.3.10_1")
+        set(FFTW_DIR "${FFTW_BASE}/include")
+        set(FFTW_LIB "${FFTW_BASE}/lib/libfftw3.a")
+
+        # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI.
+        set(TBB_BASE "/usr/local/Cellar/tbb/2021.11.0")
+        set(TBB_DIR "${TBB_BASE}/include")
+        # Must use dynamic libraries on MacOS (Xcode 15.2), use G++-13, and compile TBB via Homebrew with GCC/G++
+        # with "HOMEBREW_CC=gcc-13 HOMEBREW_CXX=g++-13 brew install tbb"
+        set(TBB_LIB "${TBB_BASE}/lib/libtbb.dylib" "${TBB_BASE}/lib/libtbbmalloc.dylib")
+    endif()
 endif()
 
 ################################################################
