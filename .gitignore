@@ -1,4 +1,3 @@
-
 ### .idea exclusions
 
 ## General User-specific stuff
@@ -7,15 +6,18 @@
 /.idea/jsLibraryMappings.xml
 /.idea/usage.statistics.xml
 /.idea/conf.py
+/.idea/misc.xml
+/.idea/modules.xml
 
 ## Editor-based Rest Client
 /.idea/httpRequests
 
 ## Only keep for personal projects
 #/.idea/vcs.xml
-#.idea/**/dictionaries
+.idea/**/dictionaries
 /.idea/copilot/
 *.iml
+/.idea/inspectionProfiles/
 
 ## Local changes
 /.idea/shelf/
@@ -46,3 +48,4 @@
 # Comment Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
 # *.iml
 # /.idea/modules.xml
+/.idea/vcs.xml
