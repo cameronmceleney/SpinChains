@@ -1,12 +1,48 @@
-# Ignore for all OS
-/.idea/
 
-# Windows specific
-/cmake-build-debug-mingw64/
-/cmake-build-release-mingw64/
-/cmake-build-release-mingw/
+### .idea exclusions
+
+## General User-specific stuff
+/.idea/workspace.xml
+/.idea/tasks.xml
+/.idea/jsLibraryMappings.xml
+/.idea/usage.statistics.xml
+/.idea/conf.py
+
+## Editor-based Rest Client
+/.idea/httpRequests
+
+## Only keep for personal projects
+#/.idea/vcs.xml
+#.idea/**/dictionaries
+/.idea/copilot/
+*.iml
+
+## Local changes
+/.idea/shelf/
+
+## Generated files
+/.idea/contentModel.xml
+
+## Sensitive or high-churn files
+/.idea/dataSources/
+/.idea/dataSources.ids
+/.idea/dataSources.xml
+/.idea/dataSources.local.xml
+/.idea/sqlDataSources.xml
+/.idea/dynamic.xml
+/.idea/uiDesigner.xml
+
+### Local environments
+/venv/
 /BaseVEnv/
 
-# MacOS specific
-/cmake-build-debug-mac/
-/cmake-build-release-mac/
+### CMake
+/cmake-build-*/
+
+### File-based project format
+/*.iws
+
+### Intellij Patch
+# Comment Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
+# *.iml
+# /.idea/modules.xml
