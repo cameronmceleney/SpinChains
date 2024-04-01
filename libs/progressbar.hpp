@@ -70,6 +70,7 @@ public:
     inline void show_bar(bool flag = true) {do_show_bar = flag;}
     // main function
     inline void update();
+    inline void updateIrregular();
 
 private:
     int progress;
@@ -87,7 +88,7 @@ private:
 inline progressbar::progressbar() :
         progress(0),
         n_cycles(0),
-        last_perc(0),
+        last_perc(-1),
         do_show_bar(true),
         update_is_called(false),
         done_char("#"),
@@ -181,5 +182,34 @@ inline void progressbar::update() {
         std::cout << "\b\b\b\bFinished!";
     }
 }
+
+inline void progressbar::updateIrregular() {
+        if (n_cycles == 0) throw std::runtime_error("progressbar::update: number of cycles not set");
+
+        // compute percentage dynamically
+        double perc = (static_cast<double>(progress) / n_cycles) * 100;
+
+        // update progress bar and percentage display only if percentage changes
+        if (static_cast<int>(perc) > last_perc) {
+            std::cout << "\r" << opening_bracket_char;
+            for (int i = 0; i < 50; ++i) {
+                if (i < perc * 0.5) std::cout << done_char;
+                else std::cout << todo_char;
+            }
+            std::cout << closing_bracket_char << ' ' << std::fixed << std::setprecision(1) << perc << '%';
+            std::cout << std::defaultfloat;
+            last_perc = static_cast<int>(perc);
+
+            // check for completion
+            if (progress == n_cycles) {
+                std::cout << " Finished!";
+            }
+
+            std::cout << std::flush;
+        }
+
+        // increment progress
+        ++progress;
+    }
 
 #endif

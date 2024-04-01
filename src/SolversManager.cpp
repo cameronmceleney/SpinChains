@@ -37,13 +37,16 @@ void SolversManager::massRunSimulations() {
     initialisationInstance->performInitialisation();
     configurationInstance->performInitialisation();
 
-    simProgressBar.set_niter(168);
+    double startValue = 0.005, endValue = 0.5, increment = 0.005;
+    int numberOfIterations = std::ceil((endValue - startValue) / increment);
+    simProgressBar.set_niter(numberOfIterations);
     simProgressBar.show_bar(true);
 
-    for (double i = 11; i < 60; i+=0.2) {
-        simProgressBar.update();
+    double i = startValue;
+    simProgressBar.updateIrregular();
+    while (i <= endValue) {
         // Add parameters to be changed here
-        simParams->drivingFreq = i * 1e9;
+        simParams->staticZeemanStrength = i;
 
         // For each new parameters set generate a new filename
         _generateNextFilename(baseFileName, letterString, numString);
@@ -53,7 +56,9 @@ void SolversManager::massRunSimulations() {
         configurationInstance->reinitialise();
         methodsInstance->performInitialisation();
 
-        if ( i > 30) { i += 0.3; }
+        simProgressBar.updateIrregular();
+
+        i += increment;
     }
 }
 
