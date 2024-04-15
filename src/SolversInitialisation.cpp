@@ -93,11 +93,11 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->latticeConstant = 1e-9;  // THIS MUST BE MANUALLY SET FOR NOW
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 12.5124 * 1e9;
-    simParams->oscillatingZeemanStrength = 2e-3;
+    simParams->drivingFreq = 15.6 * 1e9;
+    simParams->oscillatingZeemanStrength = 2e-3;  // use 2e-3 afterwards
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 10e-9;
+    simParams->maxSimTime = 5e-9;
     simParams->satMag = -1;
     simParams->stepsize = 1e-15;
 

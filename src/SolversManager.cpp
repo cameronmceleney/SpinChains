@@ -25,8 +25,10 @@ void SolversManager::Manager() {
 
 void SolversManager::massRunSimulations() {
 
-    auto initialisationInstance = SolversSuperClass::createSimulationInstance(simManager, simParams, simStates, simFlags);
-    auto configurationInstance = SolversSuperClass::createConfigurationInstance(simManager, simParams, simStates, simFlags);
+    auto initialisationInstance = SolversSuperClass::createSimulationInstance(simManager, simParams, simStates,
+                                                                              simFlags);
+    auto configurationInstance = SolversSuperClass::createConfigurationInstance(simManager, simParams, simStates,
+                                                                                simFlags);
     auto methodsInstance = SolversSuperClass::createMethodsInstance(simManager, simParams, simStates, simFlags);
 
 
@@ -37,28 +39,53 @@ void SolversManager::massRunSimulations() {
     initialisationInstance->performInitialisation();
     configurationInstance->performInitialisation();
 
-    double startValue = 0.005, endValue = 0.5, increment = 0.005;
-    int numberOfIterations = std::ceil((endValue - startValue) / increment);
+    double startValueField = 0.01, endValueField = 0.3, incrementField = 0.01;
+    double startValueFreq = 5.0, endValueFreq = 25, incrementFreq = 0.5;
+    int numberOfIterations = static_cast<int>(std::ceil((endValueField - startValueField) / incrementField)
+                                            * std::ceil((endValueFreq - startValueFreq) / incrementFreq));
     simProgressBar.set_niter(numberOfIterations);
     simProgressBar.show_bar(true);
 
-    double i = startValue;
     simProgressBar.updateIrregular();
-    while (i <= endValue) {
-        // Add parameters to be changed here
-        simParams->staticZeemanStrength = i;
 
-        // For each new parameters set generate a new filename
-        _generateNextFilename(baseFileName, letterString, numString);
+    double f = startValueFreq;
+    while ( f <= endValueFreq ) {
+        simParams->drivingFreq = f * 1e9;
 
-        // Perform the simulation with new parameters
-        initialisationInstance->reinitialise();
-        configurationInstance->reinitialise();
-        methodsInstance->performInitialisation();
+        double i = startValueField;
+        while ( i <= endValueField ) {
+
+            // Add parameters to be changed here
+            simParams->staticZeemanStrength = i;
+
+            if ( 29.2 * i > f)
+            {
+                // If driving frequency is less than the gyromagnetic constant times the static field
+                // then we can end this iteration early
+                simProgressBar.updateIrregular();
+                i += incrementField;
+                continue;
+            }
+            else
+            {
+
+                // For each new parameters set generate a new filename
+                _generateNextFilename(baseFileName, letterString, numString);
+
+                // Perform the simulation with new parameters
+                initialisationInstance->reinitialise();
+                configurationInstance->reinitialise();
+                methodsInstance->performInitialisation();
+
+                simProgressBar.updateIrregular();
+
+                i += incrementField;
+            }
+        }
 
         simProgressBar.updateIrregular();
 
-        i += increment;
+        f += incrementFreq;
     }
 }
 
@@ -74,7 +101,7 @@ void SolversManager::singleSimulation() {
 
 void SolversManager::_generateNextFilename(const std::string& baseName, std::string& letterSuffix, int& numSuffix) {
     if (simManager->hasNumericSuffix) {
-        GV.SetFileNameBase(baseName + "_" + std::to_string(numSuffix++));
+        GV.SetFileNameBase(baseName + "_" + std::to_string(simParams->drivingFreq * 10) + "_" + std::to_string(numSuffix++));
         return;
     } else {
         GV.SetFileNameBase(baseName + "_" + letterSuffix);

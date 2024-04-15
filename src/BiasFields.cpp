@@ -192,7 +192,7 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
             hyLocal = 0.0;
 
             // hz terms
-            hzLocal = GV.GetStaticBiasField();
+            hzLocal = _simParams->staticZeemanStrength;
         }
         else  {
             // hx terms
@@ -209,9 +209,9 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
 
             // hz terms
             if ( mzTermAtSite > 0 )
-                hzLocal = GV.GetStaticBiasField();
+                hzLocal = _simParams->staticZeemanStrength;
             else if ( mzTermAtSite < 0 )
-                hzLocal = GV.GetStaticBiasField() -1 + 1;
+                hzLocal = _simParams->staticZeemanStrength -1 + 1;
         }
 
         return {hxLocal, hyLocal, hzLocal};

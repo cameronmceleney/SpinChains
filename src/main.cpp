@@ -19,7 +19,7 @@ int main() {
 
     // Global simulation parameters
     GV.SetAnisotropyField(0);
-    GV.SetStaticBiasField(0.005);
+    GV.SetStaticBiasField(0.01);
     GV.SetNumSpins(8200);
     GV.SetExchangeMinVal(52.0);
     GV.SetExchangeMaxVal(52.0);
