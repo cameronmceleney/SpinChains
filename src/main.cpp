@@ -1,13 +1,20 @@
+
 // C++ Standard Libraries
-#include <iostream>
+
 
 // C++ User Libraries (General)
+//#include "../checks_examples/check_for_metal_device.h"
 //#include "../test/mappingSpeedTests.hpp"
 #include "../libs/CommonDefinitions.h"
 #include "../include/SolversSuperClass.h"
 // #include "../Other/working_on/SpinChainEigenSolverClass.h"
 
 int main() {
+    //CoffeeExample coffeeExample{};
+    //const int numElements = 1 << 18;
+    //const bool debugMode = false;
+    //std::string methodType = "simpleVectorSineAdd";
+    //coffeeExample.vectorAddition(numElements, methodType, debugMode);
 
     auto sharedSimManager = std::make_shared<SimulationManager>();
 
@@ -19,12 +26,12 @@ int main() {
 
     // Global simulation parameters
     GV.SetAnisotropyField(0);
-    GV.SetStaticBiasField(0.005);
-    GV.SetNumSpins(8200);
-    GV.SetExchangeMinVal(52.0);
-    GV.SetExchangeMaxVal(52.0);
+    GV.SetStaticBiasField(0.1);
+    GV.SetNumSpins(1400);
+    GV.SetExchangeMinVal(43.5);
+    GV.SetExchangeMaxVal(132);
     GV.SetGyromagneticConstant(29.2);
-    GV.SetDMIConstant(1.0);  // use negative to flip to match python for now
+    GV.SetDMIConstant(0);  // use negative to flip to match python for now
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -64,7 +71,7 @@ int main() {
         auto sharedSimStates = std::make_shared<SimulationStates>();
         auto sharedSimFlags = std::make_shared<SimulationFlags>();
 
-        sharedSimManager->massProduce = true;
+        sharedSimManager->massProduce = false;
         sharedSimManager->hasNumericSuffix = true;
 
         auto managerInstance = SolversSuperClass::createSimulationManager(sharedSimManager, sharedSimParams, sharedSimStates,

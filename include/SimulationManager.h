@@ -7,7 +7,7 @@
 
 #include <string>
 
-class SimulationManager {
+struct SimulationManager {
 public:
     std::string             outputFileID;
     bool                    hasNumericSuffix = true;

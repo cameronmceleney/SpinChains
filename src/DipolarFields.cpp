@@ -74,7 +74,7 @@ DipolarFields::dipolarKernel1D( const int &originSite, const int &influencingSit
 
     double positionVector = (influencingSite - originSite) * latticeConstant;
     // ################################ Calculate dipole kernel ################################
-    if ( component == "X" ) { return _simParams->PERM_FREESPACE / (2 * M_PI * pow(positionVector, 3.0)); }
+    if ( component == "X" ) { return PERM_FREESPACE / (2 * M_PI * pow(positionVector, 3.0)); }
     else { throw std::runtime_error(std::string("Invalid component passed to dipolarKernel1D")); }
 }
 
@@ -484,8 +484,8 @@ std::vector<double> DipolarFields::DipolarInteractionInterlayerAll( std::vector<
 
 std::vector<double> DipolarFields::DipolarInteractionInterlayerAdjacent( std::vector<std::vector<double>> &mTermsChain1,
                                                                          std::vector<std::vector<double>> &mTermsChain2,
-                                                                         int &numNeighbours, int &currentSite,
-                                                                         const int &currentLayer,
+                                                                         u_short &numNeighbours, int &currentSite,
+                                                                         const u_short &currentLayer,
                                                                          double &exchangeStiffness,
                                                                          double &interlayerExchange ) {
     /* Calculate the dipolar interaction between a site in Layer1 (chain 1), and every other site in another layer

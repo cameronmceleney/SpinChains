@@ -15,7 +15,7 @@ DzyaloshinskiiMoriyaInteraction::DzyaloshinskiiMoriyaInteraction( SimulationPara
 }
 
 std::array<double, 3>
-DzyaloshinskiiMoriyaInteraction::calculateClassic( const int &currentSite, const std::array<double, 2> &mxTerms,
+DzyaloshinskiiMoriyaInteraction::calculateClassic( int &currentSite, const std::array<double, 2> &mxTerms,
                                                    const std::array<double, 2> &myTerms,
                                                    const std::array<double, 2> &mzTerms ) {
     // Only use for debugging!!
@@ -165,7 +165,7 @@ DzyaloshinskiiMoriyaInteraction::_calculateDMIField1D( const int &currentSite, c
 }
 
 std::array<double, 3>
-DzyaloshinskiiMoriyaInteraction::_calculateDMIField3D( auto &currentSite, const std::vector<double> &mxTerms,
+DzyaloshinskiiMoriyaInteraction::_calculateDMIField3D( int &currentSite, const std::vector<double> &mxTerms,
                                                        const std::vector<double> &myTerms,
                                                        const std::vector<double> &mzTerms ) {
 
@@ -188,7 +188,7 @@ DzyaloshinskiiMoriyaInteraction::_calculateDMIField3D( auto &currentSite, const 
 }
 
 std::array<double, 3>
-DzyaloshinskiiMoriyaInteraction::_calculateDMIField3D( auto &currentSite, const std::vector<double> &mxTerms,
+DzyaloshinskiiMoriyaInteraction::_calculateDMIField3D( int &currentSite, const std::vector<double> &mxTerms,
                                                        const std::vector<double> &myTerms,
                                                        const std::vector<double> &mzTerms,
                                                        const bool &shouldUseTBB ) {
@@ -215,7 +215,7 @@ DzyaloshinskiiMoriyaInteraction::_calculateDMIField3D( auto &currentSite, const 
 }
 
 std::array<double, 3>
-DzyaloshinskiiMoriyaInteraction::_calculateDMIFieldClassic( auto &currentSite, const std::array<double, 2> &mxTerms,
+DzyaloshinskiiMoriyaInteraction::_calculateDMIFieldClassic( int &currentSite, const std::array<double, 2> &mxTerms,
                                                             const std::array<double, 2> &myTerms,
                                                             const std::array<double, 2> &mzTerms ) {
 

@@ -222,7 +222,7 @@ void SolversConfiguration::_generateMaps() {
 }
 
 void
-SolversConfiguration::_generateAbsorbingRegionsUpdated( int numSpinsInChain, int numSpinsAbsorbingRegion,
+SolversConfiguration::_generateAbsorbingRegionsUpdated( u_int numSpinsInChain, u_int numSpinsAbsorbingRegion,
                                                         double gilbertSpinChain,
                                                         double gilbertAbsorbingRegionInner,
                                                         double gilbertAbsorbingRegionOuter ) {
@@ -892,7 +892,7 @@ void SolversConfiguration::_generateMultilayerAbsorbingRegions( int numSpinsAbso
         exit(1);
     }
 
-    for ( int &layer: simStates->layerSpinsInChain ) {
+    for ( auto &layer: simStates->layerSpinsInChain ) {
         std::vector<double> gilbertChain(layer, gilbertSpinChain);
 
         AbsorbingRegionLHS.set_values(gilbertAbsorbingRegionOuter, gilbertAbsorbingRegionInner, numSpinsAbsorbingRegion,
@@ -960,7 +960,7 @@ std::vector<std::vector<std::vector<double>>> SolversConfiguration::initializeNe
 }
 
 std::vector<std::vector<std::vector<double>>>
-SolversConfiguration::InitialiseNestedVectors( int &totalLayer, double &mxInit, double &myInit, double &mzInit ) {
+SolversConfiguration::InitialiseNestedVectors( u_short &totalLayer, double &mxInit, double &myInit, double &mzInit ) {
 
     // Initialise mapping
     std::map<std::string, std::vector<std::vector<std::vector<double>>>> mTermsMapping;

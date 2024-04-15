@@ -49,9 +49,9 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
                         if ( it != _simStates->dRGradientMap.end()) { scalingFactor = it->second; } // Found the site in map
                     }
                     // Only change the x-component of the bias field as this is the only component that will be driven dynamically
-                    biasFieldXOut[site].fetch_add(tempBiasResults[0] * scalingFactor);
-                    biasFieldYOut[site].fetch_add(tempBiasResults[1]);
-                    biasFieldZOut[site].fetch_add(tempBiasResults[2]);
+                    //biasFieldXOut[site].fetch_add(tempBiasResults[0] * scalingFactor);
+                    //biasFieldYOut[site].fetch_add(tempBiasResults[1]);
+                    //biasFieldZOut[site].fetch_add(tempBiasResults[2]);
 
                 }
         }, tbb::auto_partitioner());
@@ -59,6 +59,39 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
     } else {
         throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");
     }
+}
+
+void BiasFields::calculateOneDimension( const int &currentLayer, const double &currentTime,
+                                        const std::vector<double> &mzTermsIn,
+                                        std::vector<double> &biasFieldXOut,
+                                        std::vector<double> &biasFieldYOut,
+                                        std::vector<double> &biasFieldZOut, const int &selectThisFunction ) {
+    // No need for syncVec counter here as each site only reads from itself during computations!
+
+    //if ( _simFlags->forceSequentialOperation ) { tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 ); }
+    tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
+        [&](const tbb::blocked_range<int>& range) {
+            for (int site = range.begin(); site < range.end(); site++) {
+                std::array<double, 3> tempBiasResults{0.0, 0.0, 0.0};
+
+                _calculateBiasField1D( site, currentLayer, currentTime, tempBiasResults, mzTermsIn[site] );
+
+                double scalingFactor = 1.0; // Implies no scaling changes are made to the bias field
+
+                if (_simFlags->hasGradientRegionForOscillatingZeeman) {
+                    // Check driving region map to see if current site has a scaling factor
+                    auto it = _simStates->dRGradientMap.find(site);
+                    if ( it != _simStates->dRGradientMap.end()) { scalingFactor = it->second; } // Found the site in map
+                }
+
+                // Safe to update exchangeVec. Remember that this is the class-wide container!
+                biasFieldXOut[site] += tempBiasResults[0] * scalingFactor;
+                //biasFieldYOut[site] += tempBiasResults[1];
+                biasFieldZOut[site] += tempBiasResults[2];
+                // Reset syncVec[site] here if its defined out with the function scope
+
+            }
+    }, tbb::auto_partitioner());
 }
 
 void BiasFields::calculateOneDimension( const int &currentLayer, const double &currentTime,
@@ -105,9 +138,9 @@ void BiasFields::calculateOneDimension( const int &currentLayer, const double &c
                 for (int site = range.begin(); site <= range.end(); site++) {
                     std::array<double, 3> tempBiasResults = _calculateBiasField1D( site, currentLayer, currentTime, mzTermsIn[site], shouldUseTBB);
 
-                    std::atomic_ref<double>(biasFieldXOut[site]).fetch_add(tempBiasResults[0]);
-                    std::atomic_ref<double>(biasFieldYOut[site]).fetch_add(tempBiasResults[1]);
-                    std::atomic_ref<double>(biasFieldZOut[site]).fetch_add(tempBiasResults[2]);
+                    //std::atomic_ref<double>(biasFieldXOut[site]).fetch_add(tempBiasResults[0]);
+                    //std::atomic_ref<double>(biasFieldYOut[site]).fetch_add(tempBiasResults[1]);
+                    //std::atomic_ref<double>(biasFieldZOut[site]).fetch_add(tempBiasResults[2]);
                 }
         }, tbb::auto_partitioner());
 
@@ -218,6 +251,65 @@ BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLay
     } else {
         throw std::invalid_argument("_calculateBiasFields1D hasn't got CUDA implementation yet");
     }
+}
+
+std::array<double, 3>&
+BiasFields::_calculateBiasField1D( const int &currentSite, const int &currentLayer, const double &currentTime,
+                                   std::array<double, 3> &localBiasFields, const double &mzTermAtSite ) {
+
+// TODO. This is a temp polymorphic version of _calculateDMIField1D that is threadsafe. Needs refinement
+// Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
+/*
+ * Code is currently hard-coded to only use nearest-neighbours (NN) heisenberg exchange interactions. But the
+ * method is laid out this way to allow easier extension to include higher-order NN exchange interactions in
+ * the future
+ */
+
+    // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
+
+    // Structure should be: first line are interactions (Heisenberg Exchange, DMI); second line are other fields
+
+    if ( _simFlags->isFerromagnetic )
+    {
+        // hx terms
+        if ( _hasOscillatingZeeman(currentSite)) {
+            // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
+            if ( _simFlags->shouldDriveAllLayers || currentLayer == 0 ) {
+                localBiasFields[0] += _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
+            }
+            else if ( _simFlags->isOscillatingZeemanStatic ) {
+                localBiasFields[0] += _simParams->oscillatingZeemanStrength;
+            }
+        }
+
+        // hy terms
+        // localBiasFields[1] += 0.0;
+
+        // hz terms
+        localBiasFields[2] += _simParams->staticZeemanStrength;
+    }
+    else
+    {
+        // hx terms
+        if ( _hasOscillatingZeeman(currentSite)) {
+            // The pulse of input energy will be restricted to being along the x-direction, and it will only be generated within the driving region
+            if ( _simFlags->isOscillatingZeemanStatic )
+                localBiasFields[0] += _simParams->oscillatingZeemanStrength;
+            else
+                localBiasFields[0] += _simParams->oscillatingZeemanStrength * cos(_simParams->drivingAngFreq * currentTime);
+        }
+
+        // hy terms
+        //localBiasFields[1] = 0.0;
+
+        // hz terms
+        if ( mzTermAtSite > 0 )
+            localBiasFields[2] += _simParams->staticZeemanStrength;
+        else if ( mzTermAtSite < 0 )
+            localBiasFields[2] += _simParams->staticZeemanStrength - 1 + 1;
+    }
+
+    return localBiasFields;
 }
 
 bool BiasFields::_hasOscillatingZeeman( const int &site ) {

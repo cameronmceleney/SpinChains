@@ -71,10 +71,10 @@ public:
                                                         double& exchangeStiffness, double& interlayerExchange);
 
     // Description missing
-    std::vector<double> DipolarInteractionInterlayerAdjacent(std::vector<std::vector<double>>& mTermsLayer1,
-                                                        std::vector<std::vector<double>>& mTermsLayer2, int& numNeighbours,
-                                                        int& currentSite, const int& currentLayer,
-                                                        double& exchangeStiffness, double& interlayerExchange);
+    std::vector<double> DipolarInteractionInterlayerAdjacent( std::vector<std::vector<double>>& mTermsChain1,
+                                                              std::vector<std::vector<double>>& mTermsChain2, u_short &numNeighbours,
+                                                              int& currentSite, const u_short &currentLayer,
+                                                              double& exchangeStiffness, double& interlayerExchange);
 
     std::vector<double> DipolarInteractionIntralayerDebug(std::vector<std::vector<double>>& mTerms, int& numNeighbours,
                                               int& currentSite, const int& currentLayer = 0);

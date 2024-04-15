@@ -41,7 +41,7 @@ void SolversInitialisation::_setSimulationFlags() {
     // Magnetic Interaction Flags
     simFlags->hasShockwave = false;
     simFlags->hasDipolar = false;
-    simFlags->hasDMI = true;
+    simFlags->hasDMI = false;
     simFlags->hasSTT = false;
     simFlags->hasStaticZeeman = true;
     simFlags->hasDemag1DThinFilm = false;
@@ -59,8 +59,8 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasCustomDrivePosition = false;
     simFlags->shouldDriveAllLayers = true;
     simFlags->shouldDriveBothSides = false;
-    simFlags->shouldDriveCentre = true;
-    simFlags->shouldDriveLHS = false;
+    simFlags->shouldDriveCentre = false;
+    simFlags->shouldDriveLHS = true;
     simFlags->shouldDriveRHS = false;
 
     // Drive Manipulation Flags
@@ -73,37 +73,37 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintDiscreteSites = false;
 
     // TESTING ONLY
-    simFlags->hasGradientRegionForOscillatingZeeman = true;
-    simFlags->hasGradientRegionForDmi = true;
-    simFlags->hasGradientRegionForDamping = true;
+    simFlags->hasGradientRegionForOscillatingZeeman = false;
+    simFlags->hasGradientRegionForDmi = false;
+    simFlags->hasGradientRegionForDamping = false;
 
-    simFlags->shouldDmiGradientMirrorOscillatingZeeman = true;
-    simFlags->shouldDampingGradientMirrorOscillatingZeeman = true;
+    simFlags->shouldDmiGradientMirrorOscillatingZeeman = false;
+    simFlags->shouldDampingGradientMirrorOscillatingZeeman = false;
 
-    simFlags->shouldRestrictDmiToWithinGradientRegion = true;
+    simFlags->shouldRestrictDmiToWithinGradientRegion = false;
     simFlags->isOscillatingZeemanLinearAcrossMap = true;
-    simFlags->isDmiLinearAcrossMap = true;
-    simFlags->isDampingLinearAcrossMap = true;
+    simFlags->isDmiLinearAcrossMap = false;
+    simFlags->isDampingLinearAcrossMap = false;
 
     simFlags->useGenerateABCUpdated = true;
 }
 
 void SolversInitialisation::_setSimulationParameters() {
 
-    simParams->latticeConstant = 1e-9;  // THIS MUST BE MANUALLY SET FOR NOW
+    simParams->latticeConstant = 0.254e-9;  // THIS MUST BE MANUALLY SET FOR NOW
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 12.5124 * 1e9;
-    simParams->oscillatingZeemanStrength = 2e-3;
+    simParams->drivingFreq = 42.5 * 1e9;
+    simParams->oscillatingZeemanStrength = 3e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 10e-9;
+    simParams->maxSimTime = 0.7e-9;
     simParams->satMag = -1;
     simParams->stepsize = 1e-15;
 
     // Data Output Parameters
     simStates->fixedOutputSites = {600, 1000, 1400, 1800, 2200, 2600, 3000, 3400};
-    simParams->numberOfDataPoints = 1e3; //static_cast<int>(maxSimTime / recordingInterval);
+    simParams->numberOfDataPoints = 1e2; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
     simParams->gilbertDamping = 1e-4;
@@ -115,7 +115,7 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->drivingRegionWidth = 200;
     simParams->numSpinsDRPeak = 200;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 500;
+    simParams->numSpinsInABC = 0;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)
@@ -144,7 +144,7 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->spinTransferEfficiency = 0.4;
     simFlags->preferredDirection = 2;
     simParams->PERMEABILITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
-    simParams->dipoleConstant = SimulationParameters::PERM_FREESPACE / (4.0 * M_PI);
+    simParams->dipoleConstant = PERM_FREESPACE / (4.0 * M_PI);
 
     simParams->layerOfInterest -= 1;  // To correct for 0-indexing
 
@@ -174,13 +174,13 @@ void SolversInitialisation::_generateRemainingParameters() {
     // Computations based upon other inputs
     simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;
 
-    simParams->iterationEnd = static_cast<int>(simParams->maxSimTime / simParams->stepsize);
+    simParams->iterationEnd = static_cast<u_int>(simParams->maxSimTime / simParams->stepsize);
     simParams->stepsizeHalf = simParams->stepsize / 2.0;
 
     simStates->layerSpinsInChain = {simParams->drivingRegionWidth, simParams->numSpinsInChain};
     simStates->layerSpinPairs.clear();
     simStates->layerTotalSpins.clear();
-    for (int& spinsInChain: simStates->layerSpinsInChain) {
+    for (auto &spinsInChain: simStates->layerSpinsInChain) {
         simStates->layerSpinPairs.push_back(spinsInChain - 1);
         simStates->layerTotalSpins.push_back(spinsInChain + 2 * simParams->numSpinsInABC);
     }

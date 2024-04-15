@@ -5,7 +5,7 @@
 #ifndef SPINCHAINS_SIMULATIONFLAGS_H
 #define SPINCHAINS_SIMULATIONFLAGS_H
 
-class SimulationFlags {
+struct SimulationFlags {
 public:
     bool                shouldDriveCentre;                               // Drive from the centre of the chain if (true)
     bool                shouldDriveAllLayers;

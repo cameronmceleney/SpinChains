@@ -85,7 +85,7 @@ private:
     std::vector<std::vector<std::vector<double>>> initializeNestedNestedVector( int numSites, bool includeEnd );
 
     // Description missing
-    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors( int &totalLayer, double &mxInit,
+    std::vector<std::vector<std::vector<double>>> InitialiseNestedVectors( u_short &totalLayer, double &mxInit,
                                                                            double &myInit, double &mzInit );
 
 
@@ -114,7 +114,7 @@ private:
 
     void _generateMaps();
 
-    void _generateAbsorbingRegionsUpdated( int numSpinsInChain, int numSpinsAbsorbingRegion,
+    void _generateAbsorbingRegionsUpdated( u_int numSpinsInChain, u_int numSpinsAbsorbingRegion,
                                            double gilbertSpinChain,
                                            double gilbertAbsorbingRegionInner,
                                            double gilbertAbsorbingRegionOuter );

@@ -136,7 +136,7 @@ MagnetisationDynamics::StochasticTerm( const int &site, const double &timeStep, 
     // Function to compute the stochastic term
 
     // Compute the standard deviation for the Gaussian noise
-    double stddev = std::sqrt(2.0 * gilbertFactor * SimulationParameters::BOLTZMANN_CONSTANT * _simParams->ambientTemperature / (_simParams->gyroMagConst * _simParams->satMag * timeStep));
+    double stddev = std::sqrt(2.0 * gilbertFactor * BOLTZMANN_CONSTANT * _simParams->ambientTemperature / (_simParams->gyroMagConst * _simParams->satMag * timeStep));
 
     // Generate Gaussian noise for each direction
     double xi_x = GenerateGaussianNoise(0.0, stddev);

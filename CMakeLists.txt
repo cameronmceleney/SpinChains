@@ -7,12 +7,13 @@
 cmake_minimum_required(VERSION 3.17)
 project(SpinChains)  # This project's name is not to be confused with (ChainSpins); an old local redundant project
 
-set(CMAKE_CXX_STANDARD 23)  # No attempt has been made to ensure backwards compatibility from C23
+set(CMAKE_CXX_STANDARD 17)  # No attempt has been made to ensure backwards compatibility from C23
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+enable_language(OBJCXX)
 
-if (APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
+if(APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 endif()
 
 ################################################################
@@ -29,6 +30,28 @@ endif()
 
 # Manually specifying Eigen and FFTW directories. May be different on your system.
 # Numbers in PATHS are version numbers
+
+################################################################
+
+# Path to your metal-cpp directory
+set(METAL_CPP_DIR ${CMAKE_SOURCE_DIR}/metal-cpp)
+if(APPLE)
+    find_library(METAL Metal)
+    find_library(FOUNDATION Foundation)
+    find_library(QUARTZ_CORE QuartzCore)
+    find_library(APP_KIT AppKit)
+endif()
+
+################################################################
+
+# Add the include directories for metal-cpp and its dependencies
+# (Metal-CPP, QuartzCore-CPP, and Foundation-CPP headers)
+
+
+# OPTIONAL: Find the system Metal and Foundation frameworks
+# find_library(METAL_FRAMEWORK Metal)
+# find_library(FOUNDATION_FRAMEWORK Foundation)
+# find_library(QUARTZCORE_FRAMEWORK QuartzCore)
 
 ################################################################
 # Operating system specific settings
@@ -76,13 +99,28 @@ endif()
 
 ################################################################
 # Create lists of all user sources
+set(METAL_GENERAL_LIBRARY
+    ${CMAKE_SOURCE_DIR}/libs/metal_config.h
+        libs/LocalMetalResources.h
+)
+
+set(METAL_CHECKS_EXAMPLES
+        #checks_examples/check_for_metal_device.cpp
+        #checks_examples/check_for_metal_device.h
+        checks_examples/CommonTools.cpp
+        checks_examples/CommonTools.h
+)
+
 set(USER_GENERAL_LIBRARIES
         libs/CommonDefinitions.h
         libs/progressbar.hpp
-        libs/linspace.cpp libs/linspace.h
+        libs/linspace.cpp
+        libs/linspace.h
         libs/revised_progressbar.hpp
         libs/CommonStructures.h
         libs/HashSpecialisation.h
+        libs/CustomTimer.hpp
+
 )
 
 set(USER_OTHER_FILES
@@ -129,14 +167,96 @@ set(SOLVER_CLASS_COMPONENTS
 # Must be before add_executable()
 # set(TBB_ENABLE_IPO OFF CACHE BOOL "Disable interprocedural optimization for TBB")
 
+################################################################
+message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
+
+# Assuming your .metal file is located at src/my_shader.metal
+set(METAL_FILE "${CMAKE_SOURCE_DIR}/src/coffeewitharch.metal")
+
+# Mark the .metal file as a header-only file to include it in the project for IDEs
+set_source_files_properties(${METAL_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
+
+################################################################
 # Links all user sources to the executable
 add_executable(${PROJECT_NAME} src/main.cpp
+        ${METAL_GENERAL_LIBRARY}
+        ${METAL_CHECKS_EXAMPLES}
         ${USER_GENERAL_LIBRARIES}
         ${USER_OTHER_FILES}
         ${CONTAINER_LIBRARIES}
         ${SOLVERS_CLASS}
         ${SOLVER_CLASS_COMPONENTS}
+        ${METAL_FILE}
 )
+
+
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ${CMAKE_SOURCE_DIR}/libs
+        ${METAL_CPP_DIR}
+        ${METAL_CPP_DIR}/AppKit
+        ${METAL_CPP_DIR}/Foundation
+        ${METAL_CPP_DIR}/Metal
+        ${METAL_CPP_DIR}/MetalFX
+        ${METAL_CPP_DIR}/MetalKit
+        ${METAL_CPP_DIR}/QuartzCore)
+
+if (APPLE)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${EIGEN_DIR})
+    target_include_directories(${PROJECT_NAME} PRIVATE ${FFTW_DIR})
+    target_include_directories(${PROJECT_NAME} PRIVATE ${TBB_DIR})
+endif ()
+################################################################
+# NEW. for create lists of all sources
+# Print the CMAKE_CURRENT_BINARY_DIR variable
+message(STATUS "CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
+
+# Path to Metal shader source file
+set(METAL_SHADER_SRC ${CMAKE_SOURCE_DIR}/src/coffeewitharch.metal)
+
+# Output path for the compiled Metal shader (AIR file)
+set(METAL_SHADER_AIR ${CMAKE_CURRENT_BINARY_DIR}/coffeewitharch.air)
+
+# Output path for the Metal library (.metallib file)
+set(METAL_SHADER_METALLIB ${CMAKE_CURRENT_BINARY_DIR}/coffeewitharch.metallib)
+add_definitions(-DMETAL_SHADER_METALLIB_PATH="${METAL_SHADER_METALLIB}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+        NS_PRIVATE_IMPLEMENTATION
+        CA_PRIVATE_IMPLEMENTATION
+        MTL_PRIVATE_IMPLEMENTATION
+        MTK_PRIVATE_IMPLEMENTATION
+)
+
+
+################################################################
+# NEW. Custom commands
+
+# Compile .metal shader to .air
+add_custom_command(
+    OUTPUT ${METAL_SHADER_AIR}
+    COMMAND xcrun -sdk macosx metal -c ${METAL_SHADER_SRC} -o ${METAL_SHADER_AIR}
+    DEPENDS ${METAL_SHADER_SRC}
+    COMMENT "Compiling ${METAL_SHADER_SRC} to AIR"
+)
+
+# Compile .air to .metallib
+add_custom_command(
+    OUTPUT ${METAL_SHADER_METALLIB}
+    COMMAND xcrun -sdk macosx metallib ${METAL_SHADER_AIR} -o ${METAL_SHADER_METALLIB}
+    DEPENDS ${METAL_SHADER_AIR}
+    COMMENT "Compiling ${METAL_SHADER_AIR} to Metal Library"
+)
+
+################################################################
+# NEW. Custom target to ensure the Metal shader is compiled
+add_custom_target(
+    CompileMetalShader ALL
+    DEPENDS ${METAL_SHADER_METALLIB}
+)
+
+################################################################
+# NEW. Specify that the executable depends on the CompileMetalShader target
+add_dependencies(${PROJECT_NAME} CompileMetalShader)
 
 ################################################################
 # Include and link directories for third-party libraries
@@ -146,8 +266,14 @@ if(WIN32 OR WIN64)
     include_directories(${EIGEN_DIR} ${FFTW_DIR} ${TBB_DIR})
     target_link_libraries(${PROJECT_NAME} PRIVATE ${FFTW_LIB} ${TBB_LIB})
 elseif(APPLE)
-    include_directories(${EIGEN_DIR} ${FFTW_DIR} ${TBB_DIR})
-    target_link_libraries(${PROJECT_NAME} PRIVATE stdc++ ${FFTW_LIB} ${TBB_LIB})
+    set(USER_FLAGS c++ c++abi)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        ${METAL}
+        ${FOUNDATION}
+        ${QUARTZ_CORE}
+        ${APP_KIT}
+        ${FFTW_LIB} ${TBB_LIB}
+        ${USER_FLAGS})
 endif()
 
 

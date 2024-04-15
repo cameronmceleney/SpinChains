@@ -7,6 +7,8 @@
 
 // C++ Standard Library
 #include <array>
+#include <atomic>
+#include <tuple>
 #include <vector>
 
 // C++ Third Party Libraries
@@ -18,7 +20,7 @@
 #include <tbb/mutex.h>
 
 // C++ User Libraries (General)
-#include "../libs/CommonDefinitions.h"
+//#include "../libs/CommonDefinitions.h"
 #include "GlobalVariables.h"
 
 // C++ User Libraries (Containers)
@@ -33,7 +35,11 @@ private:
     SimulationFlags *_simFlags;
 
 private:
-
+    struct ComputationData {
+        double* mxTerm[3]; // Pointers to mxInput for site-1, site, site+1
+        double* myTerm[3]; // Pointers to myInput for site-1, site, site+1
+        double* mzTerm[3]; // Pointers to mzInput for site-1, site, site+1
+    };
     bool _hasOscillatingZeeman( const int &site );
 
     std::array<double, 3> _calculateExchangeField1D( const int &currentSite, const std::vector<double> &mxTerms,
@@ -80,6 +86,16 @@ private:
                           const std::vector<double> &myTerms,
                           const std::vector<double> &mzTerms, const bool &shouldUseTBB );
 
+    std::array<double, 3>& _calculateExchangeField1D( const int &currentSite, std::array<double, 3> &directExchangeLocal,
+                                              const std::vector<double> &mxTerms,
+                                              const std::vector<double> &myTerms,
+                                              const std::vector<double> &mzTerms );
+
+    std::array<double, 3>& _calculateDMI1D( const int &currentSite, std::array<double, 3>& localDmiTerms,
+                                const std::vector<double> &mxTerms,
+                                const std::vector<double> &myTerms,
+                                const std::vector<double> &mzTerms );
+
 public:
     explicit ExchangeField( SimulationParameters *sharedSimParams,
                             SimulationStates *sharedSimStates,
@@ -93,14 +109,21 @@ public:
                                 std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut );
 
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
-                                const std::vector<double> &mzTerms, std::vector<std::atomic<double>> &exchangeXOut,
-                                std::vector<std::atomic<double>> &exchangeYOut,
-                                std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB );
+                                const std::vector<double> &mzTerms,
+                                std::vector<std::tuple<double, double, std::atomic<int>>> &exchangeXOut,
+                                std::vector<std::tuple<double, double, std::atomic<int>>> &exchangeYOut,
+                                std::vector<std::tuple<double, double, std::atomic<int>>> &exchangeZOut,
+                                const bool &shouldUseTBB );
 
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
                                 const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,
                                 std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut,
                                 const bool &shouldUseTBB );
+
+    void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
+                                const std::vector<double> &mzTerms, std::vector<double> &effectiveFieldX,
+                                std::vector<double> &effectiveFieldY, std::vector<double> &effectiveFieldZ,
+                                const int &selectThisFunction);
 };
 
 

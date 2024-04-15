@@ -46,7 +46,7 @@ public:
                                    const std::vector<double> &mzTerms, std::vector<double> &dmiXOut,
                                    std::vector<double> &dmiYOut, std::vector<double> &dmiZOut, bool shouldUseTBB );
 
-    std::array<double, 3> calculateClassic( const int &currentSite, const std::array<double, 2> &mxTerms,
+    std::array<double, 3> calculateClassic( int &currentSite, const std::array<double, 2> &mxTerms,
                                             const std::array<double, 2> &myTerms,
                                             const std::array<double, 2> &mzTerms );
 
@@ -100,14 +100,14 @@ private:
                           const std::vector<double> &myTerms,
                           const std::vector<double> &mzTerms, const bool &shouldUseTBB );
 
-    std::array<double, 3> _calculateDMIField3D( auto &currentSite, const std::vector<double> &mxTerms,
+    std::array<double, 3> _calculateDMIField3D( int &currentSite, const std::vector<double> &mxTerms,
                                               const std::vector<double> &myTerms, const std::vector<double> &mzTerms );
-    std::array<double, 3> _calculateDMIField3D( auto &currentSite, const std::vector<double> &mxTerms,
+    std::array<double, 3> _calculateDMIField3D( int &currentSite, const std::vector<double> &mxTerms,
                                           const std::vector<double> &myTerms, const std::vector<double> &mzTerms,
                                           const bool &shouldUseTBB);
 
     std::array<double, 3>
-    _calculateDMIFieldClassic( auto &currentSite, const std::array<double, 2> &mxTerms,
+    _calculateDMIFieldClassic( int &currentSite, const std::array<double, 2> &mxTerms,
                                const std::array<double, 2> &myTerms,
                                const std::array<double, 2> &mzTerms );
 };

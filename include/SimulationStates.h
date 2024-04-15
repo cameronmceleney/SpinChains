@@ -10,7 +10,7 @@
 #include <map>
 #include <vector>
 
-class SimulationStates {
+struct SimulationStates {
 public:
     /**
      * Holds a linearly space array of values to describe all the exchange damping factors
@@ -55,12 +55,12 @@ public:
     /**
      * Description missing
      */
-    std::vector<int> layerSpinPairs;
+    std::vector<u_int> layerSpinPairs;
 
     /**
      * Description missing
      */
-    std::vector<int>    layerSpinsInChain;
+    std::vector<u_int>    layerSpinsInChain;
 
     /**
      * Description missing

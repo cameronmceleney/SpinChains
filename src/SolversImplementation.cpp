@@ -4,6 +4,8 @@
 
 // Corresponding header
 #include "../include/SolversImplementation.h"
+#include "CustomTimer.hpp"
+#include "LocalMetalResources.h"
 
 SolversImplementation::SolversImplementation( std::shared_ptr<SimulationManager> sharedSimManager,
                                               std::shared_ptr<SimulationParameters> sharedSimParams,
@@ -587,17 +589,25 @@ void SolversImplementation::RK2Parallel() {
 
         _testShockwaveConditions(iteration);
 
-        double t0 = simParams->totalTime, t0Half = simParams->totalTime + simParams->stepsizeHalf;
+        float t0 = simParams->totalTime, t0Half = simParams->totalTime + simParams->stepsizeHalf;
 
         if ( useCompact ) {
             // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
             // Possible mistake here; should it not be 't0+h' and not 't0' for RK-S1?
-            RK2StageMultithreadedCompact(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
+            //RK2StageMultithreadedCompact(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
+            //                             t0, simParams->stepsizeHalf, iteration, "1");
+            std::cout << "test1" << std::endl;
+            RK2StageMultithreadedGPU(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
                                          t0, simParams->stepsizeHalf, iteration, "1");
+            std::cout << "test1" << std::endl;
 
             // RK2 Stage 2. Takes (m0 + k1/2) as inputs. This estimates the values of the m-components for the next iteration.
-            RK2StageMultithreadedCompact(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
-                                         t0Half, simParams->stepsize, iteration, "2");
+            //RK2StageMultithreadedCompact(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
+            //                             t0Half, simParams->stepsize, iteration, "2");
+            RK2StageMultithreadedGPU(mx1p, my1p, mz1p, mx2p, my2p, mz2p,
+                             t0Half, simParams->stepsize, iteration, "2");
+            std::cout << "test1" << std::endl;
+
         } else {
             // RK2 Stage 1. Takes initial conditions as inputs. The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
             RK2StageMultithreaded(simStates->mx0, simStates->my0, simStates->mz0, mx1p, my1p, mz1p,
@@ -750,7 +760,7 @@ void SolversImplementation::RK4Parallel() {
 void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mxIn, const std::vector<double> &myIn,
                                                    const std::vector<double> &mzIn, std::vector<double> &mxOut,
                                                    std::vector<double> &myOut, std::vector<double> &mzOut,
-                                                   double &currentTime, double &stepsize, int &iteration,
+                                                   float &currentTime, float &stepsize, int &iteration,
                                                    std::string rkStage ) {
     CommonStructures::Timer dipolarTimer;
     bool useParallel = true;
@@ -1041,36 +1051,38 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
 
     // Use these to ensure that there's no issues with sharing a member attribute across
     // methods (this is less memory efficient, but for debugging purposes)
-    std::vector<std::atomic<double>> effectiveFieldXAtomic(simParams->systemTotalSpins + 2);
-    std::vector<std::atomic<double>> effectiveFieldYAtomic(simParams->systemTotalSpins + 2);
-    std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
+    //std::vector<std::atomic<double>> effectiveFieldXAtomic(simParams->systemTotalSpins + 2);
+    //std::vector<std::atomic<double>> effectiveFieldYAtomic(simParams->systemTotalSpins + 2);
+    //std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
+    // std::fill(effectiveFieldX.begin(), effectiveFieldX.end(), 0.0);
+    // std::fill(effectiveFieldY.begin(), effectiveFieldY.end(), 0.0);
+    // std::fill(effectiveFieldZ.begin(), effectiveFieldZ.end(), 0.0);
 
-    exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                        effectiveFieldZAtomic, useParallel);
-    biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                    effectiveFieldZAtomic, useParallel);
+    exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldX, effectiveFieldY,
+                                        effectiveFieldZ, 0);
+    biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldX, effectiveFieldY,
+                                    effectiveFieldZ, 0);
 
-    _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
-    _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
-    _transferDataThenReleaseAtomicVector(effectiveFieldZAtomic, effectiveFieldZ);
+    //_transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
+    //_transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
+    //_transferDataThenReleaseAtomicVector(effectiveFieldZAtomic, effectiveFieldZ);
 
-    effectiveFieldX[0] = 0;
-    effectiveFieldX.back() = 0;
-    effectiveFieldY[0] = 0;
-    effectiveFieldY.back() = 0;
-    effectiveFieldZ[0] = 0;
-    effectiveFieldZ.back() = 0;
+    //effectiveFieldX[0] = 0;
+    //effectiveFieldX.back() = 0;
+    //effectiveFieldY[0] = 0;
+    //effectiveFieldY.back() = 0;
+    //effectiveFieldZ[0] = 0;
+    //effectiveFieldZ.back() = 0;
 
 
-    if ( simFlags->hasDemagIntense )
-        demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
-
-    if ( simFlags->hasDipolar )
-        dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
-
-    if ( simFlags->hasSTT )
-        // placeholder for example. Find STT for each site at all sites before main loop
-        stt.calculateOneDimension(mxIn, myIn, mzIn, sttXp, sttYp, sttZp);
+    if ( simFlags->hasDemagIntense || simFlags->hasDipolar || simFlags->hasSTT)
+    {
+        // demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
+        // dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
+        // stt.calculateOneDimension(mxIn, myIn, mzIn, sttXp, sttYp, sttZp);
+        std::cout << "Not yet implemented demag/dipolar/stt into RK2!" << std::endl;
+        std::exit(1);
+    }
 
     // Testing. Probably should use single thread, as the overhead here likely won't be worthwhile
     //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
@@ -1138,8 +1150,8 @@ SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &
     std::vector<std::atomic<double>> effectiveFieldYAtomic(simParams->systemTotalSpins + 2);
     std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
 
-    exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                        effectiveFieldZAtomic, useParallel);
+    exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldX, effectiveFieldX,
+                                        effectiveFieldX, useParallel);
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
                                     effectiveFieldZAtomic, useParallel);
 
@@ -1210,6 +1222,190 @@ SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &
             }
         }
     }
+
+    // if (simParams->largestMNorm > 1.00005) { throw std::runtime_error("mag. moments are no longer below <= 1.00005"); }
+
+    // No need to fill demagX/dipoleX (etc) here they are constantly overwritten; filling to zeroes is just a waste unless debugging
+
+}
+
+void
+SolversImplementation::RK2StageMultithreadedGPU( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                                 const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                                 std::vector<double> &myOut, std::vector<double> &mzOut,
+                                                 const double &currentTime, const double &stepsize,
+                                                 const int &iteration, std::string rkStage ) {
+
+    std::cout << "got here1" << std::endl;
+    CommonTools::CoreParamsForHost hostCoreParams(mxIn.size() * 4);
+    size_t NUM_ELEMENTS = mxIn.size() * 4;
+    size_t BYTES_NUM_ELEMENTS = NUM_ELEMENTS * sizeof(float);
+    hostCoreParams.calculateDataPerThread(1, 1);
+
+    //std::cout << NUM_ELEMENTS << ", " << BYTES_NUM_ELEMENTS << ", " << mxIn.size() << std::endl;
+    //std::exit(0);
+
+    Timer dipolarTimer, gpuTimer, kernelTimer;
+    int layer = 0;
+
+    // Prepare the vectors to be passed to the buffers: flatten to 1D and pad so data is read as a float4 inc. endpoints
+    // Lengths
+    std::vector<float> mIn, mInit, mOut;
+    mIn.resize(NUM_ELEMENTS);
+    mInit.resize(NUM_ELEMENTS);
+    mOut.resize(NUM_ELEMENTS);
+
+    SimulationParameters localSimParams = *simParams;
+    SimulationFlags localSimFlags = *simFlags;
+
+    for (int i = 0; i < mxIn.size(); i++)
+    {
+        // Possibly could unroll this loop. Will change to using a Struct in the future so this is more reasonable
+        mIn.push_back(static_cast<float>(mxIn[i]));
+        mIn.push_back(static_cast<float>(myIn[i]));
+        mIn.push_back(static_cast<float>(mzIn[i]));
+        mIn.push_back(static_cast<float>(0));
+
+        mInit.push_back(static_cast<float>(simStates->mx0[i]));
+        mInit.push_back(static_cast<float>(simStates->my0[i]));
+        mInit.push_back(static_cast<float>(simStates->mz0[i]));
+        mInit.push_back(static_cast<float>(0));
+    }
+
+    simParams->gpu_current_time = static_cast<float>(currentTime);
+
+    gpuTimer.setName("Overall timer (RK2)(Shared Resources)");
+    kernelTimer.setName("Kernel Timer (RK2)(Shared Resources)");
+
+    CommonTools::CoreParamsForDevice deviceCoreParams(hostCoreParams.NUM_ELEMENTS_WITH_DATA, hostCoreParams.DATAPOINTS_PER_THREAD);
+
+    // Initialise Metal device, command queue, and pipeline
+    MetalResources localMTLRes;
+    localMTLRes.initialise("rk2Stage");
+
+    // Allocate shared memory for the host and device
+    auto bufferMIn = localMTLRes.device->newBuffer(BYTES_NUM_ELEMENTS, MTL::ResourceStorageModeShared);
+    auto bufferMInit = localMTLRes.device->newBuffer(BYTES_NUM_ELEMENTS, MTL::ResourceStorageModeShared);
+    auto bufferMOut = localMTLRes.device->newBuffer(BYTES_NUM_ELEMENTS, MTL::ResourceStorageModeShared);
+    auto bufferSimParams = localMTLRes.device->newBuffer(sizeof(*simParams), MTL::ResourceStorageModeShared);
+    auto bufferSimStates = localMTLRes.device->newBuffer(mxIn.size() * 2 * sizeof(float), MTL::ResourceStorageModeShared);
+    auto bufferSimFlags = localMTLRes.device->newBuffer(sizeof(*simFlags), MTL::ResourceStorageModeShared);
+
+    // Error handling example for buffer creation
+    if ( !bufferMIn || !bufferMInit )
+    {
+        std::cerr << "Failed to create one or more input buffers!\n";
+        std::exit(1);
+    }
+    if ( !bufferMOut )
+    {
+        std::cerr << "Failed to create one or more output buffers!\n";
+        std::exit(1);
+    }
+    if ( !bufferSimParams || !bufferSimStates )
+    {
+        std::cerr << "Failed to create buffer for core parameters!\n";
+        std::exit(1);
+    }
+
+    // Encode commands
+    localMTLRes.computeCommandBuffer = localMTLRes.commandQueuePrimary->commandBuffer();
+    localMTLRes.computeCommandEncoder = localMTLRes.computeCommandBuffer->computeCommandEncoder();
+    localMTLRes.computeCommandEncoder->setComputePipelineState(localMTLRes.computePrimaryPipelineState);
+
+    localMTLRes.computeCommandEncoder->setBuffer(bufferMIn, 0, 0);
+    localMTLRes.computeCommandEncoder->setBuffer(bufferMInit, 0, 1);
+    localMTLRes.computeCommandEncoder->setBuffer(bufferMOut, 0, 2);
+    localMTLRes.computeCommandEncoder->setBuffer(bufferSimStates, 0, 3);
+    localMTLRes.computeCommandEncoder->setBuffer(bufferSimParams, 0, 4);
+    localMTLRes.computeCommandEncoder->setBuffer(bufferSimFlags, 0, 5);
+
+    // Copy data from host to device (CPU -> GPU)
+    std::vector<float> exchangeVecTest;
+    exchangeVecTest.reserve(simStates->exchangeVec.size() * 2 - 2);
+    exchangeVecTest.push_back(0.0f);
+    exchangeVecTest.push_back(0.0f);
+    for (int i = 1; i < simParams->systemTotalSpins + 1; i++) {
+        exchangeVecTest.push_back(static_cast<float>(simStates->exchangeVec[i-1]));
+        exchangeVecTest.push_back(static_cast<float>(simStates->exchangeVec[i]));
+    }
+
+    memcpy(bufferMIn->contents(), mIn.data(), BYTES_NUM_ELEMENTS);
+    memcpy(bufferMInit->contents(), mInit.data(), BYTES_NUM_ELEMENTS);
+    memcpy(bufferSimParams->contents(), &localSimParams, sizeof(*simParams));
+    memcpy(bufferSimFlags->contents(), &localSimFlags, sizeof(*simFlags));
+    memcpy(bufferSimStates->contents(), exchangeVecTest.data(), exchangeVecTest.size() * sizeof(float));
+
+    // Threads per block (1<<10 == 1024)
+    hostCoreParams.NUM_THREADS = 1 << 10;
+    if ( hostCoreParams.NUM_THREADS > localMTLRes.device->maxThreadsPerThreadgroup().width )
+    {
+        std::cout << "Attempted to set more threads per thread-group than device permits\n";
+        std::exit(1);
+    }
+    MTL::Size NUM_THREADS_PER_THREADGROUP = {hostCoreParams.NUM_THREADS, 1, 1};
+
+    // Blocks per Grid (padded as required)
+    hostCoreParams.NUM_THREADGROUPS = (simParams->systemTotalSpins + hostCoreParams.NUM_THREADS - 1) / hostCoreParams.NUM_THREADS;
+    MTL::Size NUM_THREADGROUPS_PER_GRID = {hostCoreParams.NUM_THREADGROUPS, 1, 1};
+
+    kernelTimer.start(true);
+    // Inform the kernel of the layout of the threads (similar to <<<NUM_BLOCKS, NUM_THREADS>>> in CUDA
+    localMTLRes.computeCommandEncoder->dispatchThreadgroups(NUM_THREADGROUPS_PER_GRID, NUM_THREADS_PER_THREADGROUP);
+    // Send instruction that our pipeline state encoding is completed
+    localMTLRes.computeCommandEncoder->endEncoding();
+
+    // Asynchronously launch the kernel on the device (GPU)
+    //commandBuffer->GPUStartTime()
+    std::cout << "\n\n";
+    localMTLRes.computeCommandBuffer->commit();
+
+    // Ensure synchronisation is explicitly managed (don't want to rely on memcpy for now)
+    localMTLRes.computeCommandBuffer->waitUntilCompleted();
+    kernelTimer.stop();
+    //kernelTimer.print();
+
+    // Copy sum vector from device to host (GPU -> CPU)
+    memcpy(mOut.data(), bufferMOut->contents(), BYTES_NUM_ELEMENTS);
+    for (auto val: mOut)
+    {
+        std:: cout << val << ", ";
+    }
+    std::cout << std::endl;
+    for (int i = 1; i < simParams->systemTotalSpins + 1; i++)
+    {
+        // Strides through mOut (which is designed to be used as a float4) and outputs the float4 elements to the output vectors
+        mxOut[i] = static_cast<double>(mOut[i]);
+        myOut[i] = static_cast<double>(mOut[i+1]);
+        mzOut[i] = static_cast<double>(mOut[i+2]);
+        // mzOut[i] = mOut[i+3]; 4th element is skipped (padding)
+    }
+    for (auto val: mzOut)
+    {
+        std:: cout << val << ", ";
+    }
+    std::cout << std::endl;
+
+    if (!simFlags->shouldTrackMagneticMomentNorm && rkStage == "2") {
+        for (int site = 0; site < simParams->systemTotalSpins; site++) { // Assuming 0-based indexing
+            double mIterationNorm = sqrt(pow(mxOut[site], 2) + pow(myOut[site], 2) + pow(mzOut[site], 2));
+            double deviation = fabs(1.0 - mIterationNorm); // Absolute deviation from 1.0
+            if (deviation > simParams->largestMNorm) {
+                simParams->largestMNorm = deviation;
+            }
+        }
+    }
+    std::cout << "got here2" << std::endl;
+
+    bufferMIn->release();
+    bufferMInit->release();
+    bufferMOut->release();
+    bufferSimParams->release();
+    bufferSimStates->release();
+    bufferSimFlags->release();
+    localMTLRes.manualRelease();
+    std::cout << "got here3" << std::endl;
+
 
     // if (simParams->largestMNorm > 1.00005) { throw std::runtime_error("mag. moments are no longer below <= 1.00005"); }
 
@@ -1372,7 +1568,7 @@ void SolversImplementation::_transferDataThenReleaseAtomicVector( std::vector<st
 
     if ( shouldRelease ) {
         atomicVector.clear();
-        atomicVector.shrink_to_fit();
+        //atomicVector.shrink_to_fit();
     }
 
     /*
@@ -1384,7 +1580,7 @@ void SolversImplementation::_transferDataThenReleaseAtomicVector( std::vector<st
      */
 }
 
-void SolversImplementation::_clearThenReleaseVector( auto &vec ) {
+void SolversImplementation::_clearThenReleaseVector( std::vector<double> &vec ) {
     vec.clear();
     vec.shrink_to_fit();
 }

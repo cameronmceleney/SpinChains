@@ -28,6 +28,7 @@
 #include "SolversSuperClass.h"
 // C++ User Libraries (Sibling Classes)
 #include "SolversDataHandling.h"
+#include "../checks_examples/CommonTools.h"
 
 // C++ User Libraries (Class' Components)
 #include "DemagnetisationFields.h"
@@ -75,7 +76,7 @@ private:
     /**
      * Description missing
      */
-    void _clearThenReleaseVector( auto &vec );
+    void _clearThenReleaseVector( std::vector<double> &vec );
 
     /**
      * Evaluate the given system, using the Runge-Kutta (2nd Order) midpoint method. Original
@@ -104,7 +105,7 @@ private:
     void RK2StageMultithreaded( const std::vector<double> &mxIn, const std::vector<double> &myIn,
                                 const std::vector<double> &mzIn, std::vector<double> &mxOut,
                                 std::vector<double> &myOut, std::vector<double> &mzOut,
-                                double &currentTime, double &stepsize, int &iteration,
+                                float &currentTime, float &stepsize, int &iteration,
                                 std::string rkStage );
     void RK2StageMultithreadedTest( const std::vector<double> &mxIn, const std::vector<double> &myIn,
                                     const std::vector<double> &mzIn, std::vector<double> &mxOut,
@@ -117,6 +118,12 @@ private:
                                     std::vector<double> &myOut, std::vector<double> &mzOut,
                                     const double &currentTime, const double &stepsize,
                                     const int &iteration, std::string rkStage );
+
+    void RK2StageMultithreadedGPU( const std::vector<double> &mxIn, const std::vector<double> &myIn,
+                                const std::vector<double> &mzIn, std::vector<double> &mxOut,
+                                std::vector<double> &myOut, std::vector<double> &mzOut,
+                                const double &currentTime, const double &stepsize,
+                                const int &iteration, std::string rkStage );
 
     void RK4StageMultithreadedCompact( const std::vector<double> &mxIn, const std::vector<double> &myIn,
                                     const std::vector<double> &mzIn, std::vector<double> &mxOut,

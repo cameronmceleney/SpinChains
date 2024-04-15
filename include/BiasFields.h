@@ -60,6 +60,10 @@ private:
     SimulationFlags *_simFlags;
 
 private:
+    std::array<double, 3>& _calculateBiasField1D( const int &currentSite, const int &currentLayer,
+                                                  const double &currentTime, std::array<double, 3> &localBiasFields,
+                                                  const double &mzTermAtSite );
+
     std::array<double, 3>
     _calculateBiasField1D( const int &currentSite, const int &currentLayer, const double &currentTime );
 
@@ -91,6 +95,12 @@ public:
                                 const std::vector<double> &mzTermsIn, std::vector<double> &biasFieldXOut,
                                 std::vector<double> &biasFieldYOut, std::vector<double> &biasFieldZOut,
                                 const bool &shouldUseTBB );
+
+    void calculateOneDimension( const int &currentLayer, const double &currentTime,
+                                        const std::vector<double> &mzTermsIn,
+                                        std::vector<double> &biasFieldXOut,
+                                        std::vector<double> &biasFieldYOut,
+                                        std::vector<double> &biasFieldZOut, const int &selectThisFunction );
 };
 
 
