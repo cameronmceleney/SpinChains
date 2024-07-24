@@ -39,8 +39,8 @@ void SolversManager::massRunSimulations() {
     initialisationInstance->performInitialisation();
     configurationInstance->performInitialisation();
 
-    double startValueField = 0.01, endValueField = 0.3, incrementField = 0.01;
-    double startValueFreq = 5.0, endValueFreq = 25, incrementFreq = 0.5;
+    double startValueField = 0.4, endValueField = 0.41, incrementField = 0.01;
+    double startValueFreq = 15.6, endValueFreq = 25, incrementFreq = 0.5;
     int numberOfIterations = static_cast<int>(std::ceil((endValueField - startValueField) / incrementField)
                                             * std::ceil((endValueFreq - startValueFreq) / incrementFreq));
     simProgressBar.set_niter(numberOfIterations);
@@ -53,7 +53,7 @@ void SolversManager::massRunSimulations() {
         simParams->drivingFreq = f * 1e9;
 
         double i = startValueField;
-        while ( i <= endValueField ) {
+        while ( i < endValueField ) {
 
             // Add parameters to be changed here
             simParams->staticZeemanStrength = i;
@@ -86,6 +86,7 @@ void SolversManager::massRunSimulations() {
         simProgressBar.updateIrregular();
 
         f += incrementFreq;
+        //numString = 1; // Reset suffix
     }
 }
 

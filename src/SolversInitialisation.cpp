@@ -77,13 +77,13 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasGradientRegionForDmi = true;
     simFlags->hasGradientRegionForDamping = true;
 
-    simFlags->shouldDmiGradientMirrorOscillatingZeeman = true;
-    simFlags->shouldDampingGradientMirrorOscillatingZeeman = true;
+    simFlags->shouldDmiGradientMirrorOscillatingZeeman = false;
+    simFlags->shouldDampingGradientMirrorOscillatingZeeman = false;
 
     simFlags->shouldRestrictDmiToWithinGradientRegion = true;
     simFlags->isOscillatingZeemanLinearAcrossMap = true;
-    simFlags->isDmiLinearAcrossMap = true;
-    simFlags->isDampingLinearAcrossMap = true;
+    simFlags->isDmiLinearAcrossMap = false;
+    simFlags->isDampingLinearAcrossMap = false;
 
     simFlags->useGenerateABCUpdated = true;
 }
@@ -93,11 +93,11 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->latticeConstant = 1e-9;  // THIS MUST BE MANUALLY SET FOR NOW
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 15.6 * 1e9;
+    simParams->drivingFreq = 15.0 * 1e9;
     simParams->oscillatingZeemanStrength = 2e-3;  // use 2e-3 afterwards
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 5e-9;
+    simParams->maxSimTime = 4e-9;
     simParams->satMag = -1;
     simParams->stepsize = 1e-15;
 
@@ -154,7 +154,7 @@ void SolversInitialisation::_setSimulationParameters() {
     // TODO. Turn into a struct
     simParams->dmiRegionLhs = -1;
     simParams->dmiRegionRhs = -1;
-    simParams->dmiRegionOffset = 0;
+    simParams->dmiRegionOffset = 150;
     simParams->numSpinsDmiPeak = simParams->drivingRegionWidth;
     simParams->numSpinsDmiWidth = -1; // This should be automatically calculated
 

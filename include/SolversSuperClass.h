@@ -44,7 +44,7 @@ public:
     virtual void performInitialisation() = 0;
     virtual void reinitialise() = 0;
 
-    static std::shared_ptr<SolversSuperClass>
+    static std::shared_ptr<SolversSuperClass> 
     createSimulationManager( std::shared_ptr<SimulationManager> sharedSimManager,
                              std::shared_ptr<SimulationParameters> sharedSimParams,
                              std::shared_ptr<SimulationStates> sharedSimStates,

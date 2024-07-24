@@ -52,7 +52,7 @@ elseif(APPLE)
         set(FFTW_LIB "${FFTW_BASE}/lib/libfftw3.a")
 
         # Use TBB (not OpenMP) for parallelisation. Use the newer oneAPI.
-        set(TBB_BASE "/opt/homebrew/Cellar/tbb/2021.11.0")
+        set(TBB_BASE "/opt/homebrew/Cellar/tbb/2021.13.0")
         set(TBB_DIR "${TBB_BASE}/include")
         # Must use dynamic libraries on MacOS (Xcode 15.2), use G++-13, and compile TBB via Homebrew with GCC/G++
         # with "HOMEBREW_CC=gcc-13 HOMEBREW_CXX=g++-13 brew install tbb"
@@ -153,7 +153,7 @@ endif()
 
 ################################################################
 # Optional: Uncomment for optimisation (-O2 and -O3 being most common for me)
-# target_compile_options(SpinChains PRIVATE -O2)
+target_compile_options(SpinChains PRIVATE -O3)
 
 ################################################################
 
