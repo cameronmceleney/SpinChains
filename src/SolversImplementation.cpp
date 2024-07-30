@@ -579,6 +579,8 @@ void SolversImplementation::RK2Parallel() {
     else
         _resizeClassContainers();
 
+    demagField.initialise();
+
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
         if ( !simManager->massProduce && simParams->iterationEnd >= progressBarSubdivisions &&
@@ -755,7 +757,7 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
     CommonStructures::Timer dipolarTimer;
     bool useParallel = true;
 
-    if ( simFlags->hasDemagIntense )
+    //if ( simFlags->hasDemagIntense )
         demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
     std::vector<double> mxInMu, myInMu, mzInMu;
     if ( simFlags->hasDipolar ) {
@@ -1050,6 +1052,12 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
                                     effectiveFieldZAtomic, useParallel);
 
+    if ( simFlags->hasDemagIntense )
+        // demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
+        demagField.calculateOneDimension(mxIn, myIn, mzIn,
+                                         effectiveFieldXAtomic, effectiveFieldYAtomic, effectiveFieldZAtomic,
+                                         useParallel);
+
     _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
     _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
     _transferDataThenReleaseAtomicVector(effectiveFieldZAtomic, effectiveFieldZ);
@@ -1061,9 +1069,6 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
     effectiveFieldZ[0] = 0;
     effectiveFieldZ.back() = 0;
 
-
-    if ( simFlags->hasDemagIntense )
-        demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
 
     if ( simFlags->hasDipolar )
         dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);

@@ -47,9 +47,9 @@ private:
 
 
     std::array<double, 3>
-    _calculateDemagSimple( const int &currentSite, const std::vector<double> &mxTerms,
-                                const std::vector<double> &myTerms,
-                                const std::vector<double> &mzTerms, const bool &shouldUseTBB );
+    _calculateDmiSimple( const int &currentSite, const std::vector<double> &mxTerms,
+                         const std::vector<double> &myTerms,
+                         const std::vector<double> &mzTerms, const bool &shouldUseTBB );
 
         // Empty contains to be constants reused throughout the component's lifetime instead recreating new each method call
     std::array<double, 3> _dmiVector{};

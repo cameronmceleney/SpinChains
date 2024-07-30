@@ -76,6 +76,38 @@ public:
      */
      std::vector<int> discreteDrivenSites;
 
+     /**
+     * Description missing
+     */
+     struct DemagFactors {
+        // Demagnetisation factors. Initialise at an invalid value (-1) to allow for test-cases later in program
+
+        float Nx;
+        float Ny;
+        float Nz;
+
+        // Must ensure that Nx + Ny + Nz == 1 (with reasonable precision)
+        float epsilonN = 1e-5;
+
+        [[nodiscard]] bool isDemagFactorErrorAcceptable() const {
+            // Separated from `return` for ease of reading
+            bool result = 1 - epsilonN < (Nx + Ny + Nz) < 1 + epsilonN;
+
+            return result;
+        }
+
+        [[nodiscard]] bool isDemagFactorDefaultState() const {
+            if (Nx == -1.0 and Ny == -1.0 and Nz == -1.0) { return true; }
+            else { return false; }
+        }
+
+        DemagFactors() : Nx(-1.0), Ny(-1.0), Nz(-1.0){}
+        DemagFactors(float updateNx, float updateNy, float updateNz) : Nx(updateNx), Ny(updateNy), Nz(updateNz){}
+    };
+
+     DemagFactors demagFactors;
+
+
      std::map<int, double> dRGradientMap;
      std::map<int, double> dmiGradientMap;
      std::map<int, double> dampingGradientMap;

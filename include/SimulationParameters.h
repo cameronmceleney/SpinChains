@@ -77,6 +77,7 @@ public:
 
     double totalTime = 0;
 
+    //TODO. Turn the below lines into structs (much easier to access data)
     int numSpinsDRPeak, numSpinsDRGradient;
     int dmiRegionLhs, dmiRegionRhs, numSpinsDmiPeak, numSpinsDmiGradient, numSpinsDmiWidth, dmiRegionOffset;
     int dampingRegionLhs, dampingRegionRhs, numSpinsDampingPeak, numSpinsDampingGradient, numSpinsDampingWidth, dampingRegionOffset;

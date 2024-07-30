@@ -71,9 +71,10 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                         tempExchangeLocal[2] += (tempDMILocal[2] * scalingFactor);
                     }
 
-                    if (_simFlags->hasDemag1DThinFilm) {
+                    if (_simFlags->hasDmi1DThinFilm) {
                         // Reduces total operations by only summing when DMI is present
-                        std::array<double, 3> tempDemagLocal = _calculateDemagSimple(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                        std::array<double, 3> tempDemagLocal = _calculateDmiSimple(site, mxTerms, myTerms, mzTerms,
+                                                                                   shouldUseTBB);
                         tempExchangeLocal[0] += tempDemagLocal[0];
                         tempExchangeLocal[1] += tempDemagLocal[1];
                         tempExchangeLocal[2] += tempDemagLocal[2];
@@ -349,9 +350,9 @@ ExchangeField::_calculateDMI1D( const int &currentSite, const std::vector<double
 }
 
 std::array<double, 3>
-ExchangeField::_calculateDemagSimple( const int &currentSite, const std::vector<double> &mxTerms,
-                                const std::vector<double> &myTerms,
-                                const std::vector<double> &mzTerms, const bool &shouldUseTBB ) {
+ExchangeField::_calculateDmiSimple( const int &currentSite, const std::vector<double> &mxTerms,
+                                    const std::vector<double> &myTerms,
+                                    const std::vector<double> &mzTerms, const bool &shouldUseTBB ) {
 
     /* TODO. This is a temp polymorphic version of _calculateDMIField1D that is threadsafe. Needs refinement
      * Note that this function can only be used for a 1D spinchain where the signal is along the x-axis

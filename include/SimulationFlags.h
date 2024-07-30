@@ -20,7 +20,7 @@ public:
     bool                shouldDriveRHS;                                   // Drive from the RHS
     bool                shouldDriveDiscreteSites;
     bool                hasCustomDrivePosition;
-    bool                hasDemag1DThinFilm;
+    bool                hasDmi1DThinFilm;
 
     bool                shouldPrintAllData;                               // Saves the m-component(s) of every spin at every iteration. WARNING: leads to huge output files.
     bool                shouldPrintDiscreteTimes;                            // Saves m-component(s) of every spin at regular intervals. Total save points are set by numberOfDataPoints.

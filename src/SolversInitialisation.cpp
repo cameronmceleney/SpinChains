@@ -44,8 +44,8 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->hasDMI = true;
     simFlags->hasSTT = false;
     simFlags->hasStaticZeeman = true;
-    simFlags->hasDemag1DThinFilm = false;
-    simFlags->hasDemagIntense = false;
+    simFlags->hasDmi1DThinFilm = false;
+    simFlags->hasDemagIntense = true;
     simFlags->hasDemagFFT = false;
     simFlags->hasShapeAnisotropy = false;
 
@@ -81,7 +81,7 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldDampingGradientMirrorOscillatingZeeman = false;
 
     simFlags->shouldRestrictDmiToWithinGradientRegion = true;
-    simFlags->isOscillatingZeemanLinearAcrossMap = true;
+    simFlags->isOscillatingZeemanLinearAcrossMap = false;
     simFlags->isDmiLinearAcrossMap = false;
     simFlags->isDampingLinearAcrossMap = false;
 
@@ -93,17 +93,17 @@ void SolversInitialisation::_setSimulationParameters() {
     simParams->latticeConstant = 1e-9;  // THIS MUST BE MANUALLY SET FOR NOW
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
-    simParams->drivingFreq = 15.0 * 1e9;
-    simParams->oscillatingZeemanStrength = 2e-3;  // use 2e-3 afterwards
+    simParams->drivingFreq = 20.0 * 1e9;
+    simParams->oscillatingZeemanStrength = 1e-3;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 4e-9;
-    simParams->satMag = -1;
+    simParams->maxSimTime = 5e-9;
+    simParams->satMag = 800e3;
     simParams->stepsize = 1e-15;
 
     // Data Output Parameters
     simStates->fixedOutputSites = {600, 1000, 1400, 1800, 2200, 2600, 3000, 3400};
-    simParams->numberOfDataPoints = 1e3; //static_cast<int>(maxSimTime / recordingInterval);
+    simParams->numberOfDataPoints = 1e4; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
     simParams->gilbertDamping = 1e-4;
@@ -112,10 +112,10 @@ void SolversInitialisation::_setSimulationParameters() {
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 200;
-    simParams->numSpinsDRPeak = 200;
+    simParams->drivingRegionWidth = 150;
+    simParams->numSpinsDRPeak = 150;
     simParams->numNeighbours = -1;
-    simParams->numSpinsInABC = 500;
+    simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
 
     // Shockwave Parameters (rarely used)
@@ -154,7 +154,7 @@ void SolversInitialisation::_setSimulationParameters() {
     // TODO. Turn into a struct
     simParams->dmiRegionLhs = -1;
     simParams->dmiRegionRhs = -1;
-    simParams->dmiRegionOffset = 150;
+    simParams->dmiRegionOffset = 300;
     simParams->numSpinsDmiPeak = simParams->drivingRegionWidth;
     simParams->numSpinsDmiWidth = -1; // This should be automatically calculated
 
@@ -188,7 +188,6 @@ void SolversInitialisation::_generateRemainingParameters() {
     simStates->gilbertVectorMulti.resize(simParams->numLayers, {0});
     simParams->numberOfSpinPairs = simParams->numSpinsInChain - 1;
 
-    //GV.SetNumSpins(simParams->numSpinsInChain + 2 * simParams->numSpinsInABC); // TODO turn this into a simParam
     simParams->systemTotalSpins = simParams->numSpinsInChain + 2 * simParams->numSpinsInABC;
 }
 

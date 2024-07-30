@@ -20,11 +20,11 @@ int main() {
     // Global simulation parameters
     GV.SetAnisotropyField(0);
     GV.SetStaticBiasField(0.4);
-    GV.SetNumSpins(8200);
-    GV.SetExchangeMinVal(52.0);
-    GV.SetExchangeMaxVal(52.0);
+    GV.SetNumSpins(6000);
+    GV.SetExchangeMinVal(45.0);
+    GV.SetExchangeMaxVal(45.0);
     GV.SetGyromagneticConstant(29.2);
-    GV.SetDMIConstant(1.0);  // use negative to flip to match python for now
+    GV.SetDMIConstant(2);  // use negative to flip to match python for now
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
@@ -64,8 +64,8 @@ int main() {
         auto sharedSimStates = std::make_shared<SimulationStates>();
         auto sharedSimFlags = std::make_shared<SimulationFlags>();
 
-        sharedSimManager->massProduce = true;
-        sharedSimManager->hasNumericSuffix = true;
+        sharedSimManager->massProduce = false;
+        sharedSimManager->hasNumericSuffix = false;
 
         auto managerInstance = SolversSuperClass::createSimulationManager(sharedSimManager, sharedSimParams, sharedSimStates,
                                                                           sharedSimFlags);
