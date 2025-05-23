@@ -65,13 +65,13 @@ public:
                                       std::vector<double> &effectiveFieldYTermsOut,
                                       std::vector<double> &effectiveFieldZTermsOut, const double &currentTime );
 
-    std::array<double, 3>
+    CommonStructures::Vector3D
     EffectiveFieldsCombinedTestExOnly( const int &currentSite, const int &layer,
                                        const std::vector<double> &mxTermsIn,
                                        const std::vector<double> &myTermsIn,
                                        const std::vector<double> &mzTermsIn );
 
-    std::array<double, 3> EffectiveFieldsCombinedTestDriveOnly( const int &currentSite, const int &layer,
+    CommonStructures::Vector3D EffectiveFieldsCombinedTestDriveOnly( const int &currentSite, const int &layer,
                                                                 const std::vector<double> &mxTermsIn,
                                                                 const std::vector<double> &myTermsIn,
                                                                 const std::vector<double> &mzTermsIn,

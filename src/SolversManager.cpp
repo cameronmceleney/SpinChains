@@ -56,7 +56,7 @@ void SolversManager::massRunSimulations() {
         while ( i < endValueField ) {
 
             // Add parameters to be changed here
-            simParams->staticZeemanStrength = i;
+            simParams->staticZeemanStrength.z() = i;
 
             if ( 29.2 * i > f)
             {

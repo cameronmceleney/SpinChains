@@ -34,7 +34,7 @@ private:
     SimulationFlags* _simFlags;
 
 private:
-    std::array<double, 3> _calculateClassicThreaded( const int &currentSite, const std::vector<double> &mxTerms,
+    CommonStructures::Vector3D _calculateClassicThreaded( const int &currentSite, const std::vector<double> &mxTerms,
                                                      const std::vector<double> &myTerms,
                                                      const std::vector<double> &mzTerms );
 public:

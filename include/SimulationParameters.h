@@ -6,6 +6,91 @@
 #define SPINCHAINS_SIMULATIONPARAMETERS_H
 
 // C++ Standard Library
+#include "../libs/CommonStructures.h"
+
+struct HeisenbergExchange {
+    // Member variables
+    float uniformStrength = 0.0;
+    std::optional<float> minimumStrength;
+    std::optional<float> maximumStrength;
+
+    CommonStructures::Unit units{CommonStructures::Unit::Tesla};
+    bool isExchangeUniform = true;
+
+    // Default constructor
+    HeisenbergExchange() = default;
+
+    // Constructor for uniform exchange
+    HeisenbergExchange(float value, CommonStructures::Unit unit)
+        : uniformStrength(value), units(unit), isExchangeUniform(true) {
+            minimumStrength.reset();
+            maximumStrength.reset();
+        }
+
+    // Constructor for non-uniform exchange
+    HeisenbergExchange(float minStrength, float maxStrength, CommonStructures::Unit unit)
+        : minimumStrength(minStrength), maximumStrength(maxStrength), units(unit), isExchangeUniform(false) {}
+
+    // Method to set uniform exchange (replaces GlobalVariables.cpp)
+    void setUniformExchange(float value, CommonStructures::Unit unit) {
+        uniformStrength = value;
+        units = unit;
+        isExchangeUniform = true;
+        minimumStrength.reset();
+        maximumStrength.reset();
+
+        std::cout << "Uniform exchange interaction set." << std::endl;
+    }
+
+    // Method to set non-uniform exchange (replaces GlobalVariables.cpp)
+    void setNonUniformExchange(float minStrength, float maxStrength, CommonStructures::Unit unit) {
+        minimumStrength = minStrength;
+        maximumStrength = maxStrength;
+        units = unit;
+        isExchangeUniform = false;
+        uniformStrength = 0.0;
+
+        std::cout << "Non-uniform exchange interaction set." << std::endl;
+    }
+
+    // Getters to replace contents in GlobalVariables.cpp
+    [[nodiscard]] std::pair<float, CommonStructures::Unit> getUniformExchange() const {
+        if (!isExchangeUniform) {
+            throw std::logic_error("Exchange interaction is not uniform");
+        }
+        return {uniformStrength, units};
+    }
+
+    [[nodiscard]] std::tuple<float, float, CommonStructures::Unit> getNonUniformExchange() const {
+        if (isExchangeUniform) {
+            throw std::logic_error("Exchange interaction is uniform");
+        }
+        if (!minimumStrength.has_value() || !maximumStrength.has_value()) {
+            throw std::logic_error("Non-uniform exchange interaction values are not set");
+        }
+        return {*minimumStrength, *maximumStrength, units};
+    }
+};
+
+struct GilbertDamping {
+    double factor;  // Gilbert damping factor for main chain.
+    double innerABC;  // The lower Gilbert damping factor for the Absorbing boundary conditions (ABCs) at the point where the chain meets the ABC.
+    double outerABC;  // The upper Gilbert damping factor for the Absorbing boundary conditions (ABCs) at the point where the ABC meets the pinned sites.
+
+    GilbertDamping() = default;
+};
+
+struct MappedRegion {
+    int lhsSite = -1;
+    int rhsSite = -1;
+    int peakWidth;
+    int gradientWidth;
+    int regionWidth = -1;  // This should be automatically calculated
+    int offsetWidth;
+
+    double peakValue;
+    double gradientValue;
+};
 
 class SimulationParameters {
     // todo separate this out into several compositions (flags, data structures, etc)
@@ -19,23 +104,18 @@ public:
 
     double              ambientTemperature;
     double              anisotropyField;
-    double              staticZeemanStrength;
+    CommonStructures::Vector3D  staticZeemanStrength{0.0, 0.0, 0.0};
 
     double              drivingAngFreq;                           // Angular frequency of oscillatory driving field [rad*s^{-1}].
     double              drivingFreq;                              // Frequency of oscillatory driving field. [GHz] (f_d in literature) (e.g.  42.5 * 1e9)
-    int                 drivingRegionLhs;                         // The position of the spin which is leftmost in the driving region.
-    int                 drivingRegionRhs;                         // The position of the spin which is rightmost in the driving region.
 
-    int                 drivingRegionWidth;                       // Driving region width.
-    double              oscillatingZeemanStrength;                         // Driving field amplitude [T] (caution: papers often give in [mT]).
+    double              oscillatingZeemanStrength;                // Driving field amplitude [T] (caution: papers often give in [mT]).
     int                 forceStopAtIteration;                     // Legacy breakpoint variable. Set as a -ve value to deactivate.
     double              dipoleConstant;                           // Scaling factor which is constant across dipolar interaction calculations.
+    CommonStructures::Vector3D  dmiVector{0.0, 0.0, 0.0};
     double              dmiConstant;
     double              exchangeStiffness;
 
-    double              gilbertDamping;                           // Gilbert damping factor for main chain.
-    double              gilbertABCInner;                          // The lower Gilbert damping factor for the Absorbing boundary conditions (ABCs) at the point where the chain meets the ABC.
-    double              gilbertABCOuter;                          // The upper Gilbert damping factor for the Absorbing boundary conditions (ABCs) at the point where the ABC meets the pinned sites.
     double              gyroMagConst;                             // Gyromagnetic ratio of an electron [GHz/T].
     double              latticeConstant;
 
@@ -44,9 +124,9 @@ public:
 
     int                 iterationEnd;                             // The maximum iteration of the program. 1e5 == 0.1[ns]. 1e6 == 1[ns]. 1e7 == [10ns] for stepsize 1e-15.
     int                 iterationStart = 0;                        // The iteration step that the program will begin at (Default: 0.0)
-    double              iterStartShock;                           // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the maxSimTime.
+    double              risingTimeStartAtIteration;                           // Select when shockwave is implemented as a normalised proportion [0.0, 1.0] of the maxSimTime.
 
-    double              iterEndShock;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the maxSimTime.
+    double              risingTimeEndAtIteration;                             // // Select when shockwave is ceased as a normalised proportion [0.0, 1.0] of the maxSimTime.
     double              largestMNorm = 1e-50;                     // Computes sqrt(_mx**2 + _my**2 + _mz**2) for each site at each moment to track any abnormalities. Initialises to be arbitrarily small
     double              maxSimTime;                               // How long the system will be driven for; the total simulated time [s]. Note: this is NOT the required computation time.
 
@@ -60,10 +140,10 @@ public:
     int                 systemTotalSpins;                         // The total number of spins in the system (chain plus ABCs).
     double              satMag;                                   // Saturation Magnetisation [T]. (Note: 1A/m = 1.254uT)
 
-    double              shockwaveGradientTime;                    // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[ps] when stepsize=1e-15.
-    double              shockwaveInitialStrength;                 // Initial strength of the shockwave before shockwaveScaling occurs. (Default: = oscillatingZeemanStrength)
-    double              shockwaveMax;                             // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
-    double              shockwaveScaling;                         // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
+    double              risingTimePeriod;                    // Time over which the second drive is applied. 1 = instantaneous application. 35e3 is 35[ps] when stepsize=1e-15.
+    double              risingTimeInitialMagnitude;                 // Initial strength of the shockwave before risingTimeScalingFactor occurs. (Default: = oscillatingZeemanStrength)
+    double              risingTimeMaximum;                             // Maximum amplitude of shockwave (referred to as H_D2 in documentation)
+    double              risingTimeScalingFactor;                         // Driving field amplitude [T] for the shockwave, as a ratio compared to _biasFieldDriving
 
     double              shockwaveStepsize;                        // Size of incremental increase in shockwave amplitude.
     double              stepsize;                                 // Stepsize between values
@@ -79,11 +159,13 @@ public:
 
     //TODO. Turn the below lines into structs (much easier to access data)
     int numSpinsDRPeak, numSpinsDRGradient;
-    int dmiRegionLhs, dmiRegionRhs, numSpinsDmiPeak, numSpinsDmiGradient, numSpinsDmiWidth, dmiRegionOffset;
-    int dampingRegionLhs, dampingRegionRhs, numSpinsDampingPeak, numSpinsDampingGradient, numSpinsDampingWidth, dampingRegionOffset;
 
-    double dampingGradientPeak, dampingGradientGradient;
-
+public:
+    HeisenbergExchange exchangeInteraction;
+    GilbertDamping gilbertDamping;
+    MappedRegion dmiRegion;
+    MappedRegion drivingRegion;
+    MappedRegion dampingRegion;
 };
 
 #endif //SPINCHAINS_SIMULATIONPARAMETERS_H

@@ -19,17 +19,13 @@ int main() {
 
     // Global simulation parameters
     GV.SetAnisotropyField(0);
-    GV.SetStaticBiasField(0.4);
-    GV.SetNumSpins(6000);
-    GV.SetExchangeMinVal(45.0);
-    GV.SetExchangeMaxVal(45.0);
+    GV.SetNumSpins(4000);
     GV.SetGyromagneticConstant(29.2);
-    GV.SetDMIConstant(2);  // use negative to flip to match python for now
+    GV.SetDMIConstant(1.0);  // use negative to flip to match python for now
 
     // Additional parameters and flags
     GV.SetIsFerromagnetic(true);
     GV.SetShouldFindEigenvalues(false);
-    GV.SetIsExchangeUniform();
 
     std::string outputFileID;
     std::cout << "Enter the unique identifier for the file: ";
@@ -50,12 +46,6 @@ int main() {
 
     GV.SetNumericalMethod("RK2p");
 
-    // I keep forgetting to check the exchanges, hence this warning
-    if ( GV.GetIsExchangeUniform())
-        std::cout << "Uniform Exchange" << std::endl;
-    else
-        std::cout << "Non-Uniform Exchange" << std::endl;
-
     // Run the simulation
     if ( GV.GetShouldFindEigenvalues()) {
         std::cout << "Finding eigenvalues and eigenvectors" << std::endl;
@@ -67,8 +57,10 @@ int main() {
         sharedSimManager->massProduce = false;
         sharedSimManager->hasNumericSuffix = false;
 
-        auto managerInstance = SolversSuperClass::createSimulationManager(sharedSimManager, sharedSimParams, sharedSimStates,
-                                                                          sharedSimFlags);
+        auto managerInstance = SolversSuperClass::createSimulationManager(sharedSimManager,
+                                                                                         sharedSimParams,
+                                                                                         sharedSimStates,
+                                                                                         sharedSimFlags);
         managerInstance->performInitialisation();
     }
     return 0;

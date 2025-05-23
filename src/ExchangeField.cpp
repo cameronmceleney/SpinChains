@@ -11,111 +11,215 @@ ExchangeField::ExchangeField( SimulationParameters *sharedSimParams,
 
         : _simParams(sharedSimParams), _simStates(sharedSimStates), _simFlags(sharedSimFlags) {
 
-    _dmiVector = {0, 0, _simParams->dmiConstant};
 }
 
-void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
-                                           const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,
-                                           std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut ) {
-    // This function is used for sequential calculations. Useful in small systems or when H_ex is simple
-    std::array<double, 3> tempResultsContainerHeisenberg{};
-    std::array<double, 3> tempResultsContainerDMI{};
-
-    for ( int i = 1; i <= _simParams->systemTotalSpins; i++ ) {
-        // Used boundary limits [1, _simParams->systemTotalSpins] (inclusive) is intentional
-        tempResultsContainerHeisenberg = _calculateExchangeField1D(i, mxTerms, myTerms, mzTerms);
-        tempResultsContainerDMI = _calculateDMI1D(i, mxTerms, myTerms, mzTerms);
-
-        exchangeXOut[i] = tempResultsContainerHeisenberg[0] + tempResultsContainerDMI[0];
-        exchangeYOut[i] = tempResultsContainerHeisenberg[1] + tempResultsContainerDMI[1];
-        exchangeZOut[i] = tempResultsContainerHeisenberg[2] + tempResultsContainerDMI[2];
-    }
-}
-
-void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
-                                           const std::vector<double> &mzTerms,
-                                           std::vector<std::atomic<double>> &exchangeXOut,
-                                           std::vector<std::atomic<double>> &exchangeYOut,
-                                           std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB ) {
-    // This function is used for parallel calculations. Useful in large systems or when H_ex is complex
-
-
-    if ( shouldUseTBB ) {
-        //tbb::global_control c( tbb::global_control::max_allowed_parallelism, 1 );
-        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
-            [&](const tbb::blocked_range<int>& range) {
-                for (int site = range.begin(); site < range.end(); site++) {
-                    std::array<double, 3> tempExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
-
-                    // Use of 'auto' allows for tertiary operator to be used; equivalent to declaring array and then initialising within an IF/ELSE structure
-                    //auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
-                    //                                             : std::array<double, 3>{0.0, 0.0, 0.0};
-                    if (_simFlags->hasDMI) {
-                        double scalingFactor;
-                        std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
-
-                        if ( _simFlags->hasGradientRegionForDmi ) {
-                            auto it = _simStates->dmiGradientMap.find(site);
-
-                            if ( it != _simStates->dmiGradientMap.end()) { scalingFactor = it->second; }  // Found the site in the map;
-                            else {
-                                // Site not in the map
-                                if ( _simFlags->shouldRestrictDmiToWithinGradientRegion ) { scalingFactor = 0.0; }
-                                else { scalingFactor = 1.0; }
-                            }
-                        }
-                        else { scalingFactor = 1.0; } // No gradient for DMI; linear DMI scaling throughout system
-
-                        tempExchangeLocal[0] += (tempDMILocal[0] * scalingFactor);
-                        tempExchangeLocal[1] += (tempDMILocal[1] * scalingFactor);
-                        tempExchangeLocal[2] += (tempDMILocal[2] * scalingFactor);
-                    }
-
-                    if (_simFlags->hasDmi1DThinFilm) {
-                        // Reduces total operations by only summing when DMI is present
-                        std::array<double, 3> tempDemagLocal = _calculateDmiSimple(site, mxTerms, myTerms, mzTerms,
-                                                                                   shouldUseTBB);
-                        tempExchangeLocal[0] += tempDemagLocal[0];
-                        tempExchangeLocal[1] += tempDemagLocal[1];
-                        tempExchangeLocal[2] += tempDemagLocal[2];
-                    }
-
-                    exchangeXOut[site].fetch_add(tempExchangeLocal[0]);
-                    exchangeYOut[site].fetch_add(tempExchangeLocal[1]);
-                    exchangeZOut[site].fetch_add(tempExchangeLocal[2]);
-                }
-        }, tbb::auto_partitioner());
-    } else {
-        throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");
-    }
-}
-
+// 1D public
 void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
                                            const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,
                                            std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut,
-                                           const bool &shouldUseTBB ) {
-    // Doesn't work right now
+                                           const CommonStructures::Parallelisations &parallelisationMode) {
+    calculateExchangeField(1, mxTerms, myTerms, mzTerms, exchangeXOut, exchangeYOut, exchangeZOut, parallelisationMode);
+}
+
+void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
+                                           const std::vector<double> &mzTerms, std::vector<std::atomic<double>> &exchangeXOut,
+                                           std::vector<std::atomic<double>> &exchangeYOut,
+                                           std::vector<std::atomic<double>> &exchangeZOut,
+                                           const CommonStructures::Parallelisations &parallelisationMode) {
+    calculateExchangeField(1, mxTerms, myTerms, mzTerms, exchangeXOut, exchangeYOut, exchangeZOut, parallelisationMode);
+}
+
+template <typename T>
+void ExchangeField::calculateExchangeField( int dimension, const std::vector<double> &mxTerms,
+                                            const std::vector<double> &myTerms, const std::vector<double> &mzTerms,
+                                            std::vector<T> &exchangeXOut, std::vector<T> &exchangeYOut,
+                                            std::vector<T> &exchangeZOut,
+                                            CommonStructures::Parallelisations parallelFlag ) {
+
+    // Note: If additional multithreading options are added, the method signature will need to be updated
+
+    if (parallelFlag == CommonStructures::Parallelisations::Multithreaded) {
+        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins + 1),
+            [&](const tbb::blocked_range<int> &range) {
+                for (int site = range.begin(); site < range.end(); site++) {
+                    auto tempExchangeLocal = calculateExchangeField(dimension, site, mxTerms, myTerms, mzTerms);
+                    addExchangeField(site, tempExchangeLocal, exchangeXOut, exchangeYOut, exchangeZOut);
+                }
+            }, tbb::auto_partitioner());
+    }
+    else if (parallelFlag == CommonStructures::Parallelisations::Sequential) {
+        #pragma unroll
+        for (int site = 1; site <= _simParams->systemTotalSpins; site++) {
+            auto tempExchangeLocal = calculateExchangeField(dimension, site, mxTerms, myTerms, mzTerms);
+            addExchangeField(site, tempExchangeLocal, exchangeXOut, exchangeYOut, exchangeZOut);
+        }
+    }
+    else { throw std::invalid_argument("ExchangeField::calculateExchangeField: Invalid parallelisation flag"); }
+}
+// One function for the user to access for the 1D case
+CommonStructures::Vector3D ExchangeField::calculateExchangeField( int dimension, int site,
+                                                             const std::vector<double> &mxTerms,
+                                                             const std::vector<double> &myTerms,
+                                                             const std::vector<double> &mzTerms) {
+    // High-level function that can check the various Boolean flags of the (direct) exchange field components
+    CommonStructures::Vector3D heisenbergExchangeTerms{0.0, 0.0, 0.0};
+
+    if (dimension == 1) {
+        auto tempExchangeLocal = _calculateHeisenbergExchange1D(site, mxTerms, myTerms, mzTerms);
+        heisenbergExchangeTerms.x() += tempExchangeLocal.x();
+        heisenbergExchangeTerms.y() += tempExchangeLocal.y();
+        heisenbergExchangeTerms.z() += tempExchangeLocal.z();
+    }
+    else {
+        std::cout << "ExchangeField::calculateExchangeField: Dimensionality beyond 1 not supported" << std::endl;
+    }
+
+    if (_simFlags->hasDMI) {
+        auto tempDMILocal = _calculateDMI(dimension, site, mxTerms, myTerms, mzTerms);
+        heisenbergExchangeTerms.x() += tempDMILocal.x();
+        heisenbergExchangeTerms.y() += tempDMILocal.y();
+        heisenbergExchangeTerms.z() += tempDMILocal.z();
+    }
+
+    return heisenbergExchangeTerms;
+}
+
+CommonStructures::Vector3D ExchangeField::_calculateHeisenbergExchange1D(int site, const std::vector<double> &mxTerms,
+                                                               const std::vector<double> &myTerms, const std::vector<double> &mzTerms) {
+
+    // Better to pre-compute the indexes and recycle the values each time
+    CommonStructures::VectorND<int, 2> siteLocation{site - 1, site + 1};
+
+    // Use references to avoid creating additional memory; want separate variables to improve readability
+    auto &exchangeLhs = _simStates->exchangeVec[siteLocation.x()];
+    auto &exchangeRhs = _simStates->exchangeVec[site];
+
+    CommonStructures::Vector3D heisenbergExchangeTerms{0.0, 0.0, 0.0};
+
+    heisenbergExchangeTerms.x() = exchangeLhs * mxTerms[siteLocation.x()] + exchangeRhs * mxTerms[siteLocation.y()];
+    heisenbergExchangeTerms.y() = exchangeLhs * myTerms[siteLocation.x()] + exchangeRhs * myTerms[siteLocation.y()];
+    heisenbergExchangeTerms.z() = exchangeLhs * mzTerms[siteLocation.x()] + exchangeRhs * mzTerms[siteLocation.y()];
+
+    if (!_simFlags->isFerromagnetic) {
+        heisenbergExchangeTerms.x() *= -1.0;
+        heisenbergExchangeTerms.y() *= -1.0;
+        heisenbergExchangeTerms.z() *= -1.0;
+        heisenbergExchangeTerms.z() += (mzTerms[site] > 0) ? _simParams->anisotropyField : - _simParams->anisotropyField;
+    }
+
+    return heisenbergExchangeTerms;
+}
+
+template <typename T>
+CommonStructures::Vector3D ExchangeField::_calculateDMI(int dimension, int site, const std::vector<T> &mxTerms,
+                                                   const std::vector<T> &myTerms, const std::vector<T> &mzTerms) {
+
+    CommonStructures::Vector3D dmiExchangeTerms{0.0, 0.0, 0.0};  // Container for output
+    if (dimension == 1) { dmiExchangeTerms = _calculateDMI1D(site, mxTerms, myTerms, mzTerms); }
+    else { throw std::invalid_argument("ExchangeField::_calculateDMI: Dimensionality beyond 1 not supported"); }
+
+    // Track scaling due to site's location within the gradient region
+    double scalingFactor = 1.0;  // Currently `_simStates->dmiGradientMap` is a `double` type
+
+    // Use map to check if given site is within stated gradient region
+    auto iter = _simStates->dmiGradientMap.find(site);
+    if ( iter != _simStates->dmiGradientMap.end()) { scalingFactor = iter->second; }
+    else {
+        // Site isn't in gradient region, so it's here we must check further criteria
+        if ( _simFlags->shouldRestrictDmiToWithinGradientRegion ) { scalingFactor = 0.0; }
+    }
+
+    // If scaling factor is unchanged for current site after gradient map checks, then we have an early return opportunity
+    if (scalingFactor == 1.0) { return dmiExchangeTerms; }
+
+    #pragma unroll 3
+    for (int i = 0; i < 3; i++) { dmiExchangeTerms[i] *= scalingFactor; }
+
+    return dmiExchangeTerms;
+}
+
+CommonStructures::Vector3D ExchangeField::_calculateDMI1D(int site, const std::vector<double> &mxTerms,
+                                                     const std::vector<double> &myTerms, const std::vector<double> &mzTerms) {
+    
+    CommonStructures::Vector3D siteLhs = {mxTerms[site - 1], myTerms[site - 1], mzTerms[site - 1]};
+    CommonStructures::Vector3D siteRhs = {mxTerms[site + 1], myTerms[site + 1], mzTerms[site + 1]};
+
+    CommonStructures::Vector3D dmiEquation = {
+         _simParams->dmiVector.y() * (siteRhs.z() - siteLhs.z()) - _simParams->dmiVector.z() * (siteRhs.y() - siteLhs.y()),
+        -_simParams->dmiVector.x() * (siteRhs.z() - siteLhs.z()) + _simParams->dmiVector.z() * (siteRhs.x() - siteLhs.x()),
+         _simParams->dmiVector.x() * (siteRhs.y() - siteLhs.y()) - _simParams->dmiVector.y() * (siteRhs.x() - siteLhs.x())
+    };
 
 
-    if ( shouldUseTBB ) {
-        /*
+    /* Equivalent to
+     * return {_simParams->dmiConstant * (myTerms[currentSite + 1] - myTerms[currentSite - 1]),
+     *         -1.0 * _simParams->dmiConstant * (mxTerms[currentSite + 1] - mxTerms[currentSite - 1]),
+     *         0.0}
+     */
+
+    return dmiEquation;
+}
+
+template <typename T>
+void ExchangeField::addExchangeField(int site, const CommonStructures::Vector3D &exchangeField, std::vector<T> &exchangeXOut,
+                                     std::vector<T> &exchangeYOut, std::vector<T> &exchangeZOut) {
+    exchangeXOut[site] += exchangeField.x();
+    exchangeYOut[site] += exchangeField.y();
+    exchangeZOut[site] += exchangeField.z();
+}
+
+// Specialization for std::atomic<double>
+template <>
+void ExchangeField::addExchangeField<std::atomic<double>>(int site, const CommonStructures::Vector3D &exchangeField,
+                                                          std::vector<std::atomic<double>> &exchangeXOut,
+                                                          std::vector<std::atomic<double>> &exchangeYOut,
+                                                          std::vector<std::atomic<double>> &exchangeZOut) {
+    exchangeXOut[site].fetch_add(exchangeField.x(), std::memory_order_relaxed);
+    exchangeYOut[site].fetch_add(exchangeField.y(), std::memory_order_relaxed);
+    exchangeZOut[site].fetch_add(exchangeField.z(), std::memory_order_relaxed);
+}
+
+// Cross product method
+CommonStructures::Vector3D ExchangeField::_crossProduct(const CommonStructures::Vector3D &iSite,
+                                                   const CommonStructures::Vector3D &jSite) {
+
+    return { iSite.y() * jSite.z() - iSite.z() * jSite.y(),
+            -iSite.x() * jSite.z() + iSite.z() * jSite.x(),
+             iSite.x() * jSite.y() - iSite.y() * jSite.x()
+    };
+}
+
+bool ExchangeField::_hasOscillatingZeeman(int site) {
+    if (_simFlags->shouldDriveDiscreteSites) {
+        for (const int &discreteSite: _simStates->discreteDrivenSites) {
+            if (site == discreteSite) { return true; }
+        }
+    }
+
+    if (site >= _simParams->drivingRegion.lhsSite && site <= _simParams->drivingRegion.rhsSite) { return true; }
+
+    // If no condition is met, then the site is not driven
+    return false;
+}
+
+/*
         tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
             [&]( const tbb::blocked_range<int> &tbbRange ) {
                 for ( int site = tbbRange.begin(); site < tbbRange.end(); ++site ) { // for some reason site++ doesn't work
-                    std::array<double, 3> tempResultsExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                    CommonStructures::Vector3D tempResultsExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
 
                     // Use of 'auto' allows for tertiary operator to be used; equivalent to declaring array and then initialising within an IF/ELSE structure
                     auto tempResultsDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
-                                                                 : std::array<double, 3>{0.0, 0.0, 0.0};
+                                                                 : CommonStructures::Vector3D{0.0, 0.0, 0.0};
 
                     tbb::mutex::scoped_lock lock;  // Needed to prevent race condition
-                    exchangeXOut[site] += tempResultsExchangeLocal[0] + tempResultsDMILocal[0];
-                    exchangeYOut[site] += tempResultsExchangeLocal[1] + tempResultsDMILocal[1];
-                    exchangeZOut[site] += tempResultsExchangeLocal[2] + tempResultsDMILocal[2];
+                    exchangeXOut[site] += tempResultsExchangeLocal.x() + tempResultsDMILocal.x();
+                    exchangeYOut[site] += tempResultsExchangeLocal.y() + tempResultsDMILocal.y();
+                    exchangeZOut[site] += tempResultsExchangeLocal.z() + tempResultsDMILocal.z();
                 }
             }, tbb::auto_partitioner());
-        */
-        /*
+
+
         // Thread-local storage for each component
         tbb::combinable<std::vector<double>> localFieldX([&]{ return std::vector<double>(_simParams->systemTotalSpins + 2, 0.0); });
         tbb::combinable<std::vector<double>> localFieldY([&]{ return std::vector<double>(_simParams->systemTotalSpins + 2, 0.0); });
@@ -129,10 +233,10 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
                 auto& localZ = localFieldZ.local();
 
                 for (int i = range.begin(); i <= range.end(); i++) {
-                    std::array<double, 3> fieldContribution = _calculateExchangeField1D(i, mxTerms, myTerms, mzTerms, shouldUseTBB);
-                    localX[i] += fieldContribution[0];
-                    localY[i] += fieldContribution[1];
-                    localZ[i] += fieldContribution[2];
+                    CommonStructures::Vector3D fieldContribution = _calculateExchangeField1D(i, mxTerms, myTerms, mzTerms, shouldUseTBB);
+                    localX[i] += fieldContribution.x();
+                    localY[i] += fieldContribution.y();
+                    localZ[i] += fieldContribution.z();
                 }
             }, tbb::auto_partitioner());
 
@@ -147,270 +251,3 @@ void ExchangeField::calculateOneDimension( const std::vector<double> &mxTerms, c
             for (size_t i = 1; i <= _simParams->systemTotalSpins; i++) exchangeZOut[i] += v[i];
         });
          */
-        tbb::parallel_for(tbb::blocked_range<int>(1, _simParams->systemTotalSpins),
-            [&](const tbb::blocked_range<int>& range) {
-                for (int site = range.begin(); site <= range.end(); site++) {
-                    std::array<double, 3> tempExchangeLocal = _calculateExchangeField1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
-
-                    // Use of 'auto' allows for tertiary operator to be used; equivalent to declaring array and then initialising within an IF/ELSE structure
-                    //auto tempDMILocal = _simFlags->hasDMI ? _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB)
-                    //                                             : std::array<double, 3>{0.0, 0.0, 0.0};
-                    if (_simFlags->hasDMI) {
-                        // Reduces total operations by only summing when DMI is present
-                        std::array<double, 3> tempDMILocal = _calculateDMI1D(site, mxTerms, myTerms, mzTerms, shouldUseTBB);
-                        tempExchangeLocal[0] += tempDMILocal[0];
-                        tempExchangeLocal[1] += tempDMILocal[1];
-                        tempExchangeLocal[2] += tempDMILocal[2];
-                    }
-                    std::atomic_ref<double>(exchangeXOut[site]).fetch_add(tempExchangeLocal[0]);
-                    std::atomic_ref<double>(exchangeYOut[site]).fetch_add(tempExchangeLocal[1]);
-                    std::atomic_ref<double>(exchangeZOut[site]).fetch_add(tempExchangeLocal[2]);
-                }
-        }, tbb::auto_partitioner());
-
-    } else {
-        throw std::invalid_argument("calculateOneDimension for exchange fields hasn't got CUDA implementation yet");
-    }
-}
-
-std::array<double, 3>
-ExchangeField::_calculateExchangeField1D( const int &currentSite, const std::vector<double> &mxTerms,
-                                          const std::vector<double> &myTerms,
-                                          const std::vector<double> &mzTerms ) {
-
-    // Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
-    // This version is verbose for easy debugging such as during the use of 'classic' methods
-    // Only works when considering nearest-neighbours (NN)
-
-    // Separate defintions for LHS and RHS to minimise changes of a mistake occurring
-    double exchangeLhs = _simStates->exchangeVec[currentSite - 1];
-    double exchangeRhs = _simStates->exchangeVec[currentSite];
-
-    std::array<double, 3> heisenbergExchangeTerms{0.0, 0.0, 0.0};
-    if ( _simFlags->isFerromagnetic ) {
-        heisenbergExchangeTerms[0] = exchangeLhs * mxTerms[currentSite - 1] +
-                                     exchangeRhs * mxTerms[currentSite + 1];
-        heisenbergExchangeTerms[1] = exchangeLhs * myTerms[currentSite - 1] +
-                                     exchangeRhs * myTerms[currentSite + 1];
-
-        heisenbergExchangeTerms[2] = exchangeLhs * mzTerms[currentSite - 1] +
-                                     exchangeRhs * mzTerms[currentSite + 1];
-    } else {
-        heisenbergExchangeTerms[0] = -1.0 * (exchangeLhs * mxTerms[currentSite - 1] +
-                                             exchangeRhs * mxTerms[currentSite + 1]);
-        heisenbergExchangeTerms[1] = -1.0 * (exchangeLhs * myTerms[currentSite - 1] +
-                                             exchangeRhs * myTerms[currentSite + 1]);
-
-        if ( mzTerms[currentSite] > 0 )
-            // TODO. Anisotropy field needs moved to its own class in the future. Written this way to be explicit
-            heisenbergExchangeTerms[2] = +1.0 * _simParams->anisotropyField -
-                                         (exchangeLhs * mzTerms[currentSite - 1] +
-                                          exchangeRhs * mzTerms[currentSite + 1]);
-        else if ( mzTerms[currentSite] < 0 )
-            heisenbergExchangeTerms[2] = -1.0 * _simParams->anisotropyField -
-                                         (exchangeLhs * mzTerms[currentSite - 1] +
-                                          exchangeRhs * mzTerms[currentSite + 1]);
-    }
-
-    return heisenbergExchangeTerms;
-}
-
-std::array<double, 3>
-ExchangeField::_calculateExchangeField1D( const int &currentSite, const std::vector<double> &mxTerms,
-                                          const std::vector<double> &myTerms,
-                                          const std::vector<double> &mzTerms, const bool &shouldUseTBB ) {
-
-    // TODO. This is a temp polymorphic version of _calculateDMIField1D that is threadsafe. Needs refinement
-    // Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
-    /*
-     * Code is currently hard-coded to only use nearest-neighbours (NN) heisenberg exchange interactions. But the
-     * method is laid out this way to allow easier extension to include higher-order NN exchange interactions in
-     * the future
-     */
-
-    /* for some reason this commented code doesn't work
-     *     if (shouldUseTBB) {
-        if ( _simFlags->isFerromagnetic ) {
-            return {
-                _simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1],
-                _simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1],
-                _simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1]
-            };
-        } else if ( !_simFlags->isFerromagnetic ) {
-
-            double mzAnisotropyTerm; // Written this way to be explicit for the anisotropy term
-            if ( mzTerms[currentSite] > 0 ) { mzAnisotropyTerm = _simParams->anisotropyField; }
-            else if ( mzTerms[currentSite] < 0 ) {mzAnisotropyTerm =  -1.0 * _simParams->anisotropyField; }
-
-            return {
-                -1.0 * (_simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1]),
-                -1.0 * (_simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1]),
-                mzAnisotropyTerm - (_simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1] + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1])
-            };
-        } else {
-            throw std::invalid_argument("_calculateExchangeField1D hasn't got CUDA implementation yet");
-        }
-    }
-     */
-
-    if ( shouldUseTBB ) {
-        // The effective field (H_eff) x-component acting upon a given magnetic moment (site), abbreviated to 'hx'
-        double directExchangeXLocal, directExchangeYLocal, directExchangeZLocal;
-
-        // Structure should be: first line are interactions (Heisenberg Exchange, DMI); second line are other fields
-
-        if ( _simFlags->isFerromagnetic ) {
-            // hx terms
-            directExchangeXLocal = _simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1]
-                        + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1];
-
-            // hy terms
-            directExchangeYLocal = _simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1]
-                          + _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1];
-
-            // hz terms
-            directExchangeZLocal = _simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1]
-                          + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1];
-
-        } else {
-            // hx terms
-            directExchangeXLocal = -1.0 * (_simStates->exchangeVec[currentSite - 1] * mxTerms[currentSite - 1]
-                        + _simStates->exchangeVec[currentSite] * mxTerms[currentSite + 1]);
-
-
-            // hy terms
-            directExchangeYLocal = -1.0 * (_simStates->exchangeVec[currentSite - 1] * myTerms[currentSite - 1]
-                                  + _simStates->exchangeVec[currentSite] * myTerms[currentSite + 1]);
-
-            // hz terms
-            if ( mzTerms[currentSite] > 0 )
-                directExchangeZLocal = _simParams->anisotropyField -
-                              (_simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1]
-                               + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1]);
-            else if ( mzTerms[currentSite] < 0 )
-                directExchangeZLocal =  -1.0 * _simParams->anisotropyField -
-                              (_simStates->exchangeVec[currentSite - 1] * mzTerms[currentSite - 1]
-                               + _simStates->exchangeVec[currentSite] * mzTerms[currentSite + 1]);
-        }
-
-        return {directExchangeXLocal, directExchangeYLocal, directExchangeZLocal};
-    } else
-        throw std::invalid_argument("_calculateExchangeField1D hasn't got CUDA implementation yet");
-}
-
-std::array<double, 3>
-ExchangeField::_calculateDMI1D( const int &currentSite, const std::vector<double> &mxTerms,
-                                const std::vector<double> &myTerms,
-                                const std::vector<double> &mzTerms ) {
-
-    /* Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
-     * Methodically finds general solution to H_DMI = D_{i-1, i} \cdot (m_{i-1} \times m_{i}) + D_{i, i+1} \cdot (m_{i} \times m_{i+1}
-     * for when there are only two nearest neighbours
-     *
-     * Uses Eq. 3 from https://doi.org/10.1103/PhysRevB.107.224421 to explicitly write the return statements for the case
-     * where DMI only involves two nearest neighbours (NN).
-     */
-
-    std::array<double, 3> siteLhs = {mxTerms[currentSite - 1], myTerms[currentSite - 1], mzTerms[currentSite - 1]};
-    std::array<double, 3> siteRhs = {mxTerms[currentSite + 1], myTerms[currentSite + 1],
-                                     mzTerms[currentSite + 1]};
-
-    std::array<double, 3> dmiEquation = {  _dmiVector[1] * (siteRhs[2] - siteLhs[2]) - _dmiVector[2] * (siteRhs[1] - siteLhs[1]),
-                                          -_dmiVector[0] * (siteRhs[2] - siteLhs[2]) + _dmiVector[2] * (siteRhs[0] - siteLhs[0]),
-                                           _dmiVector[0] * (siteRhs[1] - siteLhs[1]) - _dmiVector[1] * (siteRhs[0] - siteLhs[0])
-                                        };
-
-    // In 1D the typical _crossProduct(_dmiVector, originCrossInfluencingSites) simply becomes a dot product with only the z-component being non-zero
-    return {dmiEquation[0], dmiEquation[1], dmiEquation[2]};
-}
-
-std::array<double, 3>
-ExchangeField::_calculateDMI1D( const int &currentSite, const std::vector<double> &mxTerms,
-                                const std::vector<double> &myTerms,
-                                const std::vector<double> &mzTerms, const bool &shouldUseTBB ) {
-
-    /* TODO. This is a temp polymorphic version of _calculateDMIField1D that is threadsafe. Needs refinement
-     * Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
-     *
-     * Quickly finds solution to H_DMI = D_{i-1, i} \cdot (m_{i-1} \times m_{i}) + D_{i, i+1} \cdot (m_{i} \times m_{i+1}
-     * by exploiting how only D_z is non-zero in this 1D system
-     *
-     * Uses Eq. 3 from https://doi.org/10.1103/PhysRevB.107.224421 to explicitly write the return statements for the case
-     * where DMI only involves two nearest neighbours (NN).
-     */
-
-
-    if ( shouldUseTBB ) {
-        return {_simParams->dmiConstant * (myTerms[currentSite + 1] - myTerms[currentSite - 1]),
-                 -1.0 * _simParams->dmiConstant * (mxTerms[currentSite + 1] - mxTerms[currentSite - 1]),
-                 0.0};
-    } else {
-        throw std::invalid_argument("_calculateDMIField1D hasn't got CUDA implementation yet");
-    }
-}
-
-std::array<double, 3>
-ExchangeField::_calculateDmiSimple( const int &currentSite, const std::vector<double> &mxTerms,
-                                    const std::vector<double> &myTerms,
-                                    const std::vector<double> &mzTerms, const bool &shouldUseTBB ) {
-
-    /* TODO. This is a temp polymorphic version of _calculateDMIField1D that is threadsafe. Needs refinement
-     * Note that this function can only be used for a 1D spinchain where the signal is along the x-axis
-     *
-     * Quickly finds solution to H_DMI = D_{i-1, i} \cdot (m_{i-1} \times m_{i}) + D_{i, i+1} \cdot (m_{i} \times m_{i+1}
-     * by exploiting how only D_z is non-zero in this 1D system
-     *
-     * Uses Eq. 3 from https://doi.org/10.1103/PhysRevB.107.224421 to explicitly write the return statements for the case
-     * where DMI only involves two nearest neighbours (NN).
-     */
-
-
-    if ( shouldUseTBB ) {
-        return {-1.005096 * myTerms[currentSite] * mzTerms[currentSite],
-                0,
-                -1.005096 * myTerms[currentSite] * mxTerms[currentSite]};
-    } else {
-        throw std::invalid_argument("_calculateDMIField1D hasn't got CUDA implementation yet");
-    }
-}
-
-std::array<double, 3> ExchangeField::_crossProduct( const std::array<double, 3> &iSite,
-                                                    const std::array<double, 3> &jSite ) {
-    if ( iSite.size() != 3 || jSite.size() != 3 )
-        throw std::invalid_argument("One or more input vectors to DMI::crossProduct() are not size 3");
-
-    std::array<double, 3> crossProductVector{};
-    crossProductVector[0] = iSite[1] * jSite[2] - iSite[2] * jSite[1];
-    crossProductVector[1] = -iSite[0] * jSite[2] + iSite[2] * jSite[0];
-    crossProductVector[2] = iSite[0] * jSite[1] - iSite[1] * jSite[0];
-
-    return crossProductVector;
-}
-
-std::array<double, 3> ExchangeField::_crossProduct( const std::array<double, 3> &iSite,
-                                                    const std::array<double, 3> &jSite,
-                                                    const bool &shouldUseTBB ) {
-    // All needed tests are done by calling method
-
-    // Able to return result directly; no need to use temp containers; wasted time and memory on heap
-    if ( shouldUseTBB )
-        return {
-                iSite[1] * jSite[2] - iSite[2] * jSite[1],
-                -iSite[0] * jSite[2] + iSite[2] * jSite[0],
-                iSite[0] * jSite[1] - iSite[1] * jSite[0]
-        };
-    else
-        throw std::invalid_argument("_crossProduct hasn't got CUDA implementation yet");
-}
-
-bool ExchangeField::_hasOscillatingZeeman( const int &site ) {
-    if ( _simFlags->shouldDriveDiscreteSites ) {
-        for ( const int &discreteSite: _simStates->discreteDrivenSites )
-            if ( site == discreteSite ) { return true; }
-    }
-
-    if ( site >= _simParams->drivingRegionLhs && site <= _simParams->drivingRegionRhs ) { return true; }
-
-    // If no condition is met, then the site is not driven
-    return false;
-}

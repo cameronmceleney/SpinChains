@@ -27,9 +27,9 @@ void SolversImplementation::_testShockwaveConditions( double iteration ) {
         if ( simFlags->isShockwaveOn and not simFlags->isShockwaveAtMax )
             std::cout << "Shock not at maximum when cut-off" << std::endl;
 
-        if ( iteration >= simParams->iterationEnd * simParams->iterEndShock ) {
-            // Shockwave begins once simulation is a certain % complete
-            simFlags->hasShockwave = false;
+        if ( iteration >= simParams->iterationEnd * simParams->risingTimeEndAtIteration ) {
+            // Shockwave ends once simulation is a certain % complete
+            simFlags->hasRisingTime = false;
             simFlags->isShockwaveOn = false;
             simParams->oscillatingZeemanStrength = 0;
         }
@@ -37,12 +37,12 @@ void SolversImplementation::_testShockwaveConditions( double iteration ) {
         return;
     }
 
-    // If method is triggered, then the applied biasFieldDriving is increased by the scale factor shockwaveScaling
-    if ( simFlags->hasShockwave and not simFlags->isShockwaveOn ) {
-        if ( iteration >= simParams->iterationEnd * simParams->iterStartShock ) {
+    // If method is triggered, then the applied biasFieldDriving is increased by the scale factor risingTimeScalingFactor
+    if (simFlags->hasRisingTime and not simFlags->isShockwaveOn ) {
+        if ( iteration >= simParams->iterationEnd * simParams->risingTimeStartAtIteration ) {
             // Shockwave begins once simulation is a certain % complete
             simFlags->isShockwaveOn = true;
-            simParams->oscillatingZeemanStrength = simParams->shockwaveInitialStrength;
+            simParams->oscillatingZeemanStrength = simParams->risingTimeInitialMagnitude;
         }
 
         return;
@@ -51,10 +51,9 @@ void SolversImplementation::_testShockwaveConditions( double iteration ) {
     if ( simFlags->isShockwaveOn and not simFlags->isShockwaveAtMax ) {
         simParams->oscillatingZeemanStrength += simParams->shockwaveStepsize;
 
-        if ( simParams->oscillatingZeemanStrength >= simParams->shockwaveMax ) {
-            simParams->oscillatingZeemanStrength = simParams->shockwaveMax;
+        if ( simParams->oscillatingZeemanStrength >= simParams->risingTimeMaximum ) {
+            simParams->oscillatingZeemanStrength = simParams->risingTimeMaximum;
             simFlags->isShockwaveAtMax = true;
-
         }
         return;
 
@@ -103,14 +102,15 @@ void SolversImplementation::SolveRK2Classic() {
 
         // The estimate of the slope for the x/y/z-axis magnetic moment component at the midpoint; mx1 = simParams->mx0 + (h * k1 / 2) etc
         std::vector<double> mx1(simParams->systemTotalSpins + 2, 0), my1(simParams->systemTotalSpins + 2, 0), mz1(simParams->systemTotalSpins + 2, 0);
-        if ( simFlags->hasDemagIntense ) {
-            demagField.DemagnetisationFieldIntense(simStates->mx0, simStates->my0,
-                                                   simStates->mz0, demagX, demagY, demagZ);
+        if ( simFlags->hasDemagFactors ) {
+            demagField.calculateOneDimension(simStates->mx0, simStates->my0, simStates->mz0, demagX, demagY, demagZ,
+                                             DemagnetisationFields::DemagMethod::Demag,
+                                             CommonStructures::Parallelisations::Sequential);
         } else if ( simFlags->hasDemagFFT ) {
             std::string rkStageName = "2-1";
-            demagField.DemagField1DReal(demagX, demagY, demagZ, simStates->mx0, simStates->my0, simStates->mz0,
-                                        iteration, rkStageName);
-        }
+            demagField.calculateOneDimension(simStates->mx0, simStates->my0, simStates->mz0, demagX, demagY, demagZ,
+                                             DemagnetisationFields::DemagMethod::DipoleGreenFunctionReal,
+                                             CommonStructures::Parallelisations::Sequential);        }
 
         // Exclude the 0th and last spins as they will always be zero-valued (end, pinned, bound spins)
         // RK2 Stage 1. Takes initial conditions as inputs.
@@ -141,14 +141,14 @@ void SolversImplementation::SolveRK2Classic() {
 
             double dmiZ = 0;
             if ( simFlags->hasDMI ) {
-                std::array<double, 2> mxTermsForDMI = {simStates->mx0[spinLHS], simStates->mx0[site]};
-                std::array<double, 2> myTermsForDMI = {simStates->my0[spinLHS], simStates->my0[site]};
-                std::array<double, 2> mzTermsForDMI = {simStates->mz0[spinLHS], simStates->mz0[site]};
-                std::array<double, 3> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
+                CommonStructures::Vector2D mxTermsForDMI = {simStates->mx0[spinLHS], simStates->mx0[site]};
+                CommonStructures::Vector2D myTermsForDMI = {simStates->my0[spinLHS], simStates->my0[site]};
+                CommonStructures::Vector2D mzTermsForDMI = {simStates->mz0[spinLHS], simStates->mz0[site]};
+                CommonStructures::Vector3D dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
                                                                                 myTermsForDMI,
                                                                                 mzTermsForDMI);
 
-                dmiZ = dmiTerms[2];
+                dmiZ = dmiTerms.z();
             }
 
             // Calculations for the effective field (H_eff), coded as symbol 'h', components of the target site
@@ -185,11 +185,15 @@ void SolversImplementation::SolveRK2Classic() {
 
         //if (simFlags->hasDipolar)
         //    dipolarField.DipolarInteraction1D(mx1, dipoleX);
-        if ( simFlags->hasDemagIntense ) {
-            demagField.DemagnetisationFieldIntense(mx1, my1, mz1, demagX, demagY, demagZ);
+        if ( simFlags->hasDemagFactors ) {
+            demagField.calculateOneDimension(simStates->mx0, simStates->my0, simStates->mz0, demagX, demagY, demagZ,
+                                             DemagnetisationFields::DemagMethod::Demag,
+                                             CommonStructures::Parallelisations::Sequential);
         } else if ( simFlags->hasDemagFFT ) {
             std::string rkStageName = "2-2";
-            demagField.DemagField1DReal(demagX, demagY, demagZ, mx1, my1, mz1, iteration, rkStageName);
+            demagField.calculateOneDimension(simStates->mx0, simStates->my0, simStates->mz0, demagX, demagY, demagZ,
+                                             DemagnetisationFields::DemagMethod::DipoleGreenFunctionReal,
+                                             CommonStructures::Parallelisations::Sequential);
             // if (iteration > 0) {std::cout << "Stage 2" << std::endl; PrintVector(demagZ, false);}
         }
 
@@ -218,10 +222,10 @@ void SolversImplementation::SolveRK2Classic() {
 
             double dmiZ = 0;
             if ( simFlags->hasDMI ) {
-                std::array<double, 2> mxTermsForDMI = {simStates->mx0[spinLHS], simStates->mx0[site]};
-                std::array<double, 2> myTermsForDMI = {simStates->my0[spinLHS], simStates->my0[site]};
-                std::array<double, 2> mzTermsForDMI = {simStates->mz0[spinLHS], simStates->mz0[site]};
-                std::array<double, 3> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
+                CommonStructures::Vector2D mxTermsForDMI = {simStates->mx0[spinLHS], simStates->mx0[site]};
+                CommonStructures::Vector2D myTermsForDMI = {simStates->my0[spinLHS], simStates->my0[site]};
+                CommonStructures::Vector2D mzTermsForDMI = {simStates->mz0[spinLHS], simStates->mz0[site]};
+                CommonStructures::Vector3D dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
                                                                                 myTermsForDMI,
                                                                                 mzTermsForDMI);
 
@@ -383,13 +387,13 @@ void SolversImplementation::SolveRK2() {
 
                 double dmiZ = 0;
                 if ( simFlags->hasDMI ) {
-                    std::array<double, 2> mxTermsForDMI = {simStates->m0Nest[layer][spinLHS][0],
+                    CommonStructures::Vector2D mxTermsForDMI = {simStates->m0Nest[layer][spinLHS][0],
                                                            simStates->m0Nest[layer][site][0]};
-                    std::array<double, 2> myTermsForDMI = {simStates->m0Nest[layer][spinLHS][1],
+                    CommonStructures::Vector2D myTermsForDMI = {simStates->m0Nest[layer][spinLHS][1],
                                                            simStates->m0Nest[layer][site][1]};
-                    std::array<double, 2> mzTermsForDMI = {simStates->m0Nest[layer][spinLHS][2],
+                    CommonStructures::Vector2D mzTermsForDMI = {simStates->m0Nest[layer][spinLHS][2],
                                                            simStates->m0Nest[layer][site][2]};
-                    std::array<double, 3> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
+                    CommonStructures::Vector3D dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
                                                                                     myTermsForDMI,
                                                                                     mzTermsForDMI);
 
@@ -461,13 +465,13 @@ void SolversImplementation::SolveRK2() {
 
                 double dmiZ = 0;
                 if ( simFlags->hasDMI ) {
-                    std::array<double, 2> mxTermsForDMI = {simStates->m0Nest[layer][spinLHS][0],
+                    CommonStructures::Vector2D mxTermsForDMI = {simStates->m0Nest[layer][spinLHS][0],
                                                            simStates->m0Nest[layer][site][0]};
-                    std::array<double, 2> myTermsForDMI = {simStates->m0Nest[layer][spinLHS][1],
+                    CommonStructures::Vector2D myTermsForDMI = {simStates->m0Nest[layer][spinLHS][1],
                                                            simStates->m0Nest[layer][site][1]};
-                    std::array<double, 2> mzTermsForDMI = {simStates->m0Nest[layer][spinLHS][2],
+                    CommonStructures::Vector2D mzTermsForDMI = {simStates->m0Nest[layer][spinLHS][2],
                                                            simStates->m0Nest[layer][site][2]};
-                    std::array<double, 3> dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
+                    CommonStructures::Vector3D dmiTerms = dmInteraction.calculateClassic(site, mxTermsForDMI,
                                                                                     myTermsForDMI,
                                                                                     mzTermsForDMI);
 
@@ -579,7 +583,7 @@ void SolversImplementation::RK2Parallel() {
     else
         _resizeClassContainers();
 
-    demagField.initialise();
+    demagField.initialise(false);
 
     for ( int iteration = simParams->iterationStart; iteration <= simParams->iterationEnd; iteration++ ) {
 
@@ -757,8 +761,10 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
     CommonStructures::Timer dipolarTimer;
     bool useParallel = true;
 
-    //if ( simFlags->hasDemagIntense )
-        demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
+    if ( simFlags->hasDemagFactors )
+        demagField.calculateOneDimension(simStates->mx0, simStates->my0, simStates->mz0, demagXp, demagYp, demagZp,
+                                 DemagnetisationFields::DemagMethod::Demag,
+                                 CommonStructures::Parallelisations::Multithreaded);
     std::vector<double> mxInMu, myInMu, mzInMu;
     if ( simFlags->hasDipolar ) {
         // Required step to convert the magnetic moment components to the magnetic field components
@@ -805,7 +811,7 @@ void SolversImplementation::RK2StageMultithreaded( const std::vector<double> &mx
                 dipoleLocal.y = dipoleYp[site];
                 dipoleLocal.z = dipoleZp[site];
             }
-            if ( simFlags->hasDemagIntense ) {
+            if ( simFlags->hasDemagFactors ) {
                 demagLocal.x = demagXp[site];
                 demagLocal.y = demagYp[site];
                 demagLocal.z = demagZp[site];
@@ -881,7 +887,7 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
     //tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&]( const tbb::blocked_range<int> tbbRange ) {
     //    for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
 //
-    //        std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn,
+    //        CommonStructures::Vector3D driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn,
     //                                                                                              mzIn, currentTime);
     //        effectiveFieldXLocal[i] = driveTemp[0];
     //        effectiveFieldYLocal[i] = driveTemp[1];
@@ -897,13 +903,13 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
                       [&]( const tbb::blocked_range<int> tbbRange ) {
                           for ( int i = tbbRange.begin(); i <= tbbRange.end(); i++ ) {
 
-                              std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i,
+                              CommonStructures::Vector3D driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i,
                                                                                                                     0,
                                                                                                                     mxIn,
                                                                                                                     myIn,
                                                                                                                     mzIn,
                                                                                                                     currentTime);
-                              std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i,
+                              CommonStructures::Vector3D exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i,
                                                                                                                     0,
                                                                                                                     mxIn,
                                                                                                                     myIn,
@@ -923,7 +929,7 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
     tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&](const tbb::blocked_range<int>& range) {
         for (int i = range.begin(); i != range.end(); ++i) {
             // All computations where calculations are site-by-site should be here
-            std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
+            CommonStructures::Vector3D exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
 
             effectiveFieldXLocal[i].fetch_add(exchangeTemp[0]);
             effectiveFieldYLocal[i].fetch_add(exchangeTemp[1]);
@@ -934,7 +940,7 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
     tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins), [&](const tbb::blocked_range<int>& range) {
         for (int i = range.begin(); i != range.end(); ++i) {
             // All computations where calculations are site-by-site should be here
-            std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
+            CommonStructures::Vector3D driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
 
             effectiveFieldXLocal[i].fetch_add(driveTemp[0]);
             effectiveFieldYLocal[i].fetch_add(driveTemp[1]);
@@ -951,8 +957,8 @@ void SolversImplementation::RK2StageMultithreadedTest( const std::vector<double>
     tbb::parallel_reduce(tbb::blocked_range<int>(1, simParams->systemTotalSpins), 0,
         [&](const tbb::blocked_range<int>& range, int dummy) -> int {
             for (int i = range.begin(); i < range.end(); ++i) {
-                std::array<double, 3> exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
-                std::array<double, 3> driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
+                CommonStructures::Vector3D exchangeTemp = effectiveField.EffectiveFieldsCombinedTestExOnly(i, 0, mxIn, myIn, mzIn);
+                CommonStructures::Vector3D driveTemp = effectiveField.EffectiveFieldsCombinedTestDriveOnly(i, 0, mxIn, myIn, mzIn, currentTime);
 
                 effectiveFieldX[i] += exchangeTemp[0] + driveTemp[0];
                 effectiveFieldY[i] += exchangeTemp[1] + driveTemp[1];
@@ -1043,16 +1049,40 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
 
     // Use these to ensure that there's no issues with sharing a member attribute across
     // methods (this is less memory efficient, but for debugging purposes)
-    std::vector<std::atomic<double>> effectiveFieldXAtomic(simParams->systemTotalSpins + 2);
-    std::vector<std::atomic<double>> effectiveFieldYAtomic(simParams->systemTotalSpins + 2);
-    std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
+    // std::vector<std::atomic<double>> effectiveFieldXAtomic(simParams->systemTotalSpins + 2);
+    // std::vector<std::atomic<double>> effectiveFieldYAtomic(simParams->systemTotalSpins + 2);
+    // std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
+    std::vector<double> dipoleFieldX, dipoleFieldY, dipoleFieldZ;
+    if (simFlags->hasDemagFFT) {
+        std::tie(dipoleFieldX, dipoleFieldY, dipoleFieldZ) = demagField.calculateDipoleFieldGreenReal(1, 1, mxIn, myIn,mzIn);
+    }
+    tbb::parallel_for(tbb::blocked_range<int>(1, simParams->systemTotalSpins + 1),
+            [&]( const tbb::blocked_range<int> tbbRange ) {
+                for ( int site = tbbRange.begin(); site < tbbRange.end(); site++ ) {
+                    auto exchangeTemp = exchangeField.calculateExchangeField(1, site, mxIn, myIn, mzIn);
+                    auto biasTemp = biasField.calculateBiasField(1, site, layer, currentTime, mzIn);
 
-    exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                        effectiveFieldZAtomic, useParallel);
-    biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                    effectiveFieldZAtomic, useParallel);
+                    CommonStructures::Vector3D dipolarTemp{0.0, 0.0, 0.0};
+                    if (simFlags->hasDemagFactors) {
+                        // placeholder as demagnetisation-field code hasn't been adapted for direct invocation
+                        dipolarTemp = demagField.calculateDemagField(1, site, mxIn, myIn, mzIn);
+                    } else if (simFlags->hasDemagFFT) {
+                        dipolarTemp.x() = dipoleFieldX[site];
+                        dipolarTemp.y() = dipoleFieldY[site];
+                        dipolarTemp.z() = dipoleFieldZ[site];
+                    }
 
-    if ( simFlags->hasDemagIntense )
+                    effectiveFieldX[site] = exchangeTemp.x() + biasTemp.x() + dipolarTemp.x();
+                    effectiveFieldY[site] = exchangeTemp.y() + biasTemp.y() + dipolarTemp.y();
+                    effectiveFieldZ[site] = exchangeTemp.z() + biasTemp.z() + dipolarTemp.z();
+                }
+            }, tbb::auto_partitioner());
+
+    _clearThenReleaseVector(dipoleFieldX);
+    _clearThenReleaseVector(dipoleFieldY);
+    _clearThenReleaseVector(dipoleFieldZ);
+   /*
+    if ( simFlags->hasDemagFactors )
         // demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
         demagField.calculateOneDimension(mxIn, myIn, mzIn,
                                          effectiveFieldXAtomic, effectiveFieldYAtomic, effectiveFieldZAtomic,
@@ -1061,14 +1091,15 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
     _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
     _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
     _transferDataThenReleaseAtomicVector(effectiveFieldZAtomic, effectiveFieldZ);
+    */
 
-    effectiveFieldX[0] = 0;
+    // For data integrity (in case an off-by-one error occurs)
+    effectiveFieldX.front() = 0;
     effectiveFieldX.back() = 0;
-    effectiveFieldY[0] = 0;
+    effectiveFieldY.front() = 0;
     effectiveFieldY.back() = 0;
-    effectiveFieldZ[0] = 0;
+    effectiveFieldZ.front() = 0;
     effectiveFieldZ.back() = 0;
-
 
     if ( simFlags->hasDipolar )
         dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
@@ -1095,7 +1126,7 @@ SolversImplementation::RK2StageMultithreadedCompact( const std::vector<double> &
                               hkLocal.z = effectiveFieldZ[site];
 
                               // Calculations for the magnetic moment, coded as symbol 'm', components of the target site
-                              double localGilbertFactor = llg._checkIfDampingMapExists(site);
+                              auto localGilbertFactor = llg._checkIfDampingMapExists(site);
                               mkLocal.x = llg.MagneticMomentX(site, mxIn[site], myIn[site], mzIn[site],
                                                               hkLocal.x, hkLocal.y, hkLocal.z, localGilbertFactor);
                               mkLocal.y = llg.MagneticMomentY(site, mxIn[site], myIn[site], mzIn[site],
@@ -1144,16 +1175,18 @@ SolversImplementation::RK4StageMultithreadedCompact( const std::vector<double> &
     std::vector<std::atomic<double>> effectiveFieldZAtomic(simParams->systemTotalSpins + 2);
 
     exchangeField.calculateOneDimension(mxIn, myIn, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                        effectiveFieldZAtomic, useParallel);
+                                        effectiveFieldZAtomic, CommonStructures::Parallelisations::Multithreaded);
     biasField.calculateOneDimension(layer, currentTime, mzIn, effectiveFieldXAtomic, effectiveFieldYAtomic,
-                                    effectiveFieldZAtomic, useParallel);
+                                    effectiveFieldZAtomic, CommonStructures::Parallelisations::Multithreaded);
+
+    if ( simFlags->hasDemagFactors )
+        demagField.calculateOneDimension(mxIn, myIn, mzIn, demagXp, demagYp, demagZp,
+                                         DemagnetisationFields::DemagMethod::Demag,
+                                         CommonStructures::Parallelisations::Multithreaded);
 
     _transferDataThenReleaseAtomicVector(effectiveFieldXAtomic, effectiveFieldX);
     _transferDataThenReleaseAtomicVector(effectiveFieldYAtomic, effectiveFieldY);
     _transferDataThenReleaseAtomicVector(effectiveFieldZAtomic, effectiveFieldZ);
-
-    if ( simFlags->hasDemagIntense )
-        demagField.DemagnetisationFieldIntense(mxIn, myIn, mzIn, demagXp, demagYp, demagZp);
 
     if ( simFlags->hasDipolar )
         dipolarField.DipolarInteractionClassicThreaded(mxIn, myIn, mzIn, dipoleXp, dipoleYp, dipoleZp);
@@ -1255,7 +1288,7 @@ void SolversImplementation::_resizeClassContainersTest() {
 void SolversImplementation::_resizeClassContainers() {
     // Should contain all interactions/fields that are calculated
 
-    if ((simFlags->hasDemagIntense) || (!simFlags->hasDemagIntense)) {
+    if ((simFlags->hasDemagFactors) || (!simFlags->hasDemagFactors)) {
         demagXp.resize(simParams->systemTotalSpins + 2);
         std::fill(demagXp.begin(), demagXp.end(), 0.0);
         demagYp.resize(simParams->systemTotalSpins + 2);

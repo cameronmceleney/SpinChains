@@ -31,55 +31,6 @@ private:
     SimulationParameters *_simParams; // Non-owning pointer to SimulationParameters
     SimulationStates *_simStates;
     SimulationFlags *_simFlags;
-
-private:
-
-    bool _hasOscillatingZeeman( const int &site );
-
-    std::array<double, 3> _calculateExchangeField1D( const int &currentSite, const std::vector<double> &mxTerms,
-                                                     const std::vector<double> &myTerms,
-                                                     const std::vector<double> &mzTerms );
-
-    std::array<double, 3>
-    _calculateExchangeField1D( const int &currentSite, const std::vector<double> &mxTerms,
-                               const std::vector<double> &myTerms,
-                               const std::vector<double> &mzTerms, const bool &shouldUseTBB );
-
-
-    std::array<double, 3>
-    _calculateDmiSimple( const int &currentSite, const std::vector<double> &mxTerms,
-                         const std::vector<double> &myTerms,
-                         const std::vector<double> &mzTerms, const bool &shouldUseTBB );
-
-        // Empty contains to be constants reused throughout the component's lifetime instead recreating new each method call
-    std::array<double, 3> _dmiVector{};
-
-    /**
-     * To be used in all cases where readability is key for debugging, and all single-threaded cases
-     * @param iSite
-     * @param jSite
-     * @return
-     */
-    static inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite );
-
-    /**
-     * To be used in multi-threaded cases and is optimised for efficiency
-     * @param iSite
-     * @param jSite
-     * @return
-     */
-    static inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite,
-                                                const bool & shouldUseTBB);
-
-
-    std::array<double, 3> _calculateDMI1D( const int &currentSite, const std::vector<double> &mxTerms,
-                                              const std::vector<double> &myTerms, const std::vector<double> &mzTerms );
-
-    std::array<double, 3>
-    _calculateDMI1D( const int &currentSite, const std::vector<double> &mxTerms,
-                          const std::vector<double> &myTerms,
-                          const std::vector<double> &mzTerms, const bool &shouldUseTBB );
-
 public:
     explicit ExchangeField( SimulationParameters *sharedSimParams,
                             SimulationStates *sharedSimStates,
@@ -87,20 +38,63 @@ public:
 
     ~ExchangeField() = default;
 
+private:
+    // Empty contains to be constants reused throughout the component's lifetime instead recreating new each method call
+
+    /**
+     * To be used in all cases where readability is key for debugging, and all single-threaded cases
+     * @param iSite
+     * @param jSite
+     * @return
+     */
+    static inline CommonStructures::Vector3D _crossProduct( const CommonStructures::Vector3D &iSite, const CommonStructures::Vector3D &jSite );
+
+    /**
+     * To be used in multi-threaded cases and is optimised for efficiency
+     * @param iSite
+     * @param jSite
+     * @return
+     */
+
+private:
+    template <typename T>
+    void calculateExchangeField( int dimension, const std::vector<double> &mxTerms,
+                                 const std::vector<double> &myTerms, const std::vector<double> &mzTerms,
+                                 std::vector<T> &exchangeXOut, std::vector<T> &exchangeYOut,
+                                 std::vector<T> &exchangeZOut,
+                                 CommonStructures::Parallelisations parallelFlag );
+
+    CommonStructures::Vector3D _calculateHeisenbergExchange1D(int site, const std::vector<double> &mxTerms,
+                                                               const std::vector<double> &myTerms, const std::vector<double> &mzTerms);
+
+    template <typename T>
+    CommonStructures::Vector3D _calculateDMI(int dimension, int site, const std::vector<T> &mxTerms,
+                                                       const std::vector<T> &myTerms, const std::vector<T> &mzTerms);
+
+    CommonStructures::Vector3D _calculateDMI1D(int site, const std::vector<double> &mxTerms,
+                                                     const std::vector<double> &myTerms, const std::vector<double> &mzTerms);
+
+    template <typename T>
+    void addExchangeField(int site, const CommonStructures::Vector3D &exchangeField, std::vector<T> &exchangeXOut,
+                                     std::vector<T> &exchangeYOut, std::vector<T> &exchangeZOut);
+
+    bool _hasOscillatingZeeman(int site);
+
 public:
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
                                 const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,
-                                std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut );
+                                std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut,
+                                const CommonStructures::Parallelisations &parallelisationMode);
 
     void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
                                 const std::vector<double> &mzTerms, std::vector<std::atomic<double>> &exchangeXOut,
                                 std::vector<std::atomic<double>> &exchangeYOut,
-                                std::vector<std::atomic<double>> &exchangeZOut, const bool &shouldUseTBB );
+                                std::vector<std::atomic<double>> &exchangeZOut, const CommonStructures::Parallelisations &parallelisationMode);
 
-    void calculateOneDimension( const std::vector<double> &mxTerms, const std::vector<double> &myTerms,
-                                const std::vector<double> &mzTerms, std::vector<double> &exchangeXOut,
-                                std::vector<double> &exchangeYOut, std::vector<double> &exchangeZOut,
-                                const bool &shouldUseTBB );
+    CommonStructures::Vector3D calculateExchangeField( int dimension, int site,
+                                                  const std::vector<double> &mxTerms,
+                                                  const std::vector<double> &myTerms,
+                                                  const std::vector<double> &mzTerms);
 };
 
 

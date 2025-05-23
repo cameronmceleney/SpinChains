@@ -12,9 +12,7 @@ SolversConfiguration::SolversConfiguration( std::shared_ptr<SimulationManager> s
 
         : SolversSuperClass(std::move(sharedSimManager), std::move(sharedSimParams), std::move(sharedSimStates),
                             std::move(sharedSimFlags)) {
-    _mxInit = 0.0;
-    _myInit = 0.0;
-    _mzInit = 1.0;
+    
     _zeroValue = 0.0;
 }
 
@@ -23,6 +21,10 @@ void SolversConfiguration::configure() {
     // ###################### Core Method Invocations ######################
     // Order is intentional, and must be maintained!
 
+    _mxInit = simFlags->equilibriumOrientation == Axis::x ? 1.0 : 0.0;
+    _myInit = simFlags->equilibriumOrientation == Axis::y ? 1.0 : 0.0;
+    _mzInit = simFlags->equilibriumOrientation == Axis::z ? 1.0 : 0.0;
+
     if ( simManager->hasFirstRunOccurred ) {
         // Idiot-proofing from myself
         _reconfigureSystem();
@@ -30,13 +32,13 @@ void SolversConfiguration::configure() {
 
     _testShockwaveInitConditions();
 
-    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
+    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegion.regionWidth);
     _generateExchangeVector(simParams->numSpinsInABC, simParams->numberOfSpinPairs, simParams->exchangeEnergyMin,
                             simParams->exchangeEnergyMax);
 
     if ( simFlags->hasMultipleStackedLayers ) {
-        _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping,
-                                            simParams->gilbertABCInner, simParams->gilbertABCOuter);
+        _generateMultilayerAbsorbingRegions(simParams->numSpinsInABC, simParams->gilbertDamping.factor,
+                                            simParams->gilbertDamping.innerABC, simParams->gilbertDamping.outerABC);
 
         simStates->m0Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _mzInit);
         simStates->m1Nest = InitialiseNestedVectors(simParams->numLayers, _mxInit, _myInit, _zeroValue);
@@ -44,18 +46,18 @@ void SolversConfiguration::configure() {
     } else {
         if (simFlags->hasGradientRegionForOscillatingZeeman) {
             if (simFlags->useGenerateABCUpdated)
-                _generateAbsorbingRegionsUpdated(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-                                                 simParams->gilbertABCInner, simParams->gilbertABCOuter);
+                _generateAbsorbingRegionsUpdated(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping.factor,
+                                                 simParams->gilbertDamping.innerABC, simParams->gilbertDamping.outerABC);
             else
-                _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->numSpinsDRPeak,
-                                          simParams->numSpinsDRGradient, simParams->gilbertDamping,
-                                          simParams->dampingGradientPeak, simParams->gilbertABCInner, simParams->gilbertABCOuter);
+                _generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegion.peakWidth,
+                                          simParams->drivingRegion.gradientWidth, simParams->gilbertDamping.factor,
+                                          simParams->dampingRegion.peakValue, simParams->gilbertDamping.innerABC, simParams->gilbertDamping.outerABC);
         }
         else {
-            //_generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-             //                         simParams->gilbertABCInner, simParams->gilbertABCOuter);
-            _generateAbsorbingRegionsUpdated(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping,
-                                                 simParams->gilbertABCInner, simParams->gilbertABCOuter);
+            //_generateAbsorbingRegions(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping.factor,
+             //                         simParams->gilbertDamping.innerABC, simParams->gilbertDamping.outerABC);
+            _generateAbsorbingRegionsUpdated(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->gilbertDamping.factor,
+                                                 simParams->gilbertDamping.innerABC, simParams->gilbertDamping.outerABC);
         }
 
         _setupInitMagneticMoments(_mxInit, _myInit, _mzInit);
@@ -125,7 +127,7 @@ void SolversConfiguration::_reconfigureSystem() {
     }
 
     resetInitMagneticMoments(_mxInit, _myInit, _mzInit);
-    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegionWidth);
+    _setupDrivingRegion(simParams->numSpinsInChain, simParams->numSpinsInABC, simParams->drivingRegion.regionWidth);
 }
 
 void SolversConfiguration::_generateMaps() {
@@ -140,9 +142,9 @@ void SolversConfiguration::_generateMaps() {
             bias_min = 0.0;
             bias_max = 1.0;
         }
-        _generateMapOfScaling("Driving Region", simStates->dRGradientMap, simParams->drivingRegionLhs,
-                              simParams->drivingRegionRhs, simParams->drivingRegionWidth,
-                              simParams->numSpinsDRGradient, simParams->numSpinsDRPeak, bias_min, bias_max);
+        _generateMapOfScaling("Driving Region", simStates->dRGradientMap, simParams->drivingRegion.lhsSite,
+                              simParams->drivingRegion.rhsSite, simParams->drivingRegion.regionWidth,
+                              simParams->drivingRegion.gradientWidth, simParams->drivingRegion.peakWidth, bias_min, bias_max);
     }
 
     if ((simFlags->shouldDmiGradientMirrorOscillatingZeeman || simFlags->shouldDampingGradientMirrorOscillatingZeeman)
@@ -151,22 +153,22 @@ void SolversConfiguration::_generateMaps() {
     }
 
     if (simFlags->shouldDmiGradientMirrorOscillatingZeeman) {
-        simParams->dmiRegionLhs = simParams->drivingRegionLhs;
-        simParams->dmiRegionRhs = simParams->drivingRegionRhs;
-        simParams->numSpinsDmiPeak = simParams->numSpinsDRPeak;
-        simParams->numSpinsDmiGradient = simParams->numSpinsDRGradient;
-        simParams->numSpinsDmiWidth = simParams->drivingRegionWidth;
+        simParams->dmiRegion.lhsSite = simParams->drivingRegion.lhsSite;
+        simParams->dmiRegion.rhsSite = simParams->drivingRegion.rhsSite;
+        simParams->dmiRegion.peakWidth = simParams->drivingRegion.peakWidth;
+        simParams->dmiRegion.gradientWidth = simParams->drivingRegion.gradientWidth;
+        simParams->dmiRegion.regionWidth = simParams->drivingRegion.regionWidth;
         simStates->dmiGradientMap = simStates->dRGradientMap;
     }
     else if ( simFlags->hasGradientRegionForDmi ) {
-        if (simParams->dmiRegionLhs < 0 && simParams->dmiRegionRhs < 0) {
-            simParams->dmiRegionLhs = simParams->drivingRegionLhs - simParams->dmiRegionOffset;
-            simParams->dmiRegionRhs = simParams->drivingRegionRhs + simParams->dmiRegionOffset;
+        if (simParams->dmiRegion.lhsSite < 0 && simParams->dmiRegion.rhsSite < 0) {
+            simParams->dmiRegion.lhsSite = simParams->drivingRegion.lhsSite - simParams->dmiRegion.offsetWidth;
+            simParams->dmiRegion.rhsSite = simParams->drivingRegion.rhsSite + simParams->dmiRegion.offsetWidth;
         }
-        if ( simParams->numSpinsDmiWidth < 0 ) {
-            simParams->numSpinsDmiWidth = simParams->dmiRegionRhs - simParams->dmiRegionLhs + 1;
+        if ( simParams->dmiRegion.regionWidth < 0 ) {
+            simParams->dmiRegion.regionWidth = simParams->dmiRegion.rhsSite - simParams->dmiRegion.lhsSite + 1;
         }
-        simParams->numSpinsDmiGradient = (simParams->numSpinsDmiWidth - simParams->numSpinsDmiPeak) / 2;
+        simParams->dmiRegion.gradientWidth = (simParams->dmiRegion.regionWidth - simParams->dmiRegion.peakWidth) / 2;
 
         double dmi_min, dmi_max;
         if (simFlags->isDmiLinearAcrossMap) {
@@ -177,47 +179,47 @@ void SolversConfiguration::_generateMaps() {
             dmi_max = 1.0;
         }
 
-        _generateMapOfScaling("DMI Region", simStates->dmiGradientMap, simParams->dmiRegionLhs,
-                              simParams->dmiRegionRhs, simParams->numSpinsDmiWidth,
-                              simParams->numSpinsDmiGradient, simParams->numSpinsDmiPeak, dmi_min, dmi_max);
+        _generateMapOfScaling("DMI Region", simStates->dmiGradientMap, simParams->dmiRegion.lhsSite,
+                              simParams->dmiRegion.rhsSite, simParams->dmiRegion.regionWidth,
+                              simParams->dmiRegion.gradientWidth, simParams->dmiRegion.peakWidth, dmi_min, dmi_max);
     }
 
     if (simFlags->shouldDampingGradientMirrorOscillatingZeeman) {
-        simParams->dampingRegionLhs = simParams->drivingRegionLhs;
-        simParams->dampingRegionRhs = simParams->drivingRegionRhs;
-        simParams->numSpinsDampingPeak = simParams->numSpinsDRPeak;
-        simParams->numSpinsDampingGradient = simParams->numSpinsDRGradient;
-        simParams->numSpinsDampingWidth = simParams->drivingRegionWidth;
+        simParams->dampingRegion.lhsSite = simParams->drivingRegion.lhsSite;
+        simParams->dampingRegion.rhsSite = simParams->drivingRegion.rhsSite;
+        simParams->dampingRegion.peakWidth = simParams->drivingRegion.peakWidth;
+        simParams->dampingRegion.gradientWidth = simParams->drivingRegion.gradientWidth;
+        simParams->dampingRegion.regionWidth = simParams->drivingRegion.regionWidth;
         simStates->dampingGradientMap = simStates->dRGradientMap;
 
         if ( !simFlags->isOscillatingZeemanLinearAcrossMap ) {
-            throw("SolverConfiguration::_generateMaps: Oscillating Zeeman is not linear across map, but damping gradient "
-                  "is mirrored, so this creates a logic error.");
+            throw std::runtime_error("SolverConfiguration::_generateMaps: Oscillating Zeeman is not linear across map, "
+                                     "but damping gradient is mirrored, so this creates a logic error.");
         }
 
         for (auto const& [key, val] : simStates->dRGradientMap) {
-            simStates->dampingGradientMap[key] *= simParams->gilbertDamping;
+            simStates->dampingGradientMap[key] *= simParams->gilbertDamping.factor;
         }
     }
     else if ( simFlags->hasGradientRegionForDamping ) {
-        if (simParams->dampingRegionLhs < 0 && simParams->dampingRegionRhs < 0) {
-            simParams->dampingRegionLhs = simParams->drivingRegionLhs - simParams->dampingRegionOffset;
-            simParams->dampingRegionRhs = simParams->drivingRegionRhs + simParams->dampingRegionOffset;
+        if (simParams->dampingRegion.lhsSite < 0 && simParams->dampingRegion.rhsSite < 0) {
+            simParams->dampingRegion.lhsSite = simParams->drivingRegion.lhsSite - simParams->dampingRegion.offsetWidth;
+            simParams->dampingRegion.rhsSite = simParams->drivingRegion.rhsSite + simParams->dampingRegion.offsetWidth;
         }
-        if ( simParams->numSpinsDampingWidth < 0 ) {
-            simParams->numSpinsDampingWidth = simParams->dampingRegionRhs - simParams->dampingRegionLhs + 1;
+        if ( simParams->dampingRegion.regionWidth < 0 ) {
+            simParams->dampingRegion.regionWidth = simParams->dampingRegion.rhsSite - simParams->dampingRegion.lhsSite + 1;
         }
-        simParams->numSpinsDampingGradient = (simParams->numSpinsDampingWidth - simParams->numSpinsDampingPeak) / 2;
+        simParams->dampingRegion.gradientWidth = (simParams->dampingRegion.regionWidth - simParams->dampingRegion.peakWidth) / 2;
 
         if (simFlags->isDampingLinearAcrossMap) {
-            simParams->dampingGradientGradient = simParams->dampingGradientPeak;
+            simParams->dampingRegion.gradientValue = simParams->dampingRegion.peakValue;
         } else {
-            simParams->dampingGradientGradient = simParams->gilbertDamping;
+            simParams->dampingRegion.gradientValue = simParams->gilbertDamping.factor;
         }
 
-        _generateMapOfScaling("Damping Region", simStates->dampingGradientMap, simParams->dampingRegionLhs,
-                              simParams->dampingRegionRhs, simParams->numSpinsDampingWidth, simParams->numSpinsDampingGradient,
-                              simParams->numSpinsDampingPeak, simParams->dampingGradientGradient, simParams->dampingGradientPeak);
+        _generateMapOfScaling("Damping Region", simStates->dampingGradientMap, simParams->dampingRegion.lhsSite,
+                              simParams->dampingRegion.rhsSite, simParams->dampingRegion.regionWidth, simParams->dampingRegion.gradientWidth,
+                              simParams->dampingRegion.peakWidth, simParams->dampingRegion.gradientValue, simParams->dampingRegion.peakValue);
     }
 }
 
@@ -277,12 +279,12 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
         std::cout << "numSpinsDRPeak or numSpinsDRGradient are less than zero!";
         exit(1);
     }
-    int numSpinsChainLhsOfDR = simParams->drivingRegionLhs - numSpinsAbsorbingRegion;
-    int numSpinsChainRhsOfDR = numSpinsInChain - simParams->drivingRegionRhs + numSpinsAbsorbingRegion;
+    int numSpinsChainLhsOfDR = simParams->drivingRegion.lhsSite - numSpinsAbsorbingRegion;
+    int numSpinsChainRhsOfDR = numSpinsInChain - simParams->drivingRegion.rhsSite + numSpinsAbsorbingRegion;
 
     //std::cout << "Before adjustment" << std::endl;
     // std::cout << "numSpinsTotal: " << simParams->systemTotalSpins << " | numSpinsInChain: " << numSpinsInChain << " | numSpinsABC (each): " << simParams->numSpinsInABC << "\n";
-    //std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
+    //std::cout << "drivingRegionLhs: " << simParams->drivingRegion.lhsSite << " | drivingRegionRhs: " << simParams->drivingRegion.rhsSite << " | drivingRegionWidth: " << simParams->drivingRegion.regionWidth << "\n";
     //std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
     //std::cout << "Spins in chain: " << simParams->numSpinsInChain << " | total sites: " << simParams->systemTotalSpins << " | abc sites: " << simParams->numSpinsInABC  <<std::endl;
 
@@ -294,7 +296,7 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
         // The RHS driving case subtracts 1 from drivingRegionRhs for the zeroth spin addition correction
         numSpinsChainRhsOfDR--;
     } else if (simFlags->shouldDriveCentre) {
-        if ( simParams->drivingRegionWidth % 2 == 0 ) {
+        if ( simParams->drivingRegion.regionWidth % 2 == 0 ) {
             // Even driving region width
             numSpinsChainLhsOfDR--; // Just correct for zero-indexing
         } else {
@@ -305,19 +307,19 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
         // No adjustment needed for the RHS in the even case, or any case for the odd driving region width
     //std::cout << "after adjustment" << std::endl;
     // std::cout << "numSpinsTotal: " << simParams->systemTotalSpins << " | numSpinsInChain: " << numSpinsInChain << " | numSpinsABC (each): " << simParams->numSpinsInABC << "\n";
-    //std::cout << "drivingRegionLhs: " << simParams->drivingRegionLhs << " | drivingRegionRhs: " << simParams->drivingRegionRhs << " | drivingRegionWidth: " << simParams->drivingRegionWidth << "\n";
+    //std::cout << "drivingRegionLhs: " << simParams->drivingRegion.lhsSite << " | drivingRegionRhs: " << simParams->drivingRegion.rhsSite << " | drivingRegionWidth: " << simParams->drivingRegion.regionWidth << "\n";
     //std::cout << "numSpinsChainLhsOfDR: " << numSpinsChainLhsOfDR << " | numSpinsChainRhsOfDR: " << numSpinsChainRhsOfDR << " | numSpinsOutsideOfDR: " << numSpinsChainLhsOfDR + numSpinsChainRhsOfDR << "\n";
     //std::cout << "Spins in chain: " << simParams->numSpinsInChain << " | total sites: " << simParams->systemTotalSpins << std::endl;
 
     std::vector<double> gilbertMainChain;
     // Calculate the total number of sites in the driving region
-    int totalDRWidth = simParams->drivingRegionRhs - simParams->drivingRegionLhs + 1;
+    int totalDRWidth = simParams->drivingRegion.rhsSite - simParams->drivingRegion.lhsSite + 1;
     // Calculate expected sizes based on simulation parameters
     int expectedNumGradientSites = 2 * numSpinsDRGradient; // Times two for both left and right gradients
     int expectedNumPeakSites = totalDRWidth - expectedNumGradientSites;
 
     // Check if the sum of gradient (times 2) and peak sites matches the total driving region width
-    if (expectedNumGradientSites + expectedNumPeakSites != totalDRWidth || totalDRWidth != simParams->drivingRegionWidth) {
+    if (expectedNumGradientSites + expectedNumPeakSites != totalDRWidth || totalDRWidth != simParams->drivingRegion.regionWidth) {
         throw std::runtime_error("The number of sites in gradients (times 2) and peak does not sum to the total driving region width.");
     }
 
@@ -410,13 +412,13 @@ SolversConfiguration::_generateAbsorbingRegions( int numSpinsInChain, int numSpi
     // PrintVector(centreDRPeakScaled, false);
     // PrintVector(rightDRGradientScaled, false);
 
-    for ( int i = simParams->drivingRegionLhs; i < simParams->drivingRegionLhs + numSpinsDRGradient; i++ ) {
+    for ( int i = simParams->drivingRegion.lhsSite; i < simParams->drivingRegion.lhsSite + numSpinsDRGradient; i++ ) {
         leftDRGradientSites.push_back(i);
     }
-    for ( int i = simParams->drivingRegionLhs + numSpinsDRGradient; i <= simParams->drivingRegionRhs - numSpinsDRGradient; i++ ) {
+    for ( int i = simParams->drivingRegion.lhsSite + numSpinsDRGradient; i <= simParams->drivingRegion.rhsSite - numSpinsDRGradient; i++ ) {
         centreDRPeakSites.push_back(i);
     }
-    for ( int i = simParams->drivingRegionRhs - numSpinsDRGradient + 1; i <= simParams->drivingRegionRhs; i++ ) {
+    for ( int i = simParams->drivingRegion.rhsSite - numSpinsDRGradient + 1; i <= simParams->drivingRegion.rhsSite; i++ ) {
         rightDRGradientSites.push_back(i);
     }
 
@@ -670,9 +672,9 @@ SolversConfiguration::_setupDrivingRegion( int numSpinsInChain, int numSpinsAbso
             drivenSite -= 1;
 
         // Update so that output file is intuitive
-        simParams->drivingRegionWidth = 0;
-        simParams->drivingRegionLhs = 0;
-        simParams->drivingRegionRhs = 0;
+        simParams->drivingRegion.regionWidth = 0;
+        simParams->drivingRegion.lhsSite = 0;
+        simParams->drivingRegion.rhsSite = 0;
         return;
     }
 
@@ -704,18 +706,18 @@ SolversConfiguration::_setupDrivingRegion( int numSpinsInChain, int numSpinsAbso
          */
         if ( drivingRegionWidth % 2 == 0 ) {
             // By convention even case shortens the LHS
-            simParams->drivingRegionLhs =
+            simParams->drivingRegion.lhsSite =
                     (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2) + 1;
-            simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
+            simParams->drivingRegion.rhsSite = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
         } else {
             // Use convention to round down then add additional site (odd number) to the RHS of the centre
-            simParams->drivingRegionLhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
-            simParams->drivingRegionRhs = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
+            simParams->drivingRegion.lhsSite = (numSpinsInChain / 2) + numSpinsAbsorbingRegion - (drivingRegionWidth / 2);
+            simParams->drivingRegion.rhsSite = (numSpinsInChain / 2) + numSpinsAbsorbingRegion + (drivingRegionWidth / 2);
         }
 
         if ( simParams->numSpinsInChain % 2 == 1) {
-            simParams->drivingRegionLhs++;
-            simParams->drivingRegionRhs++;
+            simParams->drivingRegion.lhsSite++;
+            simParams->drivingRegion.rhsSite++;
         }
         return;
     }
@@ -727,22 +729,22 @@ SolversConfiguration::_setupDrivingRegion( int numSpinsInChain, int numSpinsAbso
 
     if ( simFlags->shouldDriveLHS ) {
         // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
-        simParams->drivingRegionLhs = numSpinsAbsorbingRegion + 1;
-        simParams->drivingRegionRhs = simParams->drivingRegionLhs + drivingRegionWidth - 1;
+        simParams->drivingRegion.lhsSite = numSpinsAbsorbingRegion + 1;
+        simParams->drivingRegion.rhsSite = simParams->drivingRegion.lhsSite + drivingRegionWidth - 1;
         return;
     }
 
     if ( simFlags->shouldDriveRHS ) {
         // The +1 is to correct the offset of adding a zeroth spin
-        simParams->drivingRegionRhs = simParams->systemTotalSpins - numSpinsAbsorbingRegion - 1;
-        simParams->drivingRegionLhs = simParams->drivingRegionRhs - drivingRegionWidth + 1;
+        simParams->drivingRegion.rhsSite = simParams->systemTotalSpins - numSpinsAbsorbingRegion - 1;
+        simParams->drivingRegion.lhsSite = simParams->drivingRegion.rhsSite - drivingRegionWidth + 1;
         return;
     }
 
     if ( simFlags->hasCustomDrivePosition ) {
         // The +1/-1 offset excludes the zeroth spin while retaining the correct driving width
-        simParams->drivingRegionLhs = simParams->numSpinsInABC + 1;
-        simParams->drivingRegionRhs = simParams->drivingRegionLhs + drivingRegionWidth - 1;
+        simParams->drivingRegion.lhsSite = simParams->numSpinsInABC + 1;
+        simParams->drivingRegion.rhsSite = simParams->drivingRegion.lhsSite + drivingRegionWidth - 1;
         return;
     }
 
@@ -865,16 +867,16 @@ void SolversConfiguration::resetInitMagneticMoments( double mxInit, double myIni
 
 void SolversConfiguration::_testShockwaveInitConditions() {
 
-    if ( simFlags->hasShockwave ) {
+    if ( simFlags->hasRisingTime ) {
         simParams->shockwaveStepsize =
-                (simParams->shockwaveMax - simParams->shockwaveInitialStrength) / simParams->shockwaveGradientTime;
+                (simParams->risingTimeMaximum - simParams->risingTimeInitialMagnitude) / simParams->risingTimePeriod;
     } else {
         // Ensures, on the output file, all parameter read as zero; reduces confusion when no shockwave is applied.
-        simParams->iterStartShock = 0.0;
-        simParams->shockwaveScaling = 0.0;
-        simParams->shockwaveGradientTime = 0.0;
-        simParams->shockwaveInitialStrength = 0.0;
-        simParams->shockwaveMax = 0.0;
+        simParams->risingTimeStartAtIteration = 0.0;
+        simParams->risingTimeScalingFactor = 0.0;
+        simParams->risingTimePeriod = 0.0;
+        simParams->risingTimeInitialMagnitude = 0.0;
+        simParams->risingTimeMaximum = 0.0;
         simParams->shockwaveStepsize = 0.0;
     }
 }

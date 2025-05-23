@@ -12,6 +12,8 @@
 
 // C++ User Libraries (General)
 #include "../../libs/CommonDefinitions.h"
+#include "../../libs/CommonStructures.h"
+#include "../../include/SimulationParameters.h"
 #include "../../include/GlobalVariables.h"
 #include "../../libs/linspace.h"
 
@@ -42,6 +44,7 @@ private:
 public:
 //  Dtype               Member Name                             // Comment
     void                CalculateEigenfrequencies(bool hasAngularFrequency);                    // Automatically populate a matrix system in order to obtain eigenvalues and eigenmodes.
+    SimulationParameters simParams;
 };
 
 #endif //SPINCHAINS_SPINCHAINEIGENSOLVERCLASS_H

@@ -100,7 +100,7 @@ std::pair<double, double> SolversSuperClass::testInstance() {
 
     instance->testModifyingDouble(100); // Modify var1 using ChildClass method
 
-    std::cout << "This works because simParams is protected, and the parent can still access it:" << instance->simParams->iterEndShock << std::endl;
+    std::cout << "This works because simParams is protected, and the parent can still access it:" << instance->simParams->risingTimeEndAtIteration << std::endl;
 
     double after = instance->getsharedSimParamsContainer()->ambientTemperature; // Get value of var1 after modification
     return {before, after};

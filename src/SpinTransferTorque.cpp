@@ -26,39 +26,39 @@ SpinTransferTorque::calculateOneDimension( const std::vector<double> &mxTerms, c
             sttZOut[iSite] = 0.0;
         }
 
-        std::array<double, 3> spCurrentDensity = _calculateExchangeDrivenSpinCurrentDensity(iSite, mxTerms, myTerms,
+        CommonStructures::Vector3D spCurrentDensity = _calculateExchangeDrivenSpinCurrentDensity(iSite, mxTerms, myTerms,
                                                                                             mzTerms);
 
         // Calculate the spin current. Might need to be more complex
-        std::array<double, 3> spinCurrent = {_simParams->spinPolarisation * spCurrentDensity[0],
+        CommonStructures::Vector3D spinCurrent = {_simParams->spinPolarisation * spCurrentDensity[0],
                                              _simParams->spinPolarisation * spCurrentDensity[1],
                                              _simParams->spinPolarisation * spCurrentDensity[2]};
 
-        std::array<double, 3> currentMTerms = {mxTerms[iSite], myTerms[iSite], mzTerms[iSite]};
+        CommonStructures::Vector3D currentMTerms = {mxTerms[iSite], myTerms[iSite], mzTerms[iSite]};
 
         // Calculate the adiabatic and non-adiabatic terms. Are these both unique to STT, or am I recalculating the heisenberg exchange/dipolar fields etc?
-        std::array<double, 3> adiabaticTerm = _crossProduct(currentMTerms, spinCurrent);
-        std::array<double, 3> nonAdiabaticTerm = _crossProduct(currentMTerms, adiabaticTerm);
+        CommonStructures::Vector3D adiabaticTerm = _crossProduct(currentMTerms, spinCurrent);
+        CommonStructures::Vector3D nonAdiabaticTerm = _crossProduct(currentMTerms, adiabaticTerm);
 
         // Return STT elements so other methods can add them to the LLG equation. Unsure if I need both the adiabatic/non-adiabatic?
         sttXOut[iSite] = _simParams->gyroMagConst * adiabaticTerm[0] +
-                         _simParams->spinTransferEfficiency * _simParams->gilbertDamping *
+                         _simParams->spinTransferEfficiency * _simParams->gilbertDamping.factor*
                          nonAdiabaticTerm[0];
         sttYOut[iSite] = _simParams->gyroMagConst * adiabaticTerm[1] +
-                         _simParams->spinTransferEfficiency * _simParams->gilbertDamping *
+                         _simParams->spinTransferEfficiency * _simParams->gilbertDamping.factor*
                          nonAdiabaticTerm[1];
         sttZOut[iSite] = _simParams->gyroMagConst * adiabaticTerm[2] +
-                         _simParams->spinTransferEfficiency * _simParams->gilbertDamping *
+                         _simParams->spinTransferEfficiency * _simParams->gilbertDamping.factor*
                          nonAdiabaticTerm[2];
     }
 }
 
-std::array<double, 3> SpinTransferTorque::_calculateExchangeDrivenSpinCurrentDensity( const int &currentSite,
+CommonStructures::Vector3D SpinTransferTorque::_calculateExchangeDrivenSpinCurrentDensity( const int &currentSite,
                                                                                       const std::vector<double> &mxTerms,
                                                                                       const std::vector<double> &myTerms,
                                                                                       const std::vector<double> &mzTerms ) {
     // Initialize the spin current density vector
-    std::array<double, 3> spin_current_density = {0.0, 0.0, 0.0};
+    CommonStructures::Vector3D spin_current_density = {0.0, 0.0, 0.0};
     if ( currentSite <= _simParams->numSpinsInABC ||
          currentSite > (_simParams->systemTotalSpins + _simParams->numSpinsInABC)) {
         // Check boundary conditions
@@ -78,12 +78,12 @@ std::array<double, 3> SpinTransferTorque::_calculateExchangeDrivenSpinCurrentDen
     }
 
     // All checks passed; proceed with finding exchange driven spin current density
-    std::array<double, 3> originSite = {mxTerms[currentSite], myTerms[currentSite], mzTerms[currentSite]};
-    std::array<double, 3> influencingSite = {mxTerms[currentSite - 1], myTerms[currentSite - 1],
+    CommonStructures::Vector3D originSite = {mxTerms[currentSite], myTerms[currentSite], mzTerms[currentSite]};
+    CommonStructures::Vector3D influencingSite = {mxTerms[currentSite - 1], myTerms[currentSite - 1],
                                              mzTerms[currentSite - 1]};
 
     // Calculate the gradient of magnetization (central difference)
-    std::array<double, 3> grad_m;
+    CommonStructures::Vector3D grad_m(0.0, 0.0, 0.0);
     for ( int i = 0; i < 3; ++i ) {
         grad_m[i] = (originSite[i] - influencingSite[i]) / (2 * latticeConstant);
     }
@@ -99,12 +99,10 @@ std::array<double, 3> SpinTransferTorque::_calculateExchangeDrivenSpinCurrentDen
     return spin_current_density;
 }
 
-std::array<double, 3> SpinTransferTorque::_crossProduct( const std::array<double, 3> &iSite,
-                                                         const std::array<double, 3> &jSite ) {
-    if ( iSite.size() != 3 || jSite.size() != 3 )
-        throw std::invalid_argument("One or more input vectors to DMI::crossProduct() are not size 3");
+CommonStructures::Vector3D SpinTransferTorque::_crossProduct( const CommonStructures::Vector3D &iSite,
+                                                         const CommonStructures::Vector3D &jSite ) {
 
-    std::array<double, 3> crossProductVector{};
+    CommonStructures::Vector3D crossProductVector(0.0, 0.0, 0.0);
     crossProductVector[0] = iSite[1] * jSite[2] - iSite[2] * jSite[1];
     crossProductVector[1] = -iSite[0] * jSite[2] + iSite[2] * jSite[0];
     crossProductVector[2] = iSite[0] * jSite[1] - iSite[1] * jSite[0];
@@ -112,8 +110,8 @@ std::array<double, 3> SpinTransferTorque::_crossProduct( const std::array<double
     return crossProductVector;
 }
 
-std::array<double, 3> SpinTransferTorque::_crossProduct( const std::array<double, 3> &iSite,
-                                                         const std::array<double, 3> &jSite,
+CommonStructures::Vector3D SpinTransferTorque::_crossProduct( const CommonStructures::Vector3D &iSite,
+                                                         const CommonStructures::Vector3D &jSite,
                                                          const bool &shouldUseTBB ) {
     // All needed tests are done by calling method
 
@@ -128,6 +126,6 @@ std::array<double, 3> SpinTransferTorque::_crossProduct( const std::array<double
         throw std::invalid_argument("_crossProduct hasn't got CUDA implementation yet");
 }
 
-std::array<double, 3> SpinTransferTorque::_calculateSTT1D() {
+CommonStructures::Vector3D SpinTransferTorque::_calculateSTT1D() {
     return {0.0, 0.0, 0.0};
 }

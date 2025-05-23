@@ -122,8 +122,8 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixAntiferromagnets()
 
     LinspaceClass exchangeValues{};
     std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
-
-    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins() - 1, true, true, false);
+    simParams.exchangeInteraction.setNonUniformExchange(132.0f, 132.0f, CommonStructures::Unit::Tesla);
+    exchangeValues.set_values(*simParams.exchangeInteraction.minimumStrength, *simParams.exchangeInteraction.maximumStrength, GV.GetNumSpins() - 1, true, true, false);
     _chainJValues = exchangeValues.generate_array();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
@@ -261,7 +261,8 @@ Matrix_xd SpinChainEigenSolverClass::PopulateMatrixFerromagnets()
     LinspaceClass exchangeValues{};
     std::vector<double> linspaceExchangeValues; // Holds exchange values for all spins that interact with two other spins
 
-    exchangeValues.set_values(GV.GetExchangeMinVal(), GV.GetExchangeMaxVal(), GV.GetNumSpins() - 1, true, true, false);
+    simParams.exchangeInteraction.setNonUniformExchange(132.0f, 132.0f, CommonStructures::Unit::Tesla);
+    exchangeValues.set_values(*simParams.exchangeInteraction.minimumStrength, *simParams.exchangeInteraction.maximumStrength, GV.GetNumSpins() - 1, true, true, false);
     _chainJValues = exchangeValues.generate_array();
 
     /* To simplify the solving of the matrix, setting all unknown frequency variables to zero and then solving the matrix to find eigenvalues proved faster
@@ -359,8 +360,8 @@ void SpinChainEigenSolverClass::CreateTextFile() {
 
     eigenValsOutput << "Static Bias Field (H0)," << GV.GetStaticBiasField() << " T," <<
                        "Anisotropic Field (H0), " << GV.GetAnisotropyField() << " T," <<
-                       "Min. Exchange Val (J_B), " << GV.GetExchangeMinVal()  << " T," <<
-                       "Max. Exchange Val (J_B), " << GV.GetExchangeMaxVal() << " T," <<
+                       "Min. Exchange Val (J_B), " << *simParams.exchangeInteraction.minimumStrength  << " T," <<
+                       "Max. Exchange Val (J_B), " << *simParams.exchangeInteraction.maximumStrength << " T," <<
                        "No. Total Spins, " << GV.GetNumSpins() << " ," <<
                        "Gyromagnetic Ratio (Y), " << GV.GetGyromagneticConstant() / (2 * M_PI * 1e9) << "GHz / (2*Pi T)," <<
                        std::endl;

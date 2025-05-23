@@ -28,23 +28,23 @@ void initialiseRandomSitesVector(std::vector<std::vector<std::vector<double>>>& 
     }
 }
 
-void initialiseRandomSitesOM(std::map<CommonStructures::Point3D, double>& map, int numSites, int dimension,
-                           std::uniform_real_distribution<double>& uni_rdm_real, std::mt19937& rng) {
+void initialiseRandomSitesOM( std::map<CommonStructures::Value3D, double>& map, int numSites, int dimension,
+                              std::uniform_real_distribution<double>& uni_rdm_real, std::mt19937& rng) {
     for (int i = 0; i < numSites; ++i) {
         int x = std::uniform_int_distribution<>(0, dimension - 1)(rng);
         int y = std::uniform_int_distribution<>(0, dimension - 1)(rng);
         int z = std::uniform_int_distribution<>(0, dimension - 1)(rng);
-        map[CommonStructures::Point3D(x, y, z)] = uni_rdm_real(rng);
+        map[CommonStructures::Value3D(x, y, z)] = uni_rdm_real(rng);
     }
 }
 
-void initialiseRandomSitesUoM(std::unordered_map<CommonStructures::Point3D, double>& map, int numSites, int dimension,
-                           std::uniform_real_distribution<double>& uni_rdm_real, std::mt19937& rng) {
+void initialiseRandomSitesUoM( std::unordered_map<CommonStructures::Value3D, double>& map, int numSites, int dimension,
+                               std::uniform_real_distribution<double>& uni_rdm_real, std::mt19937& rng) {
     for (int i = 0; i < numSites; ++i) {
         int x = std::uniform_int_distribution<>(0, dimension - 1)(rng);
         int y = std::uniform_int_distribution<>(0, dimension - 1)(rng);
         int z = std::uniform_int_distribution<>(0, dimension - 1)(rng);
-        map[CommonStructures::Point3D(x, y, z)] = uni_rdm_real(rng);
+        map[CommonStructures::Value3D(x, y, z)] = uni_rdm_real(rng);
     }
 }
 
@@ -95,12 +95,12 @@ void randomOrderedMap(int dimension_all, int num_computations, auto uni_rdm_real
     methodTimer.setName("Ordered Map with Random Access");
     methodTimer.start(true);
 
-    std::map<CommonStructures::Point3D, double> exchangeContainerOrdered;
+    std::map<CommonStructures::Value3D, double> exchangeContainerOrdered;
 
     for (int i = 0; i < dimension_all; i++) {
         for (int j = 0; j < dimension_all; ++j) {
             for (int k = 0; k < dimension_all; ++k) {
-                exchangeContainerOrdered[CommonStructures::Point3D(i, j, k)] = uni_rdm_real(rng);;
+                exchangeContainerOrdered[CommonStructures::Value3D(i, j, k)] = uni_rdm_real(rng);;
             }
         }
     }
@@ -110,7 +110,7 @@ void randomOrderedMap(int dimension_all, int num_computations, auto uni_rdm_real
             double localSum = 0.0;
             for (int i = 0; i < num_computations; i++) {
                 // Generate random coordinates within the dimensions and renormalise their sum
-                auto iter1 = exchangeContainerOrdered.find(CommonStructures::Point3D(uni_rdm_int(rng),
+                auto iter1 = exchangeContainerOrdered.find(CommonStructures::Value3D(uni_rdm_int(rng),
                                                                                      uni_rdm_int(rng),
                                                                                      uni_rdm_int(rng)));
                 if (iter1 != exchangeContainerOrdered.end())
@@ -126,19 +126,19 @@ void randomOrderedMap(int dimension_all, int num_computations, auto uni_rdm_real
     methodTimer.print();
 
     exchangeContainerOrdered.clear();
-    std::map<CommonStructures::Point3D, double>().swap(exchangeContainerOrdered);
+    std::map<CommonStructures::Value3D, double>().swap(exchangeContainerOrdered);
 }
 
 void randomUnorderedMap(int dimension_all, int num_computations, auto uni_rdm_real, auto uni_rdm_int, auto rng) {
     methodTimer.setName("Unordered Map with Random Access");
     methodTimer.start(true);
 
-    std::unordered_map<CommonStructures::Point3D, double> exchangeContainerUnordered;
+    std::unordered_map<CommonStructures::Value3D, double> exchangeContainerUnordered;
 
     for (int i = 0; i < dimension_all; i++) {
         for (int j = 0; j < dimension_all; ++j) {
             for (int k = 0; k < dimension_all; ++k) {
-                exchangeContainerUnordered[CommonStructures::Point3D(i, j, k)] = uni_rdm_real(rng);
+                exchangeContainerUnordered[CommonStructures::Value3D(i, j, k)] = uni_rdm_real(rng);
             }
         }
     }
@@ -148,9 +148,9 @@ void randomUnorderedMap(int dimension_all, int num_computations, auto uni_rdm_re
             double localSum = 0.0;
             for (int i = 0; i < num_computations; i++) {
                 // Generate random coordinates within the dimensions and renormalise their sum
-                auto iter1 = exchangeContainerUnordered.find(CommonStructures::Point3D(uni_rdm_int(rng),
-                                                                                     uni_rdm_int(rng),
-                                                                                     uni_rdm_int(rng)));
+                auto iter1 = exchangeContainerUnordered.find(CommonStructures::Value3D(uni_rdm_int(rng),
+                                                                                       uni_rdm_int(rng),
+                                                                                       uni_rdm_int(rng)));
                 if (iter1 != exchangeContainerUnordered.end())
                     localSum += iter1->second;
                 else
@@ -164,7 +164,7 @@ void randomUnorderedMap(int dimension_all, int num_computations, auto uni_rdm_re
     methodTimer.print();
 
     exchangeContainerUnordered.clear();
-    std::unordered_map<CommonStructures::Point3D, double>().swap(exchangeContainerUnordered);
+    std::unordered_map<CommonStructures::Value3D, double>().swap(exchangeContainerUnordered);
 
 }
 
@@ -285,7 +285,7 @@ void computeOnVector(int& dimension, int& numSites, auto uni_rdm_real, auto uni_
 
 void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto uni_rdm_int, auto rng) {
 
-    std::map<CommonStructures::Point3D, double> map;
+    std::map<CommonStructures::Value3D, double> map;
 
     if (randomInit) {
         initialiseRandomSitesOM(map, numSites, dimension, uni_rdm_real, rng);
@@ -294,7 +294,7 @@ void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto 
         for ( int x = 0; x < dimension; ++x ) {
             for ( int y = 0; y < dimension; ++y ) {
                 for ( int z = 0; z < dimension; ++z ) {
-                    map[CommonStructures::Point3D(x, y, z)] = uni_rdm_real(rng);
+                    map[CommonStructures::Value3D(x, y, z)] = uni_rdm_real(rng);
                 }
             }
         }
@@ -305,13 +305,13 @@ void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto 
             int x = item.first.x();
             int y = item.first.y();
             int z = item.first.z();
-            std::cout << "(" << x << ", " << y << ", " << z << "): " << map[CommonStructures::Point3D(x, y, z)]
+            std::cout << "(" << x << ", " << y << ", " << z << "): " << map[CommonStructures::Value3D(x, y, z)]
                       << " | ";
         }
     }
 
     // Temporary map to store updated values
-    std::map<CommonStructures::Point3D, double> tempMap;
+    std::map<CommonStructures::Value3D, double> tempMap;
 
     methodTimer.setName("Ordered Map with Neighbours Accessed");
     methodTimer.start(true);
@@ -325,7 +325,7 @@ void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto 
         int z = item.first.z();
 
         for (int dx = -1; dx <= 1; dx += 2) {
-            CommonStructures::Point3D neighbor(x + dx, y, z);
+            CommonStructures::Value3D neighbor(x + dx, y, z);
             if (map.find(neighbor) != map.end()) {
                 sum += map[neighbor];
                 ++count;
@@ -333,7 +333,7 @@ void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto 
         }
 
         for (int dy = -1; dy <= 1; dy += 2) {
-            CommonStructures::Point3D neighbor(x, y + dy, z);
+            CommonStructures::Value3D neighbor(x, y + dy, z);
             if (map.find(neighbor) != map.end()) {
                 sum += map[neighbor];
                 ++count;
@@ -341,7 +341,7 @@ void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto 
         }
 
         for (int dz = -1; dz <= 1; dz += 2) {
-            CommonStructures::Point3D neighbor(x, y, z + dz);
+            CommonStructures::Value3D neighbor(x, y, z + dz);
             if (map.find(neighbor) != map.end()) {
                 sum += map[neighbor];
                 ++count;
@@ -349,7 +349,7 @@ void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto 
         }
 
         // Update the cell based on the sum of its nearest neighbors
-        tempMap[CommonStructures::Point3D(x, y, z)] = sum / std::max(1, count); // Avoid division by zero
+        tempMap[CommonStructures::Value3D(x, y, z)] = sum / std::max(1, count); // Avoid division by zero
     }
 
     // Copy the updated values from tempMap back to map
@@ -363,7 +363,7 @@ void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto 
             int x = item.first.x();
             int y = item.first.y();
             int z = item.first.z();
-            std::cout << "(" << x << ", " << y << ", " << z << "): " << map[CommonStructures::Point3D(x, y, z)]
+            std::cout << "(" << x << ", " << y << ", " << z << "): " << map[CommonStructures::Value3D(x, y, z)]
                       << " | ";
         }
     }
@@ -372,12 +372,12 @@ void computeOnOrderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto 
 
 
     map.clear();
-    std::map<CommonStructures::Point3D, double>().swap(map);
+    std::map<CommonStructures::Value3D, double>().swap(map);
 }
 
 void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, auto uni_rdm_int, auto rng) {
 
-    std::unordered_map<CommonStructures::Point3D, double> map;
+    std::unordered_map<CommonStructures::Value3D, double> map;
 
     if (randomInit) {
         initialiseRandomSitesUoM(map, numSites, dimension, uni_rdm_real, rng);
@@ -386,7 +386,7 @@ void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, aut
         for ( int x = 0; x < dimension; ++x ) {
             for ( int y = 0; y < dimension; ++y ) {
                 for ( int z = 0; z < dimension; ++z ) {
-                    map[CommonStructures::Point3D(x, y, z)] = uni_rdm_real(rng);
+                    map[CommonStructures::Value3D(x, y, z)] = uni_rdm_real(rng);
                 }
             }
         }
@@ -397,13 +397,13 @@ void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, aut
             int x = item.first.x();
             int y = item.first.y();
             int z = item.first.z();
-            std::cout << "(" << x << ", " << y << ", " << z << "): " << map[CommonStructures::Point3D(x, y, z)]
+            std::cout << "(" << x << ", " << y << ", " << z << "): " << map[CommonStructures::Value3D(x, y, z)]
                       << " | ";
         }
     }
 
     // Temporary map to store updated values
-    std::unordered_map<CommonStructures::Point3D, double> tempMap;
+    std::unordered_map<CommonStructures::Value3D, double> tempMap;
 
     methodTimer.setName("Unordered Map with Neighbours Accessed");
     methodTimer.start(true);
@@ -417,7 +417,7 @@ void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, aut
         int z = item.first.z();
 
         for (int dx = -1; dx <= 1; dx += 2) {
-            CommonStructures::Point3D neighbor(x + dx, y, z);
+            CommonStructures::Value3D neighbor(x + dx, y, z);
             if (map.find(neighbor) != map.end()) {
                 sum += map[neighbor];
                 ++count;
@@ -425,7 +425,7 @@ void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, aut
         }
 
         for (int dy = -1; dy <= 1; dy += 2) {
-            CommonStructures::Point3D neighbor(x, y + dy, z);
+            CommonStructures::Value3D neighbor(x, y + dy, z);
             if (map.find(neighbor) != map.end()) {
                 sum += map[neighbor];
                 ++count;
@@ -433,7 +433,7 @@ void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, aut
         }
 
         for (int dz = -1; dz <= 1; dz += 2) {
-            CommonStructures::Point3D neighbor(x, y, z + dz);
+            CommonStructures::Value3D neighbor(x, y, z + dz);
             if (map.find(neighbor) != map.end()) {
                 sum += map[neighbor];
                 ++count;
@@ -441,7 +441,7 @@ void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, aut
         }
 
         // Update the cell based on the sum of its nearest neighbors
-        tempMap[CommonStructures::Point3D(x, y, z)] = sum / std::max(1, count); // Avoid division by zero
+        tempMap[CommonStructures::Value3D(x, y, z)] = sum / std::max(1, count); // Avoid division by zero
     }
 
     // Copy the updated values from tempMap back to map
@@ -455,7 +455,7 @@ void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, aut
             int x = item.first.x();
             int y = item.first.y();
             int z = item.first.z();
-            std::cout << "(" << x << ", " << y << ", " << z << "): " << map[CommonStructures::Point3D(x, y, z)]
+            std::cout << "(" << x << ", " << y << ", " << z << "): " << map[CommonStructures::Value3D(x, y, z)]
                       << " | ";
         }
     }
@@ -464,7 +464,7 @@ void computeOnUnorderedMap(int& dimension, int& numSites, auto uni_rdm_real, aut
 
 
     map.clear();
-    std::unordered_map<CommonStructures::Point3D, double>().swap(map);
+    std::unordered_map<CommonStructures::Value3D, double>().swap(map);
 }
 
 void computeOnContainers(int dimension, int numSites, bool randomInitialisation = false, bool printOutput = false) {

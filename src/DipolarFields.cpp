@@ -787,7 +787,7 @@ void DipolarFields::DipolarInteractionClassicThreaded( const int &currentSite, c
         dipoleZOut = 0.0;
         return;
     }
-    std::array<double, 3> calculationResults = _calculateClassicThreaded(currentSite, mxTerms, myTerms, mzTerms);
+    CommonStructures::Vector3D calculationResults = _calculateClassicThreaded(currentSite, mxTerms, myTerms, mzTerms);
     dipoleXOut = calculationResults[0];
     dipoleYOut = calculationResults[1];
     dipoleZOut = calculationResults[2];
@@ -813,7 +813,7 @@ void DipolarFields::DipolarInteractionClassicThreaded( const std::vector<double>
                                   return;
                               }
 
-                              std::array<double, 3> calculationResults = _calculateClassicThreaded(currentSite, mxTerms,
+                              CommonStructures::Vector3D calculationResults = _calculateClassicThreaded(currentSite, mxTerms,
                                                                                                    myTerms, mzTerms);
 
                               dipoleXOut[currentSite] = calculationResults[0];
@@ -824,7 +824,7 @@ void DipolarFields::DipolarInteractionClassicThreaded( const std::vector<double>
     );
 }
 
-std::array<double, 3>
+CommonStructures::Vector3D
 DipolarFields::_calculateClassicThreaded( const int &currentSite, const std::vector<double> &mxTerms,
                                           const std::vector<double> &myTerms,
                                           const std::vector<double> &mzTerms ) {
@@ -859,13 +859,13 @@ DipolarFields::_calculateClassicThreaded( const int &currentSite, const std::vec
                     if ( std::isinf(latticeConstant))
                         continue;  // Ensure that the lattice constant is not infinite (backup test / temporary)
 
-                    std::array<double, 3> positionVectorLocal = {(iSite - currentSite) * latticeConstant, 0, 0};
+                    CommonStructures::Vector3D positionVectorLocal = {(iSite - currentSite) * latticeConstant, 0.0, 0.0};
 
                     double positionNormLocal = std::sqrt(std::pow(positionVectorLocal[0], 2));
                     double positionNormCubed = std::pow(positionNormLocal, 3);
                     double positionNormFifth = std::pow(positionNormLocal, 5);
 
-                    std::array<double, 3> influencingSiteLocal = {mxTerms[iSite], myTerms[iSite], mzTerms[iSite]};
+                    CommonStructures::Vector3D influencingSiteLocal = {mxTerms[iSite], myTerms[iSite], mzTerms[iSite]};
 
                     // double originSiteDotInfluencingSite = originSite[0] * influencingSite[0];
                     // double originSiteDotPosition = originSite[0] * positionVector[0];

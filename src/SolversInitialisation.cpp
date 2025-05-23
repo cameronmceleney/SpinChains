@@ -39,13 +39,13 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldUseSLLG = false;
 
     // Magnetic Interaction Flags
-    simFlags->hasShockwave = false;
+    simFlags->hasRisingTime = false;
     simFlags->hasDipolar = false;
     simFlags->hasDMI = true;
     simFlags->hasSTT = false;
     simFlags->hasStaticZeeman = true;
     simFlags->hasDmi1DThinFilm = false;
-    simFlags->hasDemagIntense = true;
+    simFlags->hasDemagFactors = false;
     simFlags->hasDemagFFT = false;
     simFlags->hasShapeAnisotropy = false;
 
@@ -73,14 +73,14 @@ void SolversInitialisation::_setSimulationFlags() {
     simFlags->shouldPrintDiscreteSites = false;
 
     // TESTING ONLY
-    simFlags->hasGradientRegionForOscillatingZeeman = true;
-    simFlags->hasGradientRegionForDmi = true;
-    simFlags->hasGradientRegionForDamping = true;
+    simFlags->hasGradientRegionForOscillatingZeeman = false;
+    simFlags->hasGradientRegionForDmi = false;
+    simFlags->hasGradientRegionForDamping = false;
 
     simFlags->shouldDmiGradientMirrorOscillatingZeeman = false;
     simFlags->shouldDampingGradientMirrorOscillatingZeeman = false;
 
-    simFlags->shouldRestrictDmiToWithinGradientRegion = true;
+    simFlags->shouldRestrictDmiToWithinGradientRegion = false;
     simFlags->isOscillatingZeemanLinearAcrossMap = false;
     simFlags->isDmiLinearAcrossMap = false;
     simFlags->isDampingLinearAcrossMap = false;
@@ -89,84 +89,82 @@ void SolversInitialisation::_setSimulationFlags() {
 }
 
 void SolversInitialisation::_setSimulationParameters() {
+    // Old global variables that have now been moved here
+    simParams->exchangeInteraction.setUniformExchange(40, CommonStructures::Unit::Tesla);
+    // exchangeInteraction.setNonUniformExchange(132.5, 132.5, CommonStructures::Unit::Tesla);
+    simParams->exchangeEnergyMin = simParams->exchangeInteraction.uniformStrength;
+    simParams->exchangeEnergyMax = simParams->exchangeInteraction.uniformStrength;
 
-    simParams->latticeConstant = 1e-9;  // THIS MUST BE MANUALLY SET FOR NOW
+    // THIS MUST BE MANUALLY SET FOR NOW
+    simParams->latticeConstant = 1e-9;
+
+    simFlags->equilibriumOrientation = Axis::y;
+
     // Main Parameters
     simParams->ambientTemperature = 0; // Kelvin
     simParams->drivingFreq = 20.0 * 1e9;
-    simParams->oscillatingZeemanStrength = 1e-3;
+    simParams->staticZeemanStrength[simFlags->equilibriumOrientation] = 1e-2;
+    simParams->oscillatingZeemanStrength = 1e-2;
     simParams->forceStopAtIteration = -1;
     simParams->gyroMagConst = GV.GetGyromagneticConstant();
-    simParams->maxSimTime = 5e-9;
+    simParams->maxSimTime = 1e-9;
     simParams->satMag = 800e3;
     simParams->stepsize = 1e-15;
 
     // Data Output Parameters
-    simStates->fixedOutputSites = {600, 1000, 1400, 1800, 2200, 2600, 3000, 3400};
-    simParams->numberOfDataPoints = 1e4; //static_cast<int>(maxSimTime / recordingInterval);
+    simStates->fixedOutputSites = {1500};
+    simParams->numberOfDataPoints = 1e2; //static_cast<int>(maxSimTime / recordingInterval);
 
     // Damping Factors
-    simParams->gilbertDamping = 1e-4;
-    simParams->gilbertABCInner = 1e-4;
-    simParams->gilbertABCOuter = 1e0;
+    simParams->gilbertDamping.factor = 1e-4;
+    simParams->gilbertDamping.innerABC = 1e-4;
+    simParams->gilbertDamping.outerABC = 1e0;
 
     // Spin chain and multi-layer Parameters
     simStates->discreteDrivenSites = {1};
-    simParams->drivingRegionWidth = 150;
-    simParams->numSpinsDRPeak = 150;
+    simParams->drivingRegion.regionWidth = 200;
+    simParams->drivingRegion.peakWidth = simParams->drivingRegion.regionWidth;
+
     simParams->numNeighbours = -1;
     simParams->numSpinsInABC = 300;
     simParams->numLayers = 1;
 
-    // Shockwave Parameters (rarely used)
-    simParams->iterStartShock = 0.0;
-    simParams->iterEndShock = 0.0001;
-    simParams->shockwaveGradientTime = 1;
-    simParams->shockwaveInitialStrength = 0;  // Set equal to oscillatingZeemanStrength if NOT starting at time=0
-    simParams->shockwaveMax = 3e-3;
-    simParams->shockwaveScaling = 1;
+    // 'Rising time' parameters
+    simParams->risingTimeStartAtIteration = 0.0;
+    simParams->risingTimePeriod = 1;
+    simParams->risingTimeInitialMagnitude = 0;  // Set equal to oscillatingZeemanStrength if NOT starting at time=0
+    simParams->risingTimeMaximum = simParams->oscillatingZeemanStrength;
+    simParams->risingTimeScalingFactor = 1;
 
     // Currently unused parameters
     simParams->recordingInterval = 2.5e-15;
     simParams->layerOfInterest = 1;
 
     // TODO Transferred from _generateRemainingParameters for now
+
     // Set flags from global variables
     simFlags->isFerromagnetic = GV.GetIsFerromagnetic();
-    simParams->exchangeEnergyMin = GV.GetExchangeMinVal();
-    simParams->exchangeEnergyMax = GV.GetExchangeMaxVal();
     simParams->dmiConstant = GV.GetDMIConstant() / 2; // Needed to match my Python and C++ code
-    simParams->staticZeemanStrength = GV.GetStaticBiasField();
+    simParams->dmiVector.x() = simParams->dmiConstant;
+
     simParams->anisotropyField = GV.GetAnisotropyField();
     simParams->numSpinsInChain = GV.GetNumSpins();
-    simParams->exchangeStiffness = 5.3e-17;
+    simParams->exchangeStiffness = 5.3e-17;  // TODO. Integrate with ExchangeMinVal parameter
     simParams->spinPolarisation = 0.5;
     simParams->spinTransferEfficiency = 0.4;
-    simFlags->preferredDirection = 2;
     simParams->PERMEABILITY_IRON *= _BOHR_MAGNETON;  // Conversion to Am^2
     simParams->dipoleConstant = SimulationParameters::PERM_FREESPACE / (4.0 * M_PI);
-
     simParams->layerOfInterest -= 1;  // To correct for 0-indexing
 
     // Testing ONLY!
-    simParams->numSpinsDRGradient =  (simParams->drivingRegionWidth - simParams->numSpinsDRPeak) / 2;
+    simParams->drivingRegion.gradientWidth =  (simParams->drivingRegion.regionWidth - simParams->drivingRegion.peakWidth) / 2;
 
-    // TODO. Turn into a struct
-    simParams->dmiRegionLhs = -1;
-    simParams->dmiRegionRhs = -1;
-    simParams->dmiRegionOffset = 300;
-    simParams->numSpinsDmiPeak = simParams->drivingRegionWidth;
-    simParams->numSpinsDmiWidth = -1; // This should be automatically calculated
+    simParams->dmiRegion.offsetWidth= 300;
+    simParams->dmiRegion.peakWidth = simParams->drivingRegion.regionWidth;
 
-    // TODO. Turn into a struct
-    simParams->dampingRegionLhs = -1;
-    simParams->dampingRegionRhs = -1;
-    simParams->dampingRegionOffset = simParams->dmiRegionOffset;
-    //simParams->dampingGradientGradient = simParams->gilbertDamping;
-    simParams->dampingGradientPeak = 1e-2;
-    simParams->numSpinsDampingPeak = simParams->drivingRegionWidth;
-    simParams->numSpinsDampingWidth = -1; // This should be automatically calculated
-
+    simParams->dampingRegion.offsetWidth = simParams->dmiRegion.offsetWidth;
+    simParams->dampingRegion.peakValue = 1e-2;
+    simParams->dampingRegion.peakWidth = simParams->drivingRegion.regionWidth;
 }
 
 void SolversInitialisation::_generateRemainingParameters() {
@@ -174,10 +172,13 @@ void SolversInitialisation::_generateRemainingParameters() {
     // Computations based upon other inputs
     simParams->drivingAngFreq = 2 * M_PI * simParams->drivingFreq;
 
+    simParams->risingTimePeriod /= simParams->stepsize;
+    simParams->risingTimeEndAtIteration = (simParams->risingTimePeriod / simParams->maxSimTime);
+
     simParams->iterationEnd = static_cast<int>(simParams->maxSimTime / simParams->stepsize);
     simParams->stepsizeHalf = simParams->stepsize / 2.0;
 
-    simStates->layerSpinsInChain = {simParams->drivingRegionWidth, simParams->numSpinsInChain};
+    simStates->layerSpinsInChain = {simParams->drivingRegion.regionWidth, simParams->numSpinsInChain};
     simStates->layerSpinPairs.clear();
     simStates->layerTotalSpins.clear();
     for (int& spinsInChain: simStates->layerSpinsInChain) {
@@ -197,19 +198,19 @@ void SolversInitialisation::_setMaterialParameters() {
         simParams->anisotropyField = 0;
 
     if (!simFlags->hasStaticZeeman)
-        simParams->staticZeemanStrength = 0.0;
+        simParams->staticZeemanStrength.z() = 0.0;
 }
 
 void SolversInitialisation::_guardClauses() {
 
-    if (simFlags->shouldDriveCeaseEarly and simParams->iterEndShock <= 0) {
-        std::cout << "Warning: [shouldDriveCeaseEarly: True] however [iterEndShock: " << simParams->iterEndShock << " ! > 0.0]"
+    if (simFlags->shouldDriveCeaseEarly and simParams->risingTimeEndAtIteration <= 0) {
+        std::cout << "Warning: [shouldDriveCeaseEarly: True] however [risingTimeEndAtIteration: " << simParams->risingTimeEndAtIteration << " ! > 0.0]"
                   << std::endl;
         exit(1);
     }
 
-    if (simFlags->hasShockwave and simParams->iterStartShock < 0) {
-        std::cout << "Warning: [hasShockwave: True] however [iterStartShock: " << simParams->iterStartShock << " ! > 0.0]"
+    if (simFlags->hasRisingTime and simParams->risingTimeStartAtIteration < 0) {
+        std::cout << "Warning: [hasRisingTime: True] however [risingTimeStartAtIteration: " << simParams->risingTimeStartAtIteration << " ! > 0.0]"
                   << std::endl;
         exit(1);
     }
@@ -254,12 +255,12 @@ void SolversInitialisation::_guardClauses() {
         exit(1);
     }
 
-    if (simFlags->hasDemagIntense && simFlags->hasDemagFFT) {
+    if (simFlags->hasDemagFactors && simFlags->hasDemagFFT) {
         std::cout << "Warning: You cannot use both the intense and FFT demag solvers. Please choose one or the other.";
         exit(1);
     }
 
-    if ((simFlags->hasDemagIntense && !GV.GetIsFerromagnetic()) || (simFlags->hasDemagFFT && !GV.GetIsFerromagnetic())) {
+    if ((simFlags->hasDemagFactors && !simFlags->isFerromagnetic) || (simFlags->hasDemagFFT && !simFlags->isFerromagnetic)) {
         std::cout << "Warning: You cannot use the demag solvers with non-ferromagnetic materials.";
         exit(1);
     }
@@ -274,7 +275,7 @@ void SolversInitialisation::_guardClauses() {
         exit(1);
     }
 
-    if ( (simParams->numSpinsDRPeak + simParams->numSpinsDRGradient) > simParams->drivingRegionWidth) {
+    if ( (simParams->drivingRegion.peakWidth + simParams->drivingRegion.gradientWidth) > simParams->drivingRegion.regionWidth) {
         std::cout << "Warning: Attempted DR gradient setup exceeds the drivingRegionWidth!";
         exit(1);
     }
@@ -284,6 +285,6 @@ void SolversInitialisation::_guardClauses() {
 void SolversInitialisation::testModifyingDouble(double newValue) {
     // Test modifying a double in the parent class from the child
     simParams->ambientTemperature = newValue;
-    simParams->iterEndShock = 0.12345;
-    std::cout << "I changed another value: " << simParams->iterEndShock << std::endl;
+    simParams->risingTimeEndAtIteration = 0.12345;
+    std::cout << "I changed another value: " << simParams->risingTimeEndAtIteration << std::endl;
 }

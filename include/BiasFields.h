@@ -60,14 +60,18 @@ private:
     SimulationFlags *_simFlags;
 
 private:
-    std::array<double, 3>
-    _calculateBiasField1D( const int &currentSite, const int &currentLayer, const double &currentTime );
+    template <typename T>
+    void calculateBiasField(int dimension, const int &currentLayer, const double &currentTime,
+                                    const std::vector<double> &mzTermsIn, std::vector<T> &biasFieldXOut,
+                                    std::vector<T> &biasFieldYOut, std::vector<T> &biasFieldZOut,
+                                    bool isAtomic, CommonStructures::Parallelisations parallelFlag);
+    CommonStructures::Vector3D _calculateBiasField1D( int site, const int &currentLayer, const double &currentTime );
 
-    std::array<double, 3>
-    _calculateBiasField1D( const int &currentSite, const int &currentLayer, const double &currentTime,
-                           const double &mzTermAtSite, const bool &shouldUseTBB );
+    template <typename T>
+    void addBiasField(int site, const CommonStructures::Vector3D &biasField, std::vector<T> &biasFieldXOut,
+                      std::vector<T> &biasFieldYOut, std::vector<T> &biasFieldZOut, bool isAtomic);
 
-    inline bool _hasOscillatingZeeman( const int &site );
+    bool _hasOscillatingZeeman( const int &site);
 
 public:
     explicit BiasFields( SimulationParameters *sharedSimParams,
@@ -77,20 +81,19 @@ public:
     ~BiasFields() = default;
 
 public:
-    void calculateOneDimension( const int &currentLayer, const double &currentTime, const std::vector<double> &mzTermsIn,
-                                std::vector<double> &biasFieldXOut, std::vector<double> &biasFieldYOut,
-                                std::vector<double> &biasFieldZOut );
+void calculateOneDimension(const int &currentLayer, const double &currentTime,
+                                       const std::vector<double> &mzTermsIn, std::vector<double> &biasFieldXOut,
+                                       std::vector<double> &biasFieldYOut, std::vector<double> &biasFieldZOut,
+                                       const CommonStructures::Parallelisations &parallelisationMode);
 
-    void
-    calculateOneDimension( const int &currentLayer, const double &currentTime, const std::vector<double> &mzTermsIn,
-                           std::vector<std::atomic<double>> &biasFieldXOut,
-                           std::vector<std::atomic<double>> &biasFieldYOut,
-                           std::vector<std::atomic<double>> &biasFieldZOut, const bool &shouldUseTBB );
+void calculateOneDimension(const int &currentLayer, const double &currentTime,
+                                       const std::vector<double> &mzTermsIn, std::vector<std::atomic<double>> &biasFieldXOut,
+                                       std::vector<std::atomic<double>> &biasFieldYOut,
+                                       std::vector<std::atomic<double>> &biasFieldZOut,
+                                       const CommonStructures::Parallelisations &parallelisationMode);
 
-    void calculateOneDimension( const int &currentLayer, const double &currentTime,
-                                const std::vector<double> &mzTermsIn, std::vector<double> &biasFieldXOut,
-                                std::vector<double> &biasFieldYOut, std::vector<double> &biasFieldZOut,
-                                const bool &shouldUseTBB );
+CommonStructures::Vector3D calculateBiasField(int dimension, int site, const int &currentLayer, const double &currentTime,
+                                         const std::vector<double> &mzTermsIn);
 };
 
 

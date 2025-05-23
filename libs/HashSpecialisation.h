@@ -15,9 +15,9 @@
 
 namespace std {
     template<>
-    struct hash<CommonStructures::Point3D> {
-        size_t operator()(const CommonStructures::Point3D& point) const noexcept {
-            // Extract coordinates directly if CommonStructures::Point3D provides public access
+    struct hash<CommonStructures::Value3D> {
+        size_t operator()(const CommonStructures::Value3D& point) const noexcept {
+            // Extract coordinates directly if CommonStructures::Value3D provides public access
             // Otherwise, use appropriate getter methods if coordinates are private
             const auto& [x, y, z] = point.coordinates; // Assuming structured binding is valid
 

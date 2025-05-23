@@ -42,20 +42,6 @@ void GlobalVariablesClass::SetEmailWhenCompleted(bool shouldSendEmail) {
     _shouldSendEmail = shouldSendEmail;
 }
 
-double GlobalVariablesClass::GetExchangeMaxVal() {
-    return _exchangeMaxVal;
-}
-void GlobalVariablesClass::SetExchangeMaxVal(double exchangeMaxVal) {
-    _exchangeMaxVal = exchangeMaxVal;
-}
-
-double GlobalVariablesClass::GetExchangeMinVal() {
-    return _exchangeMinVal;
-}
-void GlobalVariablesClass::SetExchangeMinVal(double exchangeMinVal) {
-    _exchangeMinVal = exchangeMinVal;
-}
-
 std::string GlobalVariablesClass::FindDateToday() {
 
     time_t     now = time(nullptr);
@@ -154,19 +140,6 @@ bool GlobalVariablesClass::GetIsFerromagnetic() {
 }
 void GlobalVariablesClass::SetIsFerromagnetic(bool isFerromagnetic) {
     _isFerromagnetic = isFerromagnetic;
-}
-
-bool GlobalVariablesClass::GetIsExchangeUniform() {
-    return _isExchangeUniform;
-}
-void GlobalVariablesClass::SetIsExchangeUniform() {
-    if (_exchangeMaxVal == -3.141592 || _exchangeMinVal == -3.141592) {
-        std::cout << "One or more exchange values are not set. Please check the values and try again." << std::endl;
-        std::exit(1);
-    } else if (_exchangeMaxVal == _exchangeMinVal)
-        _isExchangeUniform = true;
-    else
-        _isExchangeUniform = false;
 }
 
 int GlobalVariablesClass::GetNumSpins() {

@@ -20,33 +20,33 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
         outputFileName << "Using LLG: [" << simFlags->shouldUseLLG << "]\t\t\t\tUsing Shockwave: ["
-                       << simFlags->hasShockwave << "]\t\tDrive from LHS: [" << simFlags->shouldDriveLHS <<
+                       << simFlags->hasRisingTime << "]\t\tDrive from LHS: [" << simFlags->shouldDriveLHS <<
                        "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: ["
                        << simFlags->isOscillatingZeemanStatic << "]\n";
 
         outputFileName << "\n";
 
-        outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t"
+        outputFileName << "Static Bias Field (H0): " << simParams->staticZeemanStrength.z() << " T\t\t\t"
                        << "Dynamic Bias Field (H_D1): " << simParams->oscillatingZeemanStrength << " T\n" <<
-                       "Dynamic Bias Field Scale Factor: " << simParams->shockwaveInitialStrength << "\t\t"
-                       << "Second Dynamic Bias Field (H_D2): " << simParams->shockwaveMax << " T\n" <<
+                       "Dynamic Bias Field Scale Factor: " << simParams->risingTimeInitialMagnitude << "\t\t"
+                       << "Second Dynamic Bias Field (H_D2): " << simParams->risingTimeMaximum << " T\n" <<
                        "Driving Frequency (f): " << simParams->drivingFreq << "Hz\t\t""Driving Region Start Site: "
-                       << simParams->drivingRegionLhs - simParams->numSpinsInABC << "\n" <<
-                       "Driving Region End Site: " << simParams->drivingRegionRhs - simParams->numSpinsInABC
-                       << " \t\t\t" << "Driving Region Width: " << simParams->drivingRegionWidth << " \n" <<
+                       << simParams->drivingRegion.lhsSite - simParams->numSpinsInABC << "\n" <<
+                       "Driving Region End Site: " << simParams->drivingRegion.rhsSite - simParams->numSpinsInABC
+                       << " \t\t\t" << "Driving Region Width: " << simParams->drivingRegion.regionWidth << " \n" <<
                        "Max. Sim. Time: " << simParams->maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): "
-                       << simParams->exchangeEnergyMin << " T\n" <<
-                       "Max. Exchange Val (J): " << simParams->exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: "
-                       << simParams->iterationEnd << "\n" <<
-                       "No. DataPoints: " << simParams->numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: "
-                       << simParams->numSpinsInChain << "\n" <<
-                       "No. Damped Spins: " << simParams->numSpinsInABC << "per side\t\t\t" << "No. Total Spins: "
-                       << simParams->systemTotalSpins << " \n" <<
-                       "simParams->stepsize (h): " << simParams->stepsize << "\t\t\t\t" << "Gilbert Damping Factor: "
-                       << simParams->gilbertDamping << "\n" <<
-                       "Gyromagnetic Ratio (2Pi*Y): " << simParams->gyroMagConst << "\t\t""Shockwave Gradient Time: "
-                       << simParams->iterStartShock << "s\n" <<
-                       "Shockwave Application Time: " << simParams->shockwaveGradientTime * simParams->stepsize << "s\n"
+                << simParams->exchangeEnergyMin << " T\n" <<
+                                                          "Max. Exchange Val (J): " << simParams->exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: "
+                                                          << simParams->iterationEnd << "\n" <<
+                                                          "No. DataPoints: " << simParams->numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: "
+                                                          << simParams->numSpinsInChain << "\n" <<
+                                                          "No. Damped Spins: " << simParams->numSpinsInABC << "per side\t\t\t" << "No. Total Spins: "
+                                                          << simParams->systemTotalSpins << " \n" <<
+                                                          "simParams->stepsize (h): " << simParams->stepsize << "\t\t\t\t" << "Gilbert Damping Factor: "
+                                                          << simParams->gilbertDamping.factor<< "\n" <<
+                                                          "Gyromagnetic Ratio (2Pi*Y): " << simParams->gyroMagConst << "\t\t""Shockwave Gradient Time: "
+                                                          << simParams->risingTimeStartAtIteration << "s\n" <<
+                                                          "Shockwave Application Time: " << simParams->risingTimePeriod * simParams->stepsize << "s\n"
                        <<
                        std::endl;
 
@@ -58,11 +58,11 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
         outputFileName << "Using magDynamics," << simFlags->shouldUseLLG << ",Using Shockwave,"
-                       << simFlags->hasShockwave << ",Drive from LHS," << simFlags->shouldDriveLHS
+                       << simFlags->hasRisingTime << ",Drive from LHS," << simFlags->shouldDriveLHS
                        << ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->isOscillatingZeemanStatic
                        << ",Has Dipolar," << simFlags->hasDipolar << ",Has DMI," << simFlags->hasDMI
                        << ",Has STT," << simFlags->hasSTT << ",Has Zeeman," << simFlags->hasStaticZeeman
-                       << ",Has Demag Intense," << simFlags->hasDemagIntense << ",Has Demag FFT," << simFlags->hasDemagFFT
+                       << ",Has Demag Intense," << simFlags->hasDemagFactors << ",Has Demag FFT," << simFlags->hasDemagFFT
                        << ",Has Shape Anisotropy," << simFlags->hasShapeAnisotropy
                        << ",Has Oscillating Zeeman Gradient Map," << simFlags->hasGradientRegionForOscillatingZeeman
                        << ",Has DMI Gradient Map," << simFlags->hasGradientRegionForDmi
@@ -91,29 +91,29 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                    "No. Spins in Damping Width,Damping Region Offset,Damping Gradient Peak,Damping Gradient Gradient"
                    "\n";
 
-        outputFileName << simParams->staticZeemanStrength << ", " << simParams->oscillatingZeemanStrength << ", "
-                       << simParams->shockwaveInitialStrength << ", " << simParams->shockwaveMax << ", "
-                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs << ", "
-                       << simParams->drivingRegionRhs << ", "
-                       << simParams->drivingRegionWidth << ", " << simParams->maxSimTime << ", "
+        outputFileName << simParams->staticZeemanStrength.z() << ", " << simParams->oscillatingZeemanStrength << ", "
+                       << simParams->risingTimeInitialMagnitude << ", " << simParams->risingTimeMaximum << ", "
+                       << simParams->drivingFreq << ", " << simParams->drivingRegion.lhsSite << ", "
+                       << simParams->drivingRegion.rhsSite << ", "
+                       << simParams->drivingRegion.regionWidth << ", " << simParams->maxSimTime << ", "
                        << simParams->exchangeEnergyMin << ", " << simParams->exchangeEnergyMax << ", "
                        << simParams->iterationEnd << ", " << simParams->numberOfDataPoints << ", "
                        << simParams->numSpinsInChain << ", " << simParams->numSpinsInABC << ", "
                        << simParams->systemTotalSpins << ", " << simParams->stepsize << ", "
-                       << simParams->gilbertDamping << ", " << simParams->gyroMagConst << ", "
-                       << simParams->iterStartShock << ", " << simParams->shockwaveGradientTime * simParams->stepsize << ", "
-                       << simParams->gilbertABCInner << ", " << simParams->gilbertABCOuter << ", "
+                       << simParams->gilbertDamping.factor<< ", " << simParams->gyroMagConst << ", "
+                       << simParams->risingTimeStartAtIteration << ", " << simParams->risingTimePeriod * simParams->stepsize << ", "
+                       << simParams->gilbertDamping.innerABC << ", " << simParams->gilbertDamping.outerABC << ", "
                        << simParams->dmiConstant * 2 << ", " << simParams->satMag << ", "
                        << simParams->exchangeStiffness << ", " << simParams->anisotropyField << ", "
-                       << simParams->latticeConstant << ", " << simParams->numSpinsDRPeak << ", "
-                       << simParams->numSpinsDRGradient << ", " << simParams->dmiRegionLhs << ", "
-                       << simParams->dmiRegionRhs << ", " << simParams->numSpinsDmiPeak << ", "
-                       << simParams->numSpinsDmiGradient << ", " << simParams->numSpinsDmiWidth << ", "
-                       << simParams->dmiRegionOffset << ", " << simParams->dampingRegionLhs << ", "
-                       << simParams->dampingRegionRhs << ", " << simParams->numSpinsDampingPeak << ", "
-                       << simParams->numSpinsDampingGradient << ", " << simParams->numSpinsDampingWidth << ", "
-                       << simParams->dampingRegionOffset << ", " << simParams->dampingGradientPeak << ", "
-                       << simParams->dampingGradientGradient
+                       << simParams->latticeConstant << ", " << simParams->drivingRegion.peakWidth << ", "
+                       << simParams->drivingRegion.gradientWidth << ", " << simParams->dmiRegion.lhsSite << ", "
+                       << simParams->dmiRegion.rhsSite << ", " << simParams->dmiRegion.peakWidth << ", "
+                       << simParams->dmiRegion.gradientWidth << ", " << simParams->dmiRegion.regionWidth << ", "
+                       << simParams->dmiRegion.offsetWidth << ", " << simParams->dampingRegion.lhsSite << ", "
+                       << simParams->dampingRegion.rhsSite << ", " << simParams->dampingRegion.peakWidth << ", "
+                       << simParams->dampingRegion.gradientWidth << ", " << simParams->dampingRegion.regionWidth << ", "
+                       << simParams->dampingRegion.offsetWidth << ", " << simParams->dampingRegion.peakValue << ", "
+                       << simParams->dampingRegion.gradientValue
                        << "\n";
 
         outputFileName << "\n";
@@ -159,7 +159,7 @@ void SolversDataHandling::CreateColumnHeaders( std::ofstream &outputFileName ) {
 
     } else if ( simFlags->shouldPrintDiscreteSites ) {
 
-        outputFileName << "Time";
+        outputFileName << "Time [s]";
         for ( int &fixed_out_val: simStates->fixedOutputSites )
             outputFileName << "," << fixed_out_val;
         outputFileName << std::endl;
@@ -182,7 +182,7 @@ void SolversDataHandling::InformUserOfCodeType( const std::string &nameNumerical
     else
         std::cout << "\nYou are running the " << nameNumericalMethod << " Spinchains (Torque) code";
 
-    if ( simFlags->hasShockwave )
+    if ( simFlags->hasRisingTime )
         std::cout << " with shockwave module.\n";
     else
         std::cout << ".\n";
@@ -328,9 +328,9 @@ void SolversDataHandling::SaveDataToFile( std::ofstream &outputFileName, std::ve
                 if (simFlags->shouldPrintDiscreteSites) {
 
                     outputFileName << (iteration * simParams->stepsize) << ","
-                                   << arrayToWrite[simParams->drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(simParams->drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[simParams->drivingRegionRhs] << ","
+                                   << arrayToWrite[simParams->drivingRegion.lhsSite] << ","
+                                   << arrayToWrite[static_cast<int>(simParams->drivingRegion.regionWidth / 2.0)] << ","
+                                   << arrayToWrite[simParams->drivingRegion.rhsSite] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
@@ -344,9 +344,9 @@ void SolversDataHandling::SaveDataToFile( std::ofstream &outputFileName, std::ve
                                    << arrayToWrite[5600] << std::endl;
                 } else {
                     outputFileName << (iteration * simParams->stepsize) << ","
-                                   << arrayToWrite[simParams->drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(simParams->drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[simParams->drivingRegionRhs] << ","
+                                   << arrayToWrite[simParams->drivingRegion.lhsSite] << ","
+                                   << arrayToWrite[static_cast<int>(simParams->drivingRegion.regionWidth / 2.0)] << ","
+                                   << arrayToWrite[simParams->drivingRegion.rhsSite] << ","
                                    << arrayToWrite[static_cast<int>(simParams->systemTotalSpins / 4.0)] << ","
                                    << arrayToWrite[static_cast<int>(simParams->systemTotalSpins / 2.0)] << ","
                                    << arrayToWrite[3 * static_cast<int>(simParams->systemTotalSpins / 4.0)] << ","
@@ -461,9 +461,9 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                 if (simFlags->shouldPrintDiscreteSites) {
 
                     outputFileName << (iteration * simParams->stepsize) << ","
-                                   << arrayToWrite[simParams->drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(simParams->drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[simParams->drivingRegionRhs] << ","
+                                   << arrayToWrite[simParams->drivingRegion.lhsSite] << ","
+                                   << arrayToWrite[static_cast<int>(simParams->drivingRegion.regionWidth / 2.0)] << ","
+                                   << arrayToWrite[simParams->drivingRegion.rhsSite] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
@@ -477,9 +477,9 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                                    << arrayToWrite[5600] << std::endl;
                 } else {
                     outputFileName << (iteration * simParams->stepsize) << ","
-                                   << arrayToWrite[simParams->drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(simParams->drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[simParams->drivingRegionRhs] << ","
+                                   << arrayToWrite[simParams->drivingRegion.lhsSite] << ","
+                                   << arrayToWrite[static_cast<int>(simParams->drivingRegion.regionWidth / 2.0)] << ","
+                                   << arrayToWrite[simParams->drivingRegion.rhsSite] << ","
                                    << arrayToWrite[static_cast<int>(simParams->systemTotalSpins / 4.0)] << ","
                                    << arrayToWrite[static_cast<int>(simParams->systemTotalSpins / 2.0)] << ","
                                    << arrayToWrite[3 * static_cast<int>(simParams->systemTotalSpins / 4.0)] << ","
@@ -520,33 +520,33 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
         outputFileName << "Using magDynamics: [" << simFlags->shouldUseLLG << "]\t\t\t\tUsing Shockwave: ["
-                       << simFlags->hasShockwave << "]\t\tDrive from LHS: [" << simFlags->shouldDriveLHS <<
+                       << simFlags->hasRisingTime << "]\t\tDrive from LHS: [" << simFlags->shouldDriveLHS <<
                        "]\nNumerical Method Used: [" << methodUsed << "]\t\tHas Static Drive: ["
                        << simFlags->isOscillatingZeemanStatic << "]\n";
 
         outputFileName << "\n";
 
-        outputFileName << "Static Bias Field (H0): " << GV.GetStaticBiasField() << " T\t\t\t"
+        outputFileName << "Static Bias Field (H0): " << simParams->staticZeemanStrength.z() << " T\t\t\t"
                        << "Dynamic Bias Field (H_D1): " << simParams->oscillatingZeemanStrength << " T\n" <<
-                       "Dynamic Bias Field Scale Factor: " << simParams->shockwaveInitialStrength << "\t\t"
-                       << "Second Dynamic Bias Field (H_D2): " << simParams->shockwaveMax << " T\n" <<
+                       "Dynamic Bias Field Scale Factor: " << simParams->risingTimeInitialMagnitude << "\t\t"
+                       << "Second Dynamic Bias Field (H_D2): " << simParams->risingTimeMaximum << " T\n" <<
                        "Driving Frequency (f): " << simParams->drivingFreq << "Hz\t\t""Driving Region Start Site: "
-                       << simParams->drivingRegionLhs - simParams->numSpinsInABC << "\n" <<
-                       "Driving Region End Site: " << simParams->drivingRegionRhs - simParams->numSpinsInABC
-                       << " \t\t\t" << "Driving Region Width: " << simParams->drivingRegionWidth << " \n" <<
+                       << simParams->drivingRegion.lhsSite - simParams->numSpinsInABC << "\n" <<
+                       "Driving Region End Site: " << simParams->drivingRegion.rhsSite - simParams->numSpinsInABC
+                       << " \t\t\t" << "Driving Region Width: " << simParams->drivingRegion.regionWidth << " \n" <<
                        "Max. Sim. Time: " << simParams->maxSimTime << " s\t\t\t\t" << "Min. Exchange Val (J): "
-                       << simParams->exchangeEnergyMin << " T\n" <<
-                       "Max. Exchange Val (J): " << simParams->exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: "
-                       << simParams->iterationEnd << "\n" <<
-                       "No. DataPoints: " << simParams->numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: "
-                       << simStates->layerSpinsInChain[layer] << "\n" <<
-                       "No. Damped Spins: " << simParams->numSpinsInABC << "per side\t\t\t" << "No. Total Spins: "
-                       << simStates->layerTotalSpins[layer] << " \n" <<
-                       "Stepsize (h): " << simParams->stepsize << "\t\t\t\t" << "Gilbert Damping Factor (Chain: "
-                       << simParams->gilbertDamping << "\n" <<
-                       "Gyromagnetic Ratio (2Pi*Y): " << simParams->gyroMagConst << "\t\t""Shockwave Gradient Time: "
-                       << simParams->iterStartShock << "s\n" <<
-                       "Shockwave Application Time: " << simParams->shockwaveGradientTime * simParams->stepsize << "s\n"
+                << simParams->exchangeEnergyMin << " T\n" <<
+                                                          "Max. Exchange Val (J): " << simParams->exchangeEnergyMax << " T\t\t\t" << "Max. Iterations: "
+                                                          << simParams->iterationEnd << "\n" <<
+                                                          "No. DataPoints: " << simParams->numberOfDataPoints << " \t\t\t\t" << "No. Spins in Chain: "
+                                                          << simStates->layerSpinsInChain[layer] << "\n" <<
+                                                          "No. Damped Spins: " << simParams->numSpinsInABC << "per side\t\t\t" << "No. Total Spins: "
+                                                          << simStates->layerTotalSpins[layer] << " \n" <<
+                                                          "Stepsize (h): " << simParams->stepsize << "\t\t\t\t" << "Gilbert Damping Factor (Chain: "
+                                                          << simParams->gilbertDamping.factor<< "\n" <<
+                                                          "Gyromagnetic Ratio (2Pi*Y): " << simParams->gyroMagConst << "\t\t""Shockwave Gradient Time: "
+                                                          << simParams->risingTimeStartAtIteration << "s\n" <<
+                                                          "Shockwave Application Time: " << simParams->risingTimePeriod * simParams->stepsize << "s\n"
                        <<
                        std::endl;
 
@@ -558,7 +558,7 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
         outputFileName << "[Booleans where (1) indicates (True) and (0) indicates (False)]\n";
 
         outputFileName << "Using magDynamics," << simFlags->shouldUseLLG << ",Using Shockwave,"
-                       << simFlags->hasShockwave << ",Drive from LHS," << simFlags->shouldDriveLHS <<
+                       << simFlags->hasRisingTime << ",Drive from LHS," << simFlags->shouldDriveLHS <<
                        ",Numerical Method Used," << methodUsed << ",Has Static Drive," << simFlags->isOscillatingZeemanStatic
                        << "\n";
 
@@ -572,18 +572,18 @@ void SolversDataHandling::CreateFileHeader( std::ofstream &outputFileName, std::
                    "Shockwave Gradient Time [s], Shockwave Application Time [s]"
                    "\n";
 
-        outputFileName << GV.GetStaticBiasField() << ", " << simParams->oscillatingZeemanStrength << ", "
-                       << simParams->shockwaveInitialStrength << ", " << simParams->shockwaveMax << ", "
-                       << simParams->drivingFreq << ", " << simParams->drivingRegionLhs - simParams->numSpinsInABC
-                       << ", " << simParams->drivingRegionRhs - simParams->numSpinsInABC << ", "
-                       << simParams->drivingRegionWidth << ", "
-                       << simParams->maxSimTime << ", " << simParams->exchangeEnergyMin << ", "
-                       << simParams->exchangeEnergyMax << ", " << simParams->iterationEnd << ", "
-                       << simParams->numberOfDataPoints << ", "
-                       << simStates->layerSpinsInChain[layer] << ", " << simParams->numSpinsInABC << ", "
-                       << simStates->layerTotalSpins[layer] << ", " << simParams->stepsize << ", "
-                       << simParams->gilbertDamping << ", " << simParams->gyroMagConst << ", "
-                       << simParams->iterStartShock << ", " << simParams->shockwaveGradientTime * simParams->stepsize
+        outputFileName << simParams->staticZeemanStrength.z() << ", " << simParams->oscillatingZeemanStrength << ", "
+                       << simParams->risingTimeInitialMagnitude << ", " << simParams->risingTimeMaximum << ", "
+                << simParams->drivingFreq << ", " << simParams->drivingRegion.lhsSite - simParams->numSpinsInABC
+                << ", " << simParams->drivingRegion.rhsSite - simParams->numSpinsInABC << ", "
+                << simParams->drivingRegion.regionWidth << ", "
+                << simParams->maxSimTime << ", " << simParams->exchangeEnergyMin << ", "
+                << simParams->exchangeEnergyMax << ", " << simParams->iterationEnd << ", "
+                << simParams->numberOfDataPoints << ", "
+                << simStates->layerSpinsInChain[layer] << ", " << simParams->numSpinsInABC << ", "
+                << simStates->layerTotalSpins[layer] << ", " << simParams->stepsize << ", "
+                << simParams->gilbertDamping.factor<< ", " << simParams->gyroMagConst << ", "
+                << simParams->risingTimeStartAtIteration << ", " << simParams->risingTimePeriod * simParams->stepsize
                        << "\n";
 
         outputFileName << "\n";
@@ -748,9 +748,9 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                 if (simFlags->shouldPrintDiscreteSites) {
 
                     outputFileName << (iteration * simParams->stepsize) << ","
-                                   << arrayToWrite[simParams->drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(simParams->drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[simParams->drivingRegionRhs] << ","
+                                   << arrayToWrite[simParams->drivingRegion.lhsSite] << ","
+                                   << arrayToWrite[static_cast<int>(simParams->drivingRegion.regionWidth / 2.0)] << ","
+                                   << arrayToWrite[simParams->drivingRegion.rhsSite] << ","
                                    << arrayToWrite[static_cast<int>(1500)] << ","
                                    << arrayToWrite[static_cast<int>(2500)] << ","
                                    << arrayToWrite[static_cast<int>(3500)] << ","
@@ -764,9 +764,9 @@ void SolversDataHandling::SaveDataToFileMultilayer( std::ofstream &outputFileNam
                                    << arrayToWrite[5600] << std::endl;
                 } else {
                     outputFileName << (iteration * simParams->stepsize) << ","
-                                   << arrayToWrite[simParams->drivingRegionLhs] << ","
-                                   << arrayToWrite[static_cast<int>(simParams->drivingRegionWidth / 2.0)] << ","
-                                   << arrayToWrite[simParams->drivingRegionRhs] << ","
+                                   << arrayToWrite[simParams->drivingRegion.lhsSite] << ","
+                                   << arrayToWrite[static_cast<int>(simParams->drivingRegion.regionWidth / 2.0)] << ","
+                                   << arrayToWrite[simParams->drivingRegion.rhsSite] << ","
                                    << arrayToWrite[static_cast<int>(simParams->systemTotalSpins / 4.0)] << ","
                                    << arrayToWrite[static_cast<int>(simParams->systemTotalSpins / 2.0)] << ","
                                    << arrayToWrite[3 * static_cast<int>(simParams->systemTotalSpins / 4.0)] << ","

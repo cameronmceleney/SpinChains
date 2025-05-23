@@ -46,9 +46,9 @@ public:
                                    const std::vector<double> &mzTerms, std::vector<double> &dmiXOut,
                                    std::vector<double> &dmiYOut, std::vector<double> &dmiZOut, bool shouldUseTBB );
 
-    std::array<double, 3> calculateClassic( const int &currentSite, const std::array<double, 2> &mxTerms,
-                                            const std::array<double, 2> &myTerms,
-                                            const std::array<double, 2> &mzTerms );
+    CommonStructures::Vector3D calculateClassic( const int &currentSite, const CommonStructures::Vector2D &mxTerms,
+                                            const CommonStructures::Vector2D &myTerms,
+                                            const CommonStructures::Vector2D &mzTerms );
 
 private:
     SimulationParameters *_simParams; // Non-owning pointer to SimulationParameters
@@ -56,7 +56,13 @@ private:
     SimulationFlags *_simFlags;
 private:
     // Empty contains to be constants reused throughout the component's lifetime instead recreating new each method call
-    std::array<double, 3> _dmiVector{};
+    /**
+     * To be used in all cases where readability is key for debugging, and all single-threaded cases
+     * @param iSite
+     * @param jSite
+     * @return
+     */
+    static inline CommonStructures::Vector3D _crossProduct( const CommonStructures::Vector3D &iSite, const CommonStructures::Vector3D &jSite );
 
     /**
      * To be used in all cases where readability is key for debugging, and all single-threaded cases
@@ -64,7 +70,7 @@ private:
      * @param jSite
      * @return
      */
-    inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite );
+    inline CommonStructures::Vector3D _dotProduct( const CommonStructures::Vector3D &iSite, const CommonStructures::Vector3D &jSite );
 
     /**
      * To be used in multi-threaded cases and is optimised for efficiency
@@ -72,44 +78,27 @@ private:
      * @param jSite
      * @return
      */
-    inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite,
+    inline CommonStructures::Vector3D _dotProduct( const CommonStructures::Vector3D &iSite, const CommonStructures::Vector3D &jSite,
                                                 const bool & shouldUseTBB);
 
-    /**
-     * To be used in all cases where readability is key for debugging, and all single-threaded cases
-     * @param iSite
-     * @param jSite
-     * @return
-     */
-    inline std::array<double, 3> _dotProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite );
-
-    /**
-     * To be used in multi-threaded cases and is optimised for efficiency
-     * @param iSite
-     * @param jSite
-     * @return
-     */
-    inline std::array<double, 3> _dotProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite,
-                                                const bool & shouldUseTBB);
-
-    std::array<double, 3> _calculateDMIField1D( const int &currentSite, const std::vector<double> &mxTerms,
+    CommonStructures::Vector3D _calculateDMIField1D( const int &currentSite, const std::vector<double> &mxTerms,
                                               const std::vector<double> &myTerms, const std::vector<double> &mzTerms );
 
-    std::array<double, 3>
+    CommonStructures::Vector3D
     _calculateDMIField1D( const int &currentSite, const std::vector<double> &mxTerms,
                           const std::vector<double> &myTerms,
                           const std::vector<double> &mzTerms, const bool &shouldUseTBB );
 
-    std::array<double, 3> _calculateDMIField3D( auto &currentSite, const std::vector<double> &mxTerms,
+    CommonStructures::Vector3D _calculateDMIField3D( auto &currentSite, const std::vector<double> &mxTerms,
                                               const std::vector<double> &myTerms, const std::vector<double> &mzTerms );
-    std::array<double, 3> _calculateDMIField3D( auto &currentSite, const std::vector<double> &mxTerms,
+    CommonStructures::Vector3D _calculateDMIField3D( auto &currentSite, const std::vector<double> &mxTerms,
                                           const std::vector<double> &myTerms, const std::vector<double> &mzTerms,
                                           const bool &shouldUseTBB);
 
-    std::array<double, 3>
-    _calculateDMIFieldClassic( auto &currentSite, const std::array<double, 2> &mxTerms,
-                               const std::array<double, 2> &myTerms,
-                               const std::array<double, 2> &mzTerms );
+    CommonStructures::Vector3D
+    _calculateDMIFieldClassic( auto &currentSite, const CommonStructures::Vector2D &mxTerms,
+                               const CommonStructures::Vector2D &myTerms,
+                               const CommonStructures::Vector2D &mzTerms );
 };
 
 

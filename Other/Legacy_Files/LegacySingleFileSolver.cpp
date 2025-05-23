@@ -178,7 +178,7 @@ void NMSuperClass::FinalChecks() {
         exit(1);
     }
 
-    if ((_useDemagIntense && !GV.GetIsFerromagnetic()) || (_useDemagFFT && !GV.GetIsFerromagnetic())) {
+    if ((_useDemagIntense && !_isFM) || (_useDemagFFT && !GV.GetIsFerromagnetic())) {
         std::cout << "Warning: You cannot use the demag solvers with non-ferromagnetic materials.";
         exit(1);
     }

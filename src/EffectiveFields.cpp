@@ -17,7 +17,7 @@ bool EffectiveFields::isSiteDriven( const int &site ) {
             if ( site == discreteSite ) { return true; }
     }
 
-    if ( site >= _simParams->drivingRegionLhs && site <= _simParams->drivingRegionRhs ) { return true; }
+    if ( site >= _simParams->drivingRegion.lhsSite && site <= _simParams->drivingRegion.rhsSite ) { return true; }
 
     // If no condition is met, then the site is not driven
     return false;
@@ -240,17 +240,21 @@ void EffectiveFields::EffectiveFieldsCombinedTest( const int &currentSite, const
         } else {
             // All spins along x which are not within the driving region
             hExLocal.x += _simStates->exchangeVec[currentSite - 1] * mxTermsIn[currentSite - 1]
-                          + _simStates->exchangeVec[currentSite] * mxTermsIn[currentSite + 1];
+                          + _simStates->exchangeVec[currentSite] * mxTermsIn[currentSite + 1]
+                          + _simParams->staticZeemanStrength.x();
+
         }
+        hExLocal.x +=  _simParams->staticZeemanStrength.x();
 
         // hy terms
         hExLocal.y += _simStates->exchangeVec[currentSite - 1] * myTermsIn[currentSite - 1]
-                      + _simStates->exchangeVec[currentSite] * myTermsIn[currentSite + 1];
+                      + _simStates->exchangeVec[currentSite] * myTermsIn[currentSite + 1]
+                      + _simParams->staticZeemanStrength.y();
 
         // hz terms
         hExLocal.z += _simStates->exchangeVec[currentSite - 1] * mzTermsIn[currentSite - 1]
-                      + _simStates->exchangeVec[currentSite] * mzTermsIn[currentSite + 1];
-        hExLocal.z += GV.GetStaticBiasField();
+                      + _simStates->exchangeVec[currentSite] * mzTermsIn[currentSite + 1]
+                      + _simParams->staticZeemanStrength.z();
 
     } else if ( !_simFlags->isFerromagnetic ) {
         // hx terms
@@ -269,18 +273,21 @@ void EffectiveFields::EffectiveFieldsCombinedTest( const int &currentSite, const
             hExLocal.x += -1.0 * (_simStates->exchangeVec[currentSite - 1] * mxTermsIn[currentSite - 1]
                                   + _simStates->exchangeVec[currentSite] * mxTermsIn[currentSite + 1]);
         }
+        hExLocal.x +=  _simParams->staticZeemanStrength.x();
 
         // hy terms
         hExLocal.y += -1.0 * (_simStates->exchangeVec[currentSite - 1] * myTermsIn[currentSite - 1]
                               + _simStates->exchangeVec[currentSite] * myTermsIn[currentSite + 1]);
+        hExLocal.y +=  _simParams->staticZeemanStrength.y();
+
 
         // hz terms
         if ( mzTermsIn[currentSite] > 0 )
-            hExLocal.z += GV.GetStaticBiasField() + _simParams->anisotropyField -
+            hExLocal.z += _simParams->staticZeemanStrength.z() + _simParams->anisotropyField -
                           (_simStates->exchangeVec[currentSite - 1] * mzTermsIn[currentSite - 1]
                            + _simStates->exchangeVec[currentSite] * mzTermsIn[currentSite + 1]);
         else if ( mzTermsIn[currentSite] < 0 )
-            hExLocal.z += GV.GetStaticBiasField() - _simParams->anisotropyField -
+            hExLocal.z += _simParams->staticZeemanStrength.z() - _simParams->anisotropyField -
                           (_simStates->exchangeVec[currentSite - 1] * mzTermsIn[currentSite - 1]
                            + _simStates->exchangeVec[currentSite] * mzTermsIn[currentSite + 1]);
     }
@@ -296,14 +303,14 @@ void EffectiveFields::EffectiveFieldsCombinedTest( const int &currentSite, const
     if ( _simFlags->isFerromagnetic ) {
         hExLocal.z += _simStates->exchangeVec[currentSite - 1] * mzTermsIn[currentSite - 1]
                       + _simStates->exchangeVec[currentSite] * mzTermsIn[currentSite + 1];
-        hExLocal.z += GV.GetStaticBiasField();
+        hExLocal.z += _simParams->staticZeemanStrength.z();
     } else if ( !_simFlags->isFerromagnetic ) {
         if ( mzTermsIn[currentSite] > 0 )
-            hExLocal.z += GV.GetStaticBiasField() + _simParams->anisotropyField -
+            hExLocal.z += _simParams->staticZeemanStrength.z() + _simParams->anisotropyField -
                           (_simStates->exchangeVec[currentSite - 1] * mzTermsIn[currentSite - 1]
                            + _simStates->exchangeVec[currentSite] * mzTermsIn[currentSite + 1]);
         else if ( mzTermsIn[currentSite] < 0 )
-            hExLocal.z += GV.GetStaticBiasField() - _simParams->anisotropyField -
+            hExLocal.z += _simParams->staticZeemanStrength.z() - _simParams->anisotropyField -
                           (_simStates->exchangeVec[currentSite - 1] * mzTermsIn[currentSite - 1]
                            + _simStates->exchangeVec[currentSite] * mzTermsIn[currentSite + 1]);
     }
@@ -313,7 +320,7 @@ void EffectiveFields::EffectiveFieldsCombinedTest( const int &currentSite, const
     effectiveFieldZTermsOut[currentSite] = hExLocal.z;
 }
 
-std::array<double, 3> EffectiveFields::EffectiveFieldsCombinedTestExOnly( const int &currentSite, const int &layer,
+CommonStructures::Vector3D EffectiveFields::EffectiveFieldsCombinedTestExOnly( const int &currentSite, const int &layer,
                                                                           const std::vector<double> &mxTermsIn,
                                                                           const std::vector<double> &myTermsIn,
                                                                           const std::vector<double> &mzTermsIn ) {
@@ -363,7 +370,7 @@ std::array<double, 3> EffectiveFields::EffectiveFieldsCombinedTestExOnly( const 
     return {hxLocal, hyLocal, hzLocal};
 }
 
-std::array<double, 3> EffectiveFields::EffectiveFieldsCombinedTestDriveOnly( const int &currentSite, const int &layer,
+CommonStructures::Vector3D EffectiveFields::EffectiveFieldsCombinedTestDriveOnly( const int &currentSite, const int &layer,
                                                                              const std::vector<double> &mxTermsIn,
                                                                              const std::vector<double> &myTermsIn,
                                                                              const std::vector<double> &mzTermsIn,
@@ -389,7 +396,7 @@ std::array<double, 3> EffectiveFields::EffectiveFieldsCombinedTestDriveOnly( con
         hyLocal = 0.0;
 
         // hz terms
-        hzLocal = GV.GetStaticBiasField();
+        hzLocal = _simParams->staticZeemanStrength.z();
 
     } else if ( !_simFlags->isFerromagnetic ) {
         // hx terms
@@ -406,9 +413,9 @@ std::array<double, 3> EffectiveFields::EffectiveFieldsCombinedTestDriveOnly( con
 
         // hz terms
         if ( mzTermsIn[currentSite] > 0 )
-            hzLocal = GV.GetStaticBiasField();
+            hzLocal = _simParams->staticZeemanStrength.z();
         else if ( mzTermsIn[currentSite] < 0 )
-            hzLocal = GV.GetStaticBiasField();
+            hzLocal = _simParams->staticZeemanStrength.z();
     }
 
     return {hxLocal, hyLocal, hzLocal};

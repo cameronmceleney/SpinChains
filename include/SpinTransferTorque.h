@@ -41,10 +41,10 @@ private:
     SimulationFlags *_simFlags;
 private:
     // Empty contains to be constants reused throughout the component's lifetime instead recreating new each method call
-    std::array<double, 3> _calculateExchangeDrivenSpinCurrentDensity( const int &currentSite, const std::vector<double> &mxTerms,
+    CommonStructures::Vector3D _calculateExchangeDrivenSpinCurrentDensity( const int &currentSite, const std::vector<double> &mxTerms,
                                                                       const std::vector<double> &myTerms,
                                                                       const std::vector<double> &mzTerms);
-    std::array<double, 3> _calculateSTT1D();
+    CommonStructures::Vector3D _calculateSTT1D();
 
     /**
      * To be used in all cases where readability is key for debugging, and all single-threaded cases
@@ -52,7 +52,7 @@ private:
      * @param jSite
      * @return
      */
-    inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite );
+    inline CommonStructures::Vector3D _crossProduct( const CommonStructures::Vector3D &iSite, const CommonStructures::Vector3D &jSite );
 
     /**
      * To be used in multi-threaded cases and is optimised for efficiency
@@ -60,7 +60,7 @@ private:
      * @param jSite
      * @return
      */
-    inline std::array<double, 3> _crossProduct( const std::array<double, 3> &iSite, const std::array<double, 3> &jSite,
+    inline CommonStructures::Vector3D _crossProduct( const CommonStructures::Vector3D &iSite, const CommonStructures::Vector3D &jSite,
                                                 const bool & shouldUseTBB);
 };
 
